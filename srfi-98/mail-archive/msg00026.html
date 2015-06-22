@@ -1,0 +1,154 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: getenv vs. locale -->
+<!--X-From-R13: Euveb Ynjnv <fuvebNynin.arg> -->
+<!--X-Date: Sun, 20 Jul 2008 09:20:26 +0200 (MST) -->
+<!--X-Message-Id: 20080719.212021.1010996329.shiro@lava.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: m2d4lbaxv3.fsf@cherry.siamics.int -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: getenv vs. locale</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00025.html">Date Prev</a>][<a href="msg00027.html">Date Next</a>][<a href="msg00025.html">Thread Prev</a>][<a href="msg00027.html">Thread Next</a>][<a href="maillist.html#00026">Date Index</a>][<a href="threads.html#00026">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: getenv vs. locale</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:oneingray@DOMAIN.HIDDEN">oneingray@xxxxxxxxx</a>, <a href="mailto:ivan@DOMAIN.HIDDEN">ivan@xxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: getenv vs. locale</li>
+<li><em>From</em>: Shiro Kawai &lt;<a href="mailto:shiro@DOMAIN.HIDDEN">shiro@xxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 19 Jul 2008 21:20:21 -1000 (HST)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-98@DOMAIN.HIDDEN">srfi-98@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-98@DOMAIN.HIDDEN">srfi-98@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:m2d4lbaxv3.fsf@DOMAIN.HIDDEN">m2d4lbaxv3.fsf@xxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:m2d4lbaxv3.fsf@DOMAIN.HIDDEN">m2d4lbaxv3.fsf@xxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>From: Ivan Shmakov &lt;ivan@xxxxxxxxxxxxx&gt;
+Subject: getenv vs. locale
+Date: Sat, 19 Jul 2008 00:46:56 +0700
+
+&gt; 	SRFI 98 reads:
+&gt; 
+&gt; --cut--
+&gt;     For obtaining the value of the environment value, getenv may use
+&gt;     locale-setting information to encode the name, and decode the value
+&gt;     of the environment variable.
+&gt; --cut--
+&gt; 
+&gt; 	And it doesn't seem appropriate.
+&gt; 
+&gt; 	Historically, environment variables are used to specify
+&gt; 	filenames (either sole, or lists, as in the case of PATH.)
+&gt; 	However, filenames aren't actually ``strings'' on a number of
+&gt; 	the general purpose platforms currently in use, most notably on
+&gt; 	those of the POSIX flavour.
+
+Good point.  In principle, we should treat anything fed from
+the outside world as a binary vector until it goes through one of
+proper &quot;gates&quot; (e.g. ports).
+
+However, I guess almost all the time the caller of getenv would
+want to use the result as a string.  It would be inconvenient
+to insert conversion routine in every call.
+(BTW, R6RS's command-line procedure in (rnrs programs (6)) library
+is defined to return a list of strings, despite that the host
+operating system may pass a byte sequence that can't be converted
+to the implementation's string object.)
+
+I suggest to keep getenv returning a string, with additional
+specification when the actual environment value can't be converted.
+The resolution can be either:
+
+(a) Raises an exception (natural, but may be inconvenient in some cases)
+(b) Returns some value indicating such condition has happened
+    (not Schemey).
+(c) Allow an optional 'filter' argument.  If it is given, it should
+    be a procedure that takes one argument.  It is called with the
+    raw byte-vector value, and its return value is the result of 
+    get-environment-variable.  The filter procedure is usually
+    supposed to return a string, but it may be an identity function
+    if the caller wants the raw byte-vector value.  It can raise
+    an exception if the raw value can't be converted to a string,
+    or can return some special value indicating the situation.
+
+If we take (a) or (b), we could add another procedures that
+return the raw value(s), in case the caller wants to process them.
+
+I think (c) is reasonably general, but it raises another issue:
+If we aim at r6rs, the filter procedure would take r6rs bytevector.
+If we look at r5rs compatibility, srfi-4 u8vector would be a
+natural choice.  Which way should we go?
+
+--shiro
+
+
+
+
+
+
+
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00027" href="msg00027.html">Re: getenv vs. locale</a></strong>
+<ul><li><em>From:</em> higepon</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00025" href="msg00025.html">getenv vs. locale</a></strong>
+<ul><li><em>From:</em> Ivan Shmakov</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00025.html">getenv vs. locale</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00027.html">Re: getenv vs. locale</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00025.html">getenv vs. locale</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00027.html">Re: getenv vs. locale</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00026"><strong>Date</strong></a></li>
+<li><a href="threads.html#00026"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

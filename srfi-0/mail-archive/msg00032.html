@@ -1,0 +1,257 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: SRFI 0 philosophy -->
+<!--X-From-R13: [nggurj Tyngg <zsynggNpf.evpr.rqh> -->
+<!--X-Date: Mon, 29 Mar 1999 18:06:43 &#45;0600 (CST) -->
+<!--X-Message-Id: 199903300006.SAA01201@cs.rice.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: SRFI 0 philosophy</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00031.html">Date Prev</a>][<a href="msg00033.html">Date Next</a>][<a href="msg00027.html">Thread Prev</a>][<a href="msg00033.html">Thread Next</a>][<a href="maillist.html#00032">Date Index</a>][<a href="threads.html#00032">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: SRFI 0 philosophy</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-0@DOMAIN.HIDDEN">srfi-0@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: SRFI 0 philosophy</li>
+<li><em>From</em>: Matthew Flatt &lt;<a href="mailto:mflatt@DOMAIN.HIDDEN">mflatt@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 29 Mar 1999 18:06:42 -0600 (CST)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Marc writes:
+&gt; So I send a plea to everyone: if you have a view on this subject now
+&gt; is the time to voice it.
+
+A summary of my view:
+
+  * Neither the original or alternate SRFI 0 proposal addresses the
+    real problem.
+
+  * The real problem is modularity. 
+
+  * Although it sounds hard, maybe we can solve the modularity problem
+    --- in the restricted context of SRFIs -- by pursuing a simple,
+    external configuration language (similar to Kelsey's refinement of
+    the alternate proposal).
+
+To elaborate, I'll start at the beginning...
+
+
+What are SRFIs for? I see two reasonable answers (both within the scope
+of the existing documents that try to answer this question):
+
+ 1. To allow an individual programmer to produce code that executes in
+    many different Scheme implementations.
+
+ 2. To allow many programmers (using many Scheme implementations) to
+    share code that relies on more than the minimal language specified
+    in RnRS.
+
+There's a significant difference in focus between these two goals. The
+first might be a useful goal, but I think that the second is a far more
+important one (and one that SRFIs can achieve).
+
+
+What is SRFI 0 for? If SRFI 0 is meant as a foundation for using SRFIs,
+I see two answers, in parallel to the above:
+
+ 1. To define a how programmer writes source code that can adapt to
+    different programming languages (i.e., languages with different
+    built-in features).
+
+ 2. To define how a programmer writes source code in a well-specified
+    language (bigger than RnRS) so that other programmers can use the
+    code.
+
+The original SRFI 0 addresses #1. The alternate SRFI 0 proposal (and
+Kelsey's extralinguistic refinement) comes closer to addressing #2.
+But, as Donovan has pointed out, even the alternate proposal provides
+no mechanism that allows parts of a program to use different SRFIs. If
+reuse is the ultimate goal, we must address the fact that code from
+multiple programmers will likely depend on different, possibly
+conflicting, SRFIs.
+
+This line of reasoning brings us to modules, of course.
+
+
+Mike writes:
+&gt; - Module system: 
+&gt;   Unfortunately, a general module system is far away.
+
+Are we sure? I'd like to test this hypothesis. 
+
+Perhaps it's just a question of how general is &quot;general&quot;. I wonder
+whether we can pin down a configuration language (outside of Scheme)
+that will enable modular SRFIs and sharable code. If we can, then I
+believe that we should push a module foundation in SRFI 0, rather than
+an #if-like construct. At the very least, I'd like to explore the
+possibility.
+
+Below is a sketch for a simple configation language. It closely
+resembles Ada or Modula-3. It is less than the module language I want
+to program with, but it is enough to write useful programs and to
+support modular SRFIs. It is easy mapped to existing module languages
+in various Scheme implementations (I think).
+
+
+-----------------------------------------------------------------------
+
+The configuration language provides three first-order constructs:
+
+ * Interfaces - An interface is a set of variable names (and an
+   implied contract for the variables' use).
+
+    &lt;interface-decl&gt; = (define-interface &lt;i-name&gt; (&lt;identifier&gt; ...))
+
+ * Modules - A module is a set of definitions and expressions, closed
+   with respect to some basis language (e.g. R4RS or R4RS + SRFI-3) and
+   a set of imported variables (imported from specific other modules).
+   Some of the defined variables are exported.
+
+   A module exports and imports run-time variables, not values or
+   macros.
+
+   The body of a module is in a separate file, to avoid messy reader
+   issues, such as case-sensitivity.
+
+     &lt;module-decl&gt; = (define-module &lt;m-name&gt; &lt;module-body&gt;)
+
+     &lt;module-body&gt; = (body &lt;file&gt;)
+                      (syntax &lt;language&gt; ...)
+                      (export &lt;i-name&gt; ...)
+                      (import &lt;m-name&gt; ...)
+
+     &lt;language&gt; = r4rs | r5rs | srfi-&lt;n&gt; | ...
+
+ * Generic modules - A generic module is a module that is parameterized
+   over (some of) the modules that provide its imports. Combining a
+   generic module with specific imported modules defines a new module.
+
+    &lt;gen-decl&gt; = (define-generic (&lt;g-name&gt; &lt;m-name&gt; ...) &lt;module-body&gt;)
+               | (define-module (&lt;g-name&gt; &lt;m-name&gt; ...))
+
+A program is a sequence of &lt;config-decl&gt;s
+
+    &lt;program&gt; = &lt;config-decl&gt; ...
+
+where a &lt;config-decl&gt; is an interface, module, or generic module
+declaration, or an include declaration for textually substituting a
+file:
+
+    &lt;config-decl&gt; = &lt;interface-decl&gt;
+                  | &lt;module-decl&gt;
+                  | &lt;gen-decl&gt;
+                  | (include &lt;file&gt;)
+
+A program must define a set of modules that are closed over the import
+relation. Running the program evaluates each definition and expression
+of the program's modules, sequentially within each module and
+sequentially across modules in the order of the module declarations.
+
+-----------------------------------------------------------------------
+
+
+I've omitted some details above (because it's just a sketch), but
+certain aspects of the sketch are important:
+
+  * Support for components - Linking among modules is hardwired into
+    each module, which makes modules good for expressing an individual
+    program, but unsuitable as units for sharing code. Generic modules
+    are units for sharing code (and they are intended as compilation
+    units).
+
+  * First-order and extralinguistic configuration - If necessary, a
+    particular configuration can be implemented by renaming variables
+    within modules, then concatenating all modules expressions to form
+    a sequence of top-level expressions (although this strategy
+    prohibits separate compilation of generics).
+
+Certain aspects are unimportant:
+
+  * Terminology - I chose &quot;module&quot;, &quot;interface&quot;, and &quot;generic&quot; because
+    they seem to be the most commonly used terms.
+
+  * Keywords and placement of parentheses (obviously).
+
+Certain issues are not addressed:
+
+  * &lt;file&gt; specification - The language should define &lt;file&gt; so that a
+    configuration can refer to standard library files (such as a
+    component implementing SRFI 1) as well as files relative to the
+    configuraiton file.
+
+  * How to get SRFI N (perhaps based on SRFI M) into implementation X -
+    I don't beleive that this is the interesting problem for SRFI 0.
+
+  * Hierarchical components - I'd like to have hierarchical components,
+    but I couldn't make them simple enough to fit into the sketch, so
+    they're probably too complicated to be worthwhile for now.
+
+
+
+With the above sketch, I'm hoping to learn how &quot;far away&quot; we are from a
+SRFI-friendly module system. More concretely, I ask the following
+question of each of you: how far is the above sketch from an acceptable
+module system?
+
+
+Matthew
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00033" href="msg00033.html">Re: SRFI 0 philosophy</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr. Preprocessor]</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00031.html">Re: SRFI 0 philosophy [WAS: logical operations in if-implements]</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00033.html">Re: SRFI 0 philosophy</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00027.html">Re: a separate configuration language</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00033.html">Re: SRFI 0 philosophy</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00032"><strong>Date</strong></a></li>
+<li><a href="threads.html#00032"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

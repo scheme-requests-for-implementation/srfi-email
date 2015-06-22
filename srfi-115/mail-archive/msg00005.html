@@ -1,0 +1,136 @@
+<!-- MHonArc v2.6.18 -->
+<!--X-Subject: Re: Reference implementation dependencies? -->
+<!--X-From-R13: Brgre Prk <Brgre.PrkNkf4nyy.ay> -->
+<!--X-Date: Tue, 15 Oct 2013 21:10:00 +0200 (MST) -->
+<!--X-Message-Id: 20131015190756.GB17096@frohike.xs4all.nl -->
+<!--X-Content-Type: multipart/mixed -->
+<!--X-Reference: 20131015173212.GA17096@frohike.xs4all.nl -->
+<!--X-Reference: 20131015182754.GB26409@mercury.ccil.org -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Reference implementation dependencies?</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00004.html">Date Prev</a>][<a href="msg00006.html">Date Next</a>][<a href="msg00003.html">Thread Prev</a>][<a href="msg00009.html">Thread Next</a>][<a href="maillist.html#00005">Date Index</a>][<a href="threads.html#00005">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Reference implementation dependencies?</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: John Cowan &lt;<a href="mailto:cowan@DOMAIN.HIDDEN">cowan@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Reference implementation dependencies?</li>
+<li><em>From</em>: Peter Bex &lt;<a href="mailto:Peter.Bex@DOMAIN.HIDDEN">Peter.Bex@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 15 Oct 2013 21:07:56 +0200</li>
+<li><em>Cc</em>: SRFI-115 discussion list &lt;<a href="mailto:srfi-115@DOMAIN.HIDDEN">srfi-115@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-115@DOMAIN.HIDDEN">srfi-115@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="msg00003.html">20131015182754.GB26409@mercury.ccil.org</a>&gt;</li>
+<li><em>Mail-followup-to</em>: John Cowan &lt;<a href="mailto:cowan@DOMAIN.HIDDEN">cowan@xxxxxxxxxxxxxxxx</a>&gt;,	SRFI-115 discussion list &lt;<a href="mailto:srfi-115@DOMAIN.HIDDEN">srfi-115@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="msg00001.html">20131015173212.GA17096@frohike.xs4all.nl</a>&gt; &lt;<a href="msg00003.html">20131015182754.GB26409@mercury.ccil.org</a>&gt;</li>
+<li><em>User-agent</em>: Mutt/1.4.2.3i</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>On Tue, Oct 15, 2013 at 02:27:54PM -0400, John Cowan wrote:
+&gt; Peter Bex scripsit:
+&gt; 
+&gt; &gt; I just tried the reference implementation in CHICKEN, but it gave me
+&gt; &gt; several warnings upon load, and errors when trying to use something:
+&gt; 
+&gt; It's a Chibi-specific library for efficient iteration in UTF-8 strings.
+&gt; <a  rel="nofollow" href="https://code.google.com/p/chibi-scheme/source/browse/lib/chibi/regexp.sld">https://code.google.com/p/chibi-scheme/source/browse/lib/chibi/regexp.sld</a>
+&gt; (the R7RS library file) includes a cond-expand that provides a portable
+&gt; implementation.  Just convert it to a Chicken module, which is trivial.
+
+It also seems to be broken.  I fiddled with it for a bit, and came up
+with the attached patch.  Hopefully it's correct...
+
+Cheers,
+Peter
+-- 
+<a  rel="nofollow" href="http://www.more-magic.net">http://www.more-magic.net</a>
+</pre><pre>diff -r 4c3e6fe661ad lib/chibi/regexp.sld
+--- a/lib/chibi/regexp.sld	Tue Oct 15 15:23:23 2013 +0900
++++ b/lib/chibi/regexp.sld	Tue Oct 15 21:09:35 2013 +0200
+@@ -28,9 +28,9 @@
+    (else
+     (begin
+       (define (string-start-arg s o)
+-        (if (pair? o) (string-index-&gt;offset (car o)) 0))
++        (if (pair? o) (string-index-&gt;offset s (car o)) 0))
+       (define (string-end-arg s o)
+-        (if (pair? o) (string-index-&gt;offset (car o)) (string-length s)))
++        (if (pair? o) (string-index-&gt;offset s (car o)) (string-length s)))
+       (define string-cursor=? =)
+       (define string-cursor&lt;? &lt;)
+       (define string-cursor&lt;=? &lt;=)
+@@ -39,6 +39,9 @@
+       (define string-cursor-ref string-ref)
+       (define substring-cursor substring)
+       (define (string-offset-&gt;index str off) off)
++      (define (string-offset-&gt;index str i) i)
++      (define (string-cursor-next s i) (+ i 1))
++      (define (string-cursor-prev s i) (- i 1))
+       (define (string-concatenate-reverse ls)
+         (apply string-append (reverse ls))))))
+   (include &quot;regexp.scm&quot;))
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00009" href="msg00009.html">Re: Reference implementation dependencies?</a></strong>
+<ul><li><em>From:</em> Alex Shinn</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00001" href="msg00001.html">Reference implementation dependencies?</a></strong>
+<ul><li><em>From:</em> Peter Bex</li></ul></li>
+<li><strong><a name="00003" href="msg00003.html">Re: Reference implementation dependencies?</a></strong>
+<ul><li><em>From:</em> John Cowan</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00004.html">Re: ANN: SRFI 155: Scheme Regular Expressions</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00006.html">Match-result submatch extraction is weird</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00003.html">Re: Reference implementation dependencies?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00009.html">Re: Reference implementation dependencies?</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00005"><strong>Date</strong></a></li>
+<li><a href="threads.html#00005"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

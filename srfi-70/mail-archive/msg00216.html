@@ -1,0 +1,184 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Wrapping up SRFI&#45;70 -->
+<!--X-From-R13: Ohoerl Xnssre <ntwNnyhz.zvg.rqh> -->
+<!--X-Date: Mon, 15 Aug 2005 05:45:04 +0200 (DFT) -->
+<!--X-Message-Id: 20050815034459.8A6981B77B4@voluntocracy.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20050810030837.1C5711B77B4@voluntocracy.org -->
+<!--X-Reference: Pine.LNX.4.58.0508092135590.25357@bolt.sonic.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Wrapping up SRFI-70</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00215.html">Date Prev</a>][<a href="msg00217.html">Date Next</a>][<a href="msg00211.html">Thread Prev</a>][<a href="msg00219.html">Thread Next</a>][<a href="maillist.html#00216">Date Index</a>][<a href="threads.html#00216">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Wrapping up SRFI-70</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:bear@DOMAIN.HIDDEN">bear@xxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Wrapping up SRFI-70</li>
+<li><em>From</em>: Aubrey Jaffer &lt;<a href="mailto:agj@DOMAIN.HIDDEN">agj@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 14 Aug 2005 23:44:59 -0400 (EDT)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-70@DOMAIN.HIDDEN">srfi-70@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-70@DOMAIN.HIDDEN">srfi-70@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:Pine.LNX.4.58.0508092135590.25357@DOMAIN.HIDDEN">Pine.LNX.4.58.0508092135590.25357@xxxxxxxxxxxxxx</a>&gt; (message from	bear on Tue, 9 Aug 2005 22:37:41 -0700 (PDT))</li>
+<li><em>References</em>: &lt;<a href="mailto:20050810030837.1C5711B77B4@DOMAIN.HIDDEN">20050810030837.1C5711B77B4@xxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:Pine.LNX.4.58.0508092135590.25357@DOMAIN.HIDDEN">Pine.LNX.4.58.0508092135590.25357@xxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre> | Date: Tue, 9 Aug 2005 22:37:41 -0700 (PDT)
+ | From: bear &lt;bear@xxxxxxxxx&gt;
+ | 
+ | Having a numeric-error object (such as nan)
+
+Your suggestion is a better treatment of not-a-number.
+0/0 has been recast as the numeric error-object.
+
+ | that propagates
+ | forward in calculations from a division by zero or other
+ | erroneous operation answers the requirements in the abstract far
+ | better than introducing and attempting to reason about
+ | &quot;infinities.&quot;
+
+I am hardly the one introducing infinities!  At least nine
+implementations of Scheme employ IEEE-754 infinities.
+
+ | It allows people to avoid deeply nested checks for
+ | zero, instead testing whenever they like whether the most recent
+ | iteration of their algorithm has produced the error object.  You
+ | can test for it and explicitly throw an exception if that's how
+ | you want to handle it, or you can make a substitution or
+ | correction explicitly and carry on.
+
+Infinities do all that, and keep track of the sign of overflows as
+well.
+
+ | Given the usual vast differences in both absolute range and
+ | precision between exact and inexact notations, reasoning about
+ | &quot;infinity&quot; in exact and inexact forms is difficult and frequently
+ | produces transparently wrong answers when numbers of both exact
+ | and inexact forms are used.  Given that, I'd have to regard
+ | numerics with nans as a superior choice mathematically and
+ | technically to numerics with infinities, for a language that
+ | distinguishes exact and inexact numbers.
+
+I have years of experience using bignums and IEEE-754 flonums in
+Scheme.  There is practically no overlap between those domains (just
+the Landau-Mignotte Bound of coefficients when factoring polynomials).
+Predicating infinities, which are useful for flonum calculations, on
+some hypothesized interaction which has not been manifest in practice
+is unconvincing.
+
+ | There is also (pardon me for saying this, but...) faint and fuzzy
+ | thinking in this SRFI about the properties of exactness and
+ | inexactness.  Exact numbers, by definition, already denote a
+ | single mathematical number, with infinite precision.
+
+Since that was not clear to everyone, SRFI-70 explicitly states it in
+order to prevent &quot;faint and fuzzy thinking&quot;.
+
+ | The requirements you make of rouding for inexact numbers are
+ | reasonable-sounding, but cannot be carried forward through any
+ | level of abstraction.  With an abstraction such as a procedure,
+ | we define a new mathematical operation in terms of one or more
+ | existing operations.  Even if those existing (primitive)
+ | operations conform to your rounding requirement (simple
+ | connectivity), there is no way to assure that the composite
+ | operation represented by an abstraction also does so.
+
+I have replaced that language with the weakest formulation yet:
+
+  In this SRFI, the definition of inexact numbers is strengthened by
+  their not being subject to the caution about &quot;precision too large to
+  be represented in the implementation&quot;.  Only magnitudes too large
+  are cautioned:
+
+    For inexact numbers, it is the programmer's responsibility to
+    avoid using complex numbers with magnitude too large to be
+    represented in the implementation.
+
+ | The SRFI also proposes to repeal an implementation's power to
+ | return an exact number when it can prove that the result is
+ | exactly known.  The specific example given in R5RS uses an exact
+ | zero as an example.  This example is capital-T True, according to
+ | laws much deeper than the surface consistency on which grounds
+ | you object to it, because zero is a multiplicative identity
+ | element.
+
+Exactness and inexactness are not defined mathematically by R5RS.  You
+have objected to my attempts to define inexactness in terms of
+topology.  You can't have it both ways.  With as weak a formulation of
+inexactness as is given above, claims that exact 0 trumps infinities
+can't appeal to mathematics.
+
+ | Forbidding an implementation to return an exact zero in
+ | that situation is to ignore a fundamental law of mathematics and
+ | also forbid the implementation from providing true and
+ | potentially useful information to its user.
+
+R5RS also allows an implementation to return inexact zero.  Is that
+wrong?  Do you feel that latitude should be removed?
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00219" href="msg00219.html">Re: Wrapping up SRFI-70</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00207" href="msg00207.html">Wrapping up SRFI-70</a></strong>
+<ul><li><em>From:</em> Aubrey Jaffer</li></ul></li>
+<li><strong><a name="00211" href="msg00211.html">Re: Wrapping up SRFI-70</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00215.html">Re: Wrapping up SRFI-70</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00217.html">Re: Wrapping up SRFI-70</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00211.html">Re: Wrapping up SRFI-70</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00219.html">Re: Wrapping up SRFI-70</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00216"><strong>Date</strong></a></li>
+<li><a href="threads.html#00216"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

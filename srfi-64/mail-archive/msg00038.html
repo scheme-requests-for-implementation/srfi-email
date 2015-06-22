@@ -1,0 +1,153 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: proosal: removing test&#45;result objects -->
+<!--X-From-R13: Rbabina Ybyoyl <qbabinaNefpurzr.bet> -->
+<!--X-Date: Tue,  5 Apr 2005 18:11:24 +0200 (DFT) -->
+<!--X-Message-Id: Pine.LNX.4.44.0504051040390.1674&#45;100000@localhost.localdomain -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 42523D05.6070007@bothner.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: proosal: removing test-result objects</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00037.html">Date Prev</a>][<a href="msg00039.html">Date Next</a>][<a href="msg00037.html">Thread Prev</a>][<a href="msg00046.html">Thread Next</a>][<a href="maillist.html#00038">Date Index</a>][<a href="threads.html#00038">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: proosal: removing test-result objects</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Per Bothner &lt;<a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: proosal: removing test-result objects</li>
+<li><em>From</em>: Donovan Kolbly &lt;<a href="mailto:donovan@DOMAIN.HIDDEN">donovan@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 5 Apr 2005 11:11:14 -0500 (CDT)</li>
+<li><em>Cc</em>: SRFI 64 &lt;<a href="mailto:srfi-64@DOMAIN.HIDDEN">srfi-64@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-64@DOMAIN.HIDDEN">srfi-64@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:42523D05.6070007@DOMAIN.HIDDEN">42523D05.6070007@xxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>On Tue, 5 Apr 2005, Per Bothner wrote:
+
+&gt; Donovan Kolbly wrote: &gt; So I'd probably go the other way and make test 
+&gt; results (or, more likely,
+&gt; &gt; test cases) first class, something like so:
+&gt; &gt; 
+&gt; &gt;   (test-case [runner])  -&gt;  current or most recent test case, or #f if none
+&gt; &gt; 
+&gt; &gt;   (test-case-kind tcase) -&gt; one of (pass xpass ...) [*]
+&gt; &gt;   (test-case-passed? tcase) ; same as (memq (test-case-kind tcase) '(pass xpass))
+&gt; &gt;   (test-case-property tcase 'property [value])   ; property setter/getter
+&gt; &gt;   (test-case-name tcase) -&gt; test name 
+&gt; &gt; 
+&gt; &gt; [* although 'kind' is looking like a strange name here; maybe 
+&gt; &gt; &quot;disposition&quot;?]
+&gt; 
+&gt; I think you're being inprecise wrt test-case vs test-result.
+&gt; A test-case is something you execute and the result is a
+&gt; test-result (or a test-case-result).  I might re-run the asme
+&gt; test-case multiple times, in a different environment.  It's then
+&gt; a single test-case, but multiple results. 
+
+Perhaps the term &quot;test case occurrence&quot; or &quot;instance&quot; would be more
+precise.  I do mean to refer to the concrete objects at the leaves of the
+test tree (as opposed to the abstract test cases which may be present in
+the test suite source code and possible reused in various ways).
+
+I also meant to make a distinction from the *result* which is essentially 
+the output of the test case occurrence specifically because you want to 
+hook in before the occurrence executes and affect the result (e.g., by 
+deciding to skip it).
+
+BTW, in the subproposal, how are you thinking someone would write a runner
+that decides to skip some subsequent tests?  Would the runner itself,
+during the on-test hook, invoke (test-skip (test-match-nth 1 999999))?
+
+I guess if you want to make that kind of decision before running a test
+case instead of after, you would make a custom specifier.  For example,
+let's say I decide to skip all tests that have the substring &quot;(only if
+ABC)&quot; in their name, e.g., because the ABC test failed, I might execute a
+test-skip with a custom specifier when ABC fails.
+
+&gt;  Though perhaps you
+&gt; could argue if it's run with a different environment, it's really
+&gt; a different test-case.  Still, I don't think using test-case to
+&gt; mean a result is a good name.
+&gt; 
+&gt; So the question: Is it useful to make test results first-class?
+&gt; Perhaps.  I can see some use cases: a testrunner that just saves
+&gt; every result.  Then perhaps you can have an interactive GUI,
+&gt; where you can click on a result to see details, for example.
+
+Interestingly, that's exactly how my xmlrunner works.  I haven't tried to 
+port it to the bare API as a functionality test...
+
+A post-mortem live debugger might be another use case.  e.g., when you run
+the test suite the runner captures the context of any error conditions and
+then you can drill in to debug any case that errored out.
+
+
+Well, anyway, all that is still possible without first-class test case
+occurrences in the API.  A custom runner can wrap things into whatever
+first-class objects it wants, as long as the hooks are there.  And I don't
+think there's anything in the subproposal to prevent an implementation
+from using such a representation internally.
+
+
+-- 
+-- Donovan Kolbly                    (  d.kolbly@xxxxxxxxxxx
+				     (  <a  rel="nofollow" href="http://www.rscheme.org/~donovan/">http://www.rscheme.org/~donovan/</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00037" href="msg00037.html">Re: proosal: removing test-result objects</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00037.html">Re: proosal: removing test-result objects</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00039.html">Re: &quot;Test results&quot;</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00037.html">Re: proosal: removing test-result objects</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00046.html">Test cases for syntax</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00038"><strong>Date</strong></a></li>
+<li><a href="threads.html#00038"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

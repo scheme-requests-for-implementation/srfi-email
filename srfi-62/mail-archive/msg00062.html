@@ -1,0 +1,158 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: new, simpler formal specification -->
+<!--X-From-R13: Bnhy Epuyvr <fpuyvrNpbzpnfg.arg> -->
+<!--X-Date: Thu, 24 Mar 2005 06:37:35 +0100 (NFT) -->
+<!--X-Message-Id: BE67BC41.9964%schlie@comcast.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: Pine.LNX.4.44.0503231754050.22108&#45;100000@autodrip.bloodandcoffee.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: new, simpler formal specification</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00061.html">Date Prev</a>][<a href="msg00063.html">Date Next</a>][<a href="msg00061.html">Thread Prev</a>][<a href="msg00063.html">Thread Next</a>][<a href="maillist.html#00062">Date Index</a>][<a href="threads.html#00062">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: new, simpler formal specification</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Taylor Campbell &lt;<a href="mailto:campbell@DOMAIN.HIDDEN">campbell@xxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: new, simpler formal specification</li>
+<li><em>From</em>: Paul Schlie &lt;<a href="mailto:schlie@DOMAIN.HIDDEN">schlie@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 24 Mar 2005 00:37:21 -0500</li>
+<li><em>Cc</em>: &lt;<a href="mailto:srfi-62@DOMAIN.HIDDEN">srfi-62@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-62@DOMAIN.HIDDEN">srfi-62@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:Pine.LNX.4.44.0503231754050.22108-100000@DOMAIN.HIDDEN">Pine.LNX.4.44.0503231754050.22108-100000@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Microsoft-Entourage/11.1.0.040913</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; From: Taylor Campbell &lt;campbell@xxxxxxxxxxxxxxxxxx&gt;
+&gt;&gt; On Wed, 23 Mar 2005, Paul Schlie wrote:
+&gt;&gt;&gt; From: Taylor Campbell &lt;campbell@xxxxxxxxxxxxxxxxxx&gt;
+&gt;&gt;&gt; This is absolutely ludicrous and absurdly derogatory of how Lisp
+&gt;&gt;&gt; readers do and always have worked. ...
+&gt;&gt; 
+&gt;&gt; - ok, how does a &quot;lisp&quot; reader parse a recursive lexically scoped comment
+&gt;&gt;   of the form specified by the grammar:
+&gt;&gt; 
+&gt;&gt;   &lt;block-comment&gt; -&gt; #| &lt;all-chars-excluding-#|-and-|#&gt; |#
+&gt;&gt; 
+&gt;&gt;   Which by the way does specify an arbitrary recursive lexical scoped
+&gt;&gt;   comment which is delimited by #| ... |#, as the next sequentially
+&gt;&gt;   encountered #| is excluded from &lt;all-chars-excluding-#|-and-|#&gt;, which
+&gt;&gt;   then begins another embedded &lt;block-comment&gt;; or encounters a |#, which
+&gt;&gt;   terminates it. Just as a recursive list bounded by () may specified.
+&gt; 
+&gt; I really have no idea what you're talking about here, and I don't see
+&gt; how you can call this 'recursive,' since your &lt;block-comment&gt; excludes
+&gt; the presence of the '#|' token entirely from its contents and certainly
+&gt; does not recursively refer back to &lt;block-comment&gt;.  Block comments are
+&gt; furthermore still completely irrelevant to this SRFI.
+
+- yes, I apologize, you are correct; it should have been denoted:
+
+  &lt;block-comment&gt; -&gt; #| &lt;any-char-or-block-comment&gt;* |#
+  &lt;any-char-or-block-comment&gt; -&gt; &lt;any-char-ex-#|-|#&gt; | &lt;block-comment&gt;
+
+&gt;&gt;   &lt;datum-comment&gt; -&gt; #; &lt;datum&gt;
+&gt;&gt;   
+&gt;&gt;   It seems fairly clear to me that #; should be properly interpreted as
+&gt;&gt;   beginning a &lt;datum-comment&gt; which either delimits an existing parse, or
+&gt;&gt;   is ignored as &lt;white-space&gt; searching for the next valid token. Where
+&gt;&gt;   since #; is not specified as beginning a &lt;datum&gt;, #; #; is invalid.
+&gt; 
+&gt; This is the crux of your argument, and it is wrong.  A &lt;datum&gt; is built
+&gt; by a stream of tokens.  Any token may be preceded by intertoken space,
+&gt; which is ignored.  Since you have specified that &lt;datum-comment&gt; is
+&gt; considered a comment, which in turn is considered intertoken space, a
+&gt; &lt;datum&gt;, which begins with a token, may always be preceded by that
+&gt; token's intertoken space, which may be a &lt;datum-comment&gt;.  Therefore:
+&gt; 
+&gt;       --- intertoken space --- (datum comment with B (from '#; A B'))
+&gt;      /                datum    \
+&gt;     /            vvvvvvvvvvvvvvv
+&gt;    #;            #; A          B   C  &lt;-- datum (token C, preceded by
+&gt;                  ^^^^\                    intertoken space '#; #; A B')
+&gt;                    |  \ datum (token A)
+&gt;                     \ intertoken space (datum comment with A)
+
+- Sorry, in a nutshell, I don't believe a left recursive grammar is
+  consistent with scheme's existing exclusively right recursive grammar;
+  and candidly still surprised anyone would, but what you advocate is:
+ 
+    &lt;datum-comment&gt; -&gt; #; &lt;datum-comment*-datum&gt;
+    &lt;datum-comment*-datum&gt; -&gt; &lt;datum-comment&gt;* &lt;datum&gt;    ; left recursive
+
+    &quot;#; #; A B C&quot; =&gt; &quot;{datum-comment {datum-comment A} B} C&quot; =&gt; &quot;C&quot;
+
+  -vs-
+
+    &lt;datum-comment&gt; -&gt; #; &lt;datum-or-datum-comment&gt;
+    &lt;datum-or-datum-comment&gt; -&gt; &lt;datum&gt; | &lt;datum-comment&gt; ; right recursive
+
+   &quot;#; #; A B C&quot; =&gt; &quot;{datum-comment {datum-comment A}} B C&quot; =&gt; &quot;B C&quot;
+
+   (as &quot;' ' A B C&quot; =&gt; &quot;(quote (quote A)) B C&quot;, not &quot;(quote (quote A) B) C&quot;)
+
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00063" href="msg00063.html">Re: new, simpler formal specification</a></strong>
+<ul><li><em>From:</em> Paul Schlie</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00061" href="msg00061.html">Re: new, simpler formal specification</a></strong>
+<ul><li><em>From:</em> Taylor Campbell</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00061.html">Re: new, simpler formal specification</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00063.html">Re: new, simpler formal specification</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00061.html">Re: new, simpler formal specification</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00063.html">Re: new, simpler formal specification</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00062"><strong>Date</strong></a></li>
+<li><a href="threads.html#00062"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

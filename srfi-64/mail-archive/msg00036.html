@@ -1,0 +1,159 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: proosal: removing test&#45;result objects -->
+<!--X-From-R13: Rbabina Ybyoyl <qbabinaNefpurzr.bet> -->
+<!--X-Date: Mon,  4 Apr 2005 16:18:26 +0200 (DFT) -->
+<!--X-Message-Id: Pine.LNX.4.44.0504040900590.1674&#45;100000@localhost.localdomain -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 424FA50C.7020401@bothner.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: proosal: removing test-result objects</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00035.html">Date Prev</a>][<a href="msg00037.html">Date Next</a>][<a href="msg00035.html">Thread Prev</a>][<a href="msg00037.html">Thread Next</a>][<a href="maillist.html#00036">Date Index</a>][<a href="threads.html#00036">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: proosal: removing test-result objects</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Per Bothner &lt;<a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: proosal: removing test-result objects</li>
+<li><em>From</em>: Donovan Kolbly &lt;<a href="mailto:donovan@DOMAIN.HIDDEN">donovan@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 4 Apr 2005 09:18:16 -0500 (CDT)</li>
+<li><em>Cc</em>: SRFI 64 &lt;<a href="mailto:srfi-64@DOMAIN.HIDDEN">srfi-64@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-64@DOMAIN.HIDDEN">srfi-64@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:424FA50C.7020401@DOMAIN.HIDDEN">424FA50C.7020401@xxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>On Sun, 3 Apr 2005, Per Bothner wrote:
+
+&gt; As discussed in past messages, I'm leaning towords removing the
+&gt; concept of a test-result &quot;value&quot;, which in the current specification
+&gt; is an association list.  Instead, I think it is better to make the
+&gt; &quot;most recent test-result&quot; be part of the test-runner, and allow
+&gt; extra properties there.
+&gt; 
+&gt; Specifically, we add:
+&gt; 
+&gt; ;; Get a named property - #f if unknown.
+&gt; (test-result [runner] 'property-name)
+&gt; These are properties of the current or most recent test.
+&gt; 
+&gt; Exampes:
+&gt; (test-result 'kind) -&gt; one of 'pass, 'xpass, 'fail, 'xfail, or 'skip.
+&gt; (test-passed?) -&gt; same as (memq (test-result 'kind) '(pass xpass))
+&gt; (test-result 'source-line) -&gt; line number if known or #f otherwise
+&gt; (test-result 'source-filename) -&gt; file name known or #f otherwise
+&gt; (test-result 'source-form) -&gt; test expresion as a list or #f
+&gt; (test-result 'test-name) -&gt; test name or #f
+&gt; 
+&gt; (test-result-set! [runner] 'property-name value) ;; set property
+&gt; 
+&gt; (test-result-clear! [runner])
+&gt; This is called internally at the start of a test to reset the
+&gt; test-result state.  Specifically, all properties set by
+&gt; test-result-set! are cleared.
+&gt; 
+&gt; The function on-test in (test-runner-on-test! runner on-test)
+&gt; is now a 1-argument function that only takes a test-runner.
+&gt; It gets the &quot;test-result&quot; from the test-runner.
+&gt; 
+&gt; Note that both test-cases and test-runner can examine these
+&gt; properties.  For example (test-passed?) can be used to decide
+&gt; whether to skip subsequent tests.
+&gt; 
+&gt; I also thing it simplies the implementation and api.  We can
+&gt; set properties at various statges during the execution of a test.
+&gt; 
+&gt; Comments?  Does this seem like an improvement?
+
+I like the idea of being able to programmatically decide wether to
+continue, for example.  Then you could, e.g., define a custom runner that,
+say, tolerates at most 10 errors and then skips everything else in the
+rest of the group.
+
+In some ways it seems better, although I don't quite get why you want to
+*remove* test-result objects.  My mental model of test suites is that it's
+a tree whose root is the suite, whose interior nodes are groups, and whose
+leaves are test cases (each test case being represented by a test result).  
+I guess you have the same basic model, but none of those objects are first
+class :-)
+
+So I'd probably go the other way and make test results (or, more likely,
+test cases) first class, something like so:
+
+  (test-case [runner])  -&gt;  current or most recent test case, or #f if none
+
+  (test-case-kind tcase) -&gt; one of (pass xpass ...) [*]
+  (test-case-passed? tcase) ; same as (memq (test-case-kind tcase) '(pass xpass))
+  (test-case-property tcase 'property [value])   ; property setter/getter
+  (test-case-name tcase) -&gt; test name 
+
+[* although 'kind' is looking like a strange name here; maybe 
+&quot;disposition&quot;?]
+
+
+-- 
+-- Donovan Kolbly                    (  d.kolbly@xxxxxxxxxxx
+				     (  <a  rel="nofollow" href="http://www.rscheme.org/~donovan/">http://www.rscheme.org/~donovan/</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00037" href="msg00037.html">Re: proosal: removing test-result objects</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00035" href="msg00035.html">proosal: removing test-result objects</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00035.html">proosal: removing test-result objects</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00037.html">Re: proosal: removing test-result objects</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00035.html">proosal: removing test-result objects</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00037.html">Re: proosal: removing test-result objects</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00036"><strong>Date</strong></a></li>
+<li><a href="threads.html#00036"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

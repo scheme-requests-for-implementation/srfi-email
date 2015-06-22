@@ -1,0 +1,237 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Issues with Unicode -->
+<!--X-From-R13: "Xbanguna E. Euncveb" <funcNrebf&#45;bf.bet> -->
+<!--X-Date: Sun, 23 Apr 2006 10:55:09 +0200 (MST) -->
+<!--X-Message-Id: y9lbqushdsw.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Issues with Unicode</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00297.html">Date Prev</a>][<a href="msg00299.html">Date Next</a>][<a href="msg00296.html">Thread Prev</a>][<a href="msg00299.html">Thread Next</a>][<a href="maillist.html#00298">Date Index</a>][<a href="threads.html#00298">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Issues with Unicode</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-75@DOMAIN.HIDDEN">srfi-75@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Issues with Unicode</li>
+<li><em>From</em>: &quot;Jonathan S. Shapiro&quot; &lt;<a href="mailto:shap@DOMAIN.HIDDEN">shap@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 23 Apr 2006 10:54:55 +0200</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-75@DOMAIN.HIDDEN">srfi-75@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Old-date</em>: Sat, 22 Apr 2006 11:09:57 -0400</li>
+<li><em>User-agent</em>: Gnus/5.110004 (No Gnus v0.4) XEmacs/21.5-b24 (darwin)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>I apologize that I have not had time to read the entire thread on this
+SRFI. The following describes what I did in BitC (a statically typed
+language, but similar in &quot;feel&quot; to scheme in many respects) in case it
+is helpful. If nothing else, it may be that enumerating the problems and
+issues I considered will be helpful to the SRFI-75 discussion.
+
+I will broaden in a few places. The introduction of unicode re-opens
+issues of input and output normalization and also issues of compilation
+unit character sets. All of these issues must be dealt with
+consistently.
+
+For reference, the relevant parts of the BitC specification may be found
+at:
+
+  Compilation unit character set and normalization:
+    <a  rel="nofollow" href="http://www.coyotos.org/docs/bitc/spec.html#2">http://www.coyotos.org/docs/bitc/spec.html#2</a>
+
+  Character Literals:
+    <a  rel="nofollow" href="http://www.coyotos.org/docs/bitc/spec.html#2.4.3">http://www.coyotos.org/docs/bitc/spec.html#2.4.3</a>
+
+  String Literals:
+    <a  rel="nofollow" href="http://www.coyotos.org/docs/bitc/spec.html#2.4.4">http://www.coyotos.org/docs/bitc/spec.html#2.4.4</a>
+
+
+Some comments:
+
+1. The historical scheme (and LISP) syntax for character literals, which
+I borrowed, is unfortunate. There is no way to lexically reconcile the
+special character literal tokens with the escaping mechanism that is
+used within strings. We tried for a while, and gave up.
+
+2. Having given up, we then adopted many of the single character
+backslash escapes from C. It is exceedingly convenient to be able to
+write an embedded newline or carriage return, the escape conventions are
+well known to nearly all programmers, and they are already recognized by
+many implementations of Scheme in any case. Some form of escaping is
+necessary in any case to admit double quote within strings. I recommend
+adopting these.
+
+3. There is an issue with newline processing in input and output (which
+probably is the subject of a different SRFI). Platforms do not agree
+about newline conventions in text files. A regrettable consequence is
+that character streams require specification at open time as to whether
+they are being opened for binary or text processing.
+
+One regrettable consequence of this is that the R5RS specification for
+open-output-file and open-input-file is inadequate. A second argument
+needs to be added to specify newline processing conventions. Note that
+this also became an issue for UNIX STDIO, and that acceptance of &quot;t&quot; and
+&quot;b&quot; in the file mode argument to fopen() is now mandated by the C
+standard.
+
+This is also an issue for string ports.
+
+In general, any operation that opens a port must specify the desired
+processing for newlines.
+
+4. In considering what to do about identifiers, I concluded that the
+problem should be divided into &quot;first characters&quot; and &quot;follow
+characters&quot;. This aligned things nicely with the existing Unicode
+identifier model, and it was sufficient to then add a few punctuation
+characters to the legal set. The set of additional characters was taken
+from the Common LISP standard, but it should not be hard to adapt it to
+scheme.
+
+5. Since integer literal tokenization already needs to handle a leading
+radix, I saw no reason to preclude this for character code points as
+well.
+
+6. I went back and forth several times on numeric encoding of code
+points within strings. I found no answer that would satisfy everyone,
+but I did arrive at some conclusions:
+
+  1. It seems unlikely that the unicode character set is done
+     growing. This suggests that the code point embedding in strings
+     wants to be delimited.
+
+  2. Setting aside the risk of code point growth, the most common
+     code point embedding syntax is extremely error prone. For a C
+     programmer, it is easy to misread
+         \0767
+     and especially so when the length of code points is variable.
+
+  3. Since the longer code points are quite long indeed, it seems
+     undesirable to require a fixed-length sequence of digits
+     following the '\' (or whatever delimiter is selected)
+
+  4. Nearly all unicode literature uses the convention
+
+	U+xxxx
+
+     to describe characters. Given a choice of bad tokens, familiar
+     ones are better than unfamiliar ones.
+
+  5. Some languages distinguish between
+
+	u+xxxx  U+xxxxxxxx
+
+     this is an artifact of having adopted unicode prior to unicode 3,
+     when it was still believed that 16 bit code points would suffice.
+
+After some discussion within our group, we settled on
+
+	\{U+xxx...xxxx}    within strings
+        #\{U+xxx...xxxx}   character literals
+
+While the delimiting is not necessary in character literals, it is
+visually parallel and it simplifies tokenization slightly.
+
+7. I am NOT convinced that the current handling of white space in BitC
+strings is right. Given that escapes were permitted, and that the human
+eye has a hard time differentiating different whitespace characters that
+may render equivalently, I concluded that it was better to restrict the
+legal set of non-escaped white space within string literals (and units
+of compilation) rather than expand it. This approach has two advantages:
+(1) I know it will work, and (2) it is a compatible change to expand the
+legal white space later.
+
+8. On advice from several other language designers, I chose
+normalization C and UTF-8 for input format. Normalization C seems to be
+generally agreed as preferred. UTF-8 is backward compatible with 7-bit
+ISO-LATIN-1. Automatically detecting the UTF encoding of an input unit
+is perilous.
+
+9. Once you have a variable-length character representation, it becomes
+necessary to incorporate separate means for reading bytes from input
+streams. For example this is needed if the programmer wishes to
+construct code to process files in (e.g.) UTF-32. This raises a question
+about newline canonicalization. My suggestion is that the port's
+handling of newlines should be independent of the caller. That is,
+read-byte on a text-mode port that would normally convert the input \r\n
+to \n should return the byte corresponding to \n. If you want unmangled
+bytes, use binary mode input.
+
+The same argument does *not* apply for read-char, because it is the
+nature of read-char to process the bytes in order to determine character
+length.
+
+10. string-length must return length-in characters. For serialization
+purposes, it *may* be advisable to add string-byte-length as well; we
+have not come to a decision about this.
+
+11. Strings now, more than ever, are not just vectors of characters
+(though this should be a feasible implementation). There is *excellent*
+discussion of the issues in the libicu documentation, and I strongly
+recommend reading that.
+
+12. The libicu package has gotten almost all of this stuff right, and is
+very widely used. I strongly recommend using it as a model for the
+character processing library that necessarily goes with scheme.
+
+13. Because the Unicode specification is updated and corrected, it is
+necessary for the Scheme standard to specify a version.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00299" href="msg00299.html">Re: Issues with Unicode</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+<li><strong><a name="00300" href="msg00300.html">Re: Issues with Unicode</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00297.html">Re: Unicode surrogates</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00299.html">Re: Issues with Unicode</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00296.html">&#x3046;&#x3048;&#x3084;&#x307E;&#x3000;&#x307F;&#x306A;&#x3053;</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00299.html">Re: Issues with Unicode</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00298"><strong>Date</strong></a></li>
+<li><a href="threads.html#00298"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

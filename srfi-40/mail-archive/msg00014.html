@@ -1,0 +1,191 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: some suggestions -->
+<!--X-From-R13: [ngguvnf @rhonhre <arhonhreNvasbezngvx.hav&#45;servohet.qr> -->
+<!--X-Date: Mon, 17 Feb 2003 15:52:22 +0100 (NFT) -->
+<!--X-Message-Id: xg8r8a7ufh9.fsf@hapuna.informatik.uni&#45;freiburg.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: E18izZd&#45;00073M&#45;00@rosebud -->
+<!--X-Reference: y9l3cms2o1e.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: xg8smusxfbl.fsf@hapuna.informatik.uni&#45;freiburg.de -->
+<!--X-Reference: y9l1y2asyfc.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: some suggestions</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00013.html">Date Prev</a>][<a href="msg00015.html">Date Next</a>][<a href="msg00011.html">Thread Prev</a>][<a href="msg00015.html">Thread Next</a>][<a href="maillist.html#00014">Date Index</a>][<a href="threads.html#00014">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: some suggestions</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Phil Bewig &lt;<a href="mailto:pbewig@DOMAIN.HIDDEN">pbewig@xxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: some suggestions</li>
+<li><em>From</em>: Matthias Neubauer &lt;<a href="mailto:neubauer@DOMAIN.HIDDEN">neubauer@xxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: 17 Feb 2003 15:52:18 +0100</li>
+<li><em>Cc</em>: Richard Kelsey &lt;<a href="mailto:kelsey@DOMAIN.HIDDEN">kelsey@xxxxxxx</a>&gt;, <a href="mailto:srfi-40@DOMAIN.HIDDEN">srfi-40@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-40@DOMAIN.HIDDEN">srfi-40@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:y9l1y2asyfc.fsf@DOMAIN.HIDDEN">y9l1y2asyfc.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:E18izZd-00073M-00@DOMAIN.HIDDEN"><a href="msg00007.html">E18izZd-00073M-00@rosebud</a></a>&gt;	&lt;<a href="mailto:y9l3cms2o1e.fsf@DOMAIN.HIDDEN">y9l3cms2o1e.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:xg8smusxfbl.fsf@DOMAIN.HIDDEN">xg8smusxfbl.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:y9l1y2asyfc.fsf@DOMAIN.HIDDEN">y9l1y2asyfc.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Sender</em>: <a href="mailto:neubauer@DOMAIN.HIDDEN">neubauer@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Gnus/5.0808 (Gnus v5.8.8) XEmacs/21.1 (Cuyahoga Valley)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Phil Bewig &lt;pbewig@xxxxxxxxxx&gt; writes:
+
+&gt; I think the STREAM-ITERATE in the core does exactly what
+&gt; your STREAM-UNFOLD does, and certainly your STREAM-FROM
+&gt; and STREAM-FROM-TO examples can be written based on
+&gt; STREAM-ITERATE.  And, given that STREAM is in the core, your
+&gt; LIST-&gt;STREAM can be written
+&gt; 
+&gt;     (define (list-&gt;stream lst) (apply stream lst))
+
+You can always define a stream using STREAM-UNFOLD if a definition
+involving STREAM-ITERATE is given. But the other way around isn't
+feasible in general (not counting solutions using nasty side effects
+of course). Here is the difference between STREAM-ITERATE and
+STREAM-UNFOLD:
+
+STREAM-ITERATE computes a subsequent element of a stream, x_{i+1},
+using its previous element, x_i, as sole input to the function
+FUNC. The following ascii scribble should help to illustrate this:
+
+ x_0 -FUNC-&gt; x_1 -FUNC-&gt; x_2 -FUNC-&gt; ... x_i -FUNC-&gt; x_{i+1} ...
+
+STREAM-UNFOLD on the other hand does not only rely on the previous
+element for each computation step but it instead passes an additional
+&quot;state&quot; s_i from step to step:
+
+           /-&gt; x_1      /-&gt; x_2      /-&gt;     x_i      /-&gt; x_{i+1}
+  s_0 -FUNC--&gt; s_1 -FUNC--&gt; s_2 -FUNC--&gt; ... s_i -FUNC--&gt; s_{i+1}
+
+The big win with the second approach is, that the passed state can be
+of any type (i.e., it does not have to coincide with the type of
+stream elements at all) and thus can also hold some additional
+information needed to compute the next element besides the stream
+elements.
+
+Here is another example that uses this extra notion of state: Suppose
+you would like to generate a stream of numbers where the difference of
+to consecutive numbers always increases by one from step to step:
+
+  1, 2, 4, 7, 11, 16, 22, ...
+
+As you can see, you can't compute the element just by using its
+predecessor. Instead you can remember for each step, what the current
+distance to the following element would be. Hence, the trick is to use
+STREAM-UNFOLD and put two things in the &quot;state&quot; passed around from
+step to step---the actual element and its difference to the following
+element:
+
+(define my-stream
+  (stream-unfold (lambda (state)
+		   (let ((num (car state))
+			 (diff (cdr state)))
+		     (cons num
+			   (cons  (+ num diff) (+ diff 1)))))
+		 (cons 1 1)))
+
+Another example is the definition of STREAM-FILTER. Suppose you have a
+non-leaking implementation of STREAM-DROP-UNTIL at hand [1], the
+following simple definition of STREAM-FILTER should (hopfully) also
+make sense:
+
+(define (stream-filter pred? stream)
+  (stream-unfold (lambda (stream)
+		   (let ((stream-1 (stream-drop-until pred? stream)))
+		     (cons (stream-car stream-1)
+			   (stream-cdr stream-1))))
+		 stream))
+		 
+Here the &quot;state&quot; that is passed from step to step is the remainder of
+the original stream that still has to be processed for the next
+element. The actual processing in each step is then performed by
+calling STREAM-DROP-UNTIL.
+
+I won't care if you split up the srfi in two parts. And if you do so,
+how. In the end, I just would like to see STREAM-UNFOLD somewhere in
+the final result. At least in my experience with streams,
+STREAM-UNFOLD is much more useful than many other procedures already
+specified in this srfi.
+
+-Matthias
+
+[1] Which isn't the case with the current reference implementation I
+just realized. Your STREAM-DROP-UNTIL bares the same space problems as
+the naive STREAM-FILTER implementation does.
+
+-- 
+Matthias Neubauer                                       |
+Universit&#xE4;t Freiburg, Institut f&#xFC;r Informatik           | tel +49 761 203 8060
+Georges-K&#xF6;hler-Allee 79, 79110 Freiburg i. Br., Germany | fax +49 761 203 8052
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00015" href="msg00015.html">Re: some suggestions</a></strong>
+<ul><li><em>From:</em> Martin Gasbichler</li></ul></li>
+<li><strong><a name="00016" href="msg00016.html">Re: some suggestions</a></strong>
+<ul><li><em>From:</em> Phil Bewig</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00007" href="msg00007.html">Re: some suggestions</a></strong>
+<ul><li><em>From:</em> Richard Kelsey</li></ul></li>
+<li><strong><a name="00008" href="msg00008.html">Re: some suggestions</a></strong>
+<ul><li><em>From:</em> Phil Bewig</li></ul></li>
+<li><strong><a name="00009" href="msg00009.html">Re: some suggestions</a></strong>
+<ul><li><em>From:</em> Matthias Neubauer</li></ul></li>
+<li><strong><a name="00011" href="msg00011.html">Re: some suggestions</a></strong>
+<ul><li><em>From:</em> Phil Bewig</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00013.html">Re: stream-define</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00015.html">Re: some suggestions</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00011.html">Re: some suggestions</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00015.html">Re: some suggestions</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00014"><strong>Date</strong></a></li>
+<li><a href="threads.html#00014"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,260 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: My comments -->
+<!--X-From-R13: [nepva 'Cepmnx' Ybjnypmlx <depmnxNxaz.bet.cy> -->
+<!--X-Date: Wed, 19 Oct 2005 20:37:43 +0200 (MST) -->
+<!--X-Message-Id: 87wtk9qro1.fsf@qrnik.zagroda -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>My comments</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00054.html">Date Prev</a>][<a href="msg00056.html">Date Next</a>][<a href="msg00051.html">Thread Prev</a>][<a href="msg00056.html">Thread Next</a>][<a href="maillist.html#00055">Date Index</a>][<a href="threads.html#00055">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>My comments</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: My comments</li>
+<li><em>From</em>: Marcin 'Qrczak' Kowalczyk &lt;<a href="mailto:qrczak@DOMAIN.HIDDEN">qrczak@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 19 Oct 2005 20:37:34 +0200</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Mail-followup-to</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Sender</em>: Marcin 'Qrczak' Kowalczyk &lt;<a href="mailto:qrczak@DOMAIN.HIDDEN">qrczak@xxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Gnus/5.1006 (Gnus v5.10.6) Emacs/21.3 (gnu/linux)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>My opinions about arithmetic are reflected in my language Kogut. I've
+implemented a toy Scheme interpreter in it. I tried to be faithful to
+R5RS, which was quite easy, but the decisions of the host language do
+have some impact and I depart from R5RS in minor details.
+
+First the original Kogut view; more about SRFI-77 below. I decided to
+be quite specific about which numeric types are provided and mostly
+how they behave. Leaving details unspecified makes hard to write
+portable code.
+
+Types of numbers:
+
+- Ints. The difference between fixnums and bignums is not exposed in
+  the language.
+
+- Ratios. Numerator and denominator are ints. Denominator is greater
+  than 1. An attempt to produce the denominator of 1 yields an integer
+  instead.
+
+  Ints and ratios are rational numbers.
+
+- Exact infinities, positive and negative. They are handy when a
+  number represents a bound or is clipped to some finite bound later.
+  Operations are only defined where the obvious limit exists, e.g. 1/0
+  is an error.
+
+- Floats, IEEE double, including negative zero, float infinities
+  and not-a-number. Float infinities are numerically equal to exact
+  infinities but their primary purpose is different: they replace
+  numbers too large to be represented. Negative zero and NaN make
+  sense only as inexact numbers. Converting NaN to ratio or int is
+  an error, and both float zeros convert to the same exact zero.
+
+  Ints, ratios and floats are real numbers.
+
+- Complex numbers. Real and imaginary part are real numbers. An
+  attempt to make a complex number with the imaginary part being exact
+  0 yields a real number instead. Note that exactnesses of the real
+  and imaginary parts are independent, and that float infinities may
+  be components of complex numbers but exact infinities may not.
+
+  C99 includes imaginary types, and William Kahan claims they are
+  essential for obtaining proper results for boundary conditions.
+  I claim that they might be essential in C where both components of
+  a complex number have the same type, but otherwise a value of an
+  imaginary type is equivalent to a complex value where the real part
+  is exact 0. For this reason multiplying a float by exact 0 gives
+  exact 0, and -0.0 + 0 = -0.0 (while -0.0 + 0.0 = 0.0).
+
+My model is somewhat open to extensions, which would make sense in
+the area of other inexact real numbers besides standard floats. Some
+existing Kogut functions produce floats from exact numbers however,
+and thus would have to be replaced as a whole. I don't know how to
+design a sensible interface for choosing the precision dynamically.
+
+CLISP does a very good job in returning exact results where possible,
+e.g. (log 1024 4) is exact 5. I'm considering making this a requirement
+(after I implement that).
+
+                          *       *       *
+
+Some violations of R5RS resulting from the underlying implementation
+(I adopted SRFI-77 notation for +inf.0, -inf.0, +nan.0, +inf, -inf):
+
+- (eqv? 0.0 -0.0) is #f, even though (= 0.0 -0.0) is #t and they are
+  both inexact. Conversely, (eqv? +nan.0 +nan.0) is #t, even though
+  (= +nan.0 +nan.0) is #f. Note: SRFI-77 fixes only the former.
+
+- Complex numbers with at least real or imaginary part inexact are
+  considered inexact in Scheme terms. Thus 1.0+2i and 1.0+2.0i have
+  equal mathematical values and are both inexact, but they are not
+  eqv?. SRFI-77 fixes that.
+
+Sometimes Scheme semantics forced me to make different decisions than
+would be made natively:
+
+- In R5RS real?, rational? and integer? may return #t for a complex
+  number with 0.0 as the imaginary part. SRFI-77 changes that, and
+  I agree.
+
+- rational? returns #t for finite floats, and integer? returns #t for
+  floats with integral values. I would reject the concept of inexact
+  integers at all; and while floats have rational values, they are
+  primarily used to approximate real numbers which are not necessarily
+  rational. I had to do extra work to make odd?, even? and
+  integer-&gt;char working for inexact integers, for no practical benefit
+  I suppose.
+
+- min and max propagate inexactness of any element to the result.
+  While there is a sensible rationale of this way of ensuring that
+  inexactness is not lost, comparisons already produce exact booleans
+  from inexact arguments even if their inexactness could influence
+  the result (because they have no other choice, inexact control flow
+  doesn't make sense), so I'm not convinced that it's worth the effort.
+
+- quotient, remainder and modulo are defined for integers including
+  inexct ones. Kogut has two pairs of functions which work for all
+  reals: Div with Mod, and Quot with Rem, as in Haskell. These
+  corresponding Scheme functions thus have an extended domain (Div is
+  missing), no problem here. It's worse with gcd, lcm, numerator and
+  denominator, which are in Kogut defined only for rationals and
+  Scheme functions must have pointless definitions for floats.
+
+                          *       *       *
+
+Now for SRFI-77:
+
+I have a feeling that descriptions of specialized versions are too
+repetitive, e.g. the atan2 table is shown three times. Descriptions
+should be reformulated to say something like this: all these &quot;fl&quot;
+functions are the same as the corresponding functions without the &quot;fl&quot;
+prefix, with the domain restricted to flonums, and with the result
+expressed as a flonum, which is +nan.0 if the true result was not
+real, except that... and then list only possible differences. If all
+results of &quot;fx&quot; functions are transformed into fixnums by taking the
+modulo of the fixnum range, say it in one place, instead of repeating
+this for each group of functions.
+
+&quot;defining procedures for some new operations, including integer
+division and bitwise operations remainder on real numbers&quot; -
+I can't parse that; typo near the &quot;remainder&quot;?
+
+&quot;Should a minimum precision be required for fixnums or flonums?&quot;
+Probably yes for fixnums, in order to make at least some programs
+using fixnum-specific functions portable.
+
+&quot;Should the R5RS procedures for generic arithmetic (e.g. +) remain in
+R6RS?&quot; - Yes! Perhaps requiring a full numeric tower, I'm not sure.
+
+&quot;Given that this SRFI suggests requiring all implementations to
+support the general complex numbers, should abs (and exabs and inabs)
+be removed?&quot; - I would prefer to remove magnitude, even if the name
+abs sounds bad for complex numbers, because the name &quot;abs&quot; is very
+common among languages.
+
+&quot;Should `(floor +inf.0)' return +inf.0 or signal an error instead?
+(Similarly for ceiling, flfloor, infloor, etc.)&quot; - Since they return
+an inexact number, they should return +inf.0. The purpose of float
+infinities and NaN is to have an algorithm working without errors
+when possible even if for particular inputs it happens to generate
+numbers too large to be represented.
+
+I don't like overloading div and mod for different behaviors depending
+on the sign of the second argument.
+
+&quot;library procedure: fxmodulo+remainder fx1 fx2&quot; - Shouldn't it be
+fxquotient+remainder?
+
+I don't think that whole families of exact and inexact functions are
+necessary. It's extremely rare that I expect inexact arguments and
+I want to signal an error if they are exact (expecting only flonums
+makes sense for efficiency, but not expecting inexact numbers in
+general). I can't imagine using inodd? ineven?, ingcd? and inlcm? -
+if numbers are known to be inexact, then these operations are poorly
+defined at all.
+
+Only a handful functions make sense in some of these variants.
+For example deciding whether we want the result of floor, ceiling,
+truncate and round to propagate exactness of the argument or be an
+exact integer; they should accept both exact and inexact arguments.
+
+I believe generic arithmetic should generally follow R5RS and
+inexactness should be contagious. It makes no sense for (+ (sqrt 2.0) 1)
+to yield a vulgar fraction.
+
+The syntax nan.0 without the sign conflicts with an identifier.
+
+&quot;In unsafe mode, these operations must provide no such checking.&quot; -
+It makes no sense to disallow checking for operations with undefined
+behavior if a check would fail if it was done. It should be just
+recommended that it's not done in order to perform faster (assuming
+that Scheme will have unsafe mode at all).
+
+-- 
+   __(&quot;&lt;         Marcin Kowalczyk
+   \__/       qrczak@xxxxxxxxxx
+    ^^     <a  rel="nofollow" href="http://qrnik.knm.org.pl/~qrczak/">http://qrnik.knm.org.pl/~qrczak/</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00056" href="msg00056.html">Re: My comments</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00054.html">Re: Arithmetic issues</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00056.html">Re: My comments</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00051.html">FIXNUM (aka Re: Arithmetic issues)</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00056.html">Re: My comments</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00055"><strong>Date</strong></a></li>
+<li><a href="threads.html#00055"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,211 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: GC safety and return values -->
+<!--X-From-R13: Fbz Zbeq <ybeqNrzs.arg> -->
+<!--X-Date: Fri, 26 Dec 2003 18:50:11 +0100 (NFT) -->
+<!--X-Message-Id: 200312261814.KAA27808@morrowfield.regexps.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200312222122.NAA06270@morrowfield.regexps.com -->
+<!--X-Reference: vt2d6agcztq.fsf@zenia.home -->
+<!--X-Reference: 200312222210.OAA06590@morrowfield.regexps.com -->
+<!--X-Reference: vt2smjcbidh.fsf@zenia.home -->
+<!--X-Reference: 200312232304.PAA18640@morrowfield.regexps.com -->
+<!--X-Reference: vt2n09ia9wo.fsf@zenia.home -->
+<!--X-Reference: y9lk74jbo12.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: GC safety and return values</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00075.html">Date Prev</a>][<a href="msg00077.html">Date Next</a>][<a href="msg00072.html">Thread Prev</a>][<a href="msg00088.html">Thread Next</a>][<a href="maillist.html#00076">Date Index</a>][<a href="threads.html#00076">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: GC safety and return values</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: GC safety and return values</li>
+<li><em>From</em>: Tom Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 26 Dec 2003 10:14:05 -0800 (PST)</li>
+<li><em>Cc</em>: <a href="mailto:jimb@DOMAIN.HIDDEN">jimb@xxxxxxxxxx</a>, <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:y9lk74jbo12.fsf@DOMAIN.HIDDEN">y9lk74jbo12.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt; (message from        Michael Sperber on Fri, 26 Dec 2003 16:24:09 +0100)</li>
+<li><em>References</em>: &lt;<a href="mailto:200312222122.NAA06270@DOMAIN.HIDDEN">200312222122.NAA06270@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;        &lt;<a href="mailto:vt2d6agcztq.fsf@DOMAIN.HIDDEN">vt2d6agcztq.fsf@xxxxxxxxxx</a>&gt;        &lt;<a href="mailto:200312222210.OAA06590@DOMAIN.HIDDEN">200312222210.OAA06590@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;        &lt;<a href="mailto:vt2smjcbidh.fsf@DOMAIN.HIDDEN">vt2smjcbidh.fsf@xxxxxxxxxx</a>&gt;        &lt;<a href="mailto:200312232304.PAA18640@DOMAIN.HIDDEN">200312232304.PAA18640@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;        &lt;<a href="mailto:vt2n09ia9wo.fsf@DOMAIN.HIDDEN">vt2n09ia9wo.fsf@xxxxxxxxxx</a>&gt; &lt;<a href="mailto:y9lk74jbo12.fsf@DOMAIN.HIDDEN">y9lk74jbo12.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+    &gt; From: Michael Sperber &lt;sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx&gt;
+
+    &gt; Jim&gt; But the thread-related problems with GCPRO that I don't see how
+    &gt; Jim&gt; to solve are those created by the user's compiler rearranging
+    &gt; Jim&gt; code that operates directly on heap references.  The compiler is
+    &gt; Jim&gt; free to make copies of heap references in registers where a
+    &gt; Jim&gt; copying GC can't find them to update them.
+
+    &gt; I don't think so---the typical GCPRO annotation (such as that in
+    &gt; Scheme 48) is going to take the address of the reference (which the
+    &gt; SRFI allows) which limits the compiler's ability to do such things
+    &gt; exactly in the way desired.
+
+    &gt; (This isn't a comment on the general issue, just on this specific
+    &gt; point.)
+
+jimb is correct.
+
+Consider the code:
+
+        scheme_value x;
+
+        [...]
+
+        GCPRO(&amp;x);
+
+        [...]
+
+        z = SCHEME_CONS (x, y);         /* XXX */
+
+
+during execution of the the statement marked &quot;XXX&quot;, the sequence
+over time of operations may be:
+
+
+        thread 1:                       thread 2:     
+                                                      |
+        reg1 = x;                       -             t
+        reg2 = y;                       -             i
+        -                               trigger GC    m
+        call SCHEME_CONS                -             e
+        (on return,                     -             |
+        reg1 holds new pair)            -             V
+        -                               trigger GC
+        z = reg1                        -
+
+At the first GC, a stop-and-copy GC will want to modify the values
+stored in x and y, but it won't find reg1 and reg2.
+
+At the second GC, a stop-and-copy GC will want to modify the value
+about to be stored in z, but it won't find reg1.
+
+That is one reason why it isn't sufficient to make sure that protected
+scheme values are always stored in GCPROtected locations -- you must
+also make sure that, other than in the internals of the FFI
+implementation, they are not stored anywhere else.
+
+You can make that guarantee by not passing or returning those values
+directly at all -- but instead passing and returning &quot;handles&quot; for
+those values.
+
+Jimb and I have each shown a technique (so now you have two available)
+for always passing and returning handles:  in jimb's approach, handles
+are separately allocated objects;  in my approach, handles are the
+addresses of GCPROtected values.    So you have either:
+
+        scheme_value_handle x = 0;
+        scheme_value_handle y = 0;
+        scheme_value_handle z = 0;
+
+        [....]
+
+        z = SCHEME_CONS (this_call, x, y);
+
+        /* caller frees any handles allocated above. */
+
+or:
+
+        struct my_frame
+        { 
+          scheme_value x;
+          scheme_value y;
+          scheme_value z;
+        } f;
+
+        GCPRO_FRAME (f);
+
+        [...]
+
+        SCHEME_CONS (&amp;f.z, this_instance, &amp;f.x, &amp;f.y);
+
+        /* eventual GCUNPRO_FRAME needed */
+
+
+(As I said elsewhere, I think that there are some performance and,
+more importantly, GC-precision advantages to the second approach.)
+
+Either approach also has advantages for single-threaded systems simply
+because they both make it harder to make certain kinds of mistakes
+that will lead to subtle and difficult-to-reproduce GC bugs.
+
+-t
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00088" href="msg00088.html">Re: GC safety and return values</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00006" href="msg00006.html">GC safety and return values</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00007" href="msg00007.html">Re: GC safety and return values</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+<li><strong><a name="00008" href="msg00008.html">Re: GC safety and return values</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00014" href="msg00014.html">Re: GC safety and return values</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+<li><strong><a name="00037" href="msg00037.html">Re: GC safety and return values</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00050" href="msg00050.html">Re: GC safety and return values</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+<li><strong><a name="00072" href="msg00072.html">Re: GC safety and return values</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00075.html">Re: target applications</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00077.html">Re: GC safety and return values</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00072.html">Re: GC safety and return values</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00088.html">Re: GC safety and return values</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00076"><strong>Date</strong></a></li>
+<li><a href="threads.html#00076"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

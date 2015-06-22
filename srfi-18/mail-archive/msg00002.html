@@ -1,0 +1,190 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Thoughts on Priorities and Quanta -->
+<!--X-From-R13: Rnivq Dhfu <xhzbNoryyfbhgu.arg> -->
+<!--X-Date: Fri, 11 Feb 2000 08:16:17 &#45;0600 (CST) -->
+<!--X-Message-Id: okfln4r4yjk.fsf@bellsouth.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200002100039.RAA25793@asimov.lanl.gov -->
+<!--X-Reference: 200002101627.LAA14775@trex.IRO.UMontreal.CA -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Thoughts on Priorities and Quanta</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00001.html">Date Prev</a>][<a href="msg00003.html">Date Next</a>][<a href="msg00001.html">Thread Prev</a>][<a href="msg00003.html">Thread Next</a>][<a href="maillist.html#00002">Date Index</a>][<a href="threads.html#00002">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Thoughts on Priorities and Quanta</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Marc Feeley &lt;<a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Thoughts on Priorities and Quanta</li>
+<li><em>From</em>: David Rush &lt;<a href="mailto:kumo@DOMAIN.HIDDEN">kumo@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: 11 Feb 2000 14:13:51 +0000</li>
+<li><em>Cc</em>: <a href="mailto:mkg@DOMAIN.HIDDEN">mkg@xxxxxxxxxxxxxxx</a>, <a href="mailto:srfi-18@DOMAIN.HIDDEN">srfi-18@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: Marc Feeley's message of &quot;Thu, 10 Feb 2000 11:27:04 -0500&quot;</li>
+<li><em>References</em>: &lt;<a href="mailto:200002100039.RAA25793@DOMAIN.HIDDEN">200002100039.RAA25793@xxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:200002101627.LAA14775@DOMAIN.HIDDEN">200002101627.LAA14775@xxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+Marc Feeley &lt;feeley@xxxxxxxxxxxxxxxx&gt; writes:
+&gt; I think the right approach is to make sure SRFI-18 doesn't disallow a
+&gt; more stringent real-time implementation, so that a future &quot;real-time
+&gt; thread&quot; SRFI can extend SRFI-18's semantics and API.  
+
+Absolutely. This may take a bit of finess in the wording, or possibly
+an alternative approach (see below).
+
+&gt; For this reason
+&gt; I am inclined to use an even weaker form of fairness:
+&gt;   If threads A and B are blocked (on a mutex or condition variable)
+&gt;   and A blocked before B, then:
+&gt;     1) if A's priority is not less than B's priority, A will wakeup before B
+&gt;     2) otherwise, A will wakeup before or after B
+
+I prefer this.
+
+&gt; &gt; 1) Limiting the number of priority levels to 8 is a severe problem for
+&gt; &gt; real-time systems. ... the consensus
+&gt; &gt; is that 256 priorities are sufficient to virtually eliminate the
+&gt; &gt; effect. Thus nearly all real-time operating systems have 256 priority
+&gt; &gt; levels. 
+
+&gt; QNX, a well known real-time OS, has only 32 priorities, so 256 seems
+&gt; way too much, even for a real-time system.  
+
+pSOS, an *extremely* common RTOS has (IIRC) 256. eCOS, the
+Cygnus/RedHat RTOS has 64 priority levels, although the documentation
+seems to indicate that this could be configured to be more.
+
+&gt; &quot;Mark K. Gardner&quot; &lt;mkg@xxxxxxxxxxxxxxx&gt; writes:
+&gt; &gt; 5) thread-priority-set! should cause an immediate reschedule if the
+&gt; &gt; priority decreases. This seems logical but it is especially important
+&gt; &gt; for real-time systems as otherwise predictability will be lost. 
+
+Actually, I found this to be exceptionally difficult to cope with
+under pSOS, at least when setting the priority of the currently
+executing thread. I was attempting to implement priority inheritance
+mutexes (before pSOS supported them) without running inside the kernel
+or using a system-wide lock. The system-wide lock turned out to be
+necessary because I had two tasks to perform, each of which could
+cause a reschedule, before I could be truly said to have left the
+critical section. If, after dropping my priority, I could have
+finished my quantum, this would have been much easier. (Please don't
+make me remember more details of this task, it was a year ago and its
+largely leaked out of my brain)
+
+So I would largely argue against rescheduling, except if a thread with
+higher priority than when the current thread started becomes
+runnable. OTOH, I am not a RT wizard, either, so this may be
+unacceptable in that domain...
+
+&gt; &gt; 7) I would suggest that thread-terminate! should always allow the
+&gt; &gt; current thread to finish the critical section if indeed it is in
+&gt; &gt; one.
+
+Snipped Marc Feeley ...
+
+&gt; &gt; 8) Perhaps an exception should be thrown when a thread is terminated
+&gt; &gt; (as opposed to when its thunk returns) so that the thread's resources
+&gt; &gt; can be properly deallocated.
+&gt; 
+&gt; It would be nice... but since there is no way to catch exceptions
+&gt; (currently) how would you specify this!!!
+
+Actually, this is something that I was wondering about when I read the
+SRFI doc. Are all the primitive pieces in place in order to completely
+specify a thread SRFI? Was this why Marc proposed SRFI-12? It seems to
+me that the only piece that is missing from Scheme to enable a threads
+implementation is some way to arrange for the current continuation to
+be passed to an end-of-quantum (actually a generalized interrupt)
+handler.
+
+&gt; &gt; 9) For good flexibility in scheduling, I like the QNX approach. Allow
+&gt; &gt; FIFO, round-robin and &quot;adaptive priority&quot; which may include aging.
+
+Actually, I would very much like to see some sort of `pluggable'
+scheduler interface. That plus the ability to handle interrupts
+would provide a firm foundation for writing all sorts of portable
+threading systems.
+
+&gt; &gt; 10) For predictability, I favor having thread quanta be in some
+&gt; &gt; sufficiently small unit of time like microseconds.
+&gt;
+&gt; Agreed.  Should there be a maximum quantum?
+
+No. Well, yes. It should be a configurable parameter of the
+scheduler.
+
+&gt; &gt; 11) I also like the idea that a program is the initial thread of
+&gt; &gt; execution and hence the parent of all other threads.
+&gt; 
+&gt; I like this too, mainly because it is more modular.
+
+Doesn't this either clutter up the thread table with threads that are
+'babysitting' their children or make at least one thread have the
+additional work of detecting when the program ends? OTOH, I am
+probably thinking more in OS terms than I am in single program terms.
+
+david rush
+-- 
+Not only does my left hand not know what the right is doing, but my
+left brain doesn't know what the right brain is up to either...
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00000" href="msg00000.html">Thoughts on Priorities and Quanta</a></strong>
+<ul><li><em>From:</em> Mark K. Gardner</li></ul></li>
+<li><strong><a name="00001" href="msg00001.html">Re: Thoughts on Priorities and Quanta</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00001.html">Re: Thoughts on Priorities and Quanta</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00003.html">continuations and threads</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00001.html">Re: Thoughts on Priorities and Quanta</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00003.html">continuations and threads</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00002"><strong>Date</strong></a></li>
+<li><a href="threads.html#00002"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

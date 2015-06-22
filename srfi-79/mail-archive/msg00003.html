@@ -1,0 +1,198 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: General comments or SRFIs 79&#45;82 -->
+<!--X-From-R13: [nepva 'Cepmnx' Ybjnypmlx <depmnxNxaz.bet.cy> -->
+<!--X-Date: Sun, 27 Nov 2005 17:39:57 +0100 (CET) -->
+<!--X-Message-Id: 87lkzakpt1.fsf@qrnik.zagroda -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>General comments or SRFIs 79-82</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00002.html">Date Prev</a>][<a href="msg00004.html">Date Next</a>][<a href="msg00002.html">Thread Prev</a>][<a href="msg00004.html">Thread Next</a>][<a href="maillist.html#00003">Date Index</a>][<a href="threads.html#00003">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>General comments or SRFIs 79-82</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-79@DOMAIN.HIDDEN">srfi-79@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: General comments or SRFIs 79-82</li>
+<li><em>From</em>: Marcin 'Qrczak' Kowalczyk &lt;<a href="mailto:qrczak@DOMAIN.HIDDEN">qrczak@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 27 Nov 2005 17:39:54 +0100</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-79@DOMAIN.HIDDEN">srfi-79@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Mail-followup-to</em>: <a href="mailto:srfi-79@DOMAIN.HIDDEN">srfi-79@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Sender</em>: Marcin 'Qrczak' Kowalczyk &lt;<a href="mailto:qrczak@DOMAIN.HIDDEN">qrczak@xxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Gnus/5.1006 (Gnus v5.10.6) Emacs/21.3 (gnu/linux)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>I don't like the separation into readers/writers, streams, and ports.
+Too many similar concepts are treated as completely disjoint types.
+
+As I understand it:
+
+- readers/writers deal with physical I/O of blocks of bytes
+
+- streams provide encoding and newline conversion, buffering,
+  and scanning the same input multiple times
+
+- ports provide raw I/O of bytes, can convert UTF-8 to characters,
+  and can convert between characters and lines, or characters and
+  Scheme external representations
+
+This feels like a single package. There should be some overall
+description of the whole design somewhere, so one doesn't have to
+dig into four separate SRFIs.
+
+I don't quite understand the rationale for using UTF-8 as the
+intermediate format. For mixing textual and binary I/O (if the
+encoding is not known to be UTF-8) one has to put and remove a
+converter dynamically on every switch, and it's incompatible with
+block-conversion of input (it must be converted one character at a
+time, unless we can find the boundary between text and binary data
+when looking at the raw stream before the conversion).
+
+EOL style doesn't include the possibility of accepting any of the
+three common conventions, which is used by Java and probably .NET.
+
+Since on classic Macintosh Perl (and perhaps C too, haven't checked)
+exchanges the meanings of \n and \r (by actually changing their
+interpretation in the source instead of recoding), I guess it would be
+more useful to exchange them when recoding in the CR style, instead
+of by treating either as a newline on input and writing a newline for
+either on output.
+
+StdIn and StdOut can be seekable, and it's sometimes useful (e.g. Unix
+&quot;wc&quot; makes use of this). The reference implementation doesn't allow that.
+
+I don't understand input-string. How much does it read?
+
+When reading from ports, it's not specified what happens when data are
+not valid UTF-8. Similarly for decoding from e.g. UTF-16 (unpaired
+surrogates), UTF-32 (too large values), or encoding to latin-1
+(characters above U+00FF).
+
+                          *       *       *
+
+Since I have similar goals when designing I/O for my language Kogut,
+I might be biased by not liking any other solution than my own.
+Anyway, here is the overall of mine for comparison:
+
+All your three layers are served by a single concept of streams with
+varying capabilities. Streams are classified into input streams and
+output streams (some might be bidirectional), and independently into
+byte streams and character streams. There are many kinds of streams,
+but there is only one conceptual layer of interfaces.
+
+By &quot;arrays&quot; below I mean arrays from my language, which have mutable
+size and can play the role of queues or buffers. Removing or adding
+a small part at the beginning or end has a good amortized time.
+Among others there are byte arrays and char arrays.
+
+All input streams support reading a block by appending it into the
+given array, with the given maximum size; they may read less if
+reading more would block. All output streams support writing by
+cutting the beginning part from an array, up to the given maximum
+size; it might actually transfer less.
+
+Here are various concrete stream types:
+
+- Raw file. It basically supports the above block I/O, and optionally
+  seeking (if they underlying OS file does).
+
+- Buffered stream on top of another stream. It supports reading or
+  writing by a single character or line, automatic flushing after
+  lines (or any I/O). A buffered input stream supports a subset of the
+  interface of sequences (like indexing or getting subsequences) and
+  thus provides arbitrarily long lookahead; it supports unreading with
+  arbitrary size. It supports seeking if the underlying stream does.
+
+- Byte array or char array is a stream itself, with similar
+  capabilities to a buffered stream. Reading from an array consumes
+  its contents: an array doesn't have a separate current pointer.
+
+- Filtered stream supports only block I/O by passing data through a
+  filtering function and maintaining an internal buffer. Here the type
+  of elements can change between bytes and characters. The filtering
+  function moves data from one array to another, and has the luxury of
+  being allowed to leave some final part of the input (e.g. incomplete
+  character).
+
+- There is an input stream which flushes a given output stream on
+  every input. It is put on the bottom of stdin to flush the top of
+  stdout, or when making a pair of streams from a socket, to ensure
+  that buffered data are written out before we wait for input on
+  a related stream.
+
+- Various less important streams: reading from another stream or
+  sequence without consuming it, /dev/null, concatenation of inputs
+  (which can be &quot;opened&quot; lazily), a filtering stream which copies
+  everything passing through it into another stream (Unix &quot;tee&quot;).
+
+You can read a lazy list of characters or lines from a stream, which
+provides something similar to your stream with respect to statelessness.
+It is a natural data source for a complex parser.
+
+I haven't described making filters basing on an encoding or encoding
+name, handling recoding errors, non-blocking I/O, and I/O without
+using the current file pointer (Unix: pread / pwrite).
+
+-- 
+   __(&quot;&lt;         Marcin Kowalczyk
+   \__/       qrczak@xxxxxxxxxx
+    ^^     <a  rel="nofollow" href="http://qrnik.knm.org.pl/~qrczak/">http://qrnik.knm.org.pl/~qrczak/</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00004" href="msg00004.html">Re: General comments or SRFIs 79-82</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00002.html">Re: Geez...</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00004.html">Re: General comments or SRFIs 79-82</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00002.html">Re: Geez...</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00004.html">Re: General comments or SRFIs 79-82</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00003"><strong>Date</strong></a></li>
+<li><a href="threads.html#00003"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

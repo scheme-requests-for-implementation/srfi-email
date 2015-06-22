@@ -1,0 +1,203 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: inexactness vs. exactness -->
+<!--X-From-R13: Ohoerl Xnssre <ntwNnyhz.zvg.rqh> -->
+<!--X-Date: Sun, 24 Jul 2005 23:13:17 +0200 (DFT) -->
+<!--X-Message-Id: 20050724211312.5D32B1B77B4@voluntocracy.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: y9loe8sbnhh.fsf@sams.informatik.uni&#45;tuebingen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: inexactness vs. exactness</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00159.html">Date Prev</a>][<a href="msg00161.html">Date Next</a>][<a href="msg00158.html">Thread Prev</a>][<a href="msg00166.html">Thread Next</a>][<a href="maillist.html#00160">Date Index</a>][<a href="threads.html#00160">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: inexactness vs. exactness</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:will@DOMAIN.HIDDEN">will@xxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: inexactness vs. exactness</li>
+<li><em>From</em>: Aubrey Jaffer &lt;<a href="mailto:agj@DOMAIN.HIDDEN">agj@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 24 Jul 2005 17:13:12 -0400 (EDT)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-70@DOMAIN.HIDDEN">srfi-70@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-70@DOMAIN.HIDDEN">srfi-70@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:y9loe8sbnhh.fsf@DOMAIN.HIDDEN">y9loe8sbnhh.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt; (message from	William D Clinger on Sun, 24 Jul 2005 10:46:18 +0200)</li>
+<li><em>References</em>: &lt;<a href="mailto:y9loe8sbnhh.fsf@DOMAIN.HIDDEN">y9loe8sbnhh.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre> | From: William D Clinger &lt;will@xxxxxxxxxxx&gt;
+ | Date: Sun, 24 Jul 2005 10:46:18 +0200
+ | 
+ | Aubrey Jaffer claims to have proved that the language of
+ | the R5RS not only regards inexact numbers as neighborhoods,
+
+No, it claims that inexact numbers are in one-to-one correspondence
+with neighborhoods around their nominal values.  Although the proof
+dealt only with reals, the same is true for complex numbers; and in
+that case, the neighborhoods are not all rectangular.
+
+ | but that no other interpretations of the R5RS are tenable.
+
+I don't think so; how could one disprove a proposition before it is
+made?
+
+ | Jaffer's alleged proof contains many errors of logic, which
+ | I will happily enumerate if anyone claims to remain convinced
+ | by the alleged proof.
+
+Yes I would.  I have appended a detailed proof of the first part
+(finite number of inexacts).
+
+ | Below I merely offer a simple argument that the &quot;inexact numbers
+ | denote neighborhoods&quot; interpretation is itself untenable. ...
+
+Clinger's alleged counterexample assumes interval arithmetic on
+inexacts, which was never part of SRFI-70.
+
+In SRFI-70 inexact calculations are performed on the nominal
+mathematical values around which the neighborhoods are based.  The
+result of a calculation is also single valued; which neighborhood it
+lies in determining which inexact number is returned.
+
+For the finite number of inexacts case, the assertion that
+mathematical numbers close to the nominal value project onto that
+inexact number is neither profound nor revolutionary.  As SRFI-70
+demonstrates:
+
+  In an implementation which represents inexact real numbers with
+  IEEE-754 64-bit flonums:
+
+  (= 3.14159265358979323846
+     3.1415926535897932384626433
+     3.141592653589793238462643383279
+     3.14159265358979323846264338327950288)       ==&gt;  #t
+
+			      -=-=-=-=-
+
+In the following proof, &quot;inexact number&quot; refers to a member of an
+equivalence class (under `=') of inexact numbers represented by the
+R5RS-compliant implementation.  Other numbers are mathematical
+numbers.
+
+Given:
+
+{a} A R5RS-compliant implementation has a finite number greater
+    than 1 of inexact number equivalence classes under the
+    transitive R5RS predicate `='.
+
+{b} That implementation contains an inexact number class #i1.0
+    such that
+
+    (eqv? #i1.0 (string-&gt;number &quot;1.0&quot;))
+
+{c} procedure: string-&gt;number string
+     Returns a [inexact] number of the maximally precise
+     representation expressed by the given STRING.
+
+{d} for any inexact number x:
+
+    (= x #i1.0) if-and-only-if (zero? (- x #i1.0))
+
+Consider the mathematical sequence indexed by positive integer k:
+
+  E[k] = 1 + (-1/10)^k						{e}
+
+  0.9, 1.01, 0.999, 1.0001, 0.99999, 1.000001, ...
+
+E[k+2] is strictly between E[k] and E[k+1] {e}.			{f}
+
+The limit of E[k] as k tends to infinity is 1 {e}.		{g}
+
+Let S[k] be the string containing a decimal representation of
+E[k].  That sequence begins:					{h}
+
+  &quot;0.9&quot;, &quot;1.01&quot;, &quot;0.999&quot;, &quot;1.0001&quot;, &quot;0.99999&quot;, &quot;1.000001&quot;, ...
+
+Let I[k] be (STRING-&gt;NUMBER S[k]) {c,h}.			{i}
+
+Because the implementation has a finite number (&gt; 1) of distinct
+(under `=') inexact numbers classes {a}, the lower bound, L[1],
+of the distance between #i1.0 and members of any other inexact
+number class must be a nonzero {a,d}.				{j}
+
+Thus there must exist an integer j such that (abs (- E[k] 1))
+is less than L[1]/4 for all k &gt; j {f,g,i,j}.			{k}
+
+I[k] must be #i1.0 for k &gt; j, because no other inexact number
+class can be closer {c,j}; and because STRING-&gt;NUMBER of the
+string representation of the limiting value, &quot;1.0&quot;, is #i1.0
+{b,g,k}.							{l}
+
+Thus the projection of mathematical numbers between E[j] and
+E[j+1] into inexact number classes is #i1.0.
+
+			      -=-=-=-=-
+
+Note that the neighborhood between E[j] and E[j+1] is a subset
+of the full neighborhood which STRING-&gt;NUMBER maps to inexact
+number class #i1.0.
+
+There was nothing special about #i1.0 in this proof.  It will
+apply to any other finite inexact number y satisfying:
+
+  (eqv? y (string-&gt;number (number-&gt;string y)))
+
+where the string representation of y, (number-&gt;string y), is
+&quot;decimal&quot; according to R5RS-6.2.6.				{m}
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00155" href="msg00155.html">Re: inexactness vs. exactness</a></strong>
+<ul><li><em>From:</em> William D Clinger</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00159.html">Re: inexactness vs. exactness</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00161.html">Re: Nitpick with FLOOR etc.</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00158.html">Re: inexactness vs. exactness</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00166.html">Re: inexactness vs. exactness</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00160"><strong>Date</strong></a></li>
+<li><a href="threads.html#00160"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

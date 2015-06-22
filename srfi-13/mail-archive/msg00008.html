@@ -1,0 +1,514 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Round 2 discussion -->
+<!--X-From-R13: fuvirefNnv.zvg.rqh -->
+<!--X-Date: Thu, 4 Nov 1999 07:55:01 &#45;0600 (CST) -->
+<!--X-Message-Id: 199911041355.IAA04280@mongkok.ai.mit.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Round 2 discussion</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00007.html">Date Prev</a>][<a href="msg00009.html">Date Next</a>][<a href="msg00007.html">Thread Prev</a>][<a href="msg00011.html">Thread Next</a>][<a href="maillist.html#00008">Date Index</a>][<a href="threads.html#00008">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Round 2 discussion</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-13@DOMAIN.HIDDEN">srfi-13@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Round 2 discussion</li>
+<li><em>From</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxx</a></li>
+<li><em>Date</em>: Thu, 4 Nov 1999 08:55:22 -0500</li>
+<li><em>Reply-to</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Here is a general discussion of the issues raised by Kleberg, Bornstein,
+Egorov, Hartrumpf, Welsh &amp; Arvestad. I will summarise the major issues
+in a following message. After you read this discussion, please read the
+issues message, and send me your comments and votes!
+
+Feel free to flame about things I didn't move over to the &quot;issues&quot; message
+if you still want to push them.
+
+    From: Bengt Kleberg &lt;bengt@xxxxxxxxxxx&gt;
+    1 Would it be possible to allow all procedures that have a _single_ [start
+    end] pair to accept both, ie [start [end]]? Like substring does (only that
+    substring must have a start, ofcourse).
+
+What you want is what they are.
+
+    2 Must string-index-right (and string-skip-right) take their [end start]
+    pair in that order?  I assume that this is influenced by the list library,
+    but if not, please consider using [start end] instead.
+
+The issue here is that you *almost never* specify the left bound; you
+*frequently* specify the right bound. You actually *start* with END in the
+-right procedures. That is why they are flipped -- you can say
+	    (let ((i (string-skip-right s char-set:white i)))
+              ...)
+In other words, with both the from-left and from-right variants, the
+first optional argument says where to begin the search, and the second
+optional argument says where to end the search.
+
+Note that if you get it wrong, you will definitely trigger a run-time
+error, since you aren't allowed to have a start parameter that's larger
+than the end parameter.
+
+    From: Dan Bornstein &lt;danfuzz@xxxxxxxx&gt;
+    The new caveat on substring, that it be allowed to share storage, seems
+    strange to me, since it could noticeably and adversely affect pre-existing
+    programs that rely on the old behavior. Plus, the SRFI specifies &quot;/shared&quot;
+    variants of other calls to explicitly call out the possibility of sharing.
+    So, why not leave substring alone, and add a substring/shared which is
+    allowed (but not required) to share storage with its argument?
+
+    To support pure functional programming, it seems to me that there ought to
+    be two new procedures:
+
+	(string-set string i char) -&gt; string
+	(string-fill s char [start end]) -&gt; string
+
+    which would be like their &quot;!&quot; brethren, except they return new strings
+    instead of altering their arguments.
+
+C'mon. Do you really think that people would use STRING-SET ?
+STRING-FILL is an easier case to make. Let's see, that would be
+
+    (define (string-fill s c . maybe-start+end)
+      (let ((ans (string-copy s)))
+	(apply string-fill! ans c maybe-start+end)
+	ans))
+
+Should I add this? I cannot think of any cases where it would be all that
+handy.
+
+    I fear the new string-copy! for one main reason: In all other cases in
+    Scheme, the only difference between a &quot;!&quot; and unmarked procedure with the
+    same name has been the fact that the &quot;!&quot; version modifies (or is at least
+    allowed to modify) its first argument and the unmarked version returns a
+    new object. In this case, the argument specs are different, and I suspect
+    this will be a source of confusion.
+
+    I suggest fixing this by [1] renaming the current string-copy! Off-the-cuff
+    suggestion, string-copy-chars! and [2] adding a non &quot;!&quot; version of the same
+    procedure (e.g., string-copy-chars), to provide the symmetry that there is
+    in the rest of the spec.
+
+Yeah, you're right. However, your non-side-effecting STRING-COPY is subsumed
+by the STRING-REPLACE Welsh proposes below. I think I'll leave things as-is.
+
+    From: Donald Welsh &lt;dwelsh@xxxxxxxxxxxxx&gt;
+
+    string-take
+    string-drop
+    string-take-right
+    string-drop-right
+    substring-move-left
+    substring-move-right
+
+    These (if needed) can all be defined as special cases of a more general
+    function, string-replace.
+
+    string-replace s1 start end s2 -&gt; string
+	replace the substring of s1 from start to end with s2
+
+    A variant, string-replace! could also be defined, which is allowed to reuse
+    the original storage of s1.
+
+    With a regexp package, regexp matching could used to find start and end
+    points, then string-replace could perform the replacement.
+
+For regexp replacement, you want something a little more sophisticated.
+See REGEXP-SUBSTITUTE &amp; REGEXP-SUBSTITUTE/GLOBAL in scsh.
+
+Further, you can do string-take/drop/move with STRING-REPLACE... but it's
+awkward. I prefer to name these operations.
+
+Nonetheless, STRING-REPLACE seems like a handy thing. I'll add it, spec'd
+as follows, unless I get a lot of complaints:
+
+string-replace s1 start1 end1 s2 [start2 end2] -&gt; string
+    Returns (string-append (substring s1 0 start1)
+                           (substring s2 start2 end2)
+                           (substring s1 end1 (string-length s1)))
+    That is, the segment of characters in S1 from START1 to END1
+    is replaced by the segment of characters in S2 from START2 to END2.
+    If START1=END1, this simply splices the S2 characters into S1 at the
+    specified index.
+
+    Examples:
+	(string-replace &quot;The TCL programmer endured daily ridicule.&quot; 4 7
+                        &quot;miserable perl&quot;) =&gt;
+            &quot;The miserable perl programmer endured daily ridicule.&quot;
+
+	(string-replace &quot;It's easy to code it up in Scheme.&quot; 5 5 &quot;really &quot;) =&gt;
+            &quot;It's really easy to code it up in Scheme.&quot;
+
+    ------------
+
+    reverse-string-concatenate string-list [end] -&gt; string
+    reverse-string-concatenate/shared string-list [end] -&gt; string
+
+    Why are these included?  Without the optional parameter, the stated
+    equivalents are clearer.  With END these functions are odd -- why are they
+    needed?
+
+They are included to eliminate the unnecessary consing of the reversed list.
+They are also included because *these particular* operations are *exactly*
+the utility needed by a wide variety of functions that accumulate character
+data into a string result, where one does not know in advance how much
+character data will be accumulated. So one accumulates the data into a
+linked list of, say, 1k buffers, the assembles the buffers into a final
+result at the end. The last buffer (which is first on the reversed list)
+may only be partially full -- hence the optional final argument.
+
+    string-filter s char/char-set/pred [start end] -&gt; string
+    string-delete s char/char-set/pred [start end] -&gt; string
+
+    The char/char-set/pred isn't intuitive.
+
+Predicates and char-sets are *the* two basic ways to describe a set of
+characters, so we handle them both. Handling the case of a single char is just
+a common-case convenience hack; not fundamental or really all that important.
+
+Note that there's an efficiency reason to favor char-set's over predicates.
+The STRING-FILTER procedure knows that doing a char-set membership test
+causes no side effects. So it can do it more than once. This means that
+it can use a two-pass strategy: once scan to count up the number of surviving
+characters, allocate a string of exactly the right size, then a second scan
+to copy the chars into the result string. In contrast, the predicate scan
+loop only applies the predicate once to each character, so it has to use
+an adaptive strategy for allocating the result, which means it runs slower
+and produces garbage (this is the kind of code where one can profitably
+use REVERSE-STRING-CONCATENATE/SHARED, by the way).
+
+    If char-sets are needed, perhaps
+    there should be a set package SRFI (is there one already?), or the
+    functionality could be provided by a regexp package.  
+
+I have submitted a char-set SRFI, but it has not yet been announced for
+discussion. (This just in: it has just been announced. See 
+    <a  rel="nofollow" href="http://srfi.schemers.org/srfi-14/">http://srfi.schemers.org/srfi-14/</a>
+It's a much smaller SRFI, but was designed in concert with SRFI-13.)
+
+    Suggest dropping
+    string-delete and using an alternative version of string-filter which uses
+    a string -&gt; string function f instead of char/char-set/pred.  (String
+    deletion can be done by f returning &quot;&quot;.)  The function f should go first,
+    as with map and string-map.
+
+    string-filter f s [start end] -&gt; string
+	construct a string by applying f to each character of s
+	function f should take a string of length one as input, and output a
+        string (of any length)
+
+This is a cute function. Consider that you could use it for backslash
+encoding strings, for example -- just say
+
+    (string-filter (lambda (c) (if (char=? c #\\) (string #\\ c) (string c))) 
+                   s)
+    
+But it's really inefficient; generates lots of garbage. You can
+backslash-encode more efficiently by saying
+
+   (let ((ans-len (string-fold (lambda (c sum)
+                                 (+ sum (if (char=? c #\\) 2 1)))
+                               0 s))
+         (ans (make-string ans-len)))
+     (string-fold (lambda (c i)
+                    (let ((i (if (char=? c #\\)
+		                 (begin (string-set! ans i #\\) (+ i 1))
+			         i)))
+                      (string-set! ans i c)
+                      (+ i 1)))
+                  0 s)
+     ans)
+
+which generates no intermediate garbage strings. Can anyone come up with
+some compelling examples of good uses for Donald's STRING-FILTER ? And
+I'd need another name for it -- STRING-FILTER and STRING-DELETE are fixed,
+in order to maintain parallelism with their list-lib analogues.
+
+    From: &quot;Sergei Egorov&quot; &lt;esl@xxxxxxxxxxxxxxx&gt; 
+    First, I only partially agree with the rationale.
+    Yes, RNRS's set of string operations is poor, but 
+    there's nothing wrong with naming conventions (the 
+    choice between string= and string=? is mainly a matter 
+    of taste; the former is compatible with = (=? variants
+    existed in R2RS to make everybody happy), but the 
+    latter is compatible with char=? and other predicates,
+    and it is both familiar and standard).
+
+Exactly -- why not, then, be consistent, and rename the numeric functions
+	 &lt;? &lt;=? =? &gt;=? &gt;?
+Urgh. Looks really ugly to me. It's redundant and ugly and wastes horizontal
+margin, which matters when you try to code in an 80-column buffer. But the
+worst of these offenses is that it's ugly. I am consistently using the
+inequality symbols alone, without an additional ? suffix, in the libraries
+I've been proposing -- so I'm being consistent with the numeric preds, not
+the others.
+
+    Shared substrings are practically unknown to the Scheme community and,
+    even if they are implemented somewhere, I see no reason to make
+    incompatible changes to the semantics of SUBSTRING (adding
+    SUBSTRING/SHARED is definitely a better idea, but why put normal and
+    /SHARED versions in one SRFI?).
+
+Shared substrings are in guile, I believe. T had them. I'm trying to do this
+library so that it will efficiently support programming both in
+implementations that do and do not have them. It's worth putting in a little
+work to support them, because they're a useful feature. 
+
+By the way, I should state my goal here: I'm *not* trying to do a complete
+shared-text string system; I'm simply trying to do a general string library
+that can be efficiently used in both kinds of systems. Note that even if your
+Scheme system *doesn't* provide shared-text substrings, you can *still*
+profitably use the /shared procedure variants (and I have, in my code -- this
+SRFI has some of its roots in the utilities I've written for systems code I've
+built for scsh). The /shared variants can exploit special cases, such as
+having a substring op return the original string when the substring start/end
+indices specify the entire string.
+
+Here's the thing about R5RS SUBSTRING: once we generalise STRING-COPY to take
+start/end parameters, it trivially subsumes R5RS SUBSTRING. We should just
+throw it away.
+
+You might suggest dropping STRING-COPY (which Dan doesn't like for reasons
+of non-parallelism w/STRING-COPY!, anyway), and simply retaining the R5RS 
+copying SUBSTRING, extending it to make the start/end parameters optional.
+I did consider this. But it seems kinda misleading to tell people: to copy
+a string, write
+  (substring s)
+How's that again? That looks very weird; not clear at all -- more of an
+oddball, corner-case &quot;idiom&quot; than a straightforward useage. Whereas, these are
+all quite clear as to what they do:
+      (STRING-COPY s)		; Copy the string. Right. Got it.
+      (STRING-COPY s 3)		; Copy the string, starting at index 3. Right.
+      (STRING-COPY s 0 end)	; Copy the string from 0 to END. No problem.
+So, once again, I've worked my way around to trivially subsuming R5RS
+SUBSTRING into STRING-COPY, just by virtue of the *general* library rule
+that all procedures take optional start/end parameters where possible and
+sensible. R5RS provides *both* STRING-COPY and SUBSTRING -- not too clever,
+given how trivial it is to subsume one into the other. But we can exploit
+this by assigning these two functions an honest-to-God *useful* distinction.
+So that is what I did.
+
+So, we should punt R5RS's SUBSTRING *for sure*. That leaves two avenues open:
+
+- The not-entirely-backwards-compatible one:
+  We use the name SUBSTRING for the shared-text variant. This seems like
+  a good use of the name. It does have small backwards-compatibility issues
+  if you are (1) using a Scheme with shared-text strings and (2) wrote
+  code that relied on SUBSTRING returning fresh storage. I think this
+  is not a big discontinuity; others may think I'm a danger to society.
+  
+- The conservative one:
+  Just to *make sure* people don't accidentally use a shared-text
+  substring op in old code where they wanted the fresh-storage substring,
+  we simply *drop* SUBSTRING entirely, and use SUBSTRING/SHARED in this
+  SRFI.
+
+I think you guys are a bunch of wimps. But I'm interested in your opinions.
+I believe I know where Egorov &amp; Bornstein stand, yes? Y'all would 
+probably vote for the conservative path? Would everyone please check in
+on this issue?
+
+A last call for not being ruled by backwards compatibility: The code that's
+*been written* is fixed in size. The code that *will be written* is unbounded.
+Always take an opportunity to set things right. Too much adherence to
+backwards compatibility (Zetalisp, in particular) is one of primary reasons
+for most of Common Lisp's current uglinesses -- yet Zetalisp has vanished
+into the mists. OK, that's my flame.
+
+    I also oppose &quot;dropping&quot; of standard Scheme procedures. Does this mean
+    that to claim support for SRFI-13 (or SRFI-1) my implementation should
+    make them unavailable? If not, then why mention it at all? I believe the
+    whole idea belongs to a separate &quot;Scheme Request For Non-implementation&quot;
+    process (SRFN-0: drop TRANSCRIPT-ON and TRANSCRIPT-OFF).
+
+They aren't dropped from Scheme. They just aren't in this SRFI. This SRFI
+is a specific set of bindings; if you write code that uses this SRFI, you
+use what it provides; no problem. If you want stuff that isn't in this SRFI,
+then import that stuff, too. No problem.
+
+    I believe that &lt;&gt; convention for &quot;not equal&quot; is not the best choice: it
+    doesn't look right when applied to domains with no natural order
+    (i.e. MY-RECORD&lt;&gt;).  Other possible choices are ~=, /=, ^=, and != (all of
+    them are subpar, but if forced to make a choice, I would pick ~=).
+
+I see your point... but I'm going to stick with &lt;&gt;. None of the other choices
+seem all that much better to me (and I don't have any better suggestions,
+myself).
+
+    ;;; Mismatch index in string-comparison procedures:
+
+    Why do we need this mismatch index in each and every comparison
+    procedure? The fact that it can be returned doesn't necessarily
+    mean that it should; if somebody's procedure ends in (string= s1 s2)
+    and I have to rewrite it, say, using lists instead of strings,
+    I don't want to scan all the code looking for call sites to
+    check if the return value is just used as a boolean (imitating
+    mismatch index in my new code may be problematic). I will
+    have all this imaginary trouble because INTENTIONS of the
+    original author were not clear. This, however, didn't stop
+    the designers of MEM*, ASS* and dozens of other functions,
+    but in many cases I can see some advantages in returning
+    non-#t value. But, judging from my modest experience, I beleive
+    that in regular lexicographical string comparison the
+    mismatch index is NEVER needed. It is definitely less 
+    useful in practice than n-ary string comparison predicates;
+    and the unfortunate fact is that STRING{&gt;...} returning a
+    mismatch index cannot be generalized to n-ary case!
+
+It turns out to be a handy value to have around if you are comparing
+strings. The string compare functions produce it, so we can essentially export
+it to clients for free. &quot;Don't hide functionality.&quot;
+
+(By the way, you *can* generalise mismatch indices to n-ary comparisons, but
+it seems to be less useful.)
+
+    SUBSTRING-COMPARE{-CI}: is mismatch index (!?) relative or absolute?
+
+You get an index into the string itself (absolute); it's relative to the
+beginning of the string, not the beginning of the selected substring
+segment. I've added a little text to the SRFI to make this clear.
+
+    STRING-ITER: why not STRING-ITERATE?
+
+Why not, indeed? I'm flexible (I'm ever so slightly in favor of -ITER, because
+I'm a brevity freak, but can definitely see the merits of -ITERATE). How do
+people feel about this one?
+
+    {SUB}STRING-{PRE,SUF}FIX-COUNT{-CI}: why not -LENGTH- instead of -COUNT-?
+    In both CommonLisp and SRFI-1, COUNT is associated with selective
+    counting, not measuring the length of contiguous subsequences.
+
+No strong reason; I believe these names came over from MIT Scheme. We
+could change. May I have other opinions on this matter?
+
+    SUBSTRING{-CI}? : why do these names end in question mark? They
+    behave more like SUBSTRING-INDEX{-CI} and other MEMQ-like procedures.
+
+1. You typically use them as boolean predicates.
+2. The name SUBSTRING is already being used.
+
+    ;;; proposed additions (actually these were defined in R^2RS):
+
+    (substring-move-left! string1 start1 end1 string2 start2)
+    (substring-move-right! string1 start1 end1 string2 start2)
+
+Got you covered; it's already there. See STRING-COPY!.  Here's the code; you
+can see that no right/left variants are needed -- it does the right thing in
+all cases.
+    
+(define (string-copy! to tstart from . maybe-fstart+fend)
+  (string-let-start+end (fstart fend) string-copy! from maybe-fstart+fend
+	(let ((tend (+ tstart (- fend fstart))))
+	  (check-substring-spec string-copy! to tstart tend)
+	  (if (&gt; fstart tstart)
+	      (do ((i fstart (+ i 1))
+		   (j tstart (+ j 1)))
+		  ((&gt;= i fend))
+		(string-set! to j (string-ref from i)))
+
+	      (do ((i (- fend 1) (- i 1))
+		   (j (- tend 1) (- j 1)))
+		  ((&lt; i fstart))
+		(string-set! to j (string-ref from i)))))))
+
+    From: Lars Arvestad &lt;arve@xxxxxxxxxxx&gt;
+    I noticed the procedure pair string-for-each and string-iter [*]. My
+    suggestion is that string-iter is dropped and that string-for-each is 
+    made do iterate from START to END. This is consistent with the list
+    version of for-each, which is guaranteed to apply PROC in
+    order. If a procedure can be applied in any order, it can't be a
+    restriction to apply it in order, thus an unordered version of
+    string-for-each is unnecessary. 
+
+    Are there efficiency/implementation advantages to have an unordered
+    version? In that case, another name than string-for-each seems
+    appropriate. 
+
+STRING-FOR-EACH is allowed to go right-to-left. Going right-to-left means the
+index end-test is for zero, not the length of the list. Testing against zero
+is faster and doesn't require you to hold the string-length in a register
+across the iteration. Call me an efficiency freak. (And, yes, I know:
+induction variable elimination nukes the zeroness of the r-to-l scan. 
+But no one does it in Scheme, so it doesn't really buy much these days...)
+
+As for STRING-REDUCE &amp; STRING-REDUCE-RIGHT: I defined them, but the
+definitions made it clear that the functions were essentially useless.
+So I have dropped them. Others may redefine &amp; repropose them, if they
+wish. Note that for reducing (in the sense of SRFI-1 list-lib) over strings, 
+the function F must be a char x char -&gt; char function, and the right identity
+value must be a character. I cannot come up with a single thing one would ever
+want to do with such a function.
+
+I have made two changes to the library:
+  - I've added a small efficiency hack to the definition of
+    REVERSE-STRING-CONCATENATE
+  - I've added two support procedures for general Knuth-Morris-Pratt
+    string search. These procedures make it easy to do KMP search
+    through arbitrary character sources such as input ports.
+
+
+    PS: Olin: Thanks once again for what looks like an excellent draft.
+
+You bet! Thanks for the excellent feedback, y'all; I appreciate it.
+    -Olin
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00011" href="msg00011.html">Re: Round 2 discussion</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00007.html">string-for-each, string-iter</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00009.html">Open issues summary #1</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00007.html">string-for-each, string-iter</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00011.html">Re: Round 2 discussion</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00008"><strong>Date</strong></a></li>
+<li><a href="threads.html#00008"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

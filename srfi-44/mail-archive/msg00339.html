@@ -1,0 +1,168 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Fundamental design flaws -->
+<!--X-From-R13: fptzvyyrNserrargcebwrpg.bet -->
+<!--X-Date: Thu, 30 Oct 2003 18:06:55 +0100 (NFT) -->
+<!--X-Message-Id: 20031030170642.GB30088@freenetproject.org -->
+<!--X-Content-Type: multipart/signed -->
+<!--X-Reference: DCE9B6E9&#45;0A7B&#45;11D8&#45;8E6E&#45;000A95CCCEE4@evdev.ath.cx -->
+<!--X-Reference: 200310301645.IAA01323@morrowfield.regexps.com -->
+<!--X-Derived: pgpafEzcYibkt.pgp -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Fundamental design flaws</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00338.html">Date Prev</a>][<a href="msg00340.html">Date Next</a>][<a href="msg00355.html">Thread Prev</a>][<a href="msg00343.html">Thread Next</a>][<a href="maillist.html#00339">Date Index</a>][<a href="threads.html#00339">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Fundamental design flaws</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Tom Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Fundamental design flaws</li>
+<li><em>From</em>: <a href="mailto:scgmille@DOMAIN.HIDDEN">scgmille@xxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Date</em>: Thu, 30 Oct 2003 11:06:42 -0600</li>
+<li><em>Cc</em>: <a href="mailto:campbell@DOMAIN.HIDDEN">campbell@xxxxxxxxxxxx</a>, <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:200310301645.IAA01323@DOMAIN.HIDDEN">200310301645.IAA01323@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Mail-followup-to</em>: <a href="mailto:scgmille@DOMAIN.HIDDEN">scgmille@xxxxxxxxxxxxxxxxx</a>,	Tom Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>&gt;, <a href="mailto:campbell@DOMAIN.HIDDEN">campbell@xxxxxxxxxxxx</a>,	<a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>References</em>: &lt;<a href="mailto:DCE9B6E9-0A7B-11D8-8E6E-000A95CCCEE4@DOMAIN.HIDDEN">DCE9B6E9-0A7B-11D8-8E6E-000A95CCCEE4@xxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:200310301645.IAA01323@DOMAIN.HIDDEN">200310301645.IAA01323@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mutt/1.5.4i</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>On Thu, Oct 30, 2003 at 08:45:49AM -0800, Tom Lord wrote:
+&gt; to emulate cursors has at least three huge drawbacks, two of which
+&gt; pertain to efficiency, all three of which pertain to semantics:
+&gt; 
+&gt; 1) The space consumption of the cursor is in general bound by the size
+&gt;    of the (entire) continuation of the call to the enumerator.
+&gt;    A call/cc cursor is going to gc-protect way, way, more than it
+&gt;    needs to.   (Sure, fairly aggressive optimization can do better
+&gt;    in some special cases but I think systems which do that will always
+&gt;    be exceptions rather than the rule.  Optimization of this sort will
+&gt;    only be possible when the compiler can do global flow analysis that
+&gt;    includes the implementation of the collection type.)
+&gt; 
+&gt;    The interaction of this with other possible extensions like weak 
+&gt;    references or first-class environments are scary to contemplate.
+
+This is nothing compared to the kind of leaks that are possible with 
+cursors alone.  Thats one of the major arguments for enumeration after 
+all.
+
+Btw, you're mistaken about call/cc and dynamic environments, I believe.  
+Try this code in a Scheme system:
+
+(define x #f)
+(begin (call/cc (lambda (k) (set! x k))) (display &quot;hi&quot;))
+(current-output-port (open-output-file &quot;/tmp/foo&quot;))
+(x)
+
+
+
+&gt;     &gt; &gt;           (error &quot;there is no such thing as a set&quot;))
+&gt; 
+&gt;     &gt; What a useful implementation _that_ would be!
+&gt; 
+&gt; That's my point -- the specs are too weak.
+
+Hardly.  A function like the one taylor wrote is explicitly illegal 
+based on the definition of union, assuming a real set is being passed.
+
+&gt; 
+&gt; I'm saying: either don't try to operate on the Scheme types at all, or
+&gt; design 44 in such a way that the collections procedures work on (at
+&gt; least):
+&gt; 
+&gt; 	ordinary lists as sequences (with any equivalence predicate)
+&gt; 	ordinary lists as sets (with any equivalence predicate)
+&gt; 	ordinary lists as ordered sequences 
+&gt;           (with any equivalence /ordering predicate)
+&gt; 	ordinary associative lists as dictionaries (with any equivalence predicate)
+&gt; 
+&gt; (and probably other things I'm forgetting.)
+
+The problem here is that the generic inter-collection operators 
+(add-all, etc) are too useful.  Changing the SRFI to support 
+non-collection datastructures at the expense of this flexibility is just 
+not an option.  There is also a lot of new formalism in this SRFI that 
+you often need a more complicated datastructure to encapsulate, and 
+which needs to be passed around with the collection.
+
+I think your mistake is confusing datastructures, which are low level 
+(lists, pairs, vectors) with collections.  A collection is a combination 
+of datastructure, semantics, and interface.  
+
+&gt; So, minimally, TinyCLOS ought to have been included.   (It's tiny,
+&gt; right? :-)
+
+I think this is a pretty good idea still.  We'd need to get permission 
+of course.
+
+</pre><p><strong>Attachment:
+<a href="pgpafEzcYibkt.pgp" ><tt>pgpafEzcYibkt.pgp</tt></a></strong><br>
+<em>Description:</em> PGP signature</p>
+
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00343" href="msg00343.html">Re: Fundamental design flaws</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+<li><strong><a name="00359" href="msg00359.html">Re: Fundamental design flaws</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00296" href="msg00296.html">Re: Fundamental design flaws</a></strong>
+<ul><li><em>From:</em> Taylor Campbell</li></ul></li>
+<li><strong><a name="00333" href="msg00333.html">Re: Fundamental design flaws</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00338.html">Re: A possible solution?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00340.html">Re: Reasons for withdrawal</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00355.html">Re: Fundamental design flaws</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00343.html">Re: Fundamental design flaws</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00339"><strong>Date</strong></a></li>
+<li><a href="threads.html#00339"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

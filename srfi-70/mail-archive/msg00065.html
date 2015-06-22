@@ -1,0 +1,240 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: [srfi&#45;70] Limit -->
+<!--X-From-R13: Ohoerl Xnssre <ntwNnyhz.zvg.rqh> -->
+<!--X-Date: Mon, 13 Jun 2005 21:32:53 +0200 (DFT) -->
+<!--X-Message-Id: 20050613193333.5659E1B77B4@voluntocracy.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: OF16409C85.5A9ED3F9&#45;ONC125700C.0024BD7D&#45;C125700C.0029C3E4@philips.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: [srfi-70] Limit</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00064.html">Date Prev</a>][<a href="msg00066.html">Date Next</a>][<a href="msg00043.html">Thread Prev</a>][<a href="msg00066.html">Thread Next</a>][<a href="maillist.html#00065">Date Index</a>][<a href="threads.html#00065">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: [srfi-70] Limit</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:sebastian.egner@DOMAIN.HIDDEN">sebastian.egner@xxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: [srfi-70] Limit</li>
+<li><em>From</em>: Aubrey Jaffer &lt;<a href="mailto:agj@DOMAIN.HIDDEN">agj@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 13 Jun 2005 15:33:33 -0400 (EDT)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-70@DOMAIN.HIDDEN">srfi-70@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-70@DOMAIN.HIDDEN">srfi-70@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: 	&lt;<a href="mailto:OF16409C85.5A9ED3F9-ONC125700C.0024BD7D-C125700C.0029C3E4@DOMAIN.HIDDEN">OF16409C85.5A9ED3F9-ONC125700C.0024BD7D-C125700C.0029C3E4@xxxxxxxxxxx</a>&gt;	(message from Sebastian Egner on Wed, 25 May 2005 09:35:25 +0200)</li>
+<li><em>References</em>: &lt;<a href="mailto:OF16409C85.5A9ED3F9-ONC125700C.0024BD7D-C125700C.0029C3E4@DOMAIN.HIDDEN">OF16409C85.5A9ED3F9-ONC125700C.0024BD7D-C125700C.0029C3E4@xxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre> | From: Sebastian Egner &lt;sebastian.egner@xxxxxxxxxxx&gt;
+ | Date: Wed, 25 May 2005 09:35:25 +0200
+ | 
+ | Example: An important function from information theory is
+ | 
+ |         f(x) =  -x log(x).
+ | 
+ | This function is in principle well behaved (smooth, analytic, etc.)
+ | on (0,1], but its derivative does not exist at x = 0. Moreover,
+ | f(0) cannot directly be computed numerically because the underflow
+ | from log(x) is not cancelled by the multiplication with zero.
+ | Practical numerical code: IF x &lt; xmin THEN 0 ELSE x log(x), where
+ | xmin is chosen minimal such that log(xmin) is an ordinary number
+ | and not -infinity.
+ | 
+ | Using LIMIT in this case is not a good idea for two reasons:
+ | a) It is expensive and unnecessary, except for very small x.
+ | b) At least the reference implementation of LIMIT doesn't get it right:
+ | 
+ |         (limit (lambda (x) (* -1 x (log x))) 0 1e-9) =&gt; -inf.0
+ | 
+ | This may be a bug in the reference implementation, but it is certainly
+ | a violation of the new specification as f(x) is monotonic on [0,1/e].
+
+That bug has been corrected:
+
+&gt; (limit (lambda (x) (* -1 x (log x))) 0 1e-9)
+102.70578127633066e-12
+&gt; (limit (lambda (x) (* -1 x (log x))) 0 1e-222)
+0.0
+
+<a  rel="nofollow" href="http://savannah.gnu.org/cgi-bin/viewcvs/scm/scm/Transcen.scm?rev=HEAD&amp;content-type=text/vnd.viewcvs-markup">http://savannah.gnu.org/cgi-bin/viewcvs/scm/scm/Transcen.scm?rev=HEAD&amp;content-type=text/vnd.viewcvs-markup</a>
+has the new limit code.
+
+<a  rel="nofollow" href="http://swiss.csail.mit.edu/~jaffer/III/Limit.html">http://swiss.csail.mit.edu/~jaffer/III/Limit.html</a>
+explains the mathematics and algorithm.
+
+The documentation for the new limit procedure is appended.
+
+ | When you try to fix the reference implementation, you will find that
+ | it cannot be fixed because it comes from the &quot;black box&quot; procedure:
+
+It took some hard work, but the new limit procedure does treat its
+procedure argument as a black box, never calling it at the limit
+point.  It essentially detects whether the function is convex or
+concave near the limit point and uses polynomial extrapolation, either
+from the function or its inverse, to estimate the limit value.  The
+inverse function extrapolation is currently limited to quadratic;
+higher order fitting can certainly be done, but the equations get big.
+
+ | At a certain moment f(x) becomes -inf.0, so that must be the limit.
+
+The new limit procedure calls f at points which are controlled by
+arguments to limit: X1+X2/K, X1+2*X2/K, ..., X1+X2.  The stipulation
+that f be monotonic and continuously differentiable over the range
+(X1, X1+X2] makes polynomial extrapolation a reasonable approximation.
+
+ | Bottom line: In the end, LIMIT might do more harm than it is worth.
+ | You might want to reconsider if it is a feature that is essential for
+ | the Scheme programming language itself.
+
+The new limit procedure works better than I had expected; even
+handling a nasty example from an old Macsyma manual (see appended
+examples).  Arguments that limits are too esoteric or new
+counterexamples may yet scuttle them from srfi-70.
+
+			      -=-=-=-=-
+
+Function: limit proc x1 x2 k
+Function: limit proc x1 x2
+
+    Proc must be a procedure taking a single inexact real argument.  K
+    is the number of points on which proc will be called; it defaults
+    to 8.
+
+    If x1 is finite, then Proc must be continuous on the half-open
+    interval:
+
+    ( x1 .. x1+x2 ]
+
+    And x2 should be chosen small enough so that proc is expected to
+    be monotonic or constant on arguments between x1 and x1 + x2.
+
+    Limit computes the limit of proc as its argument approaches x1
+    from x1 + x2. Limit returns a real number or real infinity or
+    `#f'.
+
+    If x1 is not finite, then x2 must be a finite nonzero real with
+    the same sign as x1; in which case limit returns:
+
+    (limit (lambda (x) (proc (/ x))) 0.0 (/ x2) k)
+
+    Limit examines the magnitudes of the differences between
+    successive values returned by proc called with a succession of
+    numbers from x1+x2/k to x1.
+
+    If the magnitudes of differences are monotonically decreasing,
+    then then the limit is extrapolated from the degree n polynomial
+    passing through the samples returned by proc.
+
+    If the magnitudes of differences are increasing as fast or faster
+    than a hyperbola matching at x1+x2, then a real infinity with sign
+    the same as the differences is returned.
+
+    If the magnitudes of differences are increasing more slowly than
+    the hyperbola matching at x1+x2, then the limit is extrapolated
+    from the quadratic passing through the three samples closest to
+    x1.
+
+    If the magnitudes of differences are not monotonic or are not
+    completely within one of the above categories, then #f is
+    returned.
+
+;; constant
+(limit (lambda (x) (/ x x)) 0 1.0e-9)           ==&gt; 1.0
+(limit (lambda (x) (expt 0 x)) 0 1.0e-9)        ==&gt; 0.0
+(limit (lambda (x) (expt 0 x)) 0 -1.0e-9)       ==&gt; 1/0
+;; linear
+(limit + 0 976.5625e-6)                         ==&gt; 0.0
+(limit - 0 976.5625e-6)                         ==&gt; 0.0
+;; vertical point of inflection
+(limit sqrt 0 1.0e-18)                          ==&gt; 0.0
+(limit (lambda (x) (* x (log x))) 0 1.0e-9)     ==&gt; -102.70578127633066e-12
+(limit (lambda (x) (/ x (log x))) 0 1.0e-9)     ==&gt; 96.12123142321669e-15
+;; limits tending to infinity
+(limit + 1/0 1.0e9)                             ==&gt; 1/0
+(limit + -1/0 -1.0e9)                           ==&gt; -1/0
+(limit / 0 1.0e-9)                              ==&gt; 1/0
+(limit / 0 -1.0e-9)                             ==&gt; -1/0
+(limit tan (atan 1/0) -1.0e-15)                 ==&gt; 1/0
+(limit tan (atan -1/0) 1.0e-15)                 ==&gt; -1/0
+(limit (lambda (x) (/ (log x) x)) 0 1.0e-9)     ==&gt; -1/0
+(limit (lambda (x) (/ (magnitude (log x)) x)) 0 -1.0e-9)
+                                                ==&gt; -1/0
+;; limit doesn't exist
+(limit sin 1/0 1.0e9)                           ==&gt; #f
+(limit (lambda (x) (sin (/ x))) 0 1.0e-9)       ==&gt; #f
+(limit (lambda (x) (sin (/ x))) 0 -1.0e-9)      ==&gt; #f
+(limit (lambda (x) (/ (log x) x)) 0 -1.0e-9)    ==&gt; #f
+;; conditionally convergent - return #f
+(limit (lambda (x) (/ (sin x) x)) 1/0 1.0e222)  ==&gt; #f
+;; asymptotes
+(limit / -1/0 -1.0e222)                         ==&gt; 0.0
+(limit / 1/0 1.0e222)                           ==&gt; 0.0
+(limit (lambda (x) (expt x x)) 0 1.0e-18)       ==&gt; 1.0
+(limit (lambda (x) (sin (/ x))) 1/0 1.0e222)    ==&gt; 0.0
+(limit (lambda (x) (/ (+ (exp (/ x)) 1))) 0 1.0e-9)
+                                                ==&gt; 0.0
+(limit (lambda (x) (/ (+ (exp (/ x)) 1))) 0 -1.0e-9)
+                                                ==&gt; 1.0
+(limit (lambda (x) (real-part (expt (tan x) (cos x)))) (/ pi 2) 1.0e-9)
+                                                ==&gt; 1.0
+;; This example from the 1979 Macsyma manual grows so rapidly
+;;  that x2 must be less than 41.  It correctly returns e^2.
+(limit (lambda (x) (expt (+ x (exp x) (exp (* 2 x))) (/ x))) 1/0 40)
+                                                ==&gt; 7.3890560989306504
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00034" href="msg00034.html">Re: [srfi-70] Limit</a></strong>
+<ul><li><em>From:</em> Sebastian Egner</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00064.html">Re: infinities reformulated</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00066.html">Re: [srfi-70] Limit</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00043.html">Re: [srfi-70] Limit</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00066.html">Re: [srfi-70] Limit</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00065"><strong>Date</strong></a></li>
+<li><a href="threads.html#00065"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

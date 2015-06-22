@@ -1,0 +1,188 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: mutex&#45;owner -->
+<!--X-From-R13: [nep Trryrl <srryrlNWDA.G[bagerny.QO> -->
+<!--X-Date: Mon, 10 Apr 2000 20:06:51 &#45;0500 (CDT) -->
+<!--X-Message-Id: 200004110106.VAA28811@trex.IRO.UMontreal.CA -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: E12dwbi&#45;00073v&#45;00@mdj.nada.kth.se -->
+<!--X-Reference: 200004102102.RAA28174@trex.IRO.UMontreal.CA -->
+<!--X-Reference: xy7em8dab0s.fsf@mdj.nada.kth.se -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: mutex-owner</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00037.html">Date Prev</a>][<a href="msg00039.html">Date Next</a>][<a href="msg00037.html">Thread Prev</a>][<a href="msg00034.html">Thread Next</a>][<a href="maillist.html#00038">Date Index</a>][<a href="threads.html#00038">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: mutex-owner</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:mdj@DOMAIN.HIDDEN">mdj@xxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: mutex-owner</li>
+<li><em>From</em>: Marc Feeley &lt;<a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 10 Apr 2000 21:06:46 -0400</li>
+<li><em>Cc</em>: <a href="mailto:djurfeldt@DOMAIN.HIDDEN">djurfeldt@xxxxxxxxxxx</a>, <a href="mailto:srfi-18@DOMAIN.HIDDEN">srfi-18@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:xy7em8dab0s.fsf@DOMAIN.HIDDEN">xy7em8dab0s.fsf@xxxxxxxxxxxxxxx</a>&gt; (message from Mikael Djurfeldt	on 10 Apr 2000 23:42:11 +0200)</li>
+<li><em>References</em>: &lt;<a href="mailto:E12dwbi-00073v-00@DOMAIN.HIDDEN">E12dwbi-00073v-00@xxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:200004102102.RAA28174@DOMAIN.HIDDEN">200004102102.RAA28174@xxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:xy7em8dab0s.fsf@DOMAIN.HIDDEN">xy7em8dab0s.fsf@xxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; &gt; Note that there is another implementation problem: Scheme mutexes can
+&gt; &gt; be unlocked by a different thread than the owner.  Some thread systems
+&gt; &gt; don't support this (for example POSIX threads).  Fortunately, the
+&gt; &gt; semantics of mutexes proposed can be implemented with a lower-level
+&gt; &gt; mutex and a condition variable.  So supporting mutex-owner is not an
+&gt; &gt; additional overhead.
+&gt; 
+&gt; One could of course remove the ability for a different thread to
+&gt; unlock the mutex, but I guess the proposed behaviour is more natural
+&gt; in the kind of interactive development environment which Scheme
+&gt; systems normally provide.
+
+True.  For example it allows someone that is debugging a program to
+forcibly unlock a mutex that is known to be in the wrong state
+(e.g. the program did not contain a mutex-unlock! at the right place).
+
+Moreover the rule that only the owner thread can unlock a mutex is
+artificial and probably an attempt by the designers of these systems
+to enforce a particular discipline of using mutexes to implement
+critical sections.  The &quot;Scheme way&quot; removes artificial restrictions
+whenever possible to give the programmer more freedom in terms of
+programming styles.  Just to give a simple example of what you can do
+if any thread can unlock a mutex, imagine you want to implement a
+(depth one) mailbox object that is used for interthread communication:
+any thread can deposit an object in the mailbox and any thread can get
+the object from the mailbox.  I'll use a message passing style
+(untested code...):
+
+(define (make-empty-mailbox)
+  (let ((put-mutex (make-mutex)) ; allow put! operation
+        (get-mutex (make-mutex (current-thread))) ; prevent get! operation
+        (cell #f))
+
+    (define (put! obj)
+      (mutex-lock! put-mutex) ; prevent put! operation
+      (set! cell obj)
+      (mutex-unlock! get-mutex)) ; allow get! operation
+
+    (define (get!)
+      (mutex-lock! get-mutex) ; wait until object in mailbox
+      (let ((result cell))
+        (set! cell #f) ; prevent space leaks
+        (mutex-unlock! put-mutex) ; allow put! operation
+        result))
+
+    (lambda (msg)
+      (case msg
+        ((put!) put!)
+        ((get!) get!)
+        (else (error &quot;unknown message&quot;))))))
+
+(define (mailbox-put! m obj) ((m 'put!) obj))
+(define (mailbox-get! m) ((m 'get!)))
+
+If you wanted to do this with owner-only-can-unlock mutexes, you need
+to use condition variables (and a mutex) and the code is quite a bit
+more complex for this relatively simple task.  Here is an attempt
+(untested code):
+
+(define (make-empty-mailbox)
+  (let ((mutex (make-mutex))
+        (put-condvar (make-condition-variable))
+        (get-condvar (make-condition-variable))
+        (full? #f)
+        (cell #f))
+
+    (define (put! obj)
+      (mutex-lock! mutex)
+      (let loop ()
+        (if full?
+            (begin
+              (condition-variable-wait! put-condvar mutex)
+              (loop))
+            (begin
+              (set! cell obj)
+              (set! full? #t)
+              (mutex-unlock! mutex)
+              (condition-variable-signal! get-condvar)))))
+
+    (define (get!)
+      (mutex-lock! mutex)
+      (let loop ()
+        (if (not full?)
+            (begin
+              (condition-variable-wait! get-condvar mutex)
+              (loop))
+            (let ((result cell))
+              (set! cell #f) ; avoid space leaks
+              (set! full? #f)
+              (mutex-unlock! mutex)
+              (condition-variable-signal! put-condvar)))))
+
+    (lambda (msg)
+      (case msg
+        ((put!) put!)
+        ((get!) get!)
+        (else (error &quot;unknown message&quot;))))))
+
+Marc
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00033" href="msg00033.html">mutex-owner</a></strong>
+<ul><li><em>From:</em> Mikael Djurfeldt</li></ul></li>
+<li><strong><a name="00035" href="msg00035.html">Re: mutex-owner</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+<li><strong><a name="00037" href="msg00037.html">Re: mutex-owner</a></strong>
+<ul><li><em>From:</em> Mikael Djurfeldt</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00037.html">Re: mutex-owner</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00039.html">Re: new document</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00037.html">Re: mutex-owner</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00034.html">mutex-lock!</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00038"><strong>Date</strong></a></li>
+<li><a href="threads.html#00038"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

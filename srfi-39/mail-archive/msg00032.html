@@ -1,0 +1,145 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Moving ahead -->
+<!--X-From-R13: sryvk <sryvkhaqqhavNserrarg.qr> -->
+<!--X-Date: Sat,  8 Mar 2003 14:40:05 +0100 (NFT) -->
+<!--X-Message-Id: 3E69EE42.3000101@freenet.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200303072209.h27M9Uad005975@dino00.iro.umontreal.ca -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Moving ahead</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00031.html">Date Prev</a>][<a href="msg00033.html">Date Next</a>][<a href="msg00031.html">Thread Prev</a>][<a href="msg00033.html">Thread Next</a>][<a href="maillist.html#00032">Date Index</a>][<a href="threads.html#00032">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Moving ahead</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Marc Feeley &lt;<a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Moving ahead</li>
+<li><em>From</em>: felix &lt;<a href="mailto:felixundduni@DOMAIN.HIDDEN">felixundduni@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 08 Mar 2003 14:21:06 +0100</li>
+<li><em>Cc</em>: <a href="mailto:srfi-39@DOMAIN.HIDDEN">srfi-39@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-39@DOMAIN.HIDDEN">srfi-39@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>References</em>: &lt;<a href="mailto:200303072209.h27M9Uad005975@DOMAIN.HIDDEN">200303072209.h27M9Uad005975@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.0.0) Gecko/20020529</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+Marc Feeley wrote:
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+
+It appears that the best solution in this case is to separate the
+issues into several SRFIs.  SRFI-39 can specify the parameter API and
+the behaviour in the absence of threads.  It will be up to individual
+thread SRFIs to specify a particular semantics to dynamic binding.
+</pre></blockquote><pre style="margin: 0em;">
+
+Good idea.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+There is however the issue of the interaction of dynamic binding and
+the DELAY special form.  In my opinion the body of the DELAY form
+should be evaluated in the same dynamic environment as the DELAY form
+itself.  For example in the code
+
+  (with-output-to-file &quot;foo&quot;
+    (lambda ()
+      (let ((x (delay (display &quot;hello&quot;))))
+        (with-output-to-file &quot;bar&quot;
+          (lambda ()
+            (display &quot;world&quot;)
+            (force x))))))
+
+we want &quot;hello&quot; to go to the file &quot;foo&quot; and &quot;world&quot; to go to the file
+&quot;bar&quot;.  This is consistent with the concept of delaying the
+computation (you only want to change **when** the computation is
+performed, not **what** the computation performs).  If this
+inheritance did not happen, the DELAY form would lose modularity (in
+the sense that the one writing the DELAY expression would have to take
+into account all the possible places where the promise is forced).
+This implies that if an exception is raised by the body of a DELAY
+form, it is the exception handler that was current at the DELAY form
+that is invoked.  I think this makes sense, but I'd like a discussion
+on this before moving ahead with the rewrite.
+
+</pre></blockquote><pre style="margin: 0em;">
+
+Is it really necessary for SRFI-39 to specify this? As per R5RS `delay'
+and `force' are defined clearly without capturing the dynamic context.
+So in the obvious implementation of `with-output-to-file' (via `dynamic-wind')
+promises would not retain the dynamic environment and your example
+would not behave as you intended.
+
+Moreover, it might be useful to change the context in which the force
+happens (say, I'd want to redirect output to a log file, or a custom
+`tee' port).
+
+So I propose to leave `delay' + parameters unspecified. That's another
+can of worms altogether...
+
+
+cheers,
+felix
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00033" href="msg00033.html">Re: Moving ahead</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00031" href="msg00031.html">Moving ahead</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00031.html">Moving ahead</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00033.html">Re: Moving ahead</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00031.html">Moving ahead</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00033.html">Re: Moving ahead</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00032"><strong>Date</strong></a></li>
+<li><a href="threads.html#00032"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,178 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Some Questions -->
+<!--X-From-R13: Fnlybe Qnzcoryy <pnzcoryyNriqri.ngu.pk> -->
+<!--X-Date: Sun,  5 Oct 2003 22:37:38 +0200 (DFT) -->
+<!--X-Message-Id: y9l7k3jqv5p.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 01C38770.DAEF2B20.pbewig@swbell.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Some Questions</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00001.html">Date Prev</a>][<a href="msg00003.html">Date Next</a>][<a href="msg00001.html">Thread Prev</a>][<a href="msg00003.html">Thread Next</a>][<a href="maillist.html#00002">Date Index</a>][<a href="threads.html#00002">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Some Questions</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-45@DOMAIN.HIDDEN">srfi-45@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Some Questions</li>
+<li><em>From</em>: Taylor Campbell &lt;<a href="mailto:campbell@DOMAIN.HIDDEN">campbell@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 1 Oct 2003 07:29:04 -0400</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-45@DOMAIN.HIDDEN">srfi-45@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:01C38770.DAEF2B20.pbewig@DOMAIN.HIDDEN">01C38770.DAEF2B20.pbewig@xxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Gnus/5.090019 (Oort Gnus v0.19) XEmacs/21.5 (cassava, berkeley-unix)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+On Tuesday, September 30, 2003, at 05:35 PM, Phil Bewig wrote:
+
+&gt; 6)  Why did you decide to order the arguments to stream-ref as
+&gt; (stream-ref index s) instead of (stream-ref s index)?  In SRFI-40,
+&gt; I struggled quite a while with the proper order of the arguments
+&gt; to this function.  (stream-ref index s) seems more natural, with
+&gt; the index parameter first and the stream last; most functions that
+&gt; operate on concrete data types write the parameters first and the
+&gt; data-type argument last.
+
+Really?  Let me show you a few procedure signatures from R5RS, SRFI 1, 
+SRFI
+13, SRFI 43, and SRFI 44:
+
+; R5RS
+(list-ref  LIST K)
+(list-tail LIST K)
+            ^^^^
+(string-ref   STRING K)
+(string-set!  STRING K CHAR)
+(substring    STRING START END)
+(string-fill! STRING CHAR)
+               ^^^^^^
+(vector-ref   VECTOR K)
+(vector-set!  VECTOR K OBJ)
+(vector-fill! VECTOR K OBJ)
+               ^^^^^^
+; SRFI 1
+
+(take         LIST I)
+(drop         LIST I)
+(take-right   LIST I)
+(drop-right   LIST I)
+(take!        LIST I)
+(drop-right!  LIST I)
+(split-at     LIST I)
+(split-at!    LIST I)
+(lset-adjoin  LIST ELT ...)
+(lset-adjoin! LIST ELT ...)
+               ^^^^
+; SRFI 13
+
+(string-copy             STRING [START END])
+(substring/shared        STRING START [END])
+(string-take             STRING I)
+(string-drop             STRING I)
+(string-take-right       STRING I)
+(string-drop-right       STRING I)
+(string-pad              STRING LEN [CHAR START END])
+(string-pad-right        STRING LEN [CHAR START END])
+(string-trim             STRING [CHAR/CHAR-SET/PRED START END])
+(string-compare          STRING STRING* PROC&lt; PROC= PROC&gt;)
+...many more comparison functions...
+(string-prefix-length    STRING STRING* [START END START* END*])
+...also STRING-SUFFIX-LENGTH[-CI], STRING-PREFIX?, etc...
+(string-index            STRING CHAR/CHAR-SET/PRED [START END])
+(string-skip             STRING CHAR/CHAR-SET/PRED [START END])
+(string-count            STRING CHAR/CHAR-SET/PRED [START END])
+(string-contains         STRING STRING* [START END START* END*])
+(string-titlecase        STRING [START END])
+(string-upcase           STRING [START END])
+(string-downcase         STRING [START END])
+(xsubstring              STRING FROM [TO START END])
+(string-replace          STRING STRING* START END [START* END*])
+(string-tokenize         STRING [TOKEN-SET START END])
+(string-filter           STRING CHAR/CHAR-SET/PRED [START END])
+(string-delete           STRING CHAR/CHAR-SET/PRED [START END])
+(make-kmp-restart-vector STRING [C= START END])
+                          ^^^^^^
+; SRFI 43
+(vector-copy             VECTOR [START [END]])
+(vector-resize           VECTOR SIZE [FILL])
+(vector-binary-search    VECTOR VALUE CMP)
+(vector-swap!            VECTOR I J)
+(vector-fill!            VECTOR OBJ [START [END]])
+(vector-insert!          VECTOR I OBJ)
+(vector-delete!          VECTOR I [OBJ])
+(vector-rotate!          VECTOR [I])
+                          ^^^^^^
+; SRFI 44
+
+(collection-count     COLLECTION VALUE)
+                       ^^^^^^^^^^
+(bag-contains?          BAG VALUE)
+(bag-add[![!]]          BAG VALUE)
+(bag-insert-left[![!]]  BAG VALUE)
+(bag-insert-right[![!]] BAG VALUE)
+...all the other insertion and mass deletion routines...
+...well, you get the idea, and I'm not sure why I've wasted so much time
+going through all those SRFIs to name a lot of procedure signatures.
+
+&gt; I don't think there is any particularly right or wrong answer to
+&gt; this question, I'm just curious what other people think.
+
+I think it should be (stream-ref STREAM INDEX), especially given what's 
+in
+SRFI 44 for sequences -- (sequence-ref SEQ INDEX [FK]) --.
+
+&gt; Phil
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00001.html">Some Questions</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00003.html">Re: Some Questions</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00001.html">Some Questions</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00003.html">Re: Some Questions</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00002"><strong>Date</strong></a></li>
+<li><a href="threads.html#00002"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

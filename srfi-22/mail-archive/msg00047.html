@@ -1,0 +1,158 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: SRFI&#45;22 &#45;&#45; What won't work -->
+<!--X-From-R13: fuvirefNpp.tngrpu.rqh -->
+<!--X-Date: Tue, 20 Mar 2001 12:01:50 &#45;0600 (CST) -->
+<!--X-Message-Id: 200103201801.NAA03512@mongkok.cc.gt.atl.ga.us -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>SRFI-22 -- What won't work</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00046.html">Date Prev</a>][<a href="msg00048.html">Date Next</a>][<a href="msg00074.html">Thread Prev</a>][<a href="msg00050.html">Thread Next</a>][<a href="maillist.html#00047">Date Index</a>][<a href="threads.html#00047">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>SRFI-22 -- What won't work</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-22@DOMAIN.HIDDEN">srfi-22@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: SRFI-22 -- What won't work</li>
+<li><em>From</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxxxxx</a></li>
+<li><em>Date</em>: Tue, 20 Mar 2001 13:01:49 -0500</li>
+<li><em>Reply-to</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>* Point one: Sharp-bang is not recursive
+----------------------------------------
+    From: Marc Feeley &lt;feeley@xxxxxxxxxxxxxxxx&gt; 
+    Well it could be the executable for the interpreter, but it could also
+    be a shell script that execs the appropriate underlying interpreter
+    (Gambit, Scheme48, etc) after doing some administrative checks (that
+    the user has permission to run the interpreter, logging the use of
+    a Scheme script, or whatever).  For example, I can perfectly imagine
+    Gambit's interpreter to reside in &quot;gsi&quot; and &quot;scheme-script&quot;
+    is a shell script like this
+
+       #! /bin/sh
+       ... parse command line options BUT DON'T CHANGE THE ENVIRONMENT!
+       exec gsi ...
+
+Unfortunately, Marc, that won't work. It ought to, but it doesn't.
+
+The Unix sharp-bang interpreter escape in the exec(2) system call is *not*
+recursive. That is, if you try to exec(2) the file foo with command-line args
+of (&quot;foo&quot;, &quot;-x&quot;) and foo's first few bytes are
+
+      #!/usr/bin/bar -y
+      ...
+
+this will turn into an exec of /usr/bin/bar, with command-line args of
+
+     (&quot;/usr/bin/bar&quot; &quot;-y&quot; &quot;foo&quot; &quot;-x&quot;)
+
+At this point, however, file /usr/bin/bar better be a &quot;real&quot; Unix binary. If
+it, itself, is a file whose first 16 bits are &quot;#!&quot;, the exec() call will lose,
+usually with a rather misleading error msg.
+
+What this means is that &quot;scheme-script&quot; *cannot* itself be a #! script,
+e.g., a /bin/sh shell script. OK?
+
+Scsh deals with this by having /usr/local/bin/scsh be a tiny little trampoline
+program -- native-code executable -- that inserts a few items in front
+of the argv[] values and execs the S48 vm. That allows you to do scripts
+of the form
+    #!/usr/local/bin/scsh -s
+    !#
+    ...
+Had /usr/local/bin/scsh itself been a vm heap image as a script, i.e. a file
+of the form
+    #!/usr/local/lib/scsh/scheme48vm -i
+    ...vm image bits here...
+then you would lose.
+
+-------------------------------------------------------------------------------
+* Point two: 28 is a small number
+---------------------------------
+While I'm at it, let me remind y'all of another losing feature of Unix'
+lame kernel support for #!.
+
+You usually only get 32 chars on that first sharp-bang line, divvied up
+between the sharp, the bang, the interpreter filename and the (optional,
+single) argument. (Linux gives you 127, but 32 is *very* common on other
+systems. I believe Posix only promises you 32, to boot, but i can't swear
+to it, since my Posix spec has gone missing.)
+
+Now, remember that you want to put an absolute path name for the
+interpreter, since you get no path-search help from the true kernel exec().
+Let's do the accounting: 2 chars for sharp &amp; bang. 1 char for the space
+separating the interpreter from the argument. N chars for the argument
+itself. That leaves 29-N chars for the interpreter, so even if you make the
+argument as short as possible -- 1 char -- you still max out at 28 chars for
+the interpreter.
+
+Let's see:
+    /usr/local/bin/scm-ieee-1178-90
+That's 31 characters. Oops.
+
+Now you know why I made scsh's meta-switch a single char. Horrible, isn't it?
+
+My advice: make these program names *short* and highly coded, because the
+binaries may live in various directories, and you'd like to allow as much
+winnage as possible.
+    -Olin
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00050" href="msg00050.html">Re: SRFI-22 -- What won't work</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr. Preprocessor]</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00046.html">Re: Several comments</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00048.html">SRFI-22 -- What won't work (small addition)</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00074.html">New revision of SRFI 22 available</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00050.html">Re: SRFI-22 -- What won't work</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00047"><strong>Date</strong></a></li>
+<li><a href="threads.html#00047"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

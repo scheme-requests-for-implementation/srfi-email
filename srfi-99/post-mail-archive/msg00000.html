@@ -1,0 +1,142 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: two bugs in reference implementation -->
+<!--X-From-R13: Rrevpx Sqqvatgba <qrevpx.rqqvatgbaNtznvy.pbz> -->
+<!--X-Date: Fri,  6 Nov 2009 23:49:00 +0000 (UTC) -->
+<!--X-Message-Id: 1257550003.12014.99.camel@eep -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>two bugs in reference implementation</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[Date Prev][Date Next][Thread Prev][Thread Next][<a href="maillist.html#00000">Date Index</a>][<a href="threads.html#00000">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>two bugs in reference implementation</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-99@DOMAIN.HIDDEN">srfi-99@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: two bugs in reference implementation</li>
+<li><em>From</em>: Derick Eddington &lt;<a href="mailto:derick.eddington@DOMAIN.HIDDEN">derick.eddington@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 06 Nov 2009 15:26:43 -0800</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-99@DOMAIN.HIDDEN">srfi-99@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Dkim-signature</em>: v=1; a=rsa-sha256; c=relaxed/relaxed;        d=gmail.com; s=gamma;        h=domainkey-signature:received:received:subject:from:to:content-type         :date:message-id:mime-version:x-mailer:content-transfer-encoding;        bh=qpdscG/U6R4p63gtSZeXcJcjpDXBM6DCBT2q0D5IJW4=;        b=UvD++rBuYxXd3kB+yXTH9J9ENQjrBxAAn8GT5a/AcTmg7+de1G+5optmwf5VMrqva9         30Nh15PLnvamdpC+SwiB+EVXRzsk/iQHua0ncjODnYJFvAOTkkEBCaWrxN0EirwQwdxD         +4zNfGISNCQa+BMM0umsiugMPyY83pT0NVnM0=</li>
+<li><em>Domainkey-signature</em>: a=rsa-sha1; c=nofws;        d=gmail.com; s=gamma;        h=subject:from:to:content-type:date:message-id:mime-version:x-mailer         :content-transfer-encoding;        b=jxjIAviXxgHKyy40bJhyzyCahv8GBETt2cVO6vK9QwTkfh5gf4M2UAQyiEcRFPFyiO         8zQtnHsi7llZVjIlhkOLDcv1NhzyhP0dS7Re8WRFRw8+X0JD5+me7nGAbveZlrYFpys5         1jU6D1PxMnGFQvv8V+cnxMkLRSSJPI1ioyKo8=</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>I've found and fixed two bugs in the reference implementation currently
+at <a  rel="nofollow" href="http://srfi.schemers.org/srfi-99/srfi-99.sls">http://srfi.schemers.org/srfi-99/srfi-99.sls</a> .
+
+
+First one:
+
+Ikarus Scheme version 0.0.4-rc1+ (revision 1865, build 2009-10-21)
+Copyright (c) 2006-2009 Abdulaziz Ghuloum
+
+&gt; (load &quot;srfi-99.sls&quot;)
+&gt; (import (srfi :99 records))
+&gt; (define-record-type point #T #T (x) (y))
+Exception trapped by debugger.
+ Condition components:
+   1. &amp;assertion
+   2. &amp;who: map
+   3. &amp;message: &quot;not a proper list&quot;
+   4. &amp;irritants: ()
+[t] Trace. [r] Reraise exception. [c] Continue. [q] Quit. [?] Help. 
+&gt;&gt; t
+CALL FRAMES:
+FRAME 0:
+ [0] (map (lambda (fspec field-spec) (cond ((symbol? fspec) (list 'immutable fspec (string-&gt;symbol (string-append type-name-string &quot;-&quot; (symbol-&gt;string fspec))))) ((not (pair? fspec)) (complain)) ((not (list? fspec)) (complain)) ((not (for-all symbol? fspec)) (complain)) ((null? (cdr fspec)) (list 'mutable (car fspec) (string-&gt;symbol (string-append type-name-string &quot;-&quot; (symbol-&gt;string (car fspec)))) (string-&gt;symbol (string-append type-name-string &quot;-&quot; (symbol-&gt;string (car fspec)) &quot;-set!&quot;)))) ((null? (cddr fspec)) (list 'immutable (car fspec) (syntax-car (syntax-cdr field-spec)))) ((null? (cdddr fspec)) (list 'mutable (car fspec) (syntax-car (syntax-cdr field-spec)) (syntax-car (syntax-cdr (syntax-cdr field-spec))))) (else (complain)))) fspecs (syntax-&gt;list #'field-specs))
+     operator: #&lt;procedure map&gt;
+     operands: (#&lt;procedure&gt; ((x) (y)) (#&lt;syntax (x)&gt; . #&lt;syntax ((y))&gt;))
+&gt;&gt; 
+
+
+After fixing the above one by modifying syntax-&gt;list (see the below
+patch), I found the second one:
+
+&gt; (load &quot;srfi-99.sls&quot;)
+&gt; (import (srfi :99 records))
+&gt; (define-record-type point #T #T (x) (y))
+Unhandled exception
+ Condition components:
+   1. &amp;message: &quot;invalid expression&quot;
+   2. &amp;syntax:
+       form: #&lt;syntax #f&gt;
+       subform: #f
+   3. &amp;trace: #&lt;syntax #&lt;syntax #f&gt;&gt;
+&gt; 
+
+The bug with this one is doing datum-&gt;syntax on syntax objects.  I fixed
+it by modifying frob (see the below patch).
+
+
+--- srfi-99.sls	2009-11-06 15:11:20.000000000 -0800
++++ srfi-99.sls--Derick	2009-11-06 15:09:05.000000000 -0800
+@@ -223,8 +223,10 @@
+                    (cons (frob (car x)) (frob (cdr x))))
+                   ((vector? x)
+                    (vector-map frob x))
++                  ((symbol? x)
++                   (datum-&gt;syntax tname x))
+                   (else
+-                   (datum-&gt;syntax tname x))))
++                   x)))
+ 
+           #`(#,(frob #'define-record-type-helper)
+              #,(frob tname)
+@@ -258,9 +260,7 @@
+       (define (syntax-&gt;list x)
+         (syntax-case x ()
+          (()
+-          x)
+-         ((x0)
+-          x)
++          '())
+          ((x0 . x1)
+           (cons #'x0 (syntax-&gt;list #'x1)))))
+
+
+ 
+-- 
+: Derick
+----------------------------------------------------------------
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00000"><strong>Date</strong></a></li>
+<li><a href="threads.html#00000"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

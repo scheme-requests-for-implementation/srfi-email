@@ -1,0 +1,197 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: SRFI&#45;77 with more than one flonum representation -->
+<!--X-From-R13: Oyna Ingfba <n.jngfbaNnfgebfzb.hanz.zk> -->
+<!--X-Date: Mon,  3 Jul 2006 18:16:46 +0200 (MST) -->
+<!--X-Message-Id: 44A7455F.10205@astrosmo.unam.mx -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: E1Fv0YU&#45;0000mn&#45;OV@adara.ccs.neu.edu -->
+<!--X-Reference: 44A33752.9000906@astrosmo.unam.mx -->
+<!--X-Reference: 20060630150334.GC31002@ccil.org -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: SRFI-77 with more than one flonum representation</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00477.html">Date Prev</a>][<a href="msg00479.html">Date Next</a>][<a href="msg00476.html">Thread Prev</a>][<a href="msg00491.html">Thread Next</a>][<a href="maillist.html#00478">Date Index</a>][<a href="threads.html#00478">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: SRFI-77 with more than one flonum representation</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: John Cowan &lt;<a href="mailto:cowan@DOMAIN.HIDDEN">cowan@xxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: SRFI-77 with more than one flonum representation</li>
+<li><em>From</em>: Alan Watson &lt;<a href="mailto:a.watson@DOMAIN.HIDDEN">a.watson@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 02 Jul 2006 00:02:39 -0400</li>
+<li><em>Cc</em>: William D Clinger &lt;<a href="mailto:will@DOMAIN.HIDDEN">will@xxxxxxxxxxx</a>&gt;, <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a>,	<a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20060630150334.GC31002@DOMAIN.HIDDEN">20060630150334.GC31002@xxxxxxxx</a>&gt;</li>
+<li><em>Organization</em>: Centro de Radioastronom&#xED;a y Astrof&#xED;sica UNAM</li>
+<li><em>References</em>: &lt;<a href="mailto:E1Fv0YU-0000mn-OV@DOMAIN.HIDDEN">E1Fv0YU-0000mn-OV@xxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:44A33752.9000906@DOMAIN.HIDDEN">44A33752.9000906@xxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20060630150334.GC31002@DOMAIN.HIDDEN">20060630150334.GC31002@xxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mozilla Thunderbird 1.0.7 (X11/20051113)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<tt>John Cowan asked me to justify why I want support for different 
+</tt><tt>precision floating-point numbers in Scheme. I set out to explain the 
+</tt><tt>problem I am trying to solve and why I thought I needed single-precision 
+</tt><tt>arithmentic, but in the end I have managed to convince myself that there 
+</tt><tt>is a better solution.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>First of all, I agree that single-precision and double-precision 
+</tt><tt>arithmetic are now essentially indisinguishably similar in speed. 
+</tt><tt>Indeed, when I write scalar code, I use double precision.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>However, I also write a fair bit of code that essentially takes vectors 
+</tt><tt>of single-precision arguments, performs scalar arithmetic on 
+</tt><tt>corresponding members, and produces a vector of single-precision 
+</tt><tt>results. The vectors are single precision either because this is 
+</tt><tt>external data in a specified format or to be more compact in memory.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>Now, can we agree here that my reasons for using single-precision 
+</tt><tt>vectors for arguments and results are valid? (I concede that such 
+</tt><tt>vectors are beyond the scope of SRFI 77.) If we can, then we can focus 
+</tt><tt>on the scalar calculation that takes the arguments and produces the result.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>Let us suppose that the result calculated using single-precision 
+</tt><tt>operations on some specific arguments is S, that the result calculated 
+</tt><tt>using double-precision operations on the same arguments (converted to 
+</tt><tt>double precision) is D, and that the result of truncating D to single 
+</tt><tt>precision and converting back to double precision is T.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>The problem is that there are relations that are satisfied by S or T but 
+</tt><tt>not by D. For example, if I multiply the largest finite single-precision 
+</tt><tt>number by 2 in single precision, I get Inf, but if I do so in double 
+</tt><tt>precision I get a finite number. If I then truncate this finite number 
+</tt><tt>to single precision and convert back to double precision, I get a Inf. 
+</tt><tt>There are similar problems with inequalities that are satisfied by S or 
+</tt><tt>T but not D or vice versa because of the extra precision in D.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>So, for example, I could calculate D, and check that it satisfies a 
+</tt><tt>certain relation or inequality, write it to the single-precision vector, 
+</tt><tt>read it back in, giving T, and then find that it did not satisfy the 
+</tt><tt>same relation or inequality. This can lead to real bugs that are very 
+</tt><tt>difficult to find, believe me.[*]
+</tt><pre style="margin: 0em;">
+
+</pre><tt>The solutions to this problem are to allow me to calculate either S or 
+</tt><tt>T. To calculate S, I need the ability to specify that certain operations 
+</tt><tt>should be carried out in single-precision. To calculate T, I need an 
+</tt><tt>explicit &quot;convert to single-precision and back to double-precision&quot; 
+</tt><tt>operation.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>In practice, calculating T is less convenient for programers; they have 
+</tt><tt>to remember to do the explicit conversion. However, it is much less of a 
+</tt><tt>burden on implementors than forcing them to provide single-precision 
+</tt><tt>arithmetic. Furthermore, it can be accomodated quite naturally even in 
+</tt><tt>Schemes that do everything in double precision.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>In the context of SRFI 77, it would mean adding a function to &quot;convert a 
+</tt><tt>flonum to a single-precision format appropriate for the implementation 
+</tt><tt>and then back to a flonum&quot;. I suppose SRFI 77 should also define these 
+</tt><tt>for double-precision too, in case the default flonum precision is 
+</tt><tt>extended double, as it might be on some processors.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>Does this seem like a reasonable compromise? It gives the programmer a 
+</tt><tt>means to use fast SRFI 77 flonum arithmetic but maintain some control of 
+</tt><tt>the precision of results. It asks the implementor to implement two 
+</tt><tt>simple functions in addition to those already in SRFI 77.
+</tt><pre style="margin: 0em;">
+
+Regards,
+
+Alan
+
+</pre><tt>[*] One can make the argument that this &quot;excess precision&quot; problem is 
+</tt><tt>esoteric and not worth dealing with in Scheme. I would suggest that it 
+</tt><tt>is real, especially since I have been bitten by it in a real program. 
+</tt><tt>This is not a toy program, but one that has been used to produce 
+</tt><tt>radiation transfer calculations for about a dozen papers. (It's 
+</tt><tt>basically the program that got me tenure.) It's written in C, and had a 
+</tt><tt>loop embedded in a loop. The same inequality appeared as part of the 
+</tt><tt>inner loop termination criterion and as part of the outer loop 
+</tt><tt>termination criterion. Despite all variable being declared as double, 
+</tt><tt>the compiler decided to calculate one in long double precision and the 
+</tt><tt>other in double precision. Thus, instead of both inequalities giving the 
+</tt><tt>same result, there were cases where they could give different results. 
+</tt><tt>This is legal C89. It took me days to track down and understand the bug, 
+</tt><tt>days during which my grip on sanity was considerably loosened. I fixed 
+</tt><tt>it by using a compiler switch that forced the compiler to truncate 
+</tt><tt>temporary results to double precision.
+</tt><pre style="margin: 0em;">
+--
+Dr Alan Watson
+Centro de Radioastronom&#xED;a y Astrof&#xED;sica
+Universidad Astron&#xF3;mico Nacional de M&#xE9;xico
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00491" href="msg00491.html">Re: SRFI-77 with more than one flonum representation</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00466" href="msg00466.html">Re: SRFI-77 with more than one flonum representation</a></strong>
+<ul><li><em>From:</em> William D Clinger</li></ul></li>
+<li><strong><a name="00474" href="msg00474.html">Re: SRFI-77 with more than one flonum representation</a></strong>
+<ul><li><em>From:</em> Alan Watson</li></ul></li>
+<li><strong><a name="00476" href="msg00476.html">Re: SRFI-77 with more than one flonum representation</a></strong>
+<ul><li><em>From:</em> John Cowan</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00477.html">ambiguous sign notation support?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00479.html">Re: SRFI-77 with more than one flonum representation</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00476.html">Re: SRFI-77 with more than one flonum representation</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00491.html">Re: SRFI-77 with more than one flonum representation</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00478"><strong>Date</strong></a></li>
+<li><a href="threads.html#00478"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

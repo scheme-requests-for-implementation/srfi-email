@@ -1,0 +1,161 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Choose&#45;Your&#45;Own&#45;Ellipsis -->
+<!--X-From-R13: Oynonfgre Brgebsfxl <nyNcrgebsfxl.bet> -->
+<!--X-Date: Thu, 16 Oct 2003 00:10:38 +0200 (DFT) -->
+<!--X-Message-Id: 200310152207.PAA20937@radish.petrofsky.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 6B28A95F&#45;FF4E&#45;11D7&#45;96A9&#45;000A95CCCEE4@evdev.ath.cx -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Choose-Your-Own-Ellipsis</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00012.html">Date Prev</a>][<a href="msg00014.html">Date Next</a>][<a href="msg00012.html">Thread Prev</a>][<a href="msg00016.html">Thread Next</a>][<a href="maillist.html#00013">Date Index</a>][<a href="threads.html#00013">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Choose-Your-Own-Ellipsis</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:campbell@DOMAIN.HIDDEN">campbell@xxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Choose-Your-Own-Ellipsis</li>
+<li><em>From</em>: Alabaster Petrofsky &lt;<a href="mailto:al@DOMAIN.HIDDEN">al@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 15 Oct 2003 15:07:07 -0700</li>
+<li><em>Cc</em>: <a href="mailto:srfi-46@DOMAIN.HIDDEN">srfi-46@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-46@DOMAIN.HIDDEN">srfi-46@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:6B28A95F-FF4E-11D7-96A9-000A95CCCEE4@DOMAIN.HIDDEN">6B28A95F-FF4E-11D7-96A9-000A95CCCEE4@xxxxxxxxxxxx</a>&gt; (message from	Taylor Campbell on Wed, 15 Oct 2003 16:30:30 -0400)</li>
+<li><em>References</em>: &lt;<a href="mailto:6B28A95F-FF4E-11D7-96A9-000A95CCCEE4@DOMAIN.HIDDEN">6B28A95F-FF4E-11D7-96A9-000A95CCCEE4@xxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; From: Taylor Campbell &lt;campbell@xxxxxxxxxxxx&gt;
+
+&gt; In improving Andre van Tonder's monadic CPS macro stuff, I wrote an
+&gt; MSYNTAX-RULES.
+
+&gt; But I found this problem: should the user not specify the ellipsis,
+&gt; and let it default to ..., how will MSYNTAX-RULES deal with it?
+
+Your code is too fragmentary for me to understand what you're trying
+to do.  You talk about expanding into a SYNTAX-RULES form, but in
+r5rs, any macro use must ultimately expand into an expression,
+definition, or BEGIN form.  I guess what you're trying to write is
+something like this:
+
+  (define-syntax define-msyntax-rules
+    (syntax-rules ()
+      ((define-msyntax-rules name ?ellipsis ?literals
+	 ((?ignored . ?pattern)
+	  (?macro . ?args))
+	 ...)
+       (define-syntax name
+	 (syntax-rules ?ellipsis ?literals
+	   ((?ignored (k ?ellipsis) . ?pattern)
+	    (?macro (k ?ellipsis) . ?args))
+	   ...)))))
+
+  I
+&gt; Am I missing some macro magic here, is there a problem with choose-
+&gt; your-own-ellipsis, or should the implicit ... stuff be thrown away?
+&gt; The last option would break lots of macros, and it would look rather
+&gt; ugly to me, but I can't think of a better way to solve this.
+
+If we specified that syntax-rules from now on requires an ellipsis
+argument, then that would of course break the entire existing body of
+syntax-rules macros.
+
+However, if you specify that define-msyntax-rules requires an ellipsis
+argument, I don't think there's any body of define-msyntax-rules code
+out there to be worried about breaking.
+
+Nevertheless, if you want define-msyntax-rules's ellipsis argument to
+be optional, with the implicit (and essentially non-hygienic) choice
+of &quot;...&quot; when it is missing, you could do this:
+
+  (define-syntax define-msyntax-rules
+    (syntax-rules ::: ()
+      ((define-msyntax-rules name (?literal :::)
+	 ((?ignored . ?pattern)
+	  (?macro . ?args))
+	 :::)
+       (define-syntax name
+	 (syntax-rules (?literal :::)
+	   ((?ignored (k ...) . ?pattern)
+	    (?macro (k ...) . ?args))
+	   :::)))
+      ((define-msyntax-rules name ?ellipsis ?literals
+	 ((?ignored . ?pattern)
+	  (?macro . ?args))
+	 :::)
+       (define-syntax name
+	 (syntax-rules ?ellipsis ?literals
+	   ((?ignored (k ?ellipsis) . ?pattern)
+	    (?macro (k ?ellipsis) . ?args))
+	   :::)))))
+
+
+&gt; What are some thoughts on non-linear patterns and guards
+
+I think they are probably incompatible with the title of the SRFI,
+&quot;Basic SYNTAX-RULES Extensions&quot;.
+
+-al
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00016" href="msg00016.html">Re: Choose-Your-Own-Ellipsis</a></strong>
+<ul><li><em>From:</em> Taylor Campbell</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00012" href="msg00012.html">Re: Choose-Your-Own-Ellipsis</a></strong>
+<ul><li><em>From:</em> Taylor Campbell</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00012.html">Re: Choose-Your-Own-Ellipsis</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00014.html">Re: Bidirectionality and other comments</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00012.html">Re: Choose-Your-Own-Ellipsis</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00016.html">Re: Choose-Your-Own-Ellipsis</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00013"><strong>Date</strong></a></li>
+<li><a href="threads.html#00013"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

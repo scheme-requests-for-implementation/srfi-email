@@ -1,0 +1,196 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: no constants please -->
+<!--X-From-R13: Fbz Zbeq <ybeqNrzs.arg> -->
+<!--X-Date: Mon,  5 Jan 2004 01:50:48 +0100 (NFT) -->
+<!--X-Message-Id: 200401050116.RAA21314@morrowfield.regexps.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: E1AdHCH&#45;0003c0&#45;00@mail.mumble.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: no constants please</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00147.html">Date Prev</a>][<a href="msg00149.html">Date Next</a>][<a href="msg00147.html">Thread Prev</a>][<a href="msg00152.html">Thread Next</a>][<a href="maillist.html#00148">Date Index</a>][<a href="threads.html#00148">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: no constants please</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:kelsey@DOMAIN.HIDDEN">kelsey@xxxxxxx</a></li>
+<li><em>Subject</em>: Re: no constants please</li>
+<li><em>From</em>: Tom Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 4 Jan 2004 17:16:40 -0800 (PST)</li>
+<li><em>Cc</em>: <a href="mailto:tb@DOMAIN.HIDDEN">tb@xxxxxxxxxx</a>, <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:E1AdHCH-0003c0-00@DOMAIN.HIDDEN">E1AdHCH-0003c0-00@xxxxxxxxxxxxxxx</a>&gt; (message from Richard Kelsey	on Sun, 04 Jan 2004 17:58:13 -0500)</li>
+<li><em>References</em>: &lt;<a href="mailto:E1AdHCH-0003c0-00@DOMAIN.HIDDEN">E1AdHCH-0003c0-00@xxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+    &gt; From: Richard Kelsey &lt;kelsey@xxxxxxx&gt;
+
+
+    &gt;    But the problems with the current FFI include issues with
+    &gt;    single-threaded, no-async-issue Scheme implementations including:
+
+    &gt;    ~ don't handle read/write barriers properly
+    &gt;    ~ don't handle transient root set members properly
+
+    &gt; You haven't convinced me on these points.  You have given examples
+    &gt; of misuses of the FFI, in which values are left in unprotected
+    &gt; locations during a call to a possibly-GCing procedure.  
+
+Sorry for the confusion.  I did indeed miss that the SRFI requires:
+
+	Note that the C function, if it allocates Scheme heap storage,
+	must register its parameters with the garbage collector.
+
+which undermines the specific examples I gave.   Here is an example
+of a read/write barrier problem that I believe is based on code that
+is &quot;correct&quot; under the draft specification:
+
+
+	{
+          SCHEME_DECLARE_GC_PROTECT(2);
+          scheme_value x = SCHEME_UNSPECIFIC;
+          scheme_value y = SCHEME_UNSPECIFIC;
+
+          SCHEME_GC_PROTECT_2 (x, y);
+
+          [.... set y to some heap-allocated value ....];
+
+          [.... do some possibly-GC-causing stuff ....];
+
+          /*A*/
+
+          x = y;
+
+          [.... do some possibly-GC-causing stuff ....];
+
+          /*B*/
+
+          SCHEME_&lt;any&gt; (x);
+
+          SCHEME_GC_UNPROTECT ();
+        }
+
+
+The error occurs in an incremental copying collector which believes 
+at point /*A*/ that it has updated `x' but not yet 'y' and at point
+/*B*/ that it has reached the end of a copy cycle.
+
+The old (pre-copying) reference to the value of `y' has been copied to
+`x' -- too late for `x' to be updated.   When `SCHEME_&lt;any&gt;' is
+called, it is passed a bogus value.
+
+Reading or writing to or from root values (or any other Scheme
+location) in an incremental, copying collector requires a read or
+write barrier in order to preserve the tri-color invarient -- but the
+naked C assignment `x = y' affords no such barrier (hence, permits the
+invariant to be violated).
+
+In order to preserve the invariant in the face of C's assignment
+operator, at least all GC_PROTECT_GLOBAL locations and all GC_PROTECT
+automatic variables must be, whenever such an assignment is possible,
+the same color.   Unless the draft is modified to prohibit assignments
+of the form `x = *z' where `z' is a `scheme_value *' that may point to
+a GCPROtected automatic in some caller's frame -- then _all_
+GCPROtected locations must be of the same GC color whenever a foreign
+function is executing code between GC points.
+
+Either way, the FFI is basically incompatible with incremental garbage
+collection.
+
+A &quot;philosophical&quot; way to look at this might be:  with
+SCHEME_DECLARE_GC_PROTECT and SCHEME_GC_PROTECT_&lt;n&gt; and
+SCHEME_GC_PROTECT_GLOBAL you are letting FFI-using code extend the
+Scheme heap, extend the GC's working storage, _and_ giving the C
+compiler license to read and write the Scheme heap directly.  In
+fairness, you're trying hard to limit what the C compiler can do while
+reading and writing the Scheme heap by taking advantage of sequence
+points and declaring that some legal C code over these types is an
+illegal use -- but examples like the above show that those limitations
+are insufficient.
+
+In contrast, with Pika-style conventions, you are letting FFI-using
+code extend the Scheme heap, extend the GC's working storage -- but
+_not_ giving the C compiler license to read and write the scheme heap
+at all, nor sanctioning any FFI-using C code which does so.
+
+Given the kinds of restrictions you are imposing on what counts as
+correct FFI-using code, plus the restriction that parameters must be
+GCPROtected in functions that may cause GC, I have serious doubts that
+Pika-conventions have any real overhead compared to what you are
+envisioning.  The number of stores and loads comes out the same
+(Pika might even come out ahead).  Pika is simply less error
+prone and more general.
+
+
+-t
+
+(You also talk about threads and interruption points related to them
+but, of course, that doesn't address truly concurrent threads.)
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00152" href="msg00152.html">Re: no constants please</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00153" href="msg00153.html">Re: no constants please</a></strong>
+<ul><li><em>From:</em> Richard Kelsey</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00147" href="msg00147.html">Re: no constants please</a></strong>
+<ul><li><em>From:</em> Richard Kelsey</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00147.html">Re: no constants please</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00149.html">I don't believe in &quot;(may GC)&quot;</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00147.html">Re: no constants please</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00152.html">Re: no constants please</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00148"><strong>Date</strong></a></li>
+<li><a href="threads.html#00148"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

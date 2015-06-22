@@ -1,0 +1,140 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: What #,(foo) does tell, and what it does not -->
+<!--X-From-R13: Dvpuneq Yryfrl <xryfrlNerfrnepu.aw.arp.pbz> -->
+<!--X-Date: Thu, 7 Oct 1999 09:35:56 &#45;0500 (CDT) -->
+<!--X-Message-Id: 199910071435.KAA20158@kima.nj.nec.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 199910062056.QAA01741@trex.IRO.UMontreal.CA -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: What #,(foo) does tell, and what it does not</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00010.html">Date Prev</a>][<a href="msg00012.html">Date Next</a>][<a href="msg00010.html">Thread Prev</a>][<a href="msg00012.html">Thread Next</a>][<a href="maillist.html#00011">Date Index</a>][<a href="threads.html#00011">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: What #,(foo) does tell, and what it does not</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: What #,(foo) does tell, and what it does not</li>
+<li><em>From</em>: Richard Kelsey &lt;<a href="mailto:kelsey@DOMAIN.HIDDEN">kelsey@xxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 7 Oct 1999 10:35:29 -0400</li>
+<li><em>Cc</em>: <a href="mailto:oleg@DOMAIN.HIDDEN">oleg@xxxxxxxxx</a>, <a href="mailto:srfi-10@DOMAIN.HIDDEN">srfi-10@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:199910062056.QAA01741@DOMAIN.HIDDEN">199910062056.QAA01741@xxxxxxxxxxxxxxxxxxxxx</a>&gt; (message from Marc	Feeley on Wed, 6 Oct 1999 16:56:47 -0400)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>   Date: Wed, 6 Oct 1999 16:56:47 -0400
+   From: Marc Feeley &lt;feeley@xxxxxxxxxxxxxxxx&gt;
+   References:  &lt;199910061900.TAA27600@xxxxxxxxxxxxxx&gt;
+
+   &gt; Now consider
+   &gt;         (cond-expand
+   &gt;          ((and srfi-4 srfi-10 srfi-10-4)
+   &gt;           (define sample-vector '#,(f32 1.0 2.0 3.0))))
+
+   Note that mixing &quot;cond-expand&quot; and &quot;#,(...)&quot; as in this example is not
+   a good practice.  That is because &quot;#,&quot; operates at read-time and
+   cond-expand operates later, at macro-expansion time.  So the
+   constructor for f32 will be executed regardless of the presence of
+   srfi-4, srfi-10, and srfi-10-4 (and if &quot;#,&quot; is not supported by the
+   reader, you will get a reader error).
+
+Any SRFI that extends Scheme's external syntax has this problem.
+It can be avoided when using the configuration language in SRFI-7 by
+using a `files' clause to delay reading the code until after the
+feature dispatch has been done.
+
+(program
+  (feature-cond ((and srfi-4 srfi-10 srfi-10-4)
+                 (files &quot;good-buddy.scm&quot;))))
+
+The file `good-buddy.scm' can then use #,(f32 ...), assuming that
+is what SRFI-10-4 provides.
+
+(This would not work in the implementation given in the SRFI-7
+ document, which just uses READ to read the contents of files.
+ Making it work is straightforward.)
+
+   The &quot;#,&quot; mechanism requires the user to understand yet another level
+   of compilation and the time when it is performed (and the model is
+   already not that simple if you consider forms like &quot;(load ...)&quot;,
+   &quot;(include ...)&quot;, and &quot;(eval ...)&quot;, and the REPL).
+
+I am no longer at all sure that the intent of SRFI-10 is to provide
+a mechanism for read-time evaluation.
+
+One reading of SRFI-10 and the ensuing discussion is that SRFI-10
+is not proposing an extension of Scheme but rather a convention for
+future SRFIs (footnote 1).  What is being proposed is that the
+following rule be added to the grammar for external representations
+(see section 7.1.2 in R5RS):
+
+ &lt;compound datum&gt;  --&gt;  #,(&lt;symbol&gt; &lt;datum&gt;*)
+
+and that future SRFIs that contain new read syntax for values use
+this syntax with an appropriate symbol.
+
+Seems reasonable to me, if in fact it is what SRFI-10 is about.
+
+                                     -Richard Kelsey
+
+
+Footnote 1: This would make SRFI-10 a `Scheme Request For Requests For
+Implementation', or S(RF)2I in RnRS notation.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00010" href="msg00010.html">Re: What #,(foo) does tell, and what it does not</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00010.html">Re: What #,(foo) does tell, and what it does not</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00012.html">Re: What #,(foo) does tell... include vs. load</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00010.html">Re: What #,(foo) does tell, and what it does not</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00012.html">Re: What #,(foo) does tell... include vs. load</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00011"><strong>Date</strong></a></li>
+<li><a href="threads.html#00011"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

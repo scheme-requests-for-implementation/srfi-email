@@ -1,0 +1,150 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Making the new let easier to stomach -->
+<!--X-From-R13: fcreoreNWasbezngvx.Gav&#45;Fhrovatra.Rr ([vpunry Ecreore M[e. Bercebprffbe]) -->
+<!--X-Date: Tue, 23 Feb 1999 04:54:34 &#45;0600 (CST) -->
+<!--X-Message-Id: y9ld831jspt.fsf@brabantio.informatik.uni&#45;tuebingen.de -->
+<!--X-Content-Type: multipart/mixed -->
+<!--X-Reference: y9liudagxae.fsf@brabantio.informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: 36C36F54.F9477F6B@mail.webspan.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Making the new let easier to stomach</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00001.html">Date Prev</a>][<a href="msg00003.html">Date Next</a>][<a href="msg00001.html">Thread Prev</a>][<a href="msg00003.html">Thread Next</a>][<a href="maillist.html#00002">Date Index</a>][<a href="threads.html#00002">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Making the new let easier to stomach</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Andy Gaynor &lt;<a href="mailto:silver@DOMAIN.HIDDEN">silver@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Making the new let easier to stomach</li>
+<li><em>From</em>: <a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a> (Michael Sperber [Mr. Preprocessor])</li>
+<li><em>Date</em>: 23 Feb 1999 11:54:22 +0100</li>
+<li><em>Cc</em>: <a href="mailto:srfi-5@DOMAIN.HIDDEN">srfi-5@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: Andy Gaynor's message of &quot;Fri, 12 Feb 1999 00:01:24 +0000&quot;</li>
+<li><em>References</em>: &lt;<a href="mailto:y9liudagxae.fsf@DOMAIN.HIDDEN">y9liudagxae.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:36C36F54.F9477F6B@DOMAIN.HIDDEN">36C36F54.F9477F6B@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Sender</em>: <a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt;&gt;&gt;&gt;&gt; &quot;Andy&quot; == Andy Gaynor &lt;silver@xxxxxxxxxxxxxxxx&gt; writes:
+
+Andy&gt; Heh heh, R5RS template-style macros?  See bottom.  I wouldn't be surprised if
+Andy&gt; a template wizard were able to optimize it a bit, so I'd appreciate it if
+Andy&gt; someone gave it a sound thrashing.  Not heavily tested, but it appears to work.
+
+This looks good.  I'd personally replace some of the dotted pairs by
+ellipsis constructions, as attached.  It would be good if one version
+or the other were part of the SRFI.  Let me know if you agree, and
+I'll stick it into the draft.
+
+</pre><pre>(define-syntax let
+  (syntax-rules ()
+
+    ;; In the (let 0 name normals rest arguments body bindings) form:
+    ;;     name:      The name to assign to the lambda, or #f if none.
+    ;;     normals:   The normal parameters of the lambda.
+    ;;     rest:      The rest parameter for the lambda, or () if none.
+    ;;                Using () saves a rule for (normal ... rest ...).
+    ;;     arguments: The arguments to the lambda.
+    ;;     body:      The body of the lambda.
+    ;;     bindings:  Bindings remaining to be processed.
+
+    ;; Terminating cases
+    ;; No name, use an anonymous lambda call
+    ((let 0 #f (normal ...) (rest ...) (argument ...) (body ...) ())
+     ((lambda (normal ... rest ...) body ...) argument ...))
+    ;; Name, use a letrec and call
+    ((let 0 name (normal ...) (rest ...) (argument ...) (body ...) ())
+     (letrec ((name (lambda (normal ... rest ...) body ...))) (name argument ...)))
+
+    ;; Deconstructing bindings
+    ;; Shuffle a normal binding
+    ((let 0 name (normal ...) () (argument ...) body ((variable value) binding ...))
+     (let 0 name (normal ... variable) () (argument ... value) body (binding ...)))
+    ;; Shuffle a rest binding (its values are shuffled below)
+    ((let 0 name normals () arguments body (rest-variable rest-value ...))
+     (let 0 name normals rest-variable arguments body (rest-value ...)))
+    ;; Shuffle a rest value
+    ((let 0 name normals rest (argument ...) body (rest-value1 rest-value2 ...))
+     (let 0 name normals rest (argument ... rest-value1) body (rest-value2 ...)))
+
+    ;; Top-level interface
+    ;; Straight let, no bindings
+    ((let () body ...)
+     (let 0 #f () () () (body ...) ()))
+    ;; Straight let, bindings
+    ((let ((variable value) bindings ...) body ...)
+     (let 0 #f (variable) () (value) (body ...) (bindings ...)))
+    ;; Signature-style named let
+    ((let (name bindings ...) body ...)
+     (let 0 name () () () (body ...) (bindings ...)))
+    ;; Non-signature-style named let
+    ((let name bindings body ...)
+     (let 0 name () () () (body ...) bindings))))
+</pre><pre>
+-- 
+Cheers =8-} Mike
+Friede, V&#xF6;lkerverst&#xE4;ndigung und &#xFC;berhaupt blabla
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00003" href="msg00003.html">Re: Making the new let easier to stomach</a></strong>
+<ul><li><em>From:</em> Andy Gaynor</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00000" href="msg00000.html">Making the new let easier to stomach</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr. Preprocessor]</li></ul></li>
+<li><strong><a name="00001" href="msg00001.html">Re: Making the new let easier to stomach</a></strong>
+<ul><li><em>From:</em> Andy Gaynor</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00001.html">Re: Making the new let easier to stomach</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00003.html">Re: Making the new let easier to stomach</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00001.html">Re: Making the new let easier to stomach</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00003.html">Re: Making the new let easier to stomach</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00002"><strong>Date</strong></a></li>
+<li><a href="threads.html#00002"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

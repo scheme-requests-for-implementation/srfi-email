@@ -1,0 +1,294 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Fundamental design flaws -->
+<!--X-From-R13: Fbz Zbeq <ybeqNrzs.arg> -->
+<!--X-Date: Wed, 29 Oct 2003 18:46:14 +0100 (NFT) -->
+<!--X-Message-Id: 200310291758.JAA26893@morrowfield.regexps.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Fundamental design flaws</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00277.html">Date Prev</a>][<a href="msg00279.html">Date Next</a>][<a href="msg00310.html">Thread Prev</a>][<a href="msg00283.html">Thread Next</a>][<a href="maillist.html#00278">Date Index</a>][<a href="threads.html#00278">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Fundamental design flaws</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:scgmille@DOMAIN.HIDDEN">scgmille@xxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Fundamental design flaws</li>
+<li><em>From</em>: Tom Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 29 Oct 2003 09:58:39 -0800 (PST)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+By the way, am I reading the reference implementation correctly 
+to conclude that:
+
+	(define x (list 1 2 3)
+
+	(collection-&gt;list x)
+        =&gt; (1 2 3)
+
+but
+
+	(define x (list =? '(a . b) '(c . d)))
+
+	(collection-&gt;list x)
+        =&gt; ((a . b) (c . d))
+
+So, for lists, the behavior of COLLECTION-&gt;LIST changes depending on
+the types of values stored in the list?
+
+Here's a detailed review of the first two sections:
+
+
+
+&gt; Abstract
+
+&gt; A Collections API which defines a common naming scheme and set of
+&gt; operations for creating, accessing, and manipulating common
+&gt; datastructures in Scheme.  The API defines accessors, a common
+&gt; protocol for value access via a generic enumerator, and functions for
+&gt; inter-datastructure cooperation.
+&gt; Finally, a concrete specification of a compliant set of operators
+&gt; for the standard Scheme heterogenous datastructures (lists and
+&gt; vectors) and for the homogeneous Scheme string is provided.
+
+* confusing wording
+
+  Mutation isn't mentioned there and &quot;inter-datastructure cooperation&quot; 
+  doesn't mean much.
+
+  Saying that &quot;the API defines [...] a common protocol for value access
+  via a generic enumerator&quot; is misleading: the proposal in fact defines
+  procedures (not protocols) which perform enumeration of the values in
+  any collection.  I'm not sure how you use the word &quot;protocol&quot; but in
+  this context, I would take it to mean that the proposal defines a way
+  to extend the enumeration generics for new collection types --
+  something that the srfi does _not_ define.
+
+  Although I see later that some operations in the interface accept
+  multiple collection arguments of possibly different collection types,
+  when reading the abstract I have no idea what is meant by
+  &quot;inter-datastructure cooperation&quot;.
+
+
+* unclear &quot;need for&quot; this SRFI and incomplete results
+
+  Most importantly, the abstract doesn't mention the need for the
+  proposal: it doesn't say what problem it aims to solve.  This concerns
+  me because while there are some common needs that I would hope a
+  collections srfi will address, the abstract doesn't suggest that this
+  srfi will.  
+
+
+** is it an extensible, abstract API for collections?
+
+  I _think_ that the intent of the SRFI is roughly this (but see below
+  for an alternative):
+
+    We recognize that there are several abstract data types, all of
+    which are kinds of collections (unordered sets of value, sets of
+    values, dictionaries, and so forth).  Each of these varieties of
+    collection permits many possible implementations, often
+    differentiated by distinct performance trade-offs.  
+
+    It is desirable to be able to write programs which manipulate
+    collections using only abstract interfaces: so that the programs can
+    operate on many different specific implementations of the
+    collections (even during a single run).  
+
+    Given such an abstract interface, it is then necessary to provide a
+    standard mechanism by which programs may provide new implementations  [*]
+    of the abstract interfaces to collections.
+
+    This SRFI defines abstract interfaces to a small variety of common
+    collection types and an interface for making new implementations 
+    of that inteface available.
+
+    Additionally, for each abstract collection type it defines, this
+    SRFI defines constructors for specific implementations which all	[**]
+    implementations are required to provide.
+  
+
+  44 concerns me with respect to the paragraph marked [*].  It appears
+  to me that 44 does not attempt to solve that problem.
+
+  44 concerns me with respect to the paragraph maked [**].  It appears
+  to me that 44 does that job &quot;half way&quot;.
+
+  Because of those two problems it would be a practical impossibility
+  for someone to write a future srfi, defining a new collection type
+  implementation which extends the abstract interfaces of 44, and
+  provide a reference implementation which is portable to all systems
+  that support 44.   That seems to me like quite a surprising property
+  for a fundamental data structures srfi to have.
+
+  Similarly, and also because of those two problems, it would be a
+  practical impossibility for someone to write a program, portable to
+  all systems that provide 44, which adds new collection types.
+
+  In effect, then, 44 gives us only:
+
+  1) a large abstract interface to collections parts of which are
+     neither required by the srfi to be useful or to be portably
+     implementable on systems providing 44
+
+  2) a not-portably-extensible interface to a small set of 
+     &quot;Scheme collections&quot;
+
+
+** or is it a non-extensible API for certain implementations of collections?
+
+  Or, perhaps the intent of the SRFI is roughly this (loosely
+  following wording from the chapter &quot;Sequences&quot; in &quot;Common Lisp&quot; by
+  Guy L. Steele):
+
+    The standard Scheme types list, vector, and string have very
+    different natures and uses, but they also have some aspects in
+    common.  For example, each contains an ordered list of elements.
+
+    Because of those common aspects, it is useful to provide a set of
+    operations which operate on data of any of those types
+    generically.  This SRFI defines procedures which do so.
+
+  I think it's unlikely that that's the actual intent: the srfi talks
+  about &quot;dictionaries&quot; for example.    If the intent were revised so
+  that the above was the goal, it could then be made far smaller and 
+  simpler, and more obviously implementable.
+
+
+
+&gt;       Issues
+
+&gt;       Several functions in this SRFI are required to take arbitrary
+&gt;       collections or major collection subtypes as input. This
+&gt;       requires that the function in question be able to determine
+&gt;       the specific type of the collection and dispatch to an
+&gt;       appropriate implementation.
+
+&gt;       As standard Scheme lacks the ability to automatically dispatch
+&gt;       on different function behaviors based on the types of
+&gt;       arguments, it is difficult to devise a portable implementation
+&gt;       of this SRFI which allows arbitrary future collections. 
+
+I don't think that that's a good description of the issue.
+
+Standard Scheme provides no means by which to create new types of
+objects which are disjoint from those listed in section 3.2 of R5RS.
+Among the disjoint types it does provide, it provides no reliably
+efficient means to dispatch on the type of one of those objects.
+
+Furthermore, some &quot;derived types&quot; recognized by Scheme procedures and
+of interest to a generic collections interface are not disjoint,
+either from one and other or from the types of section 3.2 (example:
+pairs, lists, and association lists).
+
+Together, those problems imply that it is _permanently_impossible_ to
+write a standard Scheme procedure which discriminates its input based
+on the type of that input if the notion of type being used for
+discrimination would separate, for exaple, pairs, lists, and
+association lists.   No upwards compatable extension to Scheme can
+change that fact.
+
+Consequently, I think it is a profound mistake of this srfi to attempt
+the impossible.  As a particular example, the reference implementation
+defines a procedure CLASS-OF whose definition begins:
+
+  (set! class-of
+    (lambda (obj)
+      (cond
+        ((%instance?   obj) (%instance-class obj))
+
+        ;; Get the right classes here -- previously, there was no &lt;LIST&gt;
+        ;; or &lt;ALIST&gt;.
+        ((null?        obj) &lt;null&gt;)
+        ((alist?       obj) &lt;alist&gt;)
+        ((list?        obj) &lt;list&gt;)
+        ((pair?        obj) &lt;pair&gt;)
+        ....)))
+
+The implication of this, given how ALIST? is defined, is that if I
+create a sequence using the srfis LIST procedure, then update it by
+storing certain elements in it at certain positions (a procedure as
+the 0th element, pairs as the other elements), then my list will
+change types and become and ALIST? and a DICTIONARY?
+
+What difference does that make?  Here's an example:
+
+COLLECTION-FOLD-LEFT, on a LIST?, should enumerate every element of
+the list.  COLLECTION-FOLD-LEFT, on an ALIST?, should enumerate every
+key-value pair.  In the reference implementation, given a list which
+contains the elements:
+
+	=?  (a . b) (c . d)
+
+the enumeration will produce:
+
+	(a . b) (c . d)
+
+!!!!
+
+In short, the kind of genericity that this SRFI proposes to provide is
+an incoherent notion.   It simply can not work.
+
+-t
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00283" href="msg00283.html">Re: Fundamental design flaws</a></strong>
+<ul><li><em>From:</em> scgmille</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00277.html">Re: API conflicts</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00279.html">Re: Reasons for withdrawal</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00310.html">Re: Fundamental design constraints</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00283.html">Re: Fundamental design flaws</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00278"><strong>Date</strong></a></li>
+<li><a href="threads.html#00278"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

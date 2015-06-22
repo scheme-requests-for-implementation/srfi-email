@@ -1,0 +1,145 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Response to SRFI 75. -->
+<!--X-From-R13: orne <orneNfbavp.arg> -->
+<!--X-Date: Tue, 12 Jul 2005 04:14:18 +0200 (DFT) -->
+<!--X-Message-Id: Pine.LNX.4.58.0507111803360.12527@bolt.sonic.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: y9l8y0j80pz.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: 20050709002445.C8F721B77B4@voluntocracy.org -->
+<!--X-Reference: y9lvf3hu90a.fsf@sams.informatik.uni&#45;tuebingen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Response to SRFI 75.</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00001.html">Date Prev</a>][<a href="msg00003.html">Date Next</a>][<a href="msg00038.html">Thread Prev</a>][<a href="msg00004.html">Thread Next</a>][<a href="maillist.html#00002">Date Index</a>][<a href="threads.html#00002">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Response to SRFI 75.</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-75@DOMAIN.HIDDEN">srfi-75@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Response to SRFI 75.</li>
+<li><em>From</em>: bear &lt;<a href="mailto:bear@DOMAIN.HIDDEN">bear@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 11 Jul 2005 19:14:07 -0700 (PDT)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-75@DOMAIN.HIDDEN">srfi-75@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:y9lvf3hu90a.fsf@DOMAIN.HIDDEN">y9lvf3hu90a.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:y9l8y0j80pz.fsf@DOMAIN.HIDDEN">y9l8y0j80pz.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20050709002445.C8F721B77B4@DOMAIN.HIDDEN">20050709002445.C8F721B77B4@xxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:y9lvf3hu90a.fsf@DOMAIN.HIDDEN">y9lvf3hu90a.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+Okay, I have a few things about this SRFI that I want to point out.
+
+First, I feel that SRFI's are not the proper forum for pre-publishing
+R6RS material.  But this is a matter of taste, and if people disagree
+I'll shut up about it.
+
+Second, I see no point in limiting the representation of unicode
+characters to 2, 4, or 8 hexadecimal digits.  In using the last
+format, one would be constrained always to pad with two constant zero
+digits which carry no information.  To read hexadecimal numbers of
+unfixed length is code that every implementor supporting hex numbers
+has to have already written, and since a trailing delimiter is
+required in the new syntax (a move I agree with, btw), the limited
+selection of fixed lengths avoids no confusion.
+
+Third, I think that char-upcase, char-downcase, string-upcase,
+and string-downcase should be added to the list of functions that
+&quot;may not produce the results an end-user would consider sensible
+with a particular locale,&quot; mainly to clarify what the document
+elsewhere says; that they implement the case mappings from
+UnicodeData.txt, rather than locale-dependent case-mappings.
+
+Fourth, in general there are still problems if you're sticking to the
+simplistic &quot;codepoint equals character&quot; model.  Particularly, some
+characters, particularly accented characters, have uppercase and
+lowercase versions which are different numbers of codepoints.  Thus,
+in the &quot;codepoint equals character&quot; model, one case is a character and
+the other case -- isn't.  The other case, in fact, is something
+impossible to return from a routine whose return value is a
+&quot;character.&quot;  This introduces range confusion in both char-downcase
+and char-upcase, and this in turn (I believe) hoses your suggested
+implementations of char-ci=?, char-ci&lt;?, char-ci&gt;? char-ci&lt;=? and
+char-ci&gt;=?.  You need to either remove the restriction and allow
+multi-codepoint characters, or embrace the restriction and explicitly
+state that the results of these functions are undefined in cases where
+the lowercase form is in fact not a single codepoint.
+
+Fifth, I think you need to add to the general set of character
+predicates defined by SRFI-14 one additional predicate: char-unused?
+which returns true for characters which are inside the valid range
+but which are not actually mapped to any character in Unicode.
+
+Sixth, is there any way for a scheme implementation to support
+characters and strings in addutional encodings different from
+unicode and not necessarily subsets of it, and remain compliant?
+For example several schemes have character sets that more
+accurately describe keystrokes than characters, containing
+entities such as &quot;META-J&quot; and &quot;SHIFT-F10&quot; and similar that
+have no corresponding unicode entities.  For another example
+there are several asian scripts that Unicode is observed to
+make a hash of, representing the same character at several
+different codepoints, and people who work with these scripts
+prefer other encodings.
+
+
+				Bear
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00004" href="msg00004.html">Re: Response to SRFI 75.</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+<li><strong><a name="00014" href="msg00014.html">Re: Response to SRFI 75.</a></strong>
+<ul><li><em>From:</em> Matthew Flatt</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00001.html">forcing delimiters after escapes in quoted strings</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00003.html">Re: forcing delimiters after escapes in quoted strings</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00038.html">Re: forcing delimiters after escapes in quoted strings</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00004.html">Re: Response to SRFI 75.</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00002"><strong>Date</strong></a></li>
+<li><a href="threads.html#00002"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

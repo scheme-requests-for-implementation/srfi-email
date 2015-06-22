@@ -1,0 +1,225 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Update, near finalization -->
+<!--X-From-R13: Bre Pbguare <creNobguare.pbz> -->
+<!--X-Date: Fri,  8 Apr 2005 23:22:07 +0200 (DFT) -->
+<!--X-Message-Id: 4256F5DB.9000701@bothner.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 4256AF0C.60703@cs.uvm.edu -->
+<!--X-Reference: 4256C0BE.8030904@bothner.com -->
+<!--X-Reference: 20050408201628.D40251B77A8@voluntocracy.org -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Update, near finalization</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00003.html">Date Prev</a>][<a href="msg00005.html">Date Next</a>][<a href="msg00003.html">Thread Prev</a>][<a href="msg00005.html">Thread Next</a>][<a href="maillist.html#00004">Date Index</a>][<a href="threads.html#00004">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Update, near finalization</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Aubrey Jaffer &lt;<a href="mailto:agj@DOMAIN.HIDDEN">agj@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Update, near finalization</li>
+<li><em>From</em>: Per Bothner &lt;<a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 08 Apr 2005 14:21:31 -0700</li>
+<li><em>Cc</em>: <a href="mailto:dvanhorn@DOMAIN.HIDDEN">dvanhorn@xxxxxxxxxx</a>, <a href="mailto:srfi-63@DOMAIN.HIDDEN">srfi-63@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-63@DOMAIN.HIDDEN">srfi-63@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20050408201628.D40251B77A8@DOMAIN.HIDDEN">20050408201628.D40251B77A8@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:4256AF0C.60703@DOMAIN.HIDDEN">4256AF0C.60703@xxxxxxxxxx</a>&gt; &lt;<a href="mailto:4256C0BE.8030904@DOMAIN.HIDDEN">4256C0BE.8030904@xxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20050408201628.D40251B77A8@DOMAIN.HIDDEN">20050408201628.D40251B77A8@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mozilla Thunderbird 1.0.2-1.3.2 (X11/20050324)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+Aubrey Jaffer wrote:
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+This works by the implementation knowing the difference between
+SRFI-25 arrays and SRFI-63 arrays.  This difference can be hidden
+entirely from the user.
+</pre></blockquote><pre style="margin: 0em;">
+
+Not sanely.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+I claim that SRFI-25 and SRFI-63 can coexist -- not that they
+interoperate!
+</pre></blockquote><pre style="margin: 0em;">
+
+Having two different array implementations, with the same
+functionality, in the same Scheme implementation, using overlapping
+but inconsistent function names is out of the question.
+
+I really don't want to add a &quot;this array was allocated using srfi-63
+make-array&quot; bit to my arrays.  That's utterly gross.  And of course
+it doesn't work to have vectors be both SRFI-25 and SRFI-63 arrays.
+
+The only sane way to support both SRFI-25 and SRFI-67 is to have them
+be in separate *optional* modules:
+(require 'srfi-67) ;; if you want SRFI-67 arrays.
+(require 'srfi-25) ;; if you want SRFI-25 arrays.
+Unfortunately, this causes probelems with any implementation
+that provides either set of functions in the default environment.
+(require 'srfi-67) must disable the srfi-25 names and vice versa.
+Existing code that uses srfi-25 array-set! will silently break
+if you (require 'srfi-67).  If you have multiple modules, things
+are really messy, unless you have a real module system.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+ | This is a recipe for disaster.
+</pre><tt> | 
+</tt><tt> | STFI-25:
+</tt><pre style="margin: 0em;">
+ | (array-set! array k ... obj)
+ | (array-set! array index obj)
+ | SRFI-63:
+ | (array-set! array obj k1 ...)
+</pre><tt> | 
+</tt><tt> | It is claimed that &quot;Type dispatch on the first argument to
+</tt><pre style="margin: 0em;">
+ | array-set!  could support both SRFIs simultaneously.&quot;  I don't
+ | believe that.
+ | How would you handle:
+ | (define array (vector 'a 'b))
+ | (set! array 1 0)
+</pre></blockquote><pre style="margin: 0em;">
+Note: this should have been: (array-set! array 1 0)
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+ | Is the result #(a 0) or #(1 b)?
+
+SRFI-25 says:
+
+  It is not required that vectors not be arrays.  It is not required
+  that they be, either.
+
+For your example to be ambiguous, you would be depending on
+unspecified behavior of SRFI-25.
+</pre></blockquote><pre style="margin: 0em;">
+
+Irrelevant to my point.  I used a vector for convenience - the same
+issue arises with a rank-1 array.  And for that matter higher-rank
+arrays, but I chose a simple example for illustration.
+
+In any case, in my implementation, vectors are arrays.  The disclaimer
+is to allow implementating arrays without modifying the core language.
+If you have the option to tweak the langauge coret, clearly it is
+better if vectors *are* rank-1 arrays.  It's a quality-of-implementation
+issue.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+But vectors are mandated to be arrays in SRFI-63.  So the result of
+your example would be #(1 b).
+</pre></blockquote><pre style="margin: 0em;">
+
+Not in my implementation.  The result *is* #(a 0).
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+By vectors being SRFI-63 arrays, not SRFI-25 arrays;
+</pre></blockquote><pre style="margin: 0em;">
+
+But vectors *are* SRFI-25 arrays in some existing implementations.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+and by the
+implementation knowing the difference between SRFI-25 arrays and
+SRFI-63 arrays,
+</pre></blockquote><pre style="margin: 0em;">
+
+Unacceptable.  And doesn't work if vectors are also SRFI-25 arrays.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Bawden arrays predate SRFI-25 by a decade.  SRFI-25 should have chosen
+other names.
+</pre></blockquote><pre style="margin: 0em;">
+
+Was that issue brought up during the discussion of SRFI-25?
+If not, it's irrelevant.  You cannot expect everyone to know
+every possible array package.  The fact that it was part of SLIB
+is more relevant: that should have been discussed, at least.
+(One problem I see with SLIB is that it contains multiple alternative
+APIs and implementations of the same basic concept - e.g. macros.
+That makes it harder to use it as a source for &quot;best practices&quot;
+or &quot;standarization&quot;.)
+
+There is a pragmatic issue: How much currently-used code uses
+Bawden's/SLIB's arrays vs how much uses SRFI-25's.  That's hard to
+tell, but perhaps there is some data or indicators.  Without that,
+the default for a SRFI should be that compatibility with a past SRFI
+(and one supported by multiple active/popular Scheme implementations)
+should weigh more than conflicting non-SRFI APIs.
+
+From the SRFI document:
+  To my knowledge, shared arrays were original to Alan Bawden in his
+  &quot;array.scm&quot;.
+
+I doubt it, unless you're restricting yourself to Scheme.
+Certainly the concept predates 1993 by far.  There are precursurs in
+APL and Fortran going back to the 60-ies.  I had it in my Q language
+from the 80-ies/early 90-ies.  (The latest &quot;modify&quot; dates on Q are
+1994, but most of the work came before that.)
+--
+	--Per Bothner
+per@xxxxxxxxxxx   <a  rel="nofollow" href="http://per.bothner.com/">http://per.bothner.com/</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00005" href="msg00005.html">Re: Update, near finalization</a></strong>
+<ul><li><em>From:</em> Aubrey Jaffer</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00001" href="msg00001.html">Update, near finalization</a></strong>
+<ul><li><em>From:</em> David Van Horn</li></ul></li>
+<li><strong><a name="00002" href="msg00002.html">Re: Update, near finalization</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+<li><strong><a name="00003" href="msg00003.html">Re: Update, near finalization</a></strong>
+<ul><li><em>From:</em> Aubrey Jaffer</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00003.html">Re: Update, near finalization</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00005.html">Re: Update, near finalization</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00003.html">Re: Update, near finalization</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00005.html">Re: Update, near finalization</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00004"><strong>Date</strong></a></li>
+<li><a href="threads.html#00004"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

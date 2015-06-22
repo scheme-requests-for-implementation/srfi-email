@@ -1,0 +1,140 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: compilability of scripts -->
+<!--X-From-R13: [nep Trryrl <srryrlNWDA.G[bagerny.QO> -->
+<!--X-Date: Sat, 10 Mar 2001 11:33:32 &#45;0600 (CST) -->
+<!--X-Message-Id: 200103101733.f2AHXVv22004@trex.IRO.UMontreal.CA -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>compilability of scripts</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00019.html">Date Prev</a>][<a href="msg00021.html">Date Next</a>][<a href="msg00068.html">Thread Prev</a>][<a href="msg00034.html">Thread Next</a>][<a href="maillist.html#00020">Date Index</a>][<a href="threads.html#00020">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>compilability of scripts</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-22@DOMAIN.HIDDEN">srfi-22@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: compilability of scripts</li>
+<li><em>From</em>: Marc Feeley &lt;<a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 10 Mar 2001 12:33:31 -0500</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>I would like scripts to be compilable on Scheme systems that offer a
+compiler of some sort.  This would allow the development of the script
+to be done with an interpreter and when speed is needed it can be
+compiled.
+
+Say we have a script &quot;S.scm&quot; that is invoked with the command
+
+        S.scm arg1 arg2 arg3
+
+Compiling this script can be done using one of these approaches:
+
+1) Use the compiler to generate an executable, say &quot;S.exe&quot;, that can
+   be invoked directly as:
+
+        S.exe arg1 arg2 arg3
+
+   This requires launching the compiled script differently than the
+   noncompiled script, which is unfortunate.  There is also the
+   problem (for the compiler) of sending the command-line arguments to
+   the right function.  Conceivably the compiler could parse the
+   invocation of &quot;scheme-script&quot; in the script, but for this to be
+   practical the syntax of the shell part of the script should be a well
+   defined subset of the shell syntax, for example always of the form:
+
+        exec scheme-script &quot;$0&quot; --call &lt;identifier&gt; &quot;$@&quot;
+
+   Alternatively, the shell part of the script could be free-form
+   except that the first occurrence of &quot;--call &lt;identifier&gt;&quot; defines
+   the function to call, and it is assumed that &quot;scheme-script&quot;
+   receives all of the script arguments.  This would allow
+   Windows scripts to use the Windows syntax:
+
+        scheme-script %0 --call &lt;identifier&gt; %*
+
+2) Use the compiler to generate a &quot;FASL file&quot; (a compiled
+   representation of &quot;S.scm&quot; that can be loaded quickly), say
+   &quot;S.fasl&quot;.  This can be a bytecode file, a binary file, heap image,
+   etc.  Scheme implementations which can generate FASL files
+   typically allow loading the file with (load &quot;S.fasl&quot;) or a command
+   line option.  Note that it is possible to define &quot;scheme-script&quot; so
+   that when
+
+        S.scm arg1 arg2 arg3
+
+   calls &quot;scheme-script S.scm ...&quot;, it will load the file &quot;S.fasl&quot;
+   instead of &quot;S.scm&quot; if &quot;S.fasl&quot; exists.  For this to work and be
+   portable, SRFI 22 would have to define the filename extension of
+   FASL files, or specify that an implementation dependent search is
+   performed for a file to load with the same base name (i.e. &quot;S&quot;).
+
+   Alternatively, this search for the file to load could be done by
+   &quot;scheme-script&quot; only if the script file argument has no extension
+   (under UNIX you can only invoke a script with the same extension as
+   its filename, but under Windows, scripts must have the extension
+   &quot;.BAT&quot; or &quot;.CMD&quot; and can be invoked with or without the extension).
+   So, a script &quot;S.scm&quot; will always load &quot;S.scm&quot;, but a script &quot;S&quot; may
+   load &quot;S.fasl&quot;, &quot;S.foobar&quot;, &quot;S.bat&quot;, &quot;S&quot;, etc.
+
+Could something like this be added to SRFI 22?
+
+Marc
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00034" href="msg00034.html">Re: compilability of scripts</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr. Preprocessor]</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00019.html">Re: Several comments</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00021.html">Re: Several comments</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00068.html">Re: Several comments</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00034.html">Re: compilability of scripts</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00020"><strong>Date</strong></a></li>
+<li><a href="threads.html#00020"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

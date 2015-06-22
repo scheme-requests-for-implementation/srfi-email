@@ -1,0 +1,169 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: stream&#45;define -->
+<!--X-From-R13: Buvy Prjvt <corjvtNfjoryy.arg> -->
+<!--X-Date: Fri, 14 Feb 2003 15:56:02 +0100 (NFT) -->
+<!--X-Message-Id: y9lfzqqsygw.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: E18imGu&#45;0005QY&#45;00@rosebud -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: stream-define</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00009.html">Date Prev</a>][<a href="msg00011.html">Date Next</a>][<a href="msg00006.html">Thread Prev</a>][<a href="msg00012.html">Thread Next</a>][<a href="maillist.html#00010">Date Index</a>][<a href="threads.html#00010">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: stream-define</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Richard Kelsey &lt;<a href="mailto:kelsey@DOMAIN.HIDDEN">kelsey@xxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: stream-define</li>
+<li><em>From</em>: Phil Bewig &lt;<a href="mailto:pbewig@DOMAIN.HIDDEN">pbewig@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 14 Feb 2003 15:55:59 +0100</li>
+<li><em>Cc</em>: <a href="mailto:srfi-40@DOMAIN.HIDDEN">srfi-40@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-40@DOMAIN.HIDDEN">srfi-40@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:E18imGu-0005QY-00@DOMAIN.HIDDEN"><a href="msg00003.html">E18imGu-0005QY-00@rosebud</a></a>&gt; (Richard Kelsey's message of &quot;Tue, 11 Feb 2003 21:05:12 -0500&quot;)</li>
+<li><em>References</em>: &lt;<a href="mailto:E18imGu-0005QY-00@DOMAIN.HIDDEN"><a href="msg00003.html">E18imGu-0005QY-00@rosebud</a></a>&gt;</li>
+<li><em>User-agent</em>: Gnus/5.090014 (Oort Gnus v0.14) XEmacs/21.5 (burdock, i386-unknown-freebsd4.6.2)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+On Tuesday, February 11, 2003 8:05 PM, Richard Kelsey [SMTP:kelsey@xxxxxxx] wrote:
+&gt; [ discussion of eliminating stream-define in favor of
+&gt;   stream-delay, followed by discussion of eliminating
+&gt;   unnecessary stream-defines in the reference
+&gt;   implementation ] 
+
+I suppose your point is that the essence of a stream is
+the delay/force mechanism, and my library offers no
+easy access to just that mechanism by itself, only in
+combination with lambda and variable binding.  Thus
+your stream-delay provides just that access and nothing
+else, and can be used alongside lambda and define in
+scheme expressions, just like any other data type.  If I
+understood that right, then it's fine with me to add
+stream-delay, although I think I prefer the name
+make-stream, for consistency with make-string and
+make-vector, and because stream-delay emphasizes
+the implementation mechanism rather than the data
+type.  (This means I will have to change the definition
+of the :stream data type and several functions that
+use it.)
+
+There is also an intermediate step between
+make-stream and stream-define.  Stream-lambda
+combines the delay/force stream mechanism with
+function creation:
+
+    (define-syntax stream-lambda
+      (syntax-rules ()
+        ((stream-lambda spec body0 body1 ...)
+          (lambda spec
+            (make-stream
+              (delay (force
+                (stream-promise
+                  (let () body0 body1 ...)))))))))
+
+I used &quot;let ()&quot; here, but this might be a case where
+&quot;begin&quot; is more appropriate.  Comments?
+
+I left stream-lambda out of the SRFI because my
+original mental model of stream functions was that
+they would normally be defined recursively (&quot;a stream
+is an object followed by a stream&quot;), but with
+higher-order functions like stream-map and syntax
+like stream-of that's not necessarily true, and a method
+to create stream-valued functions belongs in the SRFI.
+Thus I propose make-stream for the core and both
+stream-lambda and stream-define for the derived
+library.
+
+Does all this make sense?
+
+As to your other point, I may well have used
+stream-define more often than necessary in the
+reference implementation.  I was responding to a
+problem that shows up with this version of
+stream-cons that was used in several preliminary
+versions of the SRFI:
+
+    (define-syntax old-stream-cons
+      (syntax-rules ()
+        ((old-stream-cons obj strm)
+          (if (not (stream? strm))
+             (stream-error &quot;attempt to stream-cons onto non-stream object&quot;)
+             (make-stream (delay (cons obj strm)))))))
+
+Given that definition, an expression like
+
+    (define ones (old-stream-cons 1 ones))
+
+doesn't work, because the (stream? strm) unnecessarily
+strictifies old-stream-cons.  Delaying the error checks with
+stream-define prevents the problem.  Having said that, this
+issue of premature strictification was my biggest hangup in
+writing this SRFI, and I may have erred in going too far while
+trying to prevent it.
+
+Phil
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00012" href="msg00012.html">Re: stream-define</a></strong>
+<ul><li><em>From:</em> Richard Kelsey</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00003" href="msg00003.html">stream-define</a></strong>
+<ul><li><em>From:</em> Richard Kelsey</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00009.html">Re: some suggestions</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00011.html">Re: some suggestions</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00006.html">Re: stream-define</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00012.html">Re: stream-define</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00010"><strong>Date</strong></a></li>
+<li><a href="threads.html#00010"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

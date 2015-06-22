@@ -1,0 +1,175 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Thoughts on Priorities and Quanta -->
+<!--X-From-R13: "[nex Y. Uneqare" <zxtNnfvzbi.ynay.tbi> -->
+<!--X-Date: Wed, 9 Feb 2000 18:39:57 &#45;0600 (CST) -->
+<!--X-Message-Id: 200002100039.RAA25793@asimov.lanl.gov -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Thoughts on Priorities and Quanta</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[Date Prev][<a href="msg00001.html">Date Next</a>][Thread Prev][<a href="msg00001.html">Thread Next</a>][<a href="maillist.html#00000">Date Index</a>][<a href="threads.html#00000">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Thoughts on Priorities and Quanta</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-18@DOMAIN.HIDDEN">srfi-18@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Thoughts on Priorities and Quanta</li>
+<li><em>From</em>: &quot;Mark K. Gardner&quot; &lt;<a href="mailto:mkg@DOMAIN.HIDDEN">mkg@xxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 09 Feb 2000 17:39:47 -0700</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Hello all,
+
+There are a couple of items concerning priorities and quanta that I
+would like to see discussed. First, an admission of bias: I have been
+thoroughly indoctrinated in the real-time community. Thus the comments
+below deal with modifying the SRFI so that it does not prohibit the
+construction of real-time systems programmed in Scheme.
+
+1) Limiting the number of priority levels to 8 is a severe problem for
+real-time systems. Mapping otherwise distinct priorities, which have
+been established by fixed priority design guidelines, onto a limited
+set causes a potential reduction in the number of tasks which can meet
+their deadlines. The problem has been well studied and the consensus
+is that 256 priorities are sufficient to virtually eliminate the
+effect. Thus nearly all real-time operating systems have 256 priority
+levels. 
+
+Is there any reason for limiting the number of priorities to 8? If
+there is, I suggest that we make 8 the minimum number of priority
+levels and add a function to obtain the maximum number of priority
+levels.
+
+2) While we are on the issue of priority, is 0 the minimum or maximum
+priority level? It doesn't really matter to me which it is, but it
+should be specified for code to be portable.
+
+3) In general, (hard) real-time tasks do not time share. Thus there
+needs to be another value added to the quantum domain specifying that
+the thread is not to be preempted, i.e., it is to run until it blocks,
+yields the processor, or terminates. As a by-product of defining this
+special value, it is no longer necessary to precisely know how quanta
+map onto real time. (Without the special value, a hard real-time task
+would need to specify a quantum that is guaranteed to be greater than
+its longest execution time before blocking, yielding, etc.)
+
+4) When a mutex or condition variable is unlocked, the thread that has
+the highest priority and has been waiting the longest should be made
+runnable.
+
+5) thread-priority-set! should cause an immediate reschedule if the
+priority decreases. This seems logical but it is especially important
+for real-time systems as otherwise predictability will be lost. 
+
+Note that this can be implemented by the following idiom:
+
+  (thread-priority-set! my-thread new-priority)
+  (let ((old-priority (thread-priority my-thread)))
+	   (if (&lt; new-priority old-priority)
+        (thread-yield!)))
+
+Since I don't see what the additional flexibility in allowing
+reschedules to be delayed buys us, I would lobby for immediate
+reschedule.
+
+6) Should thread-quantum-set! cause a reschedule if the amount of time
+executed so far exceeds the new quantum? (This is not a real-time
+issue if there is a quantum that signifies no time sharing.) For
+symmetry with the preceding comment, I suggest that this be the case
+but I don't really care as it too can be implemented in user code *if*
+there is a way to access the number of quanta used since beginning to
+run.
+
+7) I would suggest that thread-terminate! should always allow the
+current thread to finish the critical section if indeed it is in one.
+This would solve the inconsistent state problem noted in the SRFI.
+I would also suggest that threads be terminated immediately otherwise
+as I see no benefit from delaying. Indeed, terminating as soon as
+state is consistent gives other threads as much processing time as
+possible.
+
+Implementing this will require a flag to be check on exit from the
+outermost critical section to see if the current thread should be
+terminated. 
+
+8) Perhaps an exception should be thrown when a thread is terminated
+(as opposed to when its thunk returns) so that the thread's resources
+can be properly deallocated.
+
+9) For good flexibility in scheduling, I like the QNX approach. Allow
+FIFO, round-robin and &quot;adaptive priority&quot; which may include aging.
+
+10) For predictability, I favor having thread quanta be in some
+sufficiently small unit of time like microseconds.
+
+11) I also like the idea that a program is the initial thread of
+execution and hence the parent of all other threads.
+
+As you can see, I lean towards weaker forms of fairness, including
+FIFO scheduling. Just my thoughts... what do others think?
+
+Mark
+
+-- 
+Mark K. Gardner
+RADIANT Team
+Network Engineering, CIC-5
+Los Alamos National Laboratory
+P.O. Box 1663, M.S. D451
+Los Alamos, NM 87545
+Email: mkg@xxxxxxxx
+Phone: 1-505-665-4953
+-- 
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00001" href="msg00001.html">Re: Thoughts on Priorities and Quanta</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Next by Date:
+<strong><a href="msg00001.html">Re: Thoughts on Priorities and Quanta</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00001.html">Re: Thoughts on Priorities and Quanta</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00000"><strong>Date</strong></a></li>
+<li><a href="threads.html#00000"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

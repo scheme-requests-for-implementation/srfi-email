@@ -1,0 +1,267 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Fundamental design flaws -->
+<!--X-From-R13: Fbz Zbeq <ybeqNrzs.arg> -->
+<!--X-Date: Thu, 30 Oct 2003 00:24:14 +0100 (NFT) -->
+<!--X-Message-Id: 200310292337.PAA28244@morrowfield.regexps.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200310291758.JAA26893@morrowfield.regexps.com -->
+<!--X-Reference: 20031029191336.GC1659@freenetproject.org -->
+<!--X-Reference: 20031029200642.GD22819@ogre.szonye.com -->
+<!--X-Reference: 20031029204704.GB4375@freenetproject.org -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Fundamental design flaws</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00292.html">Date Prev</a>][<a href="msg00294.html">Date Next</a>][<a href="msg00287.html">Thread Prev</a>][<a href="msg00296.html">Thread Next</a>][<a href="maillist.html#00293">Date Index</a>][<a href="threads.html#00293">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Fundamental design flaws</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:scgmille@DOMAIN.HIDDEN">scgmille@xxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Fundamental design flaws</li>
+<li><em>From</em>: Tom Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 29 Oct 2003 15:37:05 -0800 (PST)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20031029204704.GB4375@DOMAIN.HIDDEN">20031029204704.GB4375@xxxxxxxxxxxxxxxxxx</a>&gt;	(<a href="mailto:scgmille@DOMAIN.HIDDEN">scgmille@xxxxxxxxxxxxxxxxxx</a>)</li>
+<li><em>References</em>: &lt;<a href="mailto:200310291758.JAA26893@DOMAIN.HIDDEN">200310291758.JAA26893@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20031029191336.GC1659@DOMAIN.HIDDEN">20031029191336.GC1659@xxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20031029200642.GD22819@DOMAIN.HIDDEN">20031029200642.GD22819@xxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20031029204704.GB4375@DOMAIN.HIDDEN">20031029204704.GB4375@xxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+
+For me, currently, there are at least six big issues with the srfi.  I
+will list these and then say more about each below.
+
+1) lack of extensibility
+
+2) requirement for and definition of procedures for which valid
+   arguments can not be provided using only the facilities of the srfi
+   (and standard scheme)
+
+3) unfortunate class hierarchy 
+
+4) absense of reasonable support for iterators
+
+5) unfortunate handling of &quot;equivalence functions&quot;
+
+6) buggy and incomplete implementation with unreasonable dependencies.
+
+
+----------------------------------------------------------------
+
+1) lack of extensibility
+
+   I simply do not believe your claims that adding definitions for 
+   type constructors would in any serious way damage implementations.
+
+   Nothing about type constructors would _require_ that all 
+   collection types are created by them;  nothing would prevent
+   native collection types from having whatever representations
+   they like.
+
+   Collection type constructors could be reasonably implemented in a
+   reference implementation by using the facilities of srfi-9.
+
+   Collection type constructors are a prerequisite for allowing people
+   to write portable implementations of collection types.   While a 
+   portable implementation may or may not be less efficient than 
+   a native one, many useful collection types would perform quite
+   reasonably using just about any reasonable implementation of
+   srfi-9, a srfi which I would hope that any non-trivial Scheme
+   implementation seeks to implement well.
+
+
+2) unusable procedures
+
+   44 defines procedures which client programs have no use for.
+   For example, all of the SET functions could be correctly
+   implemented as:
+
+	(define (set-fn . ignored) 
+          (error &quot;there is no such thing as a set&quot;))
+
+   Specifications of such procedures should come after, not before
+   the specification of values that would make them meaningful.
+
+
+3) unfortunate class hierarchy
+
+  I recognize that there are, for example, operations which apply
+  generically to sequences and dictionaries.
+
+  It is a fine idea to provide an abstract interface to such
+  operations, much as Common Lisp does for sequences.
+
+  However, this srfi goes much further than that.  In particular, it
+  requires that, in these abstract interfaces, a list or a vector is
+  always a sequence and never a dictionary.
+
+  The reason it must do so is because it seeks to unify everything
+  that might vaguely be called a &quot;collection&quot; in a class hierarchy,
+  and to provide abstract interfaces to collections in general.
+  No motivation is provided, however, for the existence of a
+  COLLECTION? type.   And if it is the case that a COLLECTION? type
+  is truly desirable, no rationale is provided to explain why SEQUENCE?
+  gets the privilege of subsuming the LIST? type rather than, say SET?
+  or DICTIONARY?.
+
+  Related to this is the fact that some procedures that accept a
+  collection are, in fact, partial functions of the set of
+  collections.   
+
+  Let me put this a little differently: supposing I really like the
+  abstract parts of the collections interface of 44 but I'm writing a
+  program that wants to use ordinary lists (plus some other
+  implementation-specific types) as _dictionaries_ not sequences.
+  It'd be swell to have the genericty of 44 to help me operate
+  transparently on either of these two representations, but I can't --
+  because in 44 a list is always a sequence, not a dictionary.
+
+  I wonder if it wouldn't be an improvement to _not_ attempt to
+  provide a &quot;collections&quot; interface, but rather to provide separate 
+  interfaces for sets, dictionaries, and sequences?
+
+  I'll happily live without COLLECTION-COPY if you can give me both
+  DICTIONARY-COPY (accepting normal association lists) and
+  SEQUENCE-COPY (accepting normal lists).
+
+
+4) absense of reasonable support for iterators
+
+  Let us suppose that I would like to iterate over the elements of two
+  or more collections, randomly choosing which collection to pick an
+  element from next.
+
+  The -FOLD- procedures permit me to do this but only by one of a few 
+  means all of which seem to be horribly inefficient compared to what
+  is achievable:  I can convert the collections to lists or some other
+  type;   I can use call/cc.
+
+  Compared to, say, incrementing an index integer or taking the CDR of
+  a pair, those techniques for iteration over multiple collections are
+  horrible.  It is a serious weakness of 44 that it does not define
+  generic interfaces to iterators which would not require those
+  techniques.
+
+
+5) unfortunate handling of &quot;equivalence functions&quot;
+
+  Similarly to the way that 44 forces all lists to be sequences but
+  not dictionaries, it also forces all lists to EQV?-based bags.
+
+  Parametric equality is pervasive in Scheme (and, really, all lisp
+  dialects).   You've got MEMQ, MEMV, and MEMBER, for example.
+
+  I am not at all clear why I would really want just BAG-CONTAINS? for 
+  example rather than BAG-CONTQ?, BAG-CONTV?, BAG-CONTAINS? (and,
+  perhaps BAG-CONTAINS=? to permit an arbitrary predicate).
+
+  For something like a hash table, sure -- at creation time I really
+  need to establish what notion of equality (and hence, hashing) is in
+  play -- but for bags?
+
+
+6) buggy and incomplete implementation with unreasonable dependencies.
+
+  Bugs and missing things can be fixed, of course, but in its current
+  state, the srfi truly ought to be rejected by the editors on this
+  basis.
+
+  Tiny-Clos is, in my opinion, a quite unreasonable dependency.   At
+  the _very_ least it should be included in the reference
+  implementation so that the proposal is self contained.   Personally, 
+  I would much prefer to see a reference implementation based on
+  srfi-9 rather than one that defines lots of complicated new
+  functionality well outside the scope of the srfi.
+
+  A few srfis are clearly special:  they either can't be portably
+  implemented or a portable implementation is, at best, a toy.
+  srfi-9 is a good example of the latter.
+
+  Informally, though, the _point_ of such foundational srfis is quite
+  sophisticated:   to provide a spec that interfaces can implement in
+  a non-toy fashion without compromising their quality, and to spare
+  future srfis from having reference implementations that share those
+  unfortunate properties.
+
+  Since srfi-9 is ample mechanism to implement 44, it would be vastly
+  preferable to dragging in Tiny-Clos.
+
+
+Perhaps it would be helpful to take a more bottom-up approach.
+Rather than trying to make a &quot;collections&quot; srfi that is a 100%
+solution for that domain, start by making a &quot;sequences&quot; srfi and a
+&quot;dictionary&quot; srfi and a &quot;set&quot; srfi -- and then see whether there are
+higher-order generalizations to make after that.
+
+-t
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00296" href="msg00296.html">Re: Fundamental design flaws</a></strong>
+<ul><li><em>From:</em> Taylor Campbell</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00278" href="msg00278.html">Fundamental design flaws</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00283" href="msg00283.html">Re: Fundamental design flaws</a></strong>
+<ul><li><em>From:</em> scgmille</li></ul></li>
+<li><strong><a name="00285" href="msg00285.html">Re: Fundamental design flaws</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+<li><strong><a name="00287" href="msg00287.html">Re: Fundamental design flaws</a></strong>
+<ul><li><em>From:</em> scgmille</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00292.html">Re: API conflicts</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00294.html">Re: API conflicts</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00287.html">Re: Fundamental design flaws</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00296.html">Re: Fundamental design flaws</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00293"><strong>Date</strong></a></li>
+<li><a href="threads.html#00293"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,235 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: An argument against cursors -->
+<!--X-From-R13: byrtNcbobk.pbz -->
+<!--X-Date: Fri,  2 May 2003 22:17:41 +0200 (DFT) -->
+<!--X-Message-Id: 200305022016.h42KGuhu090508@adric.fnmoc.navy.mil -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>An argument against cursors</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00022.html">Date Prev</a>][<a href="msg00024.html">Date Next</a>][<a href="msg00022.html">Thread Prev</a>][<a href="msg00024.html">Thread Next</a>][<a href="maillist.html#00023">Date Index</a>][<a href="threads.html#00023">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>An argument against cursors</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: An argument against cursors</li>
+<li><em>From</em>: <a href="mailto:oleg@DOMAIN.HIDDEN">oleg@xxxxxxxxx</a></li>
+<li><em>Date</em>: Fri, 2 May 2003 13:16:56 -0700 (PDT)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Reply-to</em>: <a href="mailto:oleg@DOMAIN.HIDDEN">oleg@xxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+This is a non-theoretical argument against cursors and for
+enumerators. We argue against cursors (aka iterators) as the primary
+means of traversing and obtaining all values of a collection.
+Enumerators such as left fold are superior to cursors:
+      - in efficiency
+      - in ease of programming
+      - in more predictable resource utilization and
+      avoidance of resource leaks, especially for collections backed
+      by external resources such as file handles and database
+      connections.
+
+I'd like to remark first about the merits of a proposal to rename
+iterators into cursors. I believe the name 'iterator' is confusing: in
+C++ it means an accessor, which does not iterate over
+collection. Rather, it is _being_ iterated. On the other hand,
+languages like OCaml provide methods 'iter' that actively traverse a
+collection, applying a user-defined function to elements.  It might
+also make sense to use the database terminology to a large extent. A
+relational database is the ultimate collection, which can represent
+any single collection discussed in SRFI-44.
+
+I would like to state that I admire the comprehensive proposal by
+Scott Miller. Collections is a vast area, which I, for one, was afraid
+to touch. Without Scott Miller's proposal, we would have nothing to
+discuss.
+
+If I may be permitted a philosophical remark: when it comes to
+collections and other libraries, perhaps we could borrow more from
+languages that resemble Scheme more (such as SML, OCaml, Ruby,
+Haskell) than from languages that resemble Scheme less (C++, Java).
+
+
+There are many theoretical and fundamental reasons why enumerators
+such as fold are profoundly better than cursors. This message will not
+discuss them. Instead, we concentrate on utterly practical
+considerations: performance, easy of programming, and resource
+utilization.
+
+Writing a procedure that traverses, say, an AVL tree, in some order is
+far easier than writing a cursor that remembers the current position
+and can generate the next one. This is especially tricky if the tree
+in question does not have parent pointers (which waste space and lead
+to sharing and resource leakage problems). One look at the C++ STL
+should show how wretched programming of iterators could be.
+
+Cursors are simply less efficient. A cursor must maintain the state of
+the traversal. That state may be invalid. That is, each access to the
+cursor (to advance it or to read a value) must first verify that the
+cursor is in the valid state. The cost of the checks become
+exorbitant.
+
+This issue of inefficiency of cursors is well known. For example, it
+is highly advisable to use &quot;native&quot; operations to move large sections
+of an array (ArrayCopy in Java) rather than copy
+element-by-element. The cost of a range check on each access to the
+array is one of the considerations.
+
+Databases give another example. It is often said that the key to the
+best performance is to do more on the server rather than on the
+client. To find the maximum value of a column, it's far faster to
+       select MAX(col) from collection
+than to open a cursor on the collection and retrieve all values from
+'col' searching for the maximum. Likewise, to increment all the values
+in col, it's far better to
+	update collection set col = col + 1 
+than to use an updateable cursor. Stored procedure languages (some of
+which are quite sophisticated) were introduced to make the server-side
+processing easier and powerful.  We should stress that 
+	select MAX(col) from collection
+is precisely equivalent to
+	foldl max lower_bound collection
+
+
+Another benefit of enumerators is the ease of managing resources of
+the collection -- especially precious resources.  An enumerator can be
+programmed as
+
+	   (define (enum proc collection)
+	       (let ((database-connection #f))
+		(dynamic-wind
+		   (lambda () 
+		      (set! database-connection
+			    (open-connection collection)))
+		   (lambda () (iterate proc))
+		   (lambda ()
+		      (set! database-connection
+		            (close-connection database-connection))))))
+
+If 'proc' does not capture its continuation -- as it is often the case
+-- the database connection is opened (taken from the pool) at the
+beginning of the iteration and is returned to the pool at the end.  If
+we were to expose access to our collection in the form of a cursor, we
+would have to place the variable 'database-connection' into that
+cursor. We cannot close the database until a cursor is alive. But how
+do we know when there are no alive cursors and therefore it is safe to
+recycle the database connection? That alone requires a finalizer -- a
+non-standard, unsupported and unreliable feature. If that was not
+enough, there is another problem: a cursor may stick around (being
+referenced from local variables) even if it would not be used
+according to the logic of the program. For example:
+      (let* ((cursor (open-collection))
+	     (elem (cursor)))
+	   (+ 1 (long-computation elem)))
+
+We cannot close our database connection until long-computation
+finishes.  We contend that SRFI-44's current mandate to use iterators
+will cause great resource leakage, especially for collections with an
+external (file, database, network connection) backing.
+
+
+The most general enumerator for a collection is a left fold. It can
+handle complex seeds, and the early termination (by invoking a
+continuation or throwing an exception). Still, it might be beneficial
+to generalize fold to the following
+
+   coll-fold-left PROC COLL SEED SEED ... -&gt; [SEED ... ]
+
+It takes one or more seeds and returns just as many. PROC is a
+procedure:
+	PROC VAL SEED SEED ... -&gt; [INDIC SEED SEED ...]
+
+It takes n+1 arguments and returns n+1 values. The first argument is
+the current value retrieved from the collection. The other n arguments
+are the current seeds. The first return value is a boolean indicator:
+#t means continue iterating, #f causes the premature termination.
+Other return values of PROC are the new values of the seeds.
+
+A left fold with a similar interface has in fact been implemented --
+specifically to access databases in a functional way:
+	<a  rel="nofollow" href="http://pobox.com/~oleg/ftp/Scheme/lib/db-util1.scm">http://pobox.com/~oleg/ftp/Scheme/lib/db-util1.scm</a>
+Here's a simple example of its usage:
+	<a  rel="nofollow" href="http://pobox.com/~oleg/ftp/Scheme/tests/vdbaccess.scm">http://pobox.com/~oleg/ftp/Scheme/tests/vdbaccess.scm</a> 
+
+I am using this database fold in the production environment. See, for
+example,
+	<a  rel="nofollow" href="http://www.metnet.navy.mil/Metcast/Code/gief-serve.scm">http://www.metnet.navy.mil/Metcast/Code/gief-serve.scm</a>
+
+It is a really complex example, that uses EXISTS and other subqueries,
+table expressions, collection datatypes, geodetic datablade datatypes
+and functions, and other frills to make one sick.
+
+The example shows that it is possible to present a functional
+interface even to such complex collection as object-relational
+databases. Under the hood we can use cursors and ODBC -- and still
+present a functional enumerator-based interface to the user.
+
+Finally, if we really need cursors for our collection, we can get them
+_for free_: A conversion from an enumerator to a cursor is automatic:
+the corresponding procedure was posted on the SRFI-39 mailing list on
+Apr 2, 2003. See also
+       <a  rel="nofollow" href="http://pobox.com/~oleg/ftp/Scheme/enumerators-callcc.html">http://pobox.com/~oleg/ftp/Scheme/enumerators-callcc.html</a>
+
+Incidentally, it might make sense to require the SRFI-44 functions
+'collection-values' to return a stream rather than a list. A stream
+is, essentially, a realization of a cursor.
+
+Again, it is far more efficient and easy for a programmer to implement
+cursors via enumerators, than the other way around.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00022.html">Re: AW: Various comments</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00024.html">Meta reply</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00022.html">Re: AW: Various comments</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00024.html">Meta reply</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00023"><strong>Date</strong></a></li>
+<li><a href="threads.html#00023"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

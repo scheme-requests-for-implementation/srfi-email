@@ -1,0 +1,413 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Procedures (interfaces) -->
+<!--X-From-R13: Fnlybe Qnzcoryy <pnzcoryyNriqri.ngu.pk> -->
+<!--X-Date: Wed, 22 Oct 2003 22:36:29 +0200 (DFT) -->
+<!--X-Message-Id: 592223A6&#45;04CF&#45;11D8&#45;96A9&#45;000A95CCCEE4@evdev.ath.cx -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20031021072047.GB26398@loki.vpn.szonye.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Procedures (interfaces)</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00108.html">Date Prev</a>][<a href="msg00110.html">Date Next</a>][<a href="msg00105.html">Thread Prev</a>][<a href="msg00110.html">Thread Next</a>][<a href="maillist.html#00109">Date Index</a>][<a href="threads.html#00109">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Procedures (interfaces)</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Procedures (interfaces)</li>
+<li><em>From</em>: Taylor Campbell &lt;<a href="mailto:campbell@DOMAIN.HIDDEN">campbell@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 22 Oct 2003 16:36:00 -0400</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20031021072047.GB26398@DOMAIN.HIDDEN">20031021072047.GB26398@xxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+
+On Tuesday, Oct 21, 2003, at 03:20 US/Eastern, Bradd W. Szonye wrote:
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+As promised, here is my suggestion for revising the collection
+procedures. I tried to remain faithful to the original, and I tried to
+avoid even minor changes. No, really! Nevertheless, I'm sure that it
+will look like a big change. Therefore, let me preface my revision with
+some rationales. Feel free to question or reject them -- as you've
+already seen, I'm amenable to leaving things the way they are if you
+have a good reason to do so.
+
+Organization - With the new attributes like reversible, it was too
+difficult to organize procedures by collection type. Instead, I list
+</pre><tt>them all by procedure type (constructor, accessor, etc.) with a 
+</tt><tt>&quot;defined
+</tt><tt>for:&quot; clause below each usage example. I think I correctly specified 
+</tt><tt>all
+</tt><pre style="margin: 0em;">
+of the interfaces, but please double-check them if you decide to use
+this.
+
+Dictionaries - I generalized the collection-building procedures to work
+well with dictionaries. For example, *-add can now build a dictionary;
+just give it a (cons key value) pair, like you do in the dictionary
+constructor. Likewise, *-remove can remove a mapped value; it returns
+the removed key and value as a pair. There's also a specialized
+*-add-key (for convenience's sake) and *-remove-key (for necessity's
+sake). I removed the *-put function, but added a note to *-set-key that
+some dictionaries may permit key addition via that procedure. In other
+words, the &quot;add-or-set&quot; operation is optional.
+
+Removal and deletion - All remove-type procedures now return the
+modified collection and the removed value. If it's a dictionary, remove
+returns a key-value pair.
+
+Set! compatible with R5RS - The original specification for *-set! was
+incompatible with R5RS vector-set!, which modifies the vector in-place
+and returns an unspecified value. I changed *-set! to match that, and I
+</pre><tt>changed *-set (the functional version) to return the modified 
+</tt><tt>collection
+</tt><pre style="margin: 0em;">
+and the previous value.
+</pre></blockquote><pre style="margin: 0em;">
+
+This doesn't work at all, because *-SET! is _linear_update_, not
+purely mutable.  I am _adamantly_ against removing linear update
+procedures and replacing them with purely mutable ones, because it
+just _doesn't_work_ with some kinds of collections, e.g. lists, where
+the empty list can't be mutated.  (This applies to all of the other
+*-foo! procedures as well.)
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+*=? and &lt;=?: I added question marks for consistency with functions like
+</pre><tt>string=?. I also removed the elt= argument and changed the definition 
+</tt><tt>so
+</tt><pre style="margin: 0em;">
+that it was no longer necessary. I was reluctant to make this change,
+but I felt that the original version just wasn't viable.
+</pre></blockquote><pre style="margin: 0em;">
+
+I don't like this at all.  Removing ELT= is removing a _lot_ of
+functionality.  The reason the ? wasn't there was _because_ the
+procedures were not comparable to STRING=?, CHAR=?, et cetera.
+
+I don't understand the rationale for having ordering functions on
+_collections_.  Can you explain this in more detail?  (or in any
+detail at all: I can't find any)
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+                                                         The main
+</pre><tt>problem, once again, is that a single equivalence predicate just 
+</tt><tt>doesn't
+</tt><pre style="margin: 0em;">
+work for dictionaries.
+</pre></blockquote><pre style="margin: 0em;">
+
+It _does_ make sense for dictionaries: if all the keys are equal, _by_
+the_dictionary's_key_equivalence_function_, then test to see if all
+the
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+                       I considered passing (cons key=? val=?) to the
+procedure, but that wouldn't work for non-dictionaries.
+</pre></blockquote><pre style="margin: 0em;">
+
+Er, I don't get this.  You didn't mind changing the add and remove
+operations to accept pairs for dictionaries, but you do for the
+comparison operations?
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+                                                        In the end, I
+went with the *=? interface, partly because it makes for a trivial
+implementation of string=?.
+</pre></blockquote><pre style="margin: 0em;">
+
+(define (string=? . strings)
+  (apply string= char=? strings))
+
+That looks pretty trivial to me!
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+I think that's all of the major changes. Here's the revision:
+
+
+PROCEDURES
+
+Many procedures accept an optional procedure (thunk) to handle failure.
+If a procedure cannot perform the requested operation (because the
+collection has a fixed size, is immutable, does not permit duplicate
+values, does not contain a requested value, would become unordered,
+</pre><tt>etc.), it returns the value of invoking the thunk with no arguments. 
+</tt><tt>The
+</tt><pre style="margin: 0em;">
+default thunk signals an error.
+
+CONSTRUCTORS
+[...]
+procedure: % {key&lt;? | key=?} {val&lt;? | val=?} value ... =&gt; %
+defined for: all collections
+
+Constructs a new % collection with the values as its contents. Some
+collections may require ordering or equivalence functions during
+construction. Dictionaries may require comparison functions for both
+keys and values. (Ordered collections should derive their equivalence
+functions from the ordering function whenever possible.)
+</pre></blockquote><pre style="margin: 0em;">
+
+The ordering functions here sort of make sense, I guess...but I don't
+like how they work with these two constructors.  It's ambiguous what
+argument corresponds to what; for example, is (list = 1 2 3) a list
+with = for a comparison function and (1 2 3) for contents, or a list
+(#{Procedure} 1 2 3)?  (where '#{Procedure}' indicates an abstract
+procedure value)
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+procedure: *-copy * =&gt; *
+defined for: all collections
+
+Returns a new collection of the same type as the argument with the same
+contents but distinct storage. The copy is shallow; that is, it copies
+values in a way that preserves object identity.
+</pre></blockquote><pre style="margin: 0em;">
+
+I should like a *-COPY for sequences that also accepts optional start
+and end arguments.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+TYPE PREDICATES
+
+procedure: collection? value =&gt; value
+procedure: %? value =&gt; value
+defined for: all collections
+
+Returns a true value iff the provided value supports the interface for
+the type (%) named in the predicate.
+</pre></blockquote><pre style="margin: 0em;">
+
+Why %? and not *??
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+CARDINALITY OPERATORS
+
+procedure: *-empty? collection =&gt; boolean
+</pre></blockquote><pre style="margin: 0em;">
+
+Don't forget the 'defined for: all collections' bit.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+[...]
+procedure: *-size collection =&gt; exact integer
+defined for: all collections
+
+If the collection has a concept of size, this function returns the
+number of values or mappings in the collection. If it does not, #f must
+be returned. If possible, this should return the number of times
+collection-fold will call the fold-function before halting.
+</pre></blockquote><pre style="margin: 0em;">
+
+Have we decided on the issues of infiniteness and circularity yet?
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+[...]
+
+EQUIVALENCE AND TOTAL ORDERING RELATIONS
+
+procedure: *=? *... =&gt; boolean
+procedure: *&lt;? *... =&gt; boolean
+</pre></blockquote><pre style="margin: 0em;">
+
+(see far above)
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+procedure: *-equivalence-function * =&gt; procedure
+defined for: bags, sets, and dictionaries
+</pre></blockquote><pre style="margin: 0em;">
+
+Where's the rationale for defining this _and_
+*-KEY-EQUIVALENCE-FUNCTION on dictionaries?
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Returns the value equivalence function for the collection.
+
+procedure: *-key-equivalence-function * =&gt; procedure
+defined for: dictionaries
+
+Returns the key equivalence function for the dictionary.
+
+procedure: *-ordering-function * =&gt; procedure
+defined for: ordered bags, sets, and dictionaries
+</pre></blockquote><pre style="margin: 0em;">
+
+Again, I don't see why this is defined on dictionaries when there is
+*-KEY-ORDERING-FUNCTION.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Returns the value ordering function for the collection.
+
+procedure: *-key-ordering-function * =&gt; procedure
+defined for: ordered dictionaries
+
+Returns the key ordering function for the dictionary.
+
+ENUMERATIONS
+[...]
+
+ACCESSORS
+[...]
+
+VALUE MUTATORS
+
+</pre></blockquote><pre style="margin: 0em;">
+
+See near the top of this email about this.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+procedure: *-update * position f [thunk] =&gt; *
+procedure: *-update! * position f [thunk] =&gt; unspecified
+defined for: sequences and ordered collections
+
+procedure: *-update-key * key f [thunk] =&gt; *
+procedure: *-update-key! * key f [thunk] =&gt; unspecified
+defined for: sequences and ordered collections
+</pre></blockquote><pre style="margin: 0em;">
+
+I don't understand why you're differentiating between these two, and
+why they aren't defined for dictionaries.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+COLLECTION MUTATORS
+
+When adding or inserting a value into a dictionary, the new value must
+be a key-value pair, unless the procedure is specifically defined for
+dictionaries. Likewise, when removing or deleting a dictionary value,
+the returned value is a key-value pair. A key-value pair is a Scheme
+pair whose car is the key and whose cdr is the mapped value:
+(cons key value).
+
+procedure: *-clear[!] * [thunk] =&gt; *
+defined for: all collections
+
+Returns an empty collection of the same type as the argument.
+</pre></blockquote><pre style="margin: 0em;">
+
+[the next bit is permutated and abbreviated bit]
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+procedure: *-add-key[!] * new-key mapped-value [thunk] =&gt; *
+defined for: dictionaries
+
+Returns a collection of the same type with the new key mapped to the
+given value.
+</pre></blockquote><pre style="margin: 0em;">
+
+Why have *-ADD with key/value pairs _and_ this?
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+procedure: *-add-each[!] * source-collection [thunk] =&gt; *
+procedure: *-remove-every[!] * value =&gt; * list
+procedure: *-remove-each-from[!] * source-collection [thunk] =&gt; % list
+procedure: *-remove-every-from[!] * source-collection [thunk] =&gt; % list
+procedure: *-remove-key[!] * key [thunk] =&gt; * pair
+</pre></blockquote><pre style="margin: 0em;">
+
+Why differentiate between removing and removing keys?
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+procedure: *-remove-every-key[!] * key [thunk] =&gt; * list
+procedure: *-remove-each-key-from[!] * source [thunk] =&gt; * list
+procedure: *-remove-every-key-from[!] * source [thunk] =&gt; * list
+</pre></blockquote><pre style="margin: 0em;">
+
+Er, why all of the name changes?
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+[...]
+procedure: *-insert-right * new-value [thunk] =&gt; *
+defined for: reversible sequences
+</pre></blockquote><pre style="margin: 0em;">
+
+Don't you mean 'reversible _flexible_ sequences?'
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+[...]
+procedure: *-delete-right * [thunk] =&gt; *
+defined for: reversible sequences and reversible ordered collections
+</pre></blockquote><pre style="margin: 0em;">
+
+[flexible]
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+As *-delete, except that it deletes the value at the end of the
+sequence.
+
+SET OPERATIONS
+[...]
+--
+Bradd W. Szonye
+<a  rel="nofollow" href="http://www.szonye.com/bradd">http://www.szonye.com/bradd</a>
+
+</pre></blockquote><pre style="margin: 0em;">
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00110" href="msg00110.html">Re: Procedures (interfaces)</a></strong>
+<ul><li><em>From:</em> Taylor Campbell</li></ul></li>
+<li><strong><a name="00111" href="msg00111.html">Re: Procedures (interfaces)</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+<li><strong><a name="00114" href="msg00114.html">Re: Procedures (interfaces)</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00105" href="msg00105.html">Re: Procedures (interfaces)</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00108.html">Name and API conflicts, and some wording</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00110.html">Re: Procedures (interfaces)</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00105.html">Re: Procedures (interfaces)</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00110.html">Re: Procedures (interfaces)</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00109"><strong>Date</strong></a></li>
+<li><a href="threads.html#00109"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,204 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Arithmetic issues &#45; feedback -->
+<!--X-From-R13: orne <orneNfbavp.arg> -->
+<!--X-Date: Wed,  1 Feb 2006 23:59:32 +0100 (MET) -->
+<!--X-Message-Id: Pine.LNX.4.58.0602011336210.18839@bolt.sonic.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200510181654.j9IGs4jA012729@later.het.brown.edu -->
+<!--X-Reference: y9l64ocqfqt.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Arithmetic issues - feedback</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00400.html">Date Prev</a>][<a href="msg00402.html">Date Next</a>][<a href="msg00396.html">Thread Prev</a>][<a href="msg00402.html">Thread Next</a>][<a href="maillist.html#00401">Date Index</a>][<a href="threads.html#00401">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Arithmetic issues - feedback</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Michael Sperber &lt;<a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Arithmetic issues - feedback</li>
+<li><em>From</em>: bear &lt;<a href="mailto:bear@DOMAIN.HIDDEN">bear@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 1 Feb 2006 14:59:15 -0800 (PST)</li>
+<li><em>Cc</em>: Andre van Tonder &lt;<a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxxxxxxxx</a>&gt;,	<a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:y9l64ocqfqt.fsf@DOMAIN.HIDDEN">y9l64ocqfqt.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:200510181654.j9IGs4jA012729@DOMAIN.HIDDEN">200510181654.j9IGs4jA012729@xxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:y9l64ocqfqt.fsf@DOMAIN.HIDDEN">y9l64ocqfqt.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+For what it's worth, I've trawled through threads on
+lispy mathematics in usenet archives for both cls and
+cll, and I think that I've gotten a good idea of
+what produces most of the complaint-generating math bugs.
+
+Most math errors happen because information is lost
+when one numeric format is converted or coerced to another.
+These are of three main kinds:
+
+First, there is the well-known problematic property of
+binary-mantissa and binary-exponent representation that
+no decimal fraction can be exactly represented. This is
+of course is shared with virtually all languages except
+those (Ada I think, and maybe COBOL) which insist on
+exact decimal fractions in their spec.  Someone enters
+one fraction in their source code, the system converts
+it and proceeds with a slightly different fraction in
+its executable, and hilarity ensues.
+
+Second, it frequently happens that the exact numbers
+(bignums) have a wider range than the inexact numbers,
+which results in calculations that proceed successfully
+to a correct conclusion for rational arguments and yet
+&quot;Explode&quot; for mantissa-and-exponent arguments of exactly
+the same value, returning wrong answers because the
+representational range has been exceeded in some
+intermediate computation.  As an exercise to the reader,
+it's easy to write a function that will, in a bignums-
+and-floats representation, give
+
+(fn 3/4) =&gt; 2 and
+(fn 0.75) =&gt; #inf
+
+And such functions, accidentally arrived at, baffle and
+confuse a great many newbies.
+
+Third, sign asymmetry is often surprising.  If +x is a
+number, people expect -x to be a number.
+
+Fourth, In Lisps supporting both a floating-point format
+and a rational format, roundoff errors when a number is
+converted from one to the other baffle and surprise
+a lot of people.  Many such conversions happen to avoid
+a performance error, to wit:
+
+Most behavior errors in lisps with infinite-precision
+rationals occur because people use calculations (iterative
+refinement, etc) that generate rationals whose
+representation takes exponentially increasing amounts of
+space and as a result consume exponentially increasing
+memory space and cpu time.
+
+My immediate conclusion from looking at this list and R5RS
+(yours may be different, and probably will) is to infer
+that in order to avoid as many unexpected errors as possible,
+I should:
+
+1) Represent powers of ten exactly, indicating a numeric format
+   with an exponent-of-five as well as an exponent-of-two.
+
+2) Assure that every exact number has a corresponding inexact
+   number of precisely the same value to prevent range and
+   conversion errors.
+
+3) Eschew infinite-precision rationals as a default, instead
+   giving numbers a large(ish) &quot;denominator&quot; that will allow
+   exact rationals up to a point the user considers &quot;useful&quot;
+   and convert to &quot;inexact&quot; when that point is exceeded.
+
+So my numeric format would become, (E, S, N, D, X, Y) where
+E and S are one bit each, N has as many bits as we think
+necessary, D is probably no more than 8 words long but possibly
+selected by a command-line switch or (numeric-mode ...) syntax,
+and X and Y are probably about two biased words each.  The
+numeric value is N/D * 2^(X-bias) * 5^(Y-bias), with sign bit
+S and exactness bit E.  And I can do math without type dispatch,
+because all my numbers are the same type.  So, unexectedly,
+if I can be clever enough with my basic operations to avoid
+cache stalls and conditionals, this isn't even a big performance
+hit.
+
+The operations expressed as fx+, fx-, and so on, would be done
+by first examining the arguments' exactness bits to make sure
+they were set, then testing to make sure the denominator is
+exactly one, then making sure that (- X bias) and (- Y bias)
+are nonnegative, and throwing an error should any of those
+conditions fail.  Next, for each argument, I'd need to multiply
+N by powers of 2 and 5 to cancel out the exponents leaving
+(- X bias) = 0 and (- Y bias) = 0, throwing a different error
+if this caused N to become larger than some fixed limit.
+Next I'd perform the usual operation on the altered versions of
+the arguments, doing a modulus operation to bring N below the
+fixed limit again if necessary, and returning that result.
+Right?
+
+The operations expressed as fl+, fl-, and so on, would be done
+similarly, but with more flexibility regarding X (the power of
+2).  Oh, and I'd have to add code to explicitly fail if one of
+the arguments happened to be exact, and coerce the result to
+inexact regardless of whether an exact answer were returned
+from the generic procedure. Right?
+
+				Bear
+
+(the point of this exercise is to demonstrate that the
+operations here requested are not necessarily &quot;primitive&quot;
+and that some semi-reasonable design decisions will have
+to jump through hoops in order to dumb themselves down
+enough to meet the arbitrary limits they impose).
+
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00402" href="msg00402.html">Re: Arithmetic issues - feedback</a></strong>
+<ul><li><em>From:</em> Marcin 'Qrczak' Kowalczyk</li></ul></li>
+<li><strong><a name="00403" href="msg00403.html">Re: Arithmetic issues - feedback</a></strong>
+<ul><li><em>From:</em> John Cowan</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00396" href="msg00396.html">Re: Arithmetic issues - feedback</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00400.html">Re: straw-man [was Re: arithmetic issues]</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00402.html">Re: Arithmetic issues - feedback</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00396.html">Re: Arithmetic issues - feedback</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00402.html">Re: Arithmetic issues - feedback</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00401"><strong>Date</strong></a></li>
+<li><a href="threads.html#00401"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

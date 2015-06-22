@@ -1,0 +1,135 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: text processes vs. string procedures -->
+<!--X-From-R13: fuvirefNnv.zvg.rqh -->
+<!--X-Date: Mon, 24 Jan 2000 19:19:22 &#45;0600 (CST) -->
+<!--X-Message-Id: 200001250119.UAA10440@mongkok.smartleaf.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200001241337.IAA09036@mongkok.smartleaf.com -->
+<!--X-Reference: 009e01bf668e$0a56c0b0$3f89accf@MEURGLYSVII -->
+<!--X-Reference: 200001242152.QAA10077@mongkok.smartleaf.com -->
+<!--X-Reference: 011301bf66bc$226f7d80$3f89accf@MEURGLYSVII -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: text processes vs. string procedures</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00052.html">Date Prev</a>][<a href="msg00054.html">Date Next</a>][<a href="msg00049.html">Thread Prev</a>][<a href="msg00050.html">Thread Next</a>][<a href="maillist.html#00053">Date Index</a>][<a href="threads.html#00053">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: text processes vs. string procedures</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-13@DOMAIN.HIDDEN">srfi-13@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: text processes vs. string procedures</li>
+<li><em>From</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxx</a></li>
+<li><em>Date</em>: Mon, 24 Jan 2000 20:19:21 -0500</li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:011301bf66bc%24226f7d80%243f89accf@DOMAIN.HIDDEN"><a href="msg00049.html">011301bf66bc$226f7d80$3f89accf@MEURGLYSVII</a></a>&gt;	(<a href="mailto:esl@DOMAIN.HIDDEN">esl@xxxxxxxxxxxxxxx</a>)</li>
+<li><em>References</em>: &lt;<a href="mailto:200001241337.IAA09036@DOMAIN.HIDDEN">200001241337.IAA09036@xxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:009e01bf668e%240a56c0b0%243f89accf@DOMAIN.HIDDEN"><a href="msg00047.html">009e01bf668e$0a56c0b0$3f89accf@MEURGLYSVII</a></a>&gt; &lt;<a href="mailto:200001242152.QAA10077@DOMAIN.HIDDEN">200001242152.QAA10077@xxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:011301bf66bc%24226f7d80%243f89accf@DOMAIN.HIDDEN"><a href="msg00049.html">011301bf66bc$226f7d80$3f89accf@MEURGLYSVII</a></a>&gt;</li>
+<li><em>Reply-to</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>   From: &quot;Sergei Egorov&quot; &lt;esl@xxxxxxxxxxxxxxx&gt;
+   I understand your concern; many people do use ASCII and Latin-1 case
+   mapping and are happy with what they get from the good old char-upcase and
+   char-downcase.  And I am not against char-upcase and char-downcase as long
+   as their definition is limited to ASCII; otherwise you will have to ignore
+   three problems mentioned in the Unicode book: uppercase I may map to either
+   i or dotless i (in Turkish), two uppercase letters SS may map to a single
+   lowercase sharp s in German, and this thing with French \'e. We are lucky
+   that there are just three problems with case folding, but collation is
+   *much* worse. My suggestion would be to restrict char-upcase,
+   char-downcase, and their derivatives to ASCII and explicitly specify that
+   string&gt;? and other comparisons are based on mechanical code-point
+   comparison that might not correspond to any 'natural' comparison in a real
+   language. This approach makes the library reasonably useful, simple to
+   implement, and really fast. I believe that attempting to define
+   language-dependent interface to collation based on strings is wrong:
+   collation works best when it deals with language-specific units larger than
+   one character, and the 'text' abstraction suits this task much better.
+
+Wait wait wait -- I am *not* proposing CHAR-UPCASE and CHAR-DOWNCASE.
+These procedures are *not* part of SRFI-13. You are quite right -- they have
+real problems with non-ASCII char encodings. What is in SRFI-13 is
+      STRING-UPCASE
+      STRING-DOWNCASE
+      STRING-TITLECASE
+These can handle the various issues involved in case-mapping text (e.g.,
+upcasing German es-szet expanding to 2 chars, Greek sigma downcasing in a
+context-dependent way, titlecasing compound chars like &quot;fi&quot; or &quot;dz&quot;). No
+problem. Unicode TR 21 explains clearly and carefully how to do it for
+Unicode.
+
+Note also that I punted the side-effecting STRING-UPCASE! et al. because
+of the one-char-&gt;two-char case mapping issues. 
+
+Your general point about these operations no longer being simply
+char-&gt;char, but being string-&gt;string or text-&gt;text is right on the money.
+
+However, I have nothing intelligent to say about collation and string
+comparison in the wide Unicode world today. If I can't come up with something
+reasonable that works in ASCII, Latin-1 *and* a Unicode setting, I'll punt the
+string-comparison functions, which I think would be a huge blow to the
+library.  
+    -Olin
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00046" href="msg00046.html">Case-mapping, Unicode &amp; internationalisation</a></strong>
+<ul><li><em>From:</em> shivers</li></ul></li>
+<li><strong><a name="00047" href="msg00047.html">Re: Case-mapping, Unicode &amp; internationalisation</a></strong>
+<ul><li><em>From:</em> Sergei Egorov</li></ul></li>
+<li><strong><a name="00048" href="msg00048.html">text processes vs. string procedures</a></strong>
+<ul><li><em>From:</em> shivers</li></ul></li>
+<li><strong><a name="00049" href="msg00049.html">Re: text processes vs. string procedures</a></strong>
+<ul><li><em>From:</em> Sergei Egorov</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00052.html">char/char-set/pred</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00054.html">Re: shared-text substrings, start/end indices, xs&gt;&lt;, etc.</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00049.html">Re: text processes vs. string procedures</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00050.html">SRFI-13 -- bits &amp; pieces</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00053"><strong>Date</strong></a></li>
+<li><a href="threads.html#00053"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

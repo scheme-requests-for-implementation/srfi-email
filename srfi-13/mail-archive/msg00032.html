@@ -1,0 +1,266 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: SRFI&#45;13 string library round 3 &#45;&#45; request for comments &#38; reviews -->
+<!--X-From-R13: Rnivq Dhfu <qehfuNargfpncr.pbz> -->
+<!--X-Date: Fri, 3 Dec 1999 04:19:47 &#45;0600 (CST) -->
+<!--X-Message-Id: okfogc849de.fsf@netscape.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: qij1z9jmfar.fsf@lambda.ai.mit.edu -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: SRFI-13 string library round 3 -- request for comments &amp; reviews</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00031.html">Date Prev</a>][<a href="msg00033.html">Date Next</a>][<a href="msg00029.html">Thread Prev</a>][<a href="msg00033.html">Thread Next</a>][<a href="maillist.html#00032">Date Index</a>][<a href="threads.html#00032">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: SRFI-13 string library round 3 -- request for comments &amp; reviews</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Olin Shivers &lt;<a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxxxxxxxxx</a>&gt;,        SRFI-13 &lt;<a href="mailto:srfi-13@DOMAIN.HIDDEN">srfi-13@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: SRFI-13 string library round 3 -- request for comments &amp; reviews</li>
+<li><em>From</em>: David Rush &lt;<a href="mailto:drush@DOMAIN.HIDDEN">drush@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: 03 Dec 1999 10:16:45 +0000</li>
+<li><em>Cc</em>: <a href="mailto:kumo@DOMAIN.HIDDEN">kumo@xxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: Olin Shivers's message of &quot;21 Nov 1999 21:27:24 -0500&quot;</li>
+<li><em>References</em>: &lt;<a href="mailto:qij1z9jmfar.fsf@DOMAIN.HIDDEN">qij1z9jmfar.fsf@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+I know that I'm late coming into this discussion, but I just had to
+get a few comments in on the status of SRFi-13. First and foremost, I
+pretty much like it. However...
+
+Reading over it, I get a sense that there is a case of rampant
+featuritis happening here. String utilities are *so* pervasive
+that everyone has opinions and preferred interfaces. IMNSHO,
+the SRFI could lose:
+
+	- (Don't shoot me for this) all of the sub-stringiness. See
+	  below for a justification.
+
+	- char-set params; wrap 'em up in your own lambda, please. Is
+	  it really more efficient to do this in the library, when
+	  R5RS doesn't support the data type anyway?
+
+	- functions of marginal utility, I know that this is a matter
+	  of diverse opinion, but I suspect that there are more than a
+	  few functions in there that only *rarely* get used by
+	  anyone. My candidates are included below.
+
+Re: losing substringiness
+
+I agree that this is desirable functionality, I just really think it
+needs to be spec'ed elsewhere (SRFI-N). Shared-substrings are a
+separate data type in other languages for good reasons (I can't speak
+to Guile's issues, I use Guile, but I didn't even know they were
+there, the documentation *is* being rewritten), the simplest being
+that they have different lifecycle issues from 'full'
+strings. Besides, there are bunches of interfaces in SRFI-13 which
+would be a lot cleaner without [start end] and the indirect binding of
+substring to params e.g. (f s1 s2 start1 end1 start2 end2).
+
+Of course, because Olin is very clever, this will be mostly invisible
+to the casual user of the library. I just feel very strongly that this
+can be better treated in a shared-substring SRFI, which will probably
+never get written if most of the functionality is already avaiable in
+this one.
+
+Re: functions of marginal utility
+
+In thinking about this list, I would have to say that it is prejudiced
+by virtue of the fact that I use strings as grey boxes for
+human-directed information. If you're using strings as a poor man's
+byte-vector then you may indeed want some of these rather more than I
+do. I would again ask the question: Does this functionality fit better
+as part of a different package?
+
+string-map - In 15 years of programming, I can't think of *once* where
+	I have used something this general. string-[up/down]case, yes,
+	generalized map, no. Not a big deal, but exemplary.
+
+string-fold/unfold - these are actually cool functions. One constructs
+	a data structure from a string, and the other builds a string
+	from a data structure. I just can't get over the nagging
+	feeling that these are more about string parsing than about
+	string manipulation. And Olin suggested a parsing SRFI...
+
+string-tabluate - ??? I grok it, just can't see the utility
+
+string-for/do-each - No great complaint, I just think that since
+	you're almost certainly doing stateful processing inside the
+	loop that your code will probably be more readable with a
+	coded loop than with a function call. OTOH, this does present
+	nice possibilities when coupled with call/cc.
+
+string-compare - how much does this add to string-{pre/suf}fix? I find
+	it to be fairly cool (handling ordering relationships is one
+	of my pet programming peeves), I just don't think I'd ever end
+	up using it.
+
+string-capitalize - I agree with Olin. Ditch it. It has too much too
+	do with natural language rules, and not enough to do with
+	string manipulation.
+
+string-{filter/delete} - I feel much the same way about this as I do
+	about string-map.
+
+
+Re: string-tokenize/string-split
+
+&gt;    From: oleg@xxxxxxxxx
+&gt;
+&gt;    Suppose we have a string 'str' consisting of tokens separated
+&gt;    by a #\: character. We can extract the tokens using either
+&gt;
+&gt;        (string-tokenize str 
+&gt;                (char-set-difference char-set:full (char-set #\:)))
+&gt;    or
+&gt;        (string-split str (char-set #\:))
+&gt;
+&gt;    the two procedure calls above are indeed roughly equivalent;
+&gt;    therefore, a String library should define only one of them.
+
+Well, that does not appear to be a guiding principle from my read of
+the SRFI document.
+
+
+&gt;   It indeed appears that some problems lend themselves to
+&gt;   delimiter-based parsing while the others do to the inclusion
+&gt;   semantics. 
+
+This is the telling argument. As you may have guessed I am in favor of
+this proposal. In fact, I would go sa far as to say that the delimited
+approach should be retained and the inclusion approach abandoned;
+inclusion is both better &amp; more readily addressed via regexp's. The
+inclusion case frequently involves far more specific subsets than the
+standard available char-set:*s, and using them will require complex
+composition of char-sets involving more overhead.
+
+OTOH, regexp's are generally less 'dynamic' as in you generally don't
+recompute them on the fly, which you could more easily do with
+string-tokenize's char-sets.
+
+
+&gt; Unicode is important! But... one possible reply is that Gambit's
+&gt; char-set implementation needs to be improved.
+
+This seems to be the tail wagging the dog.
+
+&gt; You're *still* right in your larger point that I could split at colons more
+&gt; easily with a string-split. But even after reading your comments, when I sit
+&gt; down to try and design a procedure or two that does the basics, I still go
+&gt; helplessly sliding down a slippery feature slope.
+
+I believe it. I think that this might simplify by eliminating the
+sub-string features of this SRFI (which I advocate for other reasons,
+anyway).
+
+&gt; You *have* to allow control of the delimiter grammar -- separator,
+&gt; terminator, prefix
+
+No, you don't. This is not necessarily an inverse of string-join,
+although it would be nice. I'd estimate that 99% of the cases involve
+infix splitting. Terminator splitting is a trivial special case. of
+infix. I'm not sure that prefix splitting would account for even 0.1%
+of all the cases.
+
+&gt; START/END indices?
+Ditch 'em.
+
+&gt; If we are going to quit early (via MAXSPLIT), we need a way to tell
+&gt; the client how far into the string we got. 
+No. It's already there in Oleg's proposal bacause the last returned
+string in a MAXSPLIT case is all the remaining text.
+
+&gt; On the other hand, I'm not happy with returning the rest of the
+&gt; string as a final element of the return list.
+Why?
+
+&gt; One of these things is not like the other...
+What thing is not like which other?
+
+&gt; Not to mention that it requires copying the data.
+
+Only if you already had to copy it in the first place.
+
+Well, OK, here's my best shot (which is not too good) (plagiarized
+from Olin and twisted to my other prejudices as outlined above):
+
+(string-split s char/predicate [grammar max-tokens]) -&gt; string-list
+
+- GRAMMAR is 'infix, 'suffix, 'prefix, or 'strict-infix
+  Defaults to 'infix.
+- MAX-TOKENS is an integer saying &quot;quit after this many tokens&quot;; #F means
+  infinity. Defaults to #f. Oleg's convention (last element of list
+  has remaining text) applies
+
+&gt; - ELIDE-DELIMS is boolean, meaning runs of delimiters count as
+&gt;   single delimiter. Defaults to #t.
+
+Overkill, and it violates inverse-ness for string-join. The only case
+we want it for (in general) is handling white space. I could take it or
+leave it, but it should be the last parameter (most specific
+case). Now that I'm thinking, I'd probably take it in favor of
+string-split-ws...
+
+&gt; This is powerful. It's good to have an inverse for STRING-JOIN.
+Yep.
+
+&gt; It's a heck of a lot of parameters. Does anyone besides Oleg want to
+&gt; push for it? 
+Count me in.
+
+david rush
+-- 
+A camel is a horse designed by committee...
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00031.html">Re: string-escaper</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00033.html">Position of the Judean People's Front</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00029.html">is string-contains example wrong?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00033.html">Position of the Judean People's Front</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00032"><strong>Date</strong></a></li>
+<li><a href="threads.html#00032"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

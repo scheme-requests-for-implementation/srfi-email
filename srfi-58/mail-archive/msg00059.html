@@ -1,0 +1,174 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: #\a octothorpe syntax vs SRFI 10 -->
+<!--X-From-R13: Ohoerl Xnssre <ntwNnyhz.zvg.rqh> -->
+<!--X-Date: Mon,  3 Jan 2005 22:11:50 +0100 (NFT) -->
+<!--X-Message-Id: 20050103211153.87F5E1B7717@voluntocracy.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: Pine.LNX.4.44.0501021050040.30685&#45;100000@autodrip.bloodandcoffee.net -->
+<!--X-Reference: 41D86068.2080809@sorted.org -->
+<!--X-Reference: 20050103184606.417DB1B7717@voluntocracy.org -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: #\a octothorpe syntax vs SRFI 10</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00058.html">Date Prev</a>][<a href="msg00060.html">Date Next</a>][<a href="msg00058.html">Thread Prev</a>][<a href="msg00034.html">Thread Next</a>][<a href="maillist.html#00059">Date Index</a>][<a href="threads.html#00059">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: #\a octothorpe syntax vs SRFI 10</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:campbell@DOMAIN.HIDDEN">campbell@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>, <a href="mailto:srfi-58@DOMAIN.HIDDEN">srfi-58@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: #\a octothorpe syntax vs SRFI 10</li>
+<li><em>From</em>: Aubrey Jaffer &lt;<a href="mailto:agj@DOMAIN.HIDDEN">agj@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon,  3 Jan 2005 16:11:53 -0500 (EST)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-58@DOMAIN.HIDDEN">srfi-58@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20050103184606.417DB1B7717@DOMAIN.HIDDEN">20050103184606.417DB1B7717@xxxxxxxxxxxxxxxx</a>&gt; (message from	Aubrey Jaffer on Mon, 3 Jan 2005 13:46:06 -0500 (EST))</li>
+<li><em>References</em>: &lt;<a href="mailto:Pine.LNX.4.44.0501021050040.30685-100000@DOMAIN.HIDDEN">Pine.LNX.4.44.0501021050040.30685-100000@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:41D86068.2080809@DOMAIN.HIDDEN">41D86068.2080809@xxxxxxxxxx</a>&gt; &lt;<a href="mailto:20050103184606.417DB1B7717@DOMAIN.HIDDEN">20050103184606.417DB1B7717@xxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre> | From: Aubrey Jaffer &lt;agj@xxxxxxxxxxxx&gt;
+ | Date: Mon,  3 Jan 2005 13:46:06 -0500 (EST)
+ | 
+ | Heterogeneous vectors support UNQUOTE because the elements of vectors
+ | can contain reference to expressions.  Homogeneous-vectors would not
+ | easily support UNQUOTE.  From SRFI-4:
+ | 
+ |    Homogeneous vectors can appear in quasiquotations but must not
+ |    contain unquote or unquote-splicing forms (i.e. `(,x #u8(1 2)) is
+ |    legal but `#u8(1 ,x 2) is not).  This restriction is to accomodate
+ |    the many Scheme systems that use the read procedure to parse
+ |    programs.
+ | 
+ | Similarly, heterogeneous arrays could support UNQUOTE; but uniform
+ | arrays would not easily do so.
+ | 
+ | That vectors can support UNQUOTE-SPLICING is a fortuitous consequence
+ | of their having only one row, whose length is thus unconstrained.  The
+ | rows of multi-row arrays must all be the same length; supporting
+ | UNQUOTE-SPLICING would require some heavy lifting.
+
+It is useful to be able to specify data structures by template, as
+QUASIQUOTE does.  We can do better than my first attempt by adding a
+procedure to SRFI-47 array:
+
+ -- Function: array rank protothunk contents
+
+     RANK must be a nonnegative integer.  PROTOTHUNK must be a
+     procedure of no arguments returning an array.  CONTENTS must be a
+     RANK-deep nesting of lists.  For RANK = 0, CONTENTS can be any
+     object.
+
+     `array' creates and returns an array of the type returned by
+     calling PROTOTHUNK with no arguments.  The returned array has
+     RANK dimensions; and elements taken from CONTENTS in one-to-one
+     correspondence, the innermost lists corresponding to the rows
+     (the last index).
+
+Here is how the `array' procedure could be used to return matrices for
+calculating optical interference (Fresnel equations):
+
+;;; Returns 2x2 matrix coding phase difference between reflected and
+;;; transmitted paths.
+;;;
+;;;  (  -i*d_n    0    )
+;;;  ( e               )
+;;;  (           i*d_n )
+;;;  (    0     e      )
+(define (layer-phase h_j n_j th_j w)
+  (define phase (exp (/ (* +2i pi h_j n_j (cos th_j)) w)))
+  (array 2 A:complex-64 `((,(/ phase)      0)
+                          (0          ,phase))))
+
+;;; Returns 2x2 matrix:
+;;;
+;;;            (   1      r      )
+;;;    1       (           n-1,n )
+;;; -------- * (                 )
+;;;  t         ( r          1    )
+;;;   n-1,n    (  n-1,n          )
+(define (layer-interface n1 n2 th1 s-polarization?)
+  (define cos-i (cos th1))
+  (define cos-t (cos (Snell-law n1 n2 th1)))
+  (let ((transmit (E_T n1 n2 cos-i cos-t s-polarization?))
+        (reflect (E_R n1 n2 cos-i cos-t s-polarization?)))
+    (let ((r/t (/ reflect transmit))
+          (tinv (/ transmit)))
+      (array 2 A:complex-64 `((,tinv  ,r/t)
+                              (,r/t  ,tinv))))))
+
+                              -=-=-=-=-
+
+* The `array' procedure allows one to use quasiquote to create any
+  array, homogeneous or heterogeneous.
+
+* The `array' procedure allows one to use array templates for both
+  static and dynamically generated data.
+
+* Calls to `array' look very much like SRFI-10 reader syntax:
+
+  (define ident2 (array 2 A:real-32 '((1.0 0.0) (0.0 1.0))))
+  (define ident2 #,(array 2 A:real-32 ((1.0 0.0) (0.0 1.0))))
+
+* The `array' procedure can be used to implement SRFI-10 syntax for
+  arrays.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00039" href="msg00039.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+<ul><li><em>From:</em> campbell</li></ul></li>
+<li><strong><a name="00046" href="msg00046.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+<ul><li><em>From:</em> Matthias Radestock</li></ul></li>
+<li><strong><a name="00058" href="msg00058.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+<ul><li><em>From:</em> Aubrey Jaffer</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00058.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00060.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00058.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00034.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00059"><strong>Date</strong></a></li>
+<li><a href="threads.html#00059"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

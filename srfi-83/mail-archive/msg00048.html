@@ -1,0 +1,186 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: fundamental design issues (long message) -->
+<!--X-From-R13: orne <orneNfbavp.arg> -->
+<!--X-Date: Sat,  3 Dec 2005 17:22:25 +0100 (CET) -->
+<!--X-Message-Id: y9l1x0ugnhn.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20051202221700.2B43C9805C@pluto.mumble.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: fundamental design issues (long message)</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00047.html">Date Prev</a>][<a href="msg00049.html">Date Next</a>][<a href="msg00047.html">Thread Prev</a>][<a href="msg00051.html">Thread Next</a>][<a href="maillist.html#00048">Date Index</a>][<a href="threads.html#00048">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: fundamental design issues (long message)</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-83@DOMAIN.HIDDEN">srfi-83@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: fundamental design issues (long message)</li>
+<li><em>From</em>: bear &lt;<a href="mailto:bear@DOMAIN.HIDDEN">bear@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 2 Dec 2005 18:21:57 -0800 (PST)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-83@DOMAIN.HIDDEN">srfi-83@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20051202221700.2B43C9805C@DOMAIN.HIDDEN">20051202221700.2B43C9805C@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:20051202221700.2B43C9805C@DOMAIN.HIDDEN">20051202221700.2B43C9805C@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Gnus/5.110003 (No Gnus v0.3) XEmacs/21.5-b21 (darwin)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+I don't feel qualified to tackle this problem in full
+detail; My thanks to those who are.
+
+But I want to point out some simple things that work
+in other languages, and point out that this model
+does not support them.
+
+In static languages such as C and Pascal, a forward
+declaration is often used to state particular properties
+about a function or procedure, while leaving the body
+of the definition for later (presumably after the
+definitions of some of the things it depends on).
+
+In both languages, a procedure or function may have any
+number of forward declarations (or the same forward
+declaration may be imported multiple times) but only
+one definition.
+
+In C in particular, this turned out to facilitate a
+very useful pattern.  A &quot;header file&quot; with nothing but
+forward declarations allows most interdependency problems
+to be solved statically, because the forward declarations
+facilitate the separated compilation of many different
+units. The effect is that with the forward declarations
+handy, the compiler knows how to compile calls to particular
+functions, even when the definitions of those functions are
+not visible.  This is very important.
+
+I want to be sure that a module system for scheme should
+be *at least* that useful in resolving dependencies and
+supporting separated compilation.
+
+So I look at the &quot;imports&quot; syntax, and I am thinking,
+&quot;Here is a forward declaration.  Does it contain enough
+information to allow a compiler to create an optimized
+call to the associated function without being able to
+see the function definition?&quot;  And the answer is a resounding
+no.  It contains only namespace control information.
+
+So I look at the &quot;exports&quot; syntax, and I am thinking,
+&quot;okay, here is more namespace control information, but it
+is also a specification that, together with the file of
+source code, may be used to automatically generate
+(implicit) forward declarations usable in the compilation
+of other files.&quot;
+
+And that will work, and it's less error-prone, but it means
+that there can be no truly separate compilation; you can't
+get the needed forward declarations without looking at the
+source of modules other than the one you're trying to compile.
+
+I realize that you're concerned more about namespace
+control and name reuse, but I'm more concerned with an
+efficient compilation model where a program running into
+millions of lines can be distributed over a network to
+a &quot;compile farm&quot; of machines that don't have to *all* be
+looking at *all* the code in order to compile their
+particular modules, and I don't feel that this need is
+addressed (or even considered) by the current proposal.
+
+As an implementor, I could &quot;correct&quot; it by explicitly
+creating a forward-declarations resource for each library
+and then having a build process that explicitly copies
+and distributes those resources along with each source
+text that needs to be able to see them in order to
+compile successfully - but this makes compilation into
+a three-stage process, where you must first distribute
+the libraries and have your compile farm generate the
+forward-declaration resources, *then* get them distributed
+everywhere they're needed for the compilation of other
+modules, and *then* go ahead with actual compilation.
+
+Now, for the luxury of not having to actually write the
+forward declarations and manually keep them in sync with
+the source code, that might be worth it.  But there's a
+deeper issue that messes up the compile-farm model; how
+do I detect when the autogenerated forward-declaration
+resources have become stale?  Since they're autogenerated
+from source code, a simple dependency model indicates that
+they become stale when the associated source code changes.
+But that means that *EVERY* change in the source for a
+module results in a new forward-declarations resource for
+that module, and that triggers a recompile of *EVERY*
+module that calls anything in the changed module. The
+development of large projects thrashes to a halt as all
+the developers run screaming.
+
+So, let's say we go to a more complex dependency model,
+where *EVERY* definition in every module has its own
+forward-declaration resource, and new ones are generated
+only when a particular definition has changed, rather than
+a single resource being for everything in a particular
+module.  And the problem with that is, it's functionally
+equivalent to having every line of source distributed to
+every machine in the compile farm, so we're back to square
+one but with worse complexity.
+
+It is my hope and desire that, with a module system, Scheme
+should become useful for projects running into millions of
+lines (such as, for example, an OS kernel).  But with the
+proposed module system, utility for such projects would
+require significant further advances in the state of the art.
+
+					Bear
+
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00047.html">fundamental design issues (long message)</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00049.html">Re: fundamental design issues</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00047.html">fundamental design issues (long message)</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00051.html">Re: fundamental design issues (long message)</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00048"><strong>Date</strong></a></li>
+<li><a href="threads.html#00048"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

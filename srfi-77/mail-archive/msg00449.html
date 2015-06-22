@@ -1,0 +1,147 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: numerical conditioning MAGNITUDE and / -->
+<!--X-From-R13: Ohoerl Xnssre <ntwNnyhz.zvg.rqh> -->
+<!--X-Date: Mon, 19 Jun 2006 21:40:31 +0200 (MST) -->
+<!--X-Message-Id: 20060619184732.33D031B77E5@home.voluntocracy.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>numerical conditioning MAGNITUDE and /</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00448.html">Date Prev</a>][<a href="msg00450.html">Date Next</a>][<a href="msg00455.html">Thread Prev</a>][<a href="msg00464.html">Thread Next</a>][<a href="maillist.html#00449">Date Index</a>][<a href="threads.html#00449">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>numerical conditioning MAGNITUDE and /</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: numerical conditioning MAGNITUDE and /</li>
+<li><em>From</em>: Aubrey Jaffer &lt;<a href="mailto:agj@DOMAIN.HIDDEN">agj@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 19 Jun 2006 14:47:32 -0400 (EDT)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Writing arithmetic routines in Scheme does not eliminate the need to
+do the proper numerical analysis.  For example, the naive
+implementation of complex magnitude and / are:
+
+(define (square z) (* z z))
+
+(define (mag z)
+  (sqrt (+ (square (real-part z)) (square (imag-part z)))))
+
+(define (div z1 z2)
+  (define den (+ (square (real-part z2)) (square (imag-part z2))))
+  (make-rectangular (/ (+ (* (real-part z1) (real-part z2))
+			  (* (imag-part z1) (imag-part z2)))
+		       den)
+		    (/ (- (* (imag-part z1) (real-part z2))
+			  (* (real-part z1) (imag-part z2)))
+		       den)))
+
+But these routines both generate intermediate results larger or
+smaller than their inputs, overflowing on:
+
+  (/ 1e300+1e300i (* 4 1e300+1e300i))
+  (magnitude 1e300+1e300i)
+
+and underflowing on:
+
+  (/ 1e-300+1e-300i (* 4 1e-300+1e-300i))
+  (magnitude 1e-300+1e-300i)
+
+MzScheme is broken for both magnitude and /; MIT-Scheme only for /.
+Tests for both cases are in &quot;r4rstest.scm&quot;
+(<a  rel="nofollow" href="http://cvs.savannah.gnu.org/viewcvs/*checkout*/scm/scm/r4rstest.scm?rev=HEAD">http://cvs.savannah.gnu.org/viewcvs/*checkout*/scm/scm/r4rstest.scm?rev=HEAD</a>).
+
+Does SRFI-77 (or R5RS) mandate that floating-point procedures work
+for arguments generating the full range of possible outputs?
+
+			      -=-=-=-=-
+
+A correct implementation is:
+
+(define (mag z)
+  (define c (abs (real-part z)))
+  (define d (abs (imag-part z)))
+  (if (&lt; d c)
+      (* c (sqrt (+ 1 (square (/ d c)))))
+      (if (zero? d) d (* d (sqrt (+ 1 (square (/ c d))))))))
+
+(define (div z1 z2)
+  (define a (real-part z1))
+  (define b (imag-part z1))
+  (define c (real-part z2))
+  (define d (imag-part z2))
+  (if (&lt; (abs d) (abs c))
+      (let ((r (/ d c)))
+	(define den (+ c (* d r)))
+	(make-rectangular (/ (+ a (* b r)) den)
+			  (/ (- b (* a r)) den)))
+      (let ((r (/ c d)))
+	(define den (+ d (* c r)))
+	(make-rectangular (/ (+ b (* a r)) den)
+			  (/ (- a (* b r)) den)))))
+
+			      -=-=-=-=-
+
+[1] David Goldberg, &quot;What Every Computer Scientist Should Know About
+Floating-Point Arithmetic&quot;,
+<a  rel="nofollow" href="http://cch.loria.fr/documentation/IEEE754/ACM/goldberg.pdf">http://cch.loria.fr/documentation/IEEE754/ACM/goldberg.pdf</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00464" href="msg00464.html">Re: numerical conditioning MAGNITUDE and /</a></strong>
+<ul><li><em>From:</em> Bradley Lucier</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00448.html">Re: fixnumXXX and fxXXX names, and other things</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00450.html">SRFI-77 with more than one flonum representation</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00455.html">Re: fixnumXXX and fxXXX names, and other things</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00464.html">Re: numerical conditioning MAGNITUDE and /</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00449"><strong>Date</strong></a></li>
+<li><a href="threads.html#00449"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

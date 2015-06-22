@@ -1,0 +1,255 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: [oleg@pobox.com: Minor quibbles on the latest draft] -->
+<!--X-From-R13: fptzvyyrNserrargcebwrpg.bet -->
+<!--X-Date: Thu, 31 Jul 2003 05:20:46 +0200 (DFT) -->
+<!--X-Message-Id: 20030731032037.GA19688@freenetproject.org -->
+<!--X-Content-Type: multipart/signed -->
+<!--X-Reference: 20030730222428.GB15176@freenetproject.org -->
+<!--X-Derived: pgppVkbyqlvuK.pgp -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: [oleg@xxxxxxxxx: Minor quibbles on the latest draft]</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00051.html">Date Prev</a>][<a href="msg00053.html">Date Next</a>][<a href="msg00051.html">Thread Prev</a>][<a href="msg00053.html">Thread Next</a>][<a href="maillist.html#00052">Date Index</a>][<a href="threads.html#00052">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: [oleg@xxxxxxxxx: Minor quibbles on the latest draft]</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: <a href="mailto:%5Boleg@DOMAIN.HIDDEN">[oleg@xxxxxxxxx</a>: Minor quibbles on the latest draft]</li>
+<li><em>From</em>: <a href="mailto:scgmille@DOMAIN.HIDDEN">scgmille@xxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Date</em>: Wed, 30 Jul 2003 22:20:37 -0500</li>
+<li><em>Cc</em>: <a href="mailto:oleg@DOMAIN.HIDDEN">oleg@xxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20030730222428.GB15176@DOMAIN.HIDDEN">20030730222428.GB15176@xxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Mail-followup-to</em>: <a href="mailto:scgmille@DOMAIN.HIDDEN">scgmille@xxxxxxxxxxxxxxxxx</a>,	<a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a>, <a href="mailto:oleg@DOMAIN.HIDDEN">oleg@xxxxxxxxx</a></li>
+<li><em>References</em>: &lt;<a href="mailto:20030730222428.GB15176@DOMAIN.HIDDEN">20030730222428.GB15176@xxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mutt/1.5.4i</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>On Wed, Jul 30, 2003 at 05:24:28PM -0500, scgmille@xxxxxxxxxxxxxxxxxx wrote:
+&gt; [forwarded on behalf of Oleg]
+&gt; 
+&gt; advanced module system, I can import a particular dictionary
+&gt; implementation (e.g., associative lists) with renaming
+&gt; 	make-alist =&gt; make-mydict
+&gt; 	alist-get  =&gt; mydict-get
+&gt; etc. In my own code I would use the names make-mydict, mydict-get,
+&gt; etc. exclusively. If at a later time I decide to use a different
+&gt; dictionary implementation, I would only need to change the module
+&gt; declaration statement.
+
+The problem with this approach is that it doesn't let you use two 
+collections of different types by the same Scheme function.  For 
+example:
+
+(define (myfunc a)
+  (set-contains? a 3))
+
+(myfunc (foo-set 1 2 3))
+(myfunc (bar-set 4 5 6))
+
+
+&gt; The latter gave a few suggestions.
+&gt; 
+&gt; &gt; procedure: % value ... =&gt; % 
+&gt; 
+&gt; &gt;      Constructs a % collection with the zero or more values provided
+&gt; &gt; as its initial contents. 
+&gt; 
+&gt; Should we add that if the collection is a set, it is unspecified which
+&gt; element is kept in case of duplicates? Or should duplicates be
+&gt; outlawed? [Edison takes the former approach].
+
+I prefer the former.  There could be many cases where the user is 
+generating the input to that constructor, and it would be a shame to 
+penalize them for having duplicates.
+
+&gt; 
+&gt; &gt; procedure: *-add bag value =&gt; *
+&gt; &gt; procedure: *-add![!] bag value =&gt; * 
+&gt; 
+&gt; &gt;      Adds a single value to a bag. 
+&gt; 
+&gt; &gt; procedure: *-add-all dest-bag source-bag =&gt; *
+&gt; &gt; procedure: *-add-all![!] dest-bag source-bag =&gt; * 
+&gt; 
+&gt; &gt;      Adds all the values in the source bag to the destination bag. 
+&gt; 
+&gt; Edison says: insert [our add] keeps the new element in case of
+&gt; duplicates, but insertSeq [our add-all] keeps an unspecified element.
+
+In the case of bags, its perfectly valid to keep all the values.  Did 
+you mean sets?  
+
+&gt; &lt;snip&gt; occurence counts ... &lt;/snip&gt;
+
+Yeah, this is a Good Thing.  Especially for bags where duplicates may be 
+common and contains? is insufficient.
+
+&gt; required to return either 0 or 1). Edison also defines a procedure
+&gt; 
+&gt; &gt;   instanceName   :: c -&gt; String
+&gt; &gt;     -- the name of the module implementing c
+&gt; 
+&gt; which can be useful, for example, for generating error messages. The
+&gt; procedure is useful regardless of a particular module or OO system.
+
+I agree.  In our scheme:
+
+(collection-name %) =&gt; &quot;%&quot; 
+such that for example (collection-name (make-list 3)) =&gt; &quot;list&quot;
+
+&gt; 
+&gt; For ordered collections, Edison defines procedures to view, insert or
+&gt; delete the maximum and the minimum elements. I don't know how useful
+&gt; this may be (many advanced collections do allow efficient
+&gt; implementations of such operations -- especially for collections that
+&gt; are used for priority queues or dequeues).
+ 
+This has come up in IRC discussions, coincidentally in discussion of 
+implementing queues.  It would be best mapped as 
+*-get-left, *-insert-left![!], *-remove-left![!], and likewise for 
+right, and would be defined on Bags, Sequences, and ordered collections.  
+...-right's would *in general* not be well defined on bags, but specific 
+collections (like a queue) would illuminate it.
+ 
+&gt; 
+&gt; It goes without saying that many operations in Edison -- like union or
+&gt; intersection of two collections -- are perhaps too high-order or too
+&gt; laborous or too infrequent to warrant their specification in
+&gt; SRFI-44. It's better to stick to the bare minimum and provide
+&gt; extensions only for very frequent operations.
+For general collections, yes.  Note though that we basically have this 
+for sets, union = add-all, difference = remove-all, and intersection = 
+(remove-all in1 (remove-all in1 in2)).
+
+&gt; &gt; procedure: *-ref sequence integer =&gt; boolean 
+&gt; 
+&gt; &gt;      Returns the value stored in the sequence at the integer index
+&gt; &gt; provided. It is an error to reference an index outside the range of
+&gt; &gt; the sequence. 
+&gt; 
+&gt; The return type can't be boolean. Right?
+
+Typo.  Thanks.
+
+&gt; BTW, often a function *-ref-with-default is surprisingly useful. The
+&gt; function takes an extra argument -- the default value -- and returns
+&gt; literally (in the sense of eq?) that argument in case the lookup
+&gt; failed.
+Yes, we have this on dictionary get.  We probably shoud have it on ref 
+and get for the other collection types.
+
+&gt; 
+&gt; Edison's sequences,
+&gt; <a  rel="nofollow" href="http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/*checkout*/hfl/hfl/edison/Seq/Sequence.hs">http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/*checkout*/hfl/hfl/edison/Seq/Sequence.hs</a>
+&gt; 
+&gt; are also interesting, in particular procedures lview, rview, inBounds,
+&gt; adjust and zippers. However, one may also leave them out for SRFIs to
+&gt; come.
+
+Yes.  Its mostly the intent to specify the absolutely necessary elements 
+of collections here.  Like Scheme, one can define much from little.
+
+&gt; &gt; (eq? &lt;input collection&gt; (update-procedure &lt;input collection&gt;)) will
+&gt; &gt; always return a non-false value.
+&gt; 
+&gt; Perhaps this statement is too conservative? R5RS requires that eq? (as
+&gt; well as eqv? and equal?) return a boolean value. Therefore, the only
+&gt; non-false return value of eq? is #t. It might be a good idea to say
+&gt; that explicitly. 
+
+Force of habit, sorry.  
+
+&gt; &gt; The collection fold procedure then invokes the folding function on a
+&gt; &gt; value of the collection and the seeds, and receives from the folding
+&gt; &gt; function a proceed value followed by a like number of seed return
+&gt; &gt; values. If the termination value is non-false,
+&gt; 
+&gt; Perhaps you meant &quot;the proceed value&quot; rather than a termination
+&gt; value. Otherwise, &quot;termination value&quot; is not mentioned anywhere else in
+&gt; the document.
+
+Indeed.
+
+&gt; &gt; In order to ensure a consistent ordering in the collection, the
+&gt; &gt; ordering function must return the same result for like inputs over
+&gt; &gt; time. 
+&gt; In other words, an ordering function must be a pure function, a
+&gt; mapping of its arguments. One might add that an implementation of a
+&gt; collection may assume 
+&gt;     (and (equal? x x1) (equal? y y1)) ==&gt;
+&gt; 	(equal? (ordering-function x y) (ordering-function x1 y1))
+&gt; 
+&gt; Should the same requirement be applied to a equivalence function as
+&gt; well?
+
+Of course.  Thanks as always for your meticulous insight.
+
+	Scott
+</pre><p><strong>Attachment:
+<a href="pgppVkbyqlvuK.pgp" ><tt>pgppVkbyqlvuK.pgp</tt></a></strong><br>
+<em>Description:</em> PGP signature</p>
+
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00053" href="msg00053.html">Re: [oleg@xxxxxxxxx: Minor quibbles on the latest draft]</a></strong>
+<ul><li><em>From:</em> Jens Axel S&#xF8;gaard</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00051" href="msg00051.html">[oleg@xxxxxxxxx: Minor quibbles on the latest draft]</a></strong>
+<ul><li><em>From:</em> scgmille</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00051.html">[oleg@xxxxxxxxx: Minor quibbles on the latest draft]</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00053.html">Re: [oleg@xxxxxxxxx: Minor quibbles on the latest draft]</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00051.html">[oleg@xxxxxxxxx: Minor quibbles on the latest draft]</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00053.html">Re: [oleg@xxxxxxxxx: Minor quibbles on the latest draft]</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00052"><strong>Date</strong></a></li>
+<li><a href="threads.html#00052"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

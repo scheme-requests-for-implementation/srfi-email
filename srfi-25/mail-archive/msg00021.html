@@ -1,0 +1,290 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: RE: Consistency and convenience -->
+<!--X-From-R13: "Pevna Rraarl" <PevnaNBprpvivy.pbz> -->
+<!--X-Date: Fri, 16 Nov 2001 22:54:06 +0100 (MET) -->
+<!--X-Message-Id: NFBBKPDGMLAGJHHNNBMNCECMCBAA.Brian@Pcecivil.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: qotd72ijsts.fsf@donner.ling.helsinki.fi -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>RE: Consistency and convenience</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00020.html">Date Prev</a>][<a href="msg00022.html">Date Next</a>][<a href="msg00020.html">Thread Prev</a>][<a href="msg00022.html">Thread Next</a>][<a href="maillist.html#00021">Date Index</a>][<a href="threads.html#00021">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>RE: Consistency and convenience</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &lt;<a href="mailto:jpiitula@DOMAIN.HIDDEN">jpiitula@xxxxxxxxxxxxxxxx</a>&gt;,	&lt;<a href="mailto:srfi-25@DOMAIN.HIDDEN">srfi-25@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: RE: Consistency and convenience</li>
+<li><em>From</em>: &quot;Brian Denney&quot; &lt;<a href="mailto:Brian@DOMAIN.HIDDEN">Brian@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 16 Nov 2001 13:50:44 -0800</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-25@DOMAIN.HIDDEN">srfi-25@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Importance</em>: Normal</li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:qotd72ijsts.fsf@DOMAIN.HIDDEN">qotd72ijsts.fsf@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+-----Original Message-----
+From: jpiitula@xxxxxxxxxxxxxxxx [<a  rel="nofollow" href="mailto:jpiitula@xxxxxxxxxxxxxxxx">mailto:jpiitula@xxxxxxxxxxxxxxxx</a>]
+Sent: Friday, November 16, 2001 1:43 PM
+To: srfi-25@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+Subject: Consistency and convenience
+
+
+Folks,
+
+I apologise for the length of this message. I hope there is
+something of value in it. Cut mercilessly if you feel the
+need to address some small point. Or cut all.
+
+I try to expand here a bit on the proposed (shape b e ...)
+specification. In the specification the bounds of each
+dimension are simply arguments to a procedure, and the upper
+bound is not a valid index.
+
+Some are quick to point out that there are other possible
+ways, and some other way even feels more natural or more
+convenient to them. I trust that no one wants the interface
+to cover every possible way. (At least, I feel the macro at
+the end of this message is gross, and it is only half way
+there.)
+
+Let this message also serve to show what kind of thinking
+made me do all the choices I made in the specification. I
+do not say I have found the only reasonable way to do
+things, but I have thought hard of it. (This was two years
+ago. It has been dormant since up to now.)
+
+Short summary: yes, it is inconvenient to always have to
+provide the zero lower bounds, but not too inconvenient.
+What we gain is, there is a single, simple, uniform way to
+specify a shape, and the way is both right and consistent
+with the rest of the specification and the rest of Scheme.
+
+End of short summary: I want to choose one good way as
+primitive; secondary ways need not be inside the primitive
+- make them separate procedures, written when needed.
+
+If it really feels too much to always type in the lower
+bounds, and you end up doing it a lot, or it is a nuisance
+in some other way, define a variant procedure with another
+name, like so:
+
+  (define (shape0 . es)
+     (apply shape
+        (apply append
+           (map (lambda (e)
+                   (list 0 e))
+              es))))
+
+Similarly, define shape1 for one-based work.
+
+For specific purposes, like a package to match a linear
+algebra text that always uses two dimensions and always
+begins indexing at once, provide specific ways to default
+to two dimensions and one based indexing:
+
+   (define (tabulate-matrix m n proc) ...)
+   ...
+   (define a (tabulate-matrix 4 4 (lambda (r k) ...)))
+
+If you need a lot of arrays with the same shape, define one
+shape and cut all your arrays with it.
+
+You get the drift: the primitive is simple and usable as
+is; abstraction from it is allowed and encouraged; and even
+convenience variants are easy to write according to taste.
+
+I don't see how any procedure with a dispatch on argument
+types would really be more convenient to use. It would make
+the common case simpler, sure, but then it would make the
+other cases pointlessly inconvenient.
+
+Internal consistency of the array package carries a lot of
+weight with me. Here is one point: (shape b e d f) is the
+same as (array (shape 0 2 0 2) b e d f), and the arguments
+are the same, if you see what I mean.
+
+Consistency with Scheme carries equally lot of weight with
+me. I'm glad Per Bothner saw what I meant when I pointed
+out that the included lower bound, excluded upper bound
+match substring. I'll expand on that: in the sensible
+default case, when the lower bound is zero, the upper bound
+is also the length of the dimension, matching make-vector
+and make-string.
+
+These are small points but they add up, to me at least.
+
+I also believe, partly from programming experience, that
+this indexing scheme is the best there is. It avoids an
+amount of +1 or -1 correction terms, and a lot of thinking
+at the boundaries: (- e b) is quite a lot simpler than any
+of (+ (- e b) 1) or (- e b -1) or (- 1 b e) or so on. And
+intervals add nicely: [a .. b) and [b .. c) form [a .. c).
+
+(Stepping from last index to first requires correction,
+since the upper bound is not a valid index. Conceded.)
+
+The alternative of specifying a first index and length is
+not much worse, I think, but it has no counterpart in the
+rest of Scheme. (This is strenuous. Scheme is so small that
+the only clearly relevant model there are strings.)
+Consistency with other languages does not carry much weight
+with me.
+
+The alternative of specifying first and last index just
+doesn't work as well. Look at the boundary case: an empty
+dimension now is just an empty interval [b .. b). With the
+last index less than the first, it is a monster. And
+consistency with other languages does not carry much weight
+with me. We are not adding to their libraries here.
+
+One could remove the possibility of specifying arbitrary
+lower bounds. I don't see any reason to do that. (It is
+going beyond the model of the rest of Scheme, though.)
+
+Anyway, one can write convenience procedures to extract
+just what one wants. For dimension k = Integer[b .. e), let
+us say, and let us even abstract away from the concept of a
+shape as a thing:
+
+    (array-length arr k) ==&gt; e - b
+    (array-begin arr k)  ==&gt; b
+    (array-past arr k)   ==&gt; e
+    (array-last arr k)   ==&gt; e - 1
+
+These are all simple to write. Only take a flick of the
+wrist. Let us keep the primitives few and clean.
+
+Oh well. Here is the gross macro I promised. It expands
+into a call to shape and allows all kinds of combinations
+of a default lower bound, defaulting to zero, with last
+index or an excluded upper bound or dimension length. All
+are expressions. The macro uses _ as a literal keyword,
+like else in cond and case.
+
+The following are then all equivalent (innit a mess?):
+
+    (shape 0 4 0 4)
+    (shape 0 (* 2 2) 0 (+ 2 2))
+    (: 3 3)
+    (: (0 3) (0 3))
+    (: (0 _ 4) (0 _ 4))
+    (: 0 _ (_ 4) (_ 4))
+    (: 0 _ 3 3)
+    (: #(4) #(4))
+    (: (_ (* 2 2)) (_ (+ 2 2)))
+    (: #((* 2 2)) #( (+ 2 2)))
+
+You can see the expansions, with arguments evaluated, if you
+
+    (define (shape . bounds)
+      `(shape ,@ bounds)).
+
+That breaks the array package, of course. Here goes.
+
+;;; (: def _ dim ...)              library syntax
+;;; (: dim ...)                    library syntax
+;;; where each dim is one of
+;;;   (b e)    e included
+;;;   (b _ e)  e excluded
+;;;   e        b default, e included
+;;;   (_ e)    b default, e excluded
+;;;   #(n)     length
+;;; and def _ provides the default lower bound and
+;;; defaults to 0.
+
+(define-syntax :
+  (syntax-rules (_)
+    ((: bound _ . forms)
+     (letrec-syntax
+	 ((car (syntax-rules (_)
+		 ((car d (_ e)) d)
+		 ((car d (b e)) b)
+		 ((car d (b _ e)) b)
+		 ((car d #(n)) d)
+		 ((car d e) d)))
+	  (cdr (syntax-rules (_)
+		 ((cdr d (_ e)) e)
+		 ((cdr d (b e)) (+ e 1))
+		 ((cdr d (b _ e)) e)
+		 ((cdr d #(n)) (+ d n))
+		 ((cdr d e) (+ e 1))))
+	  (map (syntax-rules ()
+		 ((map d () bs es)
+		  (shuffle bs es))
+		 ((map d (f . fs) bs es)
+		  (map d fs
+		       ((car d f) . bs)
+		       ((cdr d f) . es)))))
+	  (shuffle (syntax-rules ()
+		     ((shuffle (a . bs) (d . es) . s)
+		      (shuffle bs es a d . s))
+		     ((shuffle () () . s)
+		      (shape . s)))))
+       (let ((b bound))
+	 (map b forms () ()))))
+    ((: . forms)
+     (: 0 _ . forms))))
+-- 
+Jussi 
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00014" href="msg00014.html">Consistency and convenience</a></strong>
+<ul><li><em>From:</em> Jussi Piitulainen</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00020.html">RE: Consistency and convenience</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00022.html">RE: Consistency and convenience</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00020.html">RE: Consistency and convenience</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00022.html">RE: Consistency and convenience</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00021"><strong>Date</strong></a></li>
+<li><a href="threads.html#00021"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

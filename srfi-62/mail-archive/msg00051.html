@@ -1,0 +1,141 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: new draft -->
+<!--X-From-R13: Bnhy Epuyvr <fpuyvrNpbzpnfg.arg> -->
+<!--X-Date: Mon, 14 Mar 2005 08:46:39 +0100 (NFT) -->
+<!--X-Message-Id: BE5AAB86.9724%schlie@comcast.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: Pine.LNX.4.44.0503131250070.26695&#45;100000@autodrip.bloodandcoffee.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: new draft</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00050.html">Date Prev</a>][<a href="msg00052.html">Date Next</a>][<a href="msg00050.html">Thread Prev</a>][<a href="msg00052.html">Thread Next</a>][<a href="maillist.html#00051">Date Index</a>][<a href="threads.html#00051">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: new draft</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Taylor Campbell &lt;<a href="mailto:campbell@DOMAIN.HIDDEN">campbell@xxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: new draft</li>
+<li><em>From</em>: Paul Schlie &lt;<a href="mailto:schlie@DOMAIN.HIDDEN">schlie@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 14 Mar 2005 02:46:30 -0500</li>
+<li><em>Cc</em>: &lt;<a href="mailto:srfi-62@DOMAIN.HIDDEN">srfi-62@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-62@DOMAIN.HIDDEN">srfi-62@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:Pine.LNX.4.44.0503131250070.26695-100000@DOMAIN.HIDDEN">Pine.LNX.4.44.0503131250070.26695-100000@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Microsoft-Entourage/11.1.0.040913</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>To begin with, I apologize for an over zealous response after misreading
+your revised proposal; which I misinterpreted as formalizing the treatment
+of sequential #;'s non-recursively (i.e. (#; #; a b c) -&gt; (c)), which you've
+actually denoted as an error, which much better than not; but please let me
+try to propose a potentially somewhat simpler and cleaner similar approach.
+
+- It may be simplest to define comment's grammar to be fully consistent
+  with the language's existing reader abbreviations who's scope is
+  consistently bounded by the subsequent fully recursively parsed &lt;S-EXP&gt;.
+  (very similar to your revised proposal, but without any recursive limit)
+
+  Thereby: using {} to denote the lexical bound of reader command, which
+  can't be determined until all subsequently encountered opened scopes
+  are themselves delimited; first showing only reader quote abbreviations:
+
+      input: '(''`(a ,@(list 1 2 3) b))
+     parsed: '{ ( '{ '{ `{ ( a ,@{ ( list 1 2 3 ) } b ) } } } ) }
+    returns:  (quote ( (quote (quote (qq (a (uqs (list 1 2 3)) b)))))
+
+  Correspondingly, if comment (quote-comment for the sake of argument),
+  were given the exact same recursive &lt;s-exp&gt; grammar scoping rules, the
+  only difference would be that rather than using it's immediately
+  following recursively parsed &lt;s-exp&gt; as it's argument, it removes it
+  and itself from the parsed expression (i.e commented out):
+
+      input: '(#;#;a b `#;,c d #;'e)
+     parsed: '{ ( #;{ #;{ a } } b `{ #;{ ,{ c } } } d #;{ '{ e } } )
+    returns:  (quote (b d))
+
+  Thereby things seem nice simple and symmetric; and to make things more
+  ideally consistent, just as it's clear that commenting a quote expression
+  effectively removes it, quoting an comment expression should be considered
+  equivalent; thereby all quote forms (including quote-comment), return
+  nothing if they have no/empty arguments (i.e. r5rs grammar &quot;empty&quot;).
+
+  Thereby it basically falls out for free, that:
+
+    (') -&gt; ( '{ &lt;empty&gt; } ) =&gt; ()
+  
+  As would:
+
+   `(a ,b ,) -&gt; '{(a ,{b} ,{ &lt;empty&gt; }) =&gt; (qq (a (uq b)))
+
+  Thereby consistently eliminating otherwise needless nuisance errors for
+  quotes with no arguments, which seems harmless, and would be consistent.
+
+  Ultimately requiring only a few basic tweaks to scheme's grammar:
+
+  #; [&lt;s-exp&gt;|&lt;empty&gt;] -&gt; {comment [&lt;s-exp&gt;|&lt;empty&gt;]} =&gt; &lt;empty&gt;
+
+  ['|`|,|,@] &lt;empty&gt; -&gt; {quote/qq/uq/uqs &lt;empty} =&gt; &lt;empty&gt;
+
+  Where per r5rs, essentially &lt;empty&gt; is implied last in any list, or
+  upon file/input termination (therefore should require no further tweaks).
+
+-paul-
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00050" href="msg00050.html">Re: new draft</a></strong>
+<ul><li><em>From:</em> Taylor Campbell</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00050.html">Re: new draft</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00052.html">new, simpler formal specification</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00050.html">Re: new draft</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00052.html">new, simpler formal specification</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00051"><strong>Date</strong></a></li>
+<li><a href="threads.html#00051"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

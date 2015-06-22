@@ -1,0 +1,341 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: strings draft -->
+<!--X-From-R13: Fbz Zbeq <ybeqNrzs.arg> -->
+<!--X-Date: Thu, 22 Jan 2004 18:32:58 +0100 (MET) -->
+<!--X-Message-Id: 200401221745.JAA20519@morrowfield.regexps.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200401220511.VAA18432@morrowfield.regexps.com -->
+<!--X-Reference: 20040121.234610.468711249.shiro@lava.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: strings draft</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00343.html">Date Prev</a>][<a href="msg00345.html">Date Next</a>][<a href="msg00343.html">Thread Prev</a>][<a href="msg00365.html">Thread Next</a>][<a href="maillist.html#00344">Date Index</a>][<a href="threads.html#00344">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: strings draft</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:shiro@DOMAIN.HIDDEN">shiro@xxxxxxxx</a></li>
+<li><em>Subject</em>: Re: strings draft</li>
+<li><em>From</em>: Tom Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 22 Jan 2004 09:45:53 -0800 (PST)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20040121.234610.468711249.shiro@DOMAIN.HIDDEN">20040121.234610.468711249.shiro@xxxxxxxx</a>&gt; (message from Shiro	Kawai on Wed, 21 Jan 2004 23:46:10 -1000 (HST))</li>
+<li><em>References</em>: &lt;<a href="mailto:200401220511.VAA18432@DOMAIN.HIDDEN">200401220511.VAA18432@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20040121.234610.468711249.shiro@DOMAIN.HIDDEN">20040121.234610.468711249.shiro@xxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+
+    &gt; From: Shiro Kawai &lt;shiro@xxxxxxxx&gt;
+
+(last bit first:)
+
+    &gt; I feel that accessing strings by index is a kind of premature
+    &gt; optimization, which came from the history when strings were
+    &gt; simply an array of bytes.    
+
+I used to think so too -- but that was before I started writing C code
+that allows UTF-8 and UTF-16 (and soon UTF-32) to be mixed and matched
+freely in a single application.
+
+I think that the approach I'm taking with Pika -- internally using an
+N-bit encoding when all characters in a string fit in N-bits -- does a
+pretty good job of restoring the &quot;a string is an array&quot; simplicity in
+an international context.
+
+
+(and, the rest:)
+
+    &gt; I think the goal of the document is a bit ambiguous.  Specifically,
+    &gt; I feel there are three issues intermixed; they are related each
+    &gt; other, but it'll be clearer to separate the discussion as much
+    &gt; as possible.
+
+
+You summarized the three issues that you see as intermixed this way:
+
+    &gt; 1. Defining unicode API: &quot;If a Scheme implementation supports
+    &gt;    API that explicitly deals with Unicode, it should be so and
+    &gt;    so&quot;.  [i.e., FFI issues re Unicode] [....]
+
+    &gt; 2. Addressing unicode-specific issues: &quot;If a Scheme implementation
+    &gt;    uses Unicode as its native character representation, it should be
+    &gt;    so and so&quot;. [i.e., Scheme language optional requirements]
+
+    &gt; 3. Determining the least common set of assumptions about characters
+    &gt;    and strings the language/FFI spec should define. 
+    &gt;    [i.e., Scheme Language and FFI required features]
+
+and, overall, you're concerned (understandably) about the bias of the
+draft towards Unicode and iso8859-* in general, and, in particular,
+about proposals in the draft that may not be reasonable for
+implementations using other character sets (such as EUCJP).
+
+Ok, so, my reply.
+
+I intended there to be three topics, each with two subtopics --
+similar but not quite the same as as your summary:
+
+   1. Scheme language changes needed to support Unicode
+   1a. requirements
+   1b. optional feature requirements
+
+   2. String handling in a portable FFI
+   2a. requirements
+   2b. optional feature requirements
+
+   3. Examination of a particular implementation
+   3a. native FFI spec
+   3b. implementation strategy
+
+I think that, at this stage, those three topics do belong together.
+On this list, we're most directly concerned with (2) (&quot;portable FFI&quot;)
+but I don't think we can design such an FFI usefully without
+addressing (1) (&quot;Scheme language&quot;).  For example, FFI-using code is
+seriously impoverished if it can not reliably exchange integer string
+indexes with Scheme -- so we need to nail down what those indexes mean
+in the Scheme language.  Another example: portable FFI-using code can
+not reliably enter strings into Scheme without stronger character set
+guarantees than are found in R5RS.  And if we're concerned with (1)
+and/or (2), then we also need at least one and hopefully more examples
+of (3) (&quot;particular implementation(s)&quot;) because we need to have some
+confidence that we aren't specifying something that is unimplementable
+or has too great an impact on implementations.
+
+I am, indeed, _somewhat_ biased towards Unicode -- but I also
+acknowledge the desirability of not ruling that an implementation
+using a different system (such as EUCJP) is necessarily non-standard. 
+I _think_ I did a good job at that but I'll address the specific
+concerns that you raised below.
+
+There is the question: Should future Revised Standards explicitly
+mention Unicode in the core of the specification, as I've recommended,
+or should such materials be separated from the core to an annex where
+they might stand in parrallel with analogous sections for, for
+example, EUCJP?  I suspect that such a question is mostly political,
+not technical.  I'll admit my bias that I think the way forward for
+computing generally is to converge on Unicode -- I'd like it in the
+core -- but it's a minor point and a topic for another context, I
+think.
+
+
+    &gt;    If the document limit its scope to &quot;the implementations that uses
+    &gt;    Unicode/iso8859-* internally&quot;, it's fine.  Is that the intention
+    &gt;    of the document?
+
+No, it's not -- in two ways:
+
+First:
+
+  The proposed changes to the Scheme standard do not require
+  implementations to use Unicode or iso8859-*.  They do, however,
+  require that portable Scheme programs manipulating multilingual text
+  take some of their semantics (in particular, the meaning of string
+  indexes and hex string constants) from Unicode.  Absent such a
+  semantic, integer constant string indexes and string index
+  adjustments (e.g., +1) will not have a portable meaning (for
+  example).
+
+
+Second:
+
+  Yes, I am proposing that R6RS explicitly embrace Unicode, mostly in
+  the form of optional features defining how characters beyond the
+  minimal required character set are handled.   My proposal does _not_
+  require conforming implementations to use Unicode and does not
+  preclude implementations that include characters not found in
+  Unicode (Pika's support of buckybits is an example).
+
+  As I understand it, there is resistence in some places to Unicode
+  for two reasons: (1) legacy systems using other character sets (not
+  much anyone can do about that -- I don't think Scheme should bend
+  over backwards to be EBCDIC-friendly, either); (2) still surviving
+  controversy about Han Unification.
+
+  (2) is a topic we shouldn't debate on this list or try to solve
+  here.  For Scheme, though, I think we need to look at an overarching
+  technical reason for embracing Unicode: it is simply the best
+  structured design for an international character set that anybody
+  has yet imagined.  The programmatic structure of Unicode and Unicode
+  string encodings is the best that there is and that structure is
+  orthogonal to the controversial issues.  (Contrast with, for
+  example, shift-encodings.)  Unicode does define The Right Thing for
+  the programmatic aspects of string handling -- Scheme should simply
+  embrace that.
+
+  (To make this clearer: _if_ unification really is a broken idea, it
+  can be fixed in Unicode.   Were it fixed in Unicode, none of the 
+  requirements and recommendations of the draft would change.  No 
+  portable use of those features would break.)
+  
+
+
+
+    &gt;     * If the implementation uses EUCJP as its internal CES, it
+    &gt;       will face difficulty for the recommendation of INTEGER-&gt;CHAR
+    &gt;       to support [0,255], since EUCJP does not have full mappings
+    &gt;       in this range, although it has much more characters than 256.
+    &gt;       I think it's possible that (integer-&gt;char #xa1) on such
+    &gt;       implementations returns a &quot;pseudo character&quot;, which doesn't
+    &gt;       corresponds to any character in EUCJP CES but is guaranteed
+    &gt;       that to produce #xa1 when passed to char-&gt;integer.  But the
+    &gt;       effects would be undefined if such a character is used within
+    &gt;       a string.  (An implementation can also choose different
+    &gt;       integers than the codepoint value to fulfill this &quot;256 character&quot;
+    &gt;       requirements, but it wouldn't be intuitive).
+
+You say that &quot;the effects would be undefined if such a character
+is used within a string&quot;.   I don't see why that would have to be the
+case -- I only see how a particular string implementation could have
+that bug.
+
+There are 128 unassigned octet sequences available in EUCJP that won't
+be mistaken for any real character, right?  Purely internally, those
+sequences could be used in the string representations to represent the
+effect of something like (STRING-SET! s (INTEGER-&gt;CHAR 161)).
+
+Alternatively, you could use multiple string representations
+internally, similar to those I described for Pika.
+
+The problem you mention isn't unique to EUCJP -- it occurs for a
+naively implemented UTF-8 or UTF-16-based Scheme as well.   The
+solutions are analogous.
+
+
+
+    &gt;     * &quot;What _is_ a Character&quot; section doesn't refer to an
+    &gt;       implementation where a CHAR? value corresponts to a
+    &gt;       codepoint of non-Unocde, non-iso8859-* CCS/CES.
+
+Most likely, depending on the details of the implementation you have
+in mind, I would put it in the &quot;roughly corresponds to a Unicode
+codepoint&quot; category.
+
+The sample implementation described in the draft (Pika Scheme)
+includes non-Unicode codepoints (characters with buckybits set).
+I state elsewhere in the draft that is in the &quot;roughly a Unicode
+codepoint&quot; class.
+
+
+    &gt;     * In the portable FFI section, some APIs state the encoding
+    &gt;       must be one of utf-8, iso8859-* or ascii, and I don't see
+    &gt;       the reason of such restrictions.
+
+How would you remove that restriction in a way that supports writing
+portable FFI-using code?
+
+The only plausible alternative I see would be for the FFI to also
+include a means to enter or extract strings using the Posix multibyte
+support.   I think that this would be essentially impossible for
+FFI-implementors to provide in anything other than implementations
+which use the multibyte routines internally.   It would, in effect, be
+a requirement that Scheme be based on the C multibyte routines rather
+than Unicode.
+
+
+
+    &gt; 3. Determining the least common set of assumptions about characters
+    &gt;    and strings the language/FFI spec should define.
+
+    &gt;    Mostly in &quot;R6RS recommendation&quot; section.  Some of them seem
+    &gt;    try to be codeset-independent, while some of them seem to
+    &gt;    assume Unicode/iso8859-* codeset implicitly.  So I wonder
+    &gt;    which is the intention of the document.
+
+The intention is to make optional Unicode support well-defined and
+useful as a basis for writing portable Scheme code --- while saying no
+more in the core specification of Scheme than is necessary to
+accomplish that.
+
+I believe it will be practical for implementations internally using,
+for example, EUCJP to conform to the requirements -- and even to
+provide a useful level of support for the optional Unicode facilities.
+
+
+
+    &gt; Another issue: is there a rationale about &quot;strong encouragement&quot;
+    &gt; of O(1) access of string-ref and string-set!?   There are
+    &gt; alrogithms that truly need random access, but in many cases,
+    &gt; index is used just to mark certain location of the string;
+    &gt; e.g. if you want (string-ref str 3), it's rare that you know
+    &gt; '3' is significant before you know about str---it's more likely
+    &gt; that somebody (string search function, regexp matcher, or suffix
+    &gt; database...) told you that the 3rd character of a particular
+    &gt; string in str is significant.  In such cases, the reason you
+    &gt; use index is not because the algorithm requires it, but just
+    &gt; one of the possible means to have a reference within a string.
+
+I don't follow your arguments about the distinction between an integer
+constant string index and one received as a parameter.   In both
+cases, the question is &quot;what is the computational complexity of
+STRING-REF, STRING-SET!, and SUBSTRING  ?&quot;
+
+
+-t
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00365" href="msg00365.html">Re: strings draft</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00342" href="msg00342.html">strings draft</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00343" href="msg00343.html">Re: strings draft</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00343.html">Re: strings draft</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00345.html">Re: strings draft</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00343.html">Re: strings draft</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00365.html">Re: strings draft</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00344"><strong>Date</strong></a></li>
+<li><a href="threads.html#00344"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

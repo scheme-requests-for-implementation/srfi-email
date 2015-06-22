@@ -1,0 +1,153 @@
+<!-- MHonArc v2.6.16 -->
+<!--X-Subject: Re: SRFI 105: Curly&#45;infix&#45;expressions -->
+<!--X-From-R13: "Rnivq O. Iurryre" <qjurryreNqjurryre.pbz> -->
+<!--X-Date: Wed, 29 Aug 2012 02:29:15 +0000 (UTC) -->
+<!--X-Message-Id: E1T6Y1p&#45;00079V&#45;Dn@fenris.runbox.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: E1T5yCj&#45;0002HP&#45;1q@fenris.runbox.com -->
+<!--X-Reference: 20120827.084849.350550980193030524.shiro@lava.net -->
+<!--X-Reference: E1T659P&#45;0004sq&#45;O5@fenris.runbox.com -->
+<!--X-Reference: 20120828.121555.673046846847759951.shiro@lava.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: SRFI 105: Curly-infix-expressions</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00037.html">Date Prev</a>][<a href="msg00039.html">Date Next</a>][<a href="msg00035.html">Thread Prev</a>][<a href="msg00042.html">Thread Next</a>][<a href="maillist.html#00038">Date Index</a>][<a href="threads.html#00038">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: SRFI 105: Curly-infix-expressions</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-105@DOMAIN.HIDDEN">srfi-105@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: SRFI 105: Curly-infix-expressions</li>
+<li><em>From</em>: &quot;David A. Wheeler&quot; &lt;<a href="mailto:dwheeler@DOMAIN.HIDDEN">dwheeler@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 28 Aug 2012 22:29:13 -0400 (EDT)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-105@DOMAIN.HIDDEN">srfi-105@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20120828.121555.673046846847759951.shiro@DOMAIN.HIDDEN">20120828.121555.673046846847759951.shiro@xxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:E1T5yCj-0002HP-1q@DOMAIN.HIDDEN">E1T5yCj-0002HP-1q@xxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20120827.084849.350550980193030524.shiro@DOMAIN.HIDDEN">20120827.084849.350550980193030524.shiro@xxxxxxxx</a>&gt; &lt;<a href="mailto:E1T659P-0004sq-O5@DOMAIN.HIDDEN">E1T659P-0004sq-O5@xxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20120828.121555.673046846847759951.shiro@DOMAIN.HIDDEN">20120828.121555.673046846847759951.shiro@xxxxxxxx</a>&gt;</li>
+<li><em>Reply-to</em>: <a href="mailto:dwheeler@DOMAIN.HIDDEN">dwheeler@xxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Shiro Kawai:
+&gt; I see those files use full features of 'readable' project.
+&gt; Have you ever tried using _only_ the curly-infix subset?
+&gt; 
+&gt; I implemented curly-infix notation in Gauche and stated to give it a try.
+
+That's awesome!  Thanks for being willing to experiment with them.  Experimentation is absolutely vital.
+
+&gt;  And I can't help feeling c-exprs and s-exprs don't mix well.
+&gt; To be honest, it's terrible.
+
+Sorry about that.   Let's see if we can figure out what the issue is!
+
+&gt; I started itemizing why they don't mix, but before writing up
+&gt; a lenghthy email, I'd better check with you if I'm not doing it wrong.
+&gt; 
+&gt; Here I pasted some code: <a  rel="nofollow" href="https://gist.github.com/3502491">https://gist.github.com/3502491</a>
+&gt; I took exiting code that used some math (and I remember I wished
+&gt; to have had infix notation when I wrote them) and converted to C-exprs.
+
+I'm not sure it's *terrible*.  Formats like this look pretty good to me:
+    (if {{x &lt; canvas-x0} or {canvas-x1 &lt; x}
+         or {y &lt; canvas-y0} or {canvas-y1 &lt; y}}
+
+I think this looks okay too, especially compared to traditional Scheme:
+  (lft {{q * u} + {r * w}} {{q * v} + {r * x}}
+       {{s * u} + {t * w}} {{s * v} + {t * x}}))
+With this one there are certainly two objections one could raise:
+1. What about cuddling higher-precedence operators?  That one's easy... just add extra space around &quot;+&quot; if you want to emphasize its lower precedence.
+2. Why not have &quot;*&quot; higher precedence than &quot;+&quot;, so that fewer {...} would be necessary?  Well, that WOULD be possible.  I've resisted adding precedence for a variety of reasons already documented, but that's not to say it cannot be done.  Most important is widespread adoption.  If we need a few precedence rules - or many! - for widespread adoption, then I think that's what we should do.
+
+I should note that if the infix gets really long (more than 3 lines or more than 6 operators) I tend to switch back to prefix for that one item, with curly-infix used for its parameters.  Programs in other languages often break up infix operations when they get long, for similar reasons. Infix is best when the operators are near each other, but since sooner or later you get down to that point, it's useful.
+
+,,,
+&gt; From your code, c-exprs seems to work well when combined with
+&gt; n-exprs and t-exprs.  Unless you have a strong reason that
+&gt; c-exprs alone is useful (rather than that it is technically
+&gt; orthogonal), I now think it may be better to bundle them together.
+
+Well, you're absolutely correct that we tend to use them together.  In particular, I rarely use curly-infix expressions without neoteric-expressions being embedded, so that I can say f(x) instead of (f x).  If that's the point you're making, point taken.  For example, your:
+
+       (if {(abs Fx) &lt; 10e-6} ...
+
+would be written, with neoteric-expressions, as:
+
+       (if {abs(Fx) &lt; 10e-6} ...
+
+
+So I see three possible directions:
+1. Continue with this proposal's current direction, with *just* curly-infix.
+2. Add neoteric-expressions inside {...}, recursively.  That would let you use abs(x) as a synonym for (abs x), where you wanted to, and so on.  We didn't do this on the grounds that it's inconsistent to accept f(x) inside curly-infix, and not accept them outside. But it's true that curly-infix isn't standard anyway, so this wouldn't impact any existing standard-compliant program.
+3. Change this SRFI to define neoteric-expressions as a datum all by itself.  That would mean that, anywhere you can read a datum you'd accept e(f) as an abbreviation for (e f).
+
+In the longer term, I really want all Schemes to accept neoteric-expressions.  They are *trivial* to implement.  But neoteric-expressions outside curly-infix are, without question, an *ACTUAL* syntax change.  Per the standard, cos(0) should be read as two datums, &quot;cos&quot; and &quot;(0)&quot;. Shame on the rare people who *DO* that, and thankfully a pretty-printer can fix this automatically, but I know it happens.
+
+So, I was trying to propose a smaller, self-contained spec that didn't impose *any* change to existing syntax.  I could switch to #2 or #3 easily enough; I have all the material.  What do people think would be the best course?
+
+(I don't know if we can rename SRFIs, but as long as the number stays the same I don't know why we can't.)
+
+--- David A. Wheeler
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00020" href="msg00020.html">Re: SRFI 105: Curly-infix-expressions</a></strong>
+<ul><li><em>From:</em> David A. Wheeler</li></ul></li>
+<li><strong><a name="00025" href="msg00025.html">Re: SRFI 105: Curly-infix-expressions</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+<li><strong><a name="00026" href="msg00026.html">Re: SRFI 105: Curly-infix-expressions</a></strong>
+<ul><li><em>From:</em> David A. Wheeler</li></ul></li>
+<li><strong><a name="00035" href="msg00035.html">Re: SRFI 105: Curly-infix-expressions</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00037.html">Re: SRFI 105: Curly-infix-expressions</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00039.html">Re: SRFI 105: Curly-infix-expressions</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00035.html">Re: SRFI 105: Curly-infix-expressions</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00042.html">Re: SRFI 105: Curly-infix-expressions</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00038"><strong>Date</strong></a></li>
+<li><a href="threads.html#00038"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

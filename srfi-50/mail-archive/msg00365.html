@@ -1,0 +1,402 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: strings draft -->
+<!--X-From-R13: Euveb Ynjnv <fuvebNynin.arg> -->
+<!--X-Date: Fri, 23 Jan 2004 06:03:39 +0100 (MET) -->
+<!--X-Message-Id: 20040122.190329.579644543.shiro@lava.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200401220511.VAA18432@morrowfield.regexps.com -->
+<!--X-Reference: 20040121.234610.468711249.shiro@lava.net -->
+<!--X-Reference: 200401221745.JAA20519@morrowfield.regexps.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: strings draft</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00364.html">Date Prev</a>][<a href="msg00366.html">Date Next</a>][<a href="msg00344.html">Thread Prev</a>][<a href="msg00388.html">Thread Next</a>][<a href="maillist.html#00365">Date Index</a>][<a href="threads.html#00365">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: strings draft</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a></li>
+<li><em>Subject</em>: Re: strings draft</li>
+<li><em>From</em>: Shiro Kawai &lt;<a href="mailto:shiro@DOMAIN.HIDDEN">shiro@xxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 22 Jan 2004 19:03:29 -1000 (HST)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:200401221745.JAA20519@DOMAIN.HIDDEN">200401221745.JAA20519@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:200401220511.VAA18432@DOMAIN.HIDDEN">200401220511.VAA18432@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:20040121.234610.468711249.shiro@DOMAIN.HIDDEN">20040121.234610.468711249.shiro@xxxxxxxx</a>&gt;	&lt;<a href="mailto:200401221745.JAA20519@DOMAIN.HIDDEN">200401221745.JAA20519@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Thanks for the detailed reply.  
+First of all, I'm not intended to discuss effectiveness of Unicode
+in multilingual environment and/or Han Unification at all.  My point
+is to allow alternatives.
+
+My reply goes as follows:
+
+ * About O(1) string access
+ * About character-set independence
+
+[About O(1) string access]
+
+From: Tom Lord &lt;lord@xxxxxxx&gt;
+Subject: Re: strings draft
+Date: Thu, 22 Jan 2004 09:45:53 -0800 (PST)
+
+&gt;     &gt; I feel that accessing strings by index is a kind of premature
+&gt;     &gt; optimization, which came from the history when strings were
+&gt;     &gt; simply an array of bytes.    
+&gt; 
+&gt; I used to think so too -- but that was before I started writing C code
+&gt; that allows UTF-8 and UTF-16 (and soon UTF-32) to be mixed and matched
+&gt; freely in a single application.
+&gt; 
+&gt; I think that the approach I'm taking with Pika -- internally using an
+&gt; N-bit encoding when all characters in a string fit in N-bits -- does a
+&gt; pretty good job of restoring the &quot;a string is an array&quot; simplicity in
+&gt; an international context.
+
+I see your approach (having multiple encodings) works, but don't
+see the reason to &quot;strongly recommend&quot; it.
+
+&gt;     &gt; Another issue: is there a rationale about &quot;strong encouragement&quot;
+&gt;     &gt; of O(1) access of string-ref and string-set!?   There are
+&gt;     &gt; alrogithms that truly need random access, but in many cases,
+&gt;     &gt; index is used just to mark certain location of the string;
+&gt;     &gt; e.g. if you want (string-ref str 3), it's rare that you know
+&gt;     &gt; '3' is significant before you know about str---it's more likely
+&gt;     &gt; that somebody (string search function, regexp matcher, or suffix
+&gt;     &gt; database...) told you that the 3rd character of a particular
+&gt;     &gt; string in str is significant.  In such cases, the reason you
+&gt;     &gt; use index is not because the algorithm requires it, but just
+&gt;     &gt; one of the possible means to have a reference within a string.
+&gt; 
+&gt; I don't follow your arguments about the distinction between an integer
+&gt; constant string index and one received as a parameter.   In both
+&gt; cases, the question is &quot;what is the computational complexity of
+&gt; STRING-REF, STRING-SET!, and SUBSTRING  ?&quot;
+
+No.  String search, regexp match, or precalculated prefix/suffix
+database, all can return some sort of reference that directly
+points into the string, so that the subsequent use of such 
+reference wouldn't need to count characters.
+(The implementation that shares substrings and uses write-on-copy
+for string mutation, those basic operations even can efficiently
+return substring directly.)
+
+And to implement search, regexp, or prefix/suffix arrays, the
+access of string is mostly sequential, or requires &quot;random hopping&quot;
+in a small amount.  Sequential access can be efficiently implemented,
+using string ports, for example, than using integer index.
+
+It's OK to have STRING-REF as well---after all, we have LIST-REF
+and nobody complains its O(N) complexity.
+
+
+[About character-set independence]
+
+What I felt ambiguous is the degree of &quot;character-set independence&quot;
+you're aiming at.   If we'd like to have a character-set independent
+language spec,  we need to be much more careful to separate
+Unicode-specific issues and character-set independent issues.
+
+&gt; I intended there to be three topics, each with two subtopics --
+&gt; similar but not quite the same as as your summary:
+&gt; 
+&gt;    1. Scheme language changes needed to support Unicode
+&gt;    1a. requirements
+&gt;    1b. optional feature requirements
+&gt; 
+&gt;    2. String handling in a portable FFI
+&gt;    2a. requirements
+&gt;    2b. optional feature requirements
+&gt; 
+&gt;    3. Examination of a particular implementation
+&gt;    3a. native FFI spec
+&gt;    3b. implementation strategy
+&gt;
+&gt; I think that, at this stage, those three topics do belong together.
+&gt; On this list, we're most directly concerned with (2) (&quot;portable FFI&quot;)
+&gt; but I don't think we can design such an FFI usefully without
+&gt; addressing (1) (&quot;Scheme language&quot;).
+
+We need to define some kind of minimum requirements on the language (1).
+For example, your point here is a reasonable.
+
+&gt; Another example: portable FFI-using code can
+&gt; not reliably enter strings into Scheme without stronger character set
+&gt; guarantees than are found in R5RS.  
+
+(Although I wonder the following:
+
+&gt; For example, FFI-using code is
+&gt; seriously impoverished if it can not reliably exchange integer string
+&gt; indexes with Scheme
+
+If an opaque &quot;string reference&quot; liberates the Scheme code from integer
+indexing strings, there's not much reason that we want to pass integer
+index to FFI.)
+
+&gt; There is the question: Should future Revised Standards explicitly
+&gt; mention Unicode in the core of the specification, as I've recommended,
+&gt; or should such materials be separated from the core to an annex where
+&gt; they might stand in parrallel with analogous sections for, for
+&gt; example, EUCJP?  I suspect that such a question is mostly political,
+&gt; not technical.  I'll admit my bias that I think the way forward for
+&gt; computing generally is to converge on Unicode -- I'd like it in the
+&gt; core -- but it's a minor point and a topic for another context, I
+&gt; think.
+
+I have no doubt that future information exchange will be done
+in Unicode.  Still, there are niche areas that people wants to
+handle weird character set.  For example:
+
+ * Handling literature and historical document on computers
+   requires more characters than Unicode, such as the one
+   &quot;Mojikyo&quot; <a  rel="nofollow" href="http://www.mojikyo.org/">http://www.mojikyo.org/</a>  provides.
+
+ * Japanese local character set JISX-0213 added thousands of
+   characters, of which a few hundreds of characters were
+   undefined in Unicode at that time.  It took a couple of
+   years until Unicode included them (except about a dozen
+   characters which are not in Unicode yet).
+
+ * Legacy documents.  You mentioned that Scheme shouldn't bend
+   over backwards to be EBCDIC-friendly and it's true.  The
+   issue here is that converting legacy encoding to Unicode
+   is not a loss-less conversion.  If you convert EUCJP to
+   Unicode in one program, and then covert back by another
+   program, it is not guaranteed that you get the same document
+   as in original.  So, in some areas, one need to use
+   the legacy encodings.
+
+It would be nice that Scheme language spec allows a local
+implementation that uses different CCS/CES.
+
+&gt;   The proposed changes to the Scheme standard do not require
+&gt;   implementations to use Unicode or iso8859-*.  They do, however,
+&gt;   require that portable Scheme programs manipulating multilingual text
+&gt;   take some of their semantics (in particular, the meaning of string
+&gt;   indexes and hex string constants) from Unicode.  Absent such a
+&gt;   semantic, integer constant string indexes and string index
+&gt;   adjustments (e.g., +1) will not have a portable meaning (for
+&gt;   example).
+
+Using Unicode codepoints as the portable means of hex notation
+(#\U+XXXX) is ok.
+The integer indexing is an different issue.  EUCJP #xA5F7
+character is mapped to two subsequent unicode codepoints,
+U+30AB and U+309A.   On the other hand, U+30AB itself is
+mapped to EUCJP #xA5AB, and U+309A doesn't have corresponding
+character in EUCJP.
+If STRING-REF has to be unicode codepoint index, I don't see
+how it should work.
+
+&gt;   My proposal does _not_
+&gt;   require conforming implementations to use Unicode and does not
+&gt;   preclude implementations that include characters not found in
+&gt;   Unicode (Pika's support of buckybits is an example).
+
+Requirements for unicode codepoint index and 256 character mapping
+(as I explain later) implies the implementation to use
+Unicode-compatible charset.
+
+&gt;   As I understand it, there is resistence in some places to Unicode
+&gt;   for two reasons: (1) legacy systems using other character sets (not
+&gt;   much anyone can do about that -- I don't think Scheme should bend
+&gt;   over backwards to be EBCDIC-friendly, either); (2) still surviving
+&gt;   controversy about Han Unification.
+
+As I mentioned, there are niche area that wants to use other
+encodings, and there are some areas that want to deal with (1).
+
+I don't see much problem about (2)---no other encodings completely
+solve the problem, so we have to live with it anyway.  However,
+there are encodings that solve the problem in different way
+(e.g. iso2022), which is why I want to stick to codeset-independent
+solutions.
+
+&gt;     &gt;     * If the implementation uses EUCJP as its internal CES, it
+&gt;     &gt;       will face difficulty for the recommendation of INTEGER-&gt;CHAR
+&gt;     &gt;       to support [0,255], since EUCJP does not have full mappings
+&gt;     &gt;       in this range, although it has much more characters than 256.
+&gt;     &gt;       I think it's possible that (integer-&gt;char #xa1) on such
+&gt;     &gt;       implementations returns a &quot;pseudo character&quot;, which doesn't
+&gt;     &gt;       corresponds to any character in EUCJP CES but is guaranteed
+&gt;     &gt;       that to produce #xa1 when passed to char-&gt;integer.  But the
+&gt;     &gt;       effects would be undefined if such a character is used within
+&gt;     &gt;       a string.  (An implementation can also choose different
+&gt;     &gt;       integers than the codepoint value to fulfill this &quot;256 character&quot;
+&gt;     &gt;       requirements, but it wouldn't be intuitive).
+&gt; 
+&gt; You say that &quot;the effects would be undefined if such a character
+&gt; is used within a string&quot;.   I don't see why that would have to be the
+&gt; case -- I only see how a particular string implementation could have
+&gt; that bug.
+&gt;
+&gt; There are 128 unassigned octet sequences available in EUCJP that won't
+&gt; be mistaken for any real character, right?  Purely internally, those
+&gt; sequences could be used in the string representations to represent the
+&gt; effect of something like (STRING-SET! s (INTEGER-&gt;CHAR 161)).
+
+Strictly speaking, yes.  I can map integer #x80 to #xff into a
+undefined region of EUCJP.  That's what I said &quot;it wouldn't be
+intuitive&quot;.
+
+Here's EUCJP packed encoding:
+
+  Character               EUCJP packed encoding.
+                      
+  ASCII                   [#xNN]           NN in 0..7f
+  JISX0201                [#x8e #xNN]      NN in 0..ff
+  JISX0213 1st plane      [#xNN #xMM]      NN in a0..ff, MM in a0..ff
+  JISX0213 2nd plane      [#x8f #xNN #xMM] NN in a0..ff, MM in a0..ff
+
+So, I can use something like [#x8f #x20 #xNN] to represent
+(integer-&gt;char #xNN) where NN is 80 to ff.   However, you said.
+
+  There are many circumstances in which conversions between
+  octets and characters are desirable 
+
+And I don't see such circumstances.  What exactly does this
+requirement to solve?  Even if I use the pseudo character
+representation like above, there's no way to read
+and write such a character from/to a port reliably.
+
+&gt; The problem you mention isn't unique to EUCJP -- it occurs for a
+&gt; naively implemented UTF-8 or UTF-16-based Scheme as well.   The
+&gt; solutions are analogous.
+
+Not really.   Character encoding scheme (CES) of eastern Asia
+languages typically includes more than one coded character set (CCS).
+So, the &quot;codepoint&quot; in particular CCS isn't the same as the
+encoded value in CES---e.g. JISX0201 defines code in #x00 to #x7f
+region which conflicts with ASCII.  In programs you have to
+stick to CES code value.
+
+In Unicode world, one CCS (Unicode) has many CES (utf-8,
+utf-16, ...) but you can always map one codepoint to the other.
+So you can treat them consistently in CCS codepoint.
+
+&gt;     &gt;     * &quot;What _is_ a Character&quot; section doesn't refer to an
+&gt;     &gt;       implementation where a CHAR? value corresponts to a
+&gt;     &gt;       codepoint of non-Unocde, non-iso8859-* CCS/CES.
+&gt; 
+&gt; Most likely, depending on the details of the implementation you have
+&gt; in mind, I would put it in the &quot;roughly corresponds to a Unicode
+&gt; codepoint&quot; category.
+
+Maybe EUCJP can fall to the category where CHAR? value corresponds
+to a &quot;combining sequence&quot;---because of EUCJP #xA5F7 &lt;-&gt; [U+30AB U+309A]
+mapping.  But you can't derive &quot;integer range [0..256] can map to
+characters&quot; from that.
+
+&gt;     &gt;     * In the portable FFI section, some APIs state the encoding
+&gt;     &gt;       must be one of utf-8, iso8859-* or ascii, and I don't see
+&gt;     &gt;       the reason of such restrictions.
+&gt; 
+&gt; How would you remove that restriction in a way that supports writing
+&gt; portable FFI-using code?
+
+What I'm picking there is the word &quot;must&quot;. 
+scm_extract_string8 can put answer in eucjp packed format into
+t_uchar* array if the implementation supports that, so I don't
+see why this restriction is needed.
+
+  indicated encoding (which must be one of `uni_utf8',
+  `uni_iso8859_*', or `uni_ascii') 
+
+Of course using such encoding wouldn't be portable.  But so
+as iso8859_1 implementation is asked to convert the string
+into iso8859_2.
+
+&gt;     &gt; 3. Determining the least common set of assumptions about characters
+&gt;     &gt;    and strings the language/FFI spec should define.
+&gt; 
+&gt;     &gt;    Mostly in &quot;R6RS recommendation&quot; section.  Some of them seem
+&gt;     &gt;    try to be codeset-independent, while some of them seem to
+&gt;     &gt;    assume Unicode/iso8859-* codeset implicitly.  So I wonder
+&gt;     &gt;    which is the intention of the document.
+&gt; 
+&gt; The intention is to make optional Unicode support well-defined and
+&gt; useful as a basis for writing portable Scheme code --- while saying no
+&gt; more in the core specification of Scheme than is necessary to
+&gt; accomplish that.
+&gt; 
+&gt; I believe it will be practical for implementations internally using,
+&gt; for example, EUCJP to conform to the requirements -- and even to
+&gt; provide a useful level of support for the optional Unicode facilities.
+
+Gauche can be compiled using EUCJP, and doesn't have a problem
+communicating with Unicode world so far.  But I don't see
+[0..256] mapping, &quot;Unicode codepoint index&quot;, and O(1) accesses
+are essential for such an implementation to communicate with
+Unicode world.
+
+--shiro
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00388" href="msg00388.html">Re: strings draft</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00342" href="msg00342.html">strings draft</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00343" href="msg00343.html">Re: strings draft</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+<li><strong><a name="00344" href="msg00344.html">Re: strings draft</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00364.html">Re: strings draft</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00366.html">READ-OCTET (Re: strings draft)</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00344.html">Re: strings draft</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00388.html">Re: strings draft</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00365"><strong>Date</strong></a></li>
+<li><a href="threads.html#00365"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

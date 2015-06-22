@@ -1,0 +1,175 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: integer&#45;length and integer&#45;sqrt -->
+<!--X-From-R13: Ohoerl Xnssre <ntwNnyhz.zvg.rqh> -->
+<!--X-Date: Mon, 17 Oct 2005 00:45:52 +0200 (MST) -->
+<!--X-Message-Id: 20051016224535.2FF4D1B77BB@home.voluntocracy.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 21f37ac4cfb0944dc2cf71979165104b@math.purdue.edu -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: integer-length and integer-sqrt</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00029.html">Date Prev</a>][<a href="msg00031.html">Date Next</a>][<a href="msg00018.html">Thread Prev</a>][<a href="msg00033.html">Thread Next</a>][<a href="maillist.html#00030">Date Index</a>][<a href="threads.html#00030">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: integer-length and integer-sqrt</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:lucier@DOMAIN.HIDDEN">lucier@xxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: integer-length and integer-sqrt</li>
+<li><em>From</em>: Aubrey Jaffer &lt;<a href="mailto:agj@DOMAIN.HIDDEN">agj@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 16 Oct 2005 18:45:35 -0400 (EDT)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:21f37ac4cfb0944dc2cf71979165104b@DOMAIN.HIDDEN">21f37ac4cfb0944dc2cf71979165104b@xxxxxxxxxxxxxxx</a>&gt; (message from	Bradley Lucier on Fri, 7 Oct 2005 12:47:01 +0200)</li>
+<li><em>References</em>: &lt;<a href="mailto:21f37ac4cfb0944dc2cf71979165104b@DOMAIN.HIDDEN">21f37ac4cfb0944dc2cf71979165104b@xxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre> | From: Bradley Lucier &lt;lucier@xxxxxxxxxxxxxxx&gt;
+ | Date: Fri, 7 Oct 2005 12:47:01 +0200
+ | 
+ | Jens Axel S&#xF8;gaard writes:
+ | 
+ | &gt; I propose adding the following two operations on integers.
+ | ...
+ | &gt; The second is INTEGER-SQRT, which is discussed here:
+ | &gt;
+ | &gt; &lt;<a  rel="nofollow" href="http://groups.google.com/group/comp.lang.scheme/browse_frm/thread/">http://groups.google.com/group/comp.lang.scheme/browse_frm/thread/</a> 
+ | &gt; dc06e91e306cf488/a9cf92f425bb3db1?lnk=st&amp;q=lucier+integer- 
+ | &gt; sqrt&amp;rnum=1&amp;hl=en#a9cf92f425bb3db1&gt;
+ | &gt;
+ | &gt; I consider INTEGER-SQRT just as natural an operation as GCD and LCM
+ | &gt; when it comes to number theoretical calculations.
+ | 
+ | Agree completely.
+ | 
+ | The following algorithm is better; it's about twice as fast and  
+ | Zimmermann has published a proof of correctness:
+
+What language is this written in?
+
+ | (define-prim (##exact-int.sqrt x)
+ | 
+ |    ;; x is non-negative.  Returns (cons s r) where
+ |    ;; x = s^2+r, x &lt; (s+1)^2
+ | 
+ |    ;; Derived from the paper &quot;Karatsuba Square Root&quot; by Paul Zimmermann,
+ |    ;; INRIA technical report RR-3805, 1999.  (Used in gmp 4.*)
+ | 
+ |    ;; Note that the statement of the theorem requires that
+ |    ;; b/4 &lt;= high-order digit of x &lt; b which can be impossible when b is  
+ | a
+ |    ;; power of 2; the paper later notes that it is the lower bound that  
+ | is
+ |    ;; necessary, which we preserve.
+ | 
+ |    (if (and (##fixnum? x)
+ |             ;; we require that
+ |             ;; (##&lt; (##flonum.sqrt (- (* y y) 1)) y) =&gt; #t
+ |             ;; whenever x=y^2 is in this range.  Here we assume that we
+ |             ;; have at least as much precision as IEEE double precision  
+ | and
+ |             ;; we round to nearest.
+ |             (or (##not (##fixnum? 4294967296))          ; 32-bit fixnums
+ |                 (##fixnum.&lt;= x 4503599627370496)))      ; 2^52
+ |        (let* ((s (##flonum.-&gt;fixnum (##flonum.sqrt (##flonum.&lt;-fixnum  
+ | x))))
+ |               (r (##fixnum.- x (##fixnum.* s s))))
+ |          (##cons s r))
+ |        (let ((length/4
+ |               (##fixnum.arithmetic-shift-right
+ |                (##fixnum.+ (##integer-length x) 1)
+ |                2)))
+ |          (let* ((s-prime&amp;r-prime
+ |                  (##exact-int.sqrt
+ |                   (##arithmetic-shift
+ |                    x
+ |                    (##fixnum.- (##fixnum.arithmetic-shift-left length/4  
+ | 1)))))
+ |                 (s-prime
+ |                  (##car s-prime&amp;r-prime))
+ |                 (r-prime
+ |                  (##cdr s-prime&amp;r-prime)))
+ |            (let* ((qu
+ |                    (##exact-int.div
+ |                     (##+ (##arithmetic-shift r-prime length/4)
+ |                          (##extract-bit-field length/4 length/4 x))
+ |                     (##arithmetic-shift s-prime 1)))
+ |                   (q
+ |                    (##car qu))
+ |                   (u
+ |                    (##cdr qu)))
+ |              (let ((s
+ |                     (##+ (##arithmetic-shift s-prime length/4) q))
+ |                    (r
+ |                     (##- (##+ (##arithmetic-shift u length/4)
+ |                               (##extract-bit-field length/4 0 x))
+ |                          (##* q q))))
+ |                (if (##negative? r)
+ |                  (##cons (##- s 1)
+ |                          (##+ r
+ |                               (##- (##arithmetic-shift s 1) 1)))
+ |                  (##cons s
+ |                          r))))))))
+ | 
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00033" href="msg00033.html">Re: integer-length and integer-sqrt</a></strong>
+<ul><li><em>From:</em> Bradley Lucier</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00017" href="msg00017.html">Re: integer-length and integer-sqrt</a></strong>
+<ul><li><em>From:</em> Bradley Lucier</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00029.html">Re: meta-comment on typing</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00031.html">Re: implementation categories, exact rationals</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00018.html">Integers as Bits [was Re: integer-length]</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00033.html">Re: integer-length and integer-sqrt</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00030"><strong>Date</strong></a></li>
+<li><a href="threads.html#00030"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

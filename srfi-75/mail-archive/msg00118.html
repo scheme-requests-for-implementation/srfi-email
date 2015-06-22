@@ -1,0 +1,231 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: the discussion so far -->
+<!--X-From-R13: orne <orneNfbavp.arg> -->
+<!--X-Date: Tue, 19 Jul 2005 11:30:35 +0200 (DFT) -->
+<!--X-Message-Id: Pine.LNX.4.58.0507190156300.14436@bolt.sonic.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: E1Dtlz7&#45;0000Mq&#45;00@pop&#45;satin.atl.sa.earthlink.net -->
+<!--X-Reference: 5fb7e087050718200423778e82@mail.gmail.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: the discussion so far</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00117.html">Date Prev</a>][<a href="msg00119.html">Date Next</a>][<a href="msg00113.html">Thread Prev</a>][<a href="msg00119.html">Thread Next</a>][<a href="maillist.html#00118">Date Index</a>][<a href="threads.html#00118">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: the discussion so far</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Alex Shinn &lt;<a href="mailto:alexshinn@DOMAIN.HIDDEN">alexshinn@xxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: the discussion so far</li>
+<li><em>From</em>: bear &lt;<a href="mailto:bear@DOMAIN.HIDDEN">bear@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 19 Jul 2005 02:30:13 -0700 (PDT)</li>
+<li><em>Cc</em>: Matthew Flatt &lt;<a href="mailto:mflatt@DOMAIN.HIDDEN">mflatt@xxxxxxxxxxx</a>&gt;, <a href="mailto:srfi-75@DOMAIN.HIDDEN">srfi-75@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-75@DOMAIN.HIDDEN">srfi-75@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:5fb7e087050718200423778e82@DOMAIN.HIDDEN">5fb7e087050718200423778e82@xxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:E1Dtlz7-0000Mq-00@DOMAIN.HIDDEN">E1Dtlz7-0000Mq-00@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:5fb7e087050718200423778e82@DOMAIN.HIDDEN">5fb7e087050718200423778e82@xxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+On Tue, 19 Jul 2005, Alex Shinn wrote:
+
+&gt; This seems to me a very disturbing precedent, if R6RS will deliberately
+&gt; specify &quot;the wrong thing&quot; just because it cannot figure out &quot;the right
+&gt; thing.&quot;  In a case like this, I think it would be better not to specify
+&gt; anything.
+
+It would certainly be more consistent with the spirit of past
+RnRS reports to avoid specifying anything.  The current committee
+seems to have a different goal than past committees though; If
+their goal is making portable code possible rather than waiting
+for consensus and specifying only the Right Thing, they will be
+making the same kind of compromises just in order to specify
+*something* that, say, the Common Lisp standard does.
+
+&gt; So far, the following conflicts exist between R5RS (ASCII) and Unicode:
+
+&gt; 1) Case operations.  In ASCII, CHAR-*CASE and STRING-*CASE can be
+&gt; defined in terms of one another, and either can be used to define
+&gt; CHAR-CI=?  or STRING-CI=?, or these can be provided separately.  In
+&gt; ASCII, at the very least STRING-CI=? is required for basic parsing
+&gt; of text formats (though in reality it is possible that such parsing
+&gt; will be done directly on octet-arrays rather than native strings).
+&gt; CHAR-CI=?  and CHAR-*CASE can be used to improve efficiency in
+&gt; low-level libraries such as parsers and regex matchers.
+
+This problem is much less severe if your characters are grapheme
+clusters.  But thanks to Ligatures (which cannot appear in canonical
+strings) and eszett (which, unfortunately, can) it is not completely
+eliminated by moving to grapheme clusters.
+
+&gt; In Unicode, the character-level operations have no meaning.  It is
+&gt; in fact far, far worse to provide character-level operations that
+&gt; &quot;do as much as they can&quot; given the Unicode data for single
+&gt; characters, because then you encourage people to use this feature,
+&gt; but by definition any program that performs case operations at the
+&gt; character level is broken and can never be fixed or extended.  Also,
+&gt; STRING-CI=?  cannot be defined in terms of STRING-*CASE, and both
+&gt; are locale-specific procedures.
+
+Right; substrings that aren't valid strings, or which combine into
+something that isn't the original string, can result when you split
+grapheme clusters; This happens when you take substrings on arbitrary
+codepoint boundaries, or do buffered operations on arbitrary codepoint
+boundaries, or any of a number of other things.  But these are
+problems that go away if your characters are grapheme clusters.
+
+&gt; There are two ways to reconcile these differences.  One is to unify the
+&gt; procedures, the other is to create separate procedures.  Unified should
+&gt; be something like:
+
+&gt;  CHAR-*CASE, CHAR-CI=?
+&gt;    - as in R5RS
+&gt;    - folds ASCII *only* (please don't enourage bad code)
+
+I don't believe in this.  If you're going to limit it to ASCII,
+then 'ascii' ought to be in its name.
+
+&gt;  STRING-*CASE, STRING-CI=?
+&gt;    - takes optional locale argument (which may be ignored)
+&gt;    - guaranteed to work at least on ASCII characters as in R5RS
+&gt;    - optionally Unicode aware
+
+The thing is, if underspecified these operations will be
+nearly useless.  Portable code will be unable to rely on
+them doing any particular thing.
+
+&gt; Normalization.  Implementations should be allowed to internally keep
+&gt; all strings normalized, and/or perform normalized comparisons for
+&gt; the likes of STRING=?.  Unlike subjective collation, one should
+&gt; generally want to treat strings as identical to their normalized
+&gt; forms, however in implementing certain low-level libraries (such as
+&gt; encoding converters) one may want explicit control of code-point
+&gt; equivalence.  Furthermore one may want library procedures to convert
+&gt; between different normalized forms, however if the implementation
+&gt; always maintains a specific internal normalization, conversions to
+&gt; other normalizations by definition cannot return native strings.
+
+It's my opinion that the only way to make normalization transparent to
+the programmer and user is to use grapheme-cluster characters instead
+of codepoint characters.  Normalization consists in altering codepoint
+sequences within grapheme clusters only; if this is your character
+unit, then it can be done without disrupting character indexes or
+counts, saving everyone a lot of headaches.
+
+One thing about normalization: Ligatures do not exist in normalized
+text, because they have canonical decompositions.  If you are using
+normalized grapheme clusters as characters, then there are no
+ligatures, and most of specialcasing.txt specifies upcase and downcase
+operations that do in fact take one character and return one character
+(alas, they are not all or necessarily reciprocal relationships, or
+the problem would be truly simple.) The sole exception is eszett.
+
+As for conversion between different normalized forms, I think that the
+unicode normalization form is properly a property of the port through
+which data is read or written.  The port reads codepoints in some
+normalization form, and delivers _characters_ represented according to
+the abstraction you use internally.  Likewise, it accepts abstract
+characters and writes codepoints in some normalization form.  This
+introduces a distinction between text ports (which read and write
+characters, full-stop) and binary ports (which read and write octets).
+If you want to read or write characters on a binary port, you *SHOULD*
+have to state explicitly what encoding to use.
+
+&gt; Definition of a character.  Rather than pure code-point iterators,
+&gt; one may wish to define operations on sequences of code-points
+&gt; representing higher-level linguistic components (e.g. join accent
+&gt; marks) or even glyphs (returning ligatures, or consonant plus vowels
+&gt; for scripts like Thai).  Fortunately these can be defined in terms
+&gt; of Unicode code-points, so they can be relegated to future
+&gt; libraries.
+
+Well, I'm going to argue pretty strenuously in favor of grapheme
+clusters as characters, for all the reasons mentioned above.
+
+&gt; It should be kept in mind that we will likely always have Schemes
+&gt; implementing the full range of Unicode support, from nothing to
+&gt; complete (and then some), just as we have variation in the range of
+&gt; number tower support.  However, unlike in the number tower, the
+&gt; ASCII vs. Unicode distinctions are semantically different, and even
+&gt; in an implementation supporting all of Unicode, you may wish to use
+&gt; ASCII-specific procedures which ignore or possibly even throw an
+&gt; error in the presence of non-ASCII data.  Moreover, there is a very
+&gt; significant overhead in the Unicode versions, both in speed and in
+&gt; memory usage.  Because using an ASCII-level operation makes clear
+&gt; what you are doing (non-linguistic parsing), and because it can be
+&gt; significantly more efficient, I'm leaning towards providing separate
+&gt; procedures.
+
+I'd tend to agree.  If the encoding is an important part of the
+definition of any operation, I'd suggest strongly that the name
+of the encoding appear in the name of the operation.  Thus,
+char-&gt;integer returns &quot;an integer&quot; but if you want to specify
+a routine that returns &quot;a unicode codepoint&quot; I think its name
+should be char-&gt;unicode.
+
+			Bear
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00119" href="msg00119.html">Re: the discussion so far</a></strong>
+<ul><li><em>From:</em> John.Cowan</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00084" href="msg00084.html">the discussion so far</a></strong>
+<ul><li><em>From:</em> Matthew Flatt</li></ul></li>
+<li><strong><a name="00113" href="msg00113.html">Re: the discussion so far</a></strong>
+<ul><li><em>From:</em> Alex Shinn</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00117.html">Re: A different approach</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00119.html">Re: the discussion so far</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00113.html">Re: the discussion so far</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00119.html">Re: the discussion so far</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00118"><strong>Date</strong></a></li>
+<li><a href="threads.html#00118"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

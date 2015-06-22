@@ -1,0 +1,173 @@
+<!-- MHonArc v2.6.16 -->
+<!--X-Subject: Re: A few requests for clarification -->
+<!--X-From-R13: "Rnivq O. Iurryre" <qjurryreNqjurryre.pbz> -->
+<!--X-Date: Tue, 16 Oct 2012 02:58:58 +0000 (UTC) -->
+<!--X-Message-Id: E1TNxMu&#45;0002L7&#45;Uu@fenris.runbox.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 87wqyswuda.fsf@tines.lan -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: A few requests for clarification</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00140.html">Date Prev</a>][<a href="msg00142.html">Date Next</a>][<a href="msg00140.html">Thread Prev</a>][<a href="msg00143.html">Thread Next</a>][<a href="maillist.html#00141">Date Index</a>][<a href="threads.html#00141">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: A few requests for clarification</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:mhw@DOMAIN.HIDDEN">mhw@xxxxxxxxxx</a>, <a href="mailto:srfi-105@DOMAIN.HIDDEN">srfi-105@xxxxxxxxxxxxxxxxx</a>, <a href="mailto:readable-discuss@DOMAIN.HIDDEN">readable-discuss@xxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: A few requests for clarification</li>
+<li><em>From</em>: &quot;David A. Wheeler&quot; &lt;<a href="mailto:dwheeler@DOMAIN.HIDDEN">dwheeler@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 15 Oct 2012 22:58:56 -0400 (EDT)</li>
+<li><em>Cc</em>: <a href="mailto:almkglor@DOMAIN.HIDDEN">almkglor@xxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-105@DOMAIN.HIDDEN">srfi-105@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:87wqyswuda.fsf@DOMAIN.HIDDEN">87wqyswuda.fsf@xxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:87wqyswuda.fsf@DOMAIN.HIDDEN">87wqyswuda.fsf@xxxxxxxxx</a>&gt;</li>
+<li><em>Reply-to</em>: <a href="mailto:dwheeler@DOMAIN.HIDDEN">dwheeler@xxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Mark H Weaver said:
+&gt; I recently wrote a preliminary implementation of SRFI-105 for Guile 2.0
+
+Thanks VERY MUCH!! That's awesome.
+
+&gt; and found a few places where the clarity of the specification could be
+&gt; improved.
+
+Thanks for the feedback!
+
+
+&gt; 
+&gt; First, the definition of neoteric expressions states that they &quot;recurse
+&gt; within lists, so lists contains sequences of zero or more neoteric
+&gt; expressions, not s-expressions.&quot;  I take this to mean that:
+&gt; 
+&gt;    { (f (g h(x))) }   ---&gt;  (f (g (h x)))   NOT   (f (g h (x)))
+
+Yes, that's the intent.
+
+&gt; However, it does not clarify whether neoteric expressions recurse within
+&gt; vector literals:
+&gt; 
+&gt;    { (f #(g h(x))) }  ---&gt;  (f #(g (h x)))   OR   (f #(g h (x)))  ??
+&gt; 
+&gt; The same question will arise for any other kind of literal that supports
+&gt; symbolic elements, such a record literals or hash-table literals, for
+&gt; implementations that support them.  Although I would not expect this
+&gt; SRFI to impose requirements for handling on non-standard literals, it
+&gt; might still be helpful to make recommendations to encourage uniformity
+&gt; among implementations.
+
+You're absolutely right, we need to address that.
+
+Alan Manuel Gloria says:
+&gt; My gut instinct is &quot;it's still neoteric in vector literals&quot; i.e.
+&gt; vectors in n-expression position MUST contain n-expressions.
+
+I agree.  In fact, the sample implementation *specifically* implements neoteric-expresions within vectors, so:
+ {#(1 2 f(a) 4)}
+maps to:
+ #(1 2 (f a) 4)
+
+I'll modify the spec to clarify that, including that example.
+
+Alan Manuel Gloria says:
+&gt; I think I'd also clarify that any other literals specific to an implementation
+&gt; SHOULD also support n-expressions in places that they support
+&gt; s-expressions, if the literal is in n-expression position.
+
+Agree.  I'll add that.
+
+Mark H Weaver said:
+&gt; Another issue I ran into relates to datum comments of the form:
+&gt; 
+&gt;    #;&lt;whitespace&gt;&lt;datum&gt;
+&gt; 
+&gt; as specified in the R6RS and R7RS (draft 6).  What kind of syntax should
+&gt; be used to parse &lt;datum&gt; within such a comment?  I think it's fairly
+&gt; clear that &lt;datum&gt; should be parsed the same way as it would have been
+&gt; if the &quot;#;&quot; was removed.  It would be good to add a note and an example
+&gt; to clarify this.  For example:
+&gt; 
+&gt;    { (f #;g(x) h(x)) }  ---&gt;  (f (h x))   NOT   (f (x) (h x))
+
+
+Alan Manuel Gloria says:
+&gt;My gut instinct is to say &quot;yes, datum comments should consume
+&gt;n-expressions if they are found in n-expression position&quot;.
+
+I agree with that, too.  I'll add a note, and the example listed above.
+
+&gt; Finally, and perhaps most importantly, I would strongly encourage you to
+&gt; add many more examples (along with their s-expression equivalents) to
+&gt; cover every supported syntax, including all of the edge cases that
+&gt; implementors might conceivably get wrong.  This would not only help
+&gt; readers clearly understand the spec, but also help ensure that SRFI-105
+&gt; syntax is read the same way by all implementations.  If slightly
+&gt; incompatible implementations became widely deployed, it could be
+&gt; disastrous for adoption of SRFI-105.
+
+Okay.  I'll probably steal more examples from the test suite we have in the readable project.  There's an endless number of tests one can create, but a larger test suite combined with a hopefully clear spec is a good thing.
+
+&gt; Thanks for your work on this!
+
+And thank YOU, very much, for your work.  I think SRFI-105 has to be available on many implementations to be really useful, and your work is a critical part of that.
+
+--- David A. Wheeler
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00140" href="msg00140.html">A few requests for clarification</a></strong>
+<ul><li><em>From:</em> Mark H Weaver</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00140.html">A few requests for clarification</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00142.html">Please update SRFI-105</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00140.html">A few requests for clarification</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00143.html">Add explanation about unprefixed brackets</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00141"><strong>Date</strong></a></li>
+<li><a href="threads.html#00141"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

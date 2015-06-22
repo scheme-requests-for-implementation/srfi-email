@@ -1,0 +1,117 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Implementation of read&#45;ieee&#45;float64 -->
+<!--X-From-R13: Penqyrl Zhpvre <yhpvreNzngu.cheqhr.rqh> -->
+<!--X-Date: Wed,  7 Dec 2005 06:01:47 +0100 (CET) -->
+<!--X-Message-Id: DAD12F48&#45;4E49&#45;4B32&#45;A29D&#45;7CD3018C3E8B@math.purdue.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Implementation of read-ieee-float64</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00000.html">Date Prev</a>][<a href="msg00002.html">Date Next</a>][<a href="msg00000.html">Thread Prev</a>][<a href="msg00002.html">Thread Next</a>][<a href="maillist.html#00001">Date Index</a>][<a href="threads.html#00001">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Implementation of read-ieee-float64</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-56@DOMAIN.HIDDEN">srfi-56@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Implementation of read-ieee-float64</li>
+<li><em>From</em>: Bradley Lucier &lt;<a href="mailto:lucier@DOMAIN.HIDDEN">lucier@xxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 6 Dec 2005 23:01:37 -0600</li>
+<li><em>Cc</em>: Bradley Lucier &lt;<a href="mailto:lucier@DOMAIN.HIDDEN">lucier@xxxxxxxxxxxxxxx</a>&gt;, <a href="mailto:alexshinn@DOMAIN.HIDDEN">alexshinn@xxxxxxxxx</a>,	Marc Feeley &lt;<a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>&gt;,	Gambit List &lt;<a href="mailto:Gambit-list@DOMAIN.HIDDEN">Gambit-list@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-56@DOMAIN.HIDDEN">srfi-56@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<tt>In the implementation of the withdrawn SRFI-56, read-ieee-float64 has  
+</tt><tt>the following code
+</tt><pre style="margin: 0em;">
+
+    (define (mantissa expn b2 b3 b4 b5 b6 b7 b8)
+      (case expn   ; recognize special literal exponents
+        ((255) #f) ; won't handle NaN and +/- Inf
+        ((0)       ; denormalized
+         (exact-&gt;inexact (* (expt 2.0 (- 1 (+ 1023 52)))
+                            (combine b2 b3 b4 b5 b6 b7 b8))))
+        (else
+         (exact-&gt;inexact
+          (* (expt 2.0 (- expn (+ 1023 52)))
+             (combine (+ b2 16) b3 b4 b5 b6 b7 b8))))))
+
+</pre><tt>Gambit 4.0b15 fails some srfi-56 tests because the first instance of  
+</tt><tt>2.0 is not 2; unfortunately, Gambit-C calculates
+</tt><pre style="margin: 0em;">
+
+(expt 2.0 -1074)
+
+as
+
+(/ (expt 2.0 1074))
+
+</pre><tt>Since the exponent range of IEEE arithmetic is not symmetric, (expt  
+</tt><tt>2.0 1074) is +inf.0, yet (expt 2.0 -1074) is not 0.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>If both instances of 2.0 are changed to 2, then Gambit passes all the  
+</tt><tt>tests.  I think that this is what you may have meant in the first  
+</tt><tt>place, because you take the trouble to call exact-&gt;inexact on what is  
+</tt><tt>already an inexact number.
+</tt><pre style="margin: 0em;">
+
+Brad
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00002" href="msg00002.html">Re: Implementation of read-ieee-float64</a></strong>
+<ul><li><em>From:</em> Alex Shinn</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00000.html">Withdrawn SRFI 56: Binary I/O</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00002.html">Re: Implementation of read-ieee-float64</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00000.html">Withdrawn SRFI 56: Binary I/O</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00002.html">Re: Implementation of read-ieee-float64</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00001"><strong>Date</strong></a></li>
+<li><a href="threads.html#00001"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

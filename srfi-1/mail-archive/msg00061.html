@@ -1,0 +1,186 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Restricting the procedures to proper lists -->
+<!--X-From-R13: Ayva Euviref <fuvirefNfuviref.ar.zrqvnbar.arg> -->
+<!--X-Date: Mon, 5 Jul 1999 19:31:26 &#45;0500 (CDT) -->
+<!--X-Message-Id: 199907060037.UAA04056@shivers.ne.mediaone.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Restricting the procedures to proper lists</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00060.html">Date Prev</a>][<a href="msg00062.html">Date Next</a>][<a href="msg00060.html">Thread Prev</a>][<a href="msg00062.html">Thread Next</a>][<a href="maillist.html#00061">Date Index</a>][<a href="threads.html#00061">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Restricting the procedures to proper lists</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-1@DOMAIN.HIDDEN">srfi-1@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Restricting the procedures to proper lists</li>
+<li><em>From</em>: Olin Shivers &lt;<a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 5 Jul 1999 20:37:24 -0400</li>
+<li><em>Reply-to</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>The response from the discussion list has been overwhelmingly against defining
+these procedures to produce results when given dotted lists, in favor of
+increased error checking. Accordingly, I have made a careful pass through the
+Common Lisp spec, and brought the list-lib procedures into line with the
+proper-list constraints chosen by Common Lisp. You can check the Common Lisp
+spec on-line at Kent Pitman's excellent &quot;hyperspec&quot;
+    <a  rel="nofollow" href="http://www.harlequin.com/education/books/HyperSpec/">http://www.harlequin.com/education/books/HyperSpec/</a>
+if you wish to see exactly what Common Lisp does. In particular, see
+the note/clarification on the handling of dotted lists at
+    <a  rel="nofollow" href="http://www.harlequin.com/education/books/HyperSpec/Issues/iss138-writeup.html">http://www.harlequin.com/education/books/HyperSpec/Issues/iss138-writeup.html</a>
+I am personally against this, but am bowing to the general consensus.
+
+For me, the current BIG QUESTION is this: some list-processing procedures
+do not always examine the whole list -- such as the procedures that search
+lists, like FIND, MEMBER, etc. Suppose we decide to restrict these
+procedures to proper lists. What is the spec going to be for invocations
+where the procedure never examines the whole list, and so cannot see the
+terminator? For example,
+    (find even? '(1 2 3 . d))
+is going to return 2, even if it is supposed to be defined only over proper
+lists.  That is, it's unlikely that any implementation would ever enforce the
+proper-list typing of its list parameter. So how should the spec read?  Should
+we say that in this case, is it an error that the procedure is not required to
+detect, allowing the procedure to produce an undefined result and effect? So
+you should never *rely* on FIND working on an improper list?  I would
+appreciate some discussion on this. 
+
+I'm introducing a new function, NULL-LIST?, which is exactly Common Lisp's
+ENDP. It returns true on (), false on a pair, and raises an error on other
+arguments. This toughens up the Common Lisp spec, which allows ENDP to be
+implemented as (NOT (PAIRP x)) for speed. If you want to lobby for allow
+the sleaze factor in the spec, say so now.
+
+These procedures take proper lists for their parameters.
+They will signal an error when passed a dotted list.
+They may diverge or signal an error when passed a circular list.
+    filter  partition  remove
+    filter! partition! remove! 
+    del  delq  delv  delete 
+    del! delq! delv! delete!
+    alist-copy
+    delq-duplicates  delv-duplicates  delete-duplicates  del-duplicates 
+    delq-duplicates! delv-duplicates! delete-duplicates! del-duplicates!
+    alist-delete  del-ass  del-assq  del-assv  del-assoc
+    alist-delete! del-ass! del-assq! del-assv! del-assoc!
+    for-each pair-for-each
+    reduce reduce-right
+    unzip1 unzip2 unzip3 unzip4 unzip5 
+    reverse reverse! 
+    union, intersection, etc.
+
+These procedures take proper lists for their parameters.
+They will raise an error *if* they encounter a non-nil dotted-list 
+terminator. Question: what do we say about these procedures when they
+are passed a dotted list that they do not detect (i.e., when they
+terminate without going to the end of the list, such as 
+    (find even? '(1 2 3 4 . d))
+Is it an error that the procedure is not required to detect, allowing
+the procedure to produce an undefined result and effect? Is it OK?
+They may diverge or signal an error when passed a circular list.
+    mem member memq memv
+    ass assoc assq assv 
+    find find-tail any every list-index
+
+These procedures take proper or circular lists for their parameters.
+They will signal an error if given a dotted list.
+    length length+
+
+These procedures accept proper or circular lists.
+At least one list must be proper (finite).
+The issue of &quot;what is the spec for long dotted-lists when the
+procedure terminates early on a shorter proper list&quot; remains.
+    append-map append-map! 
+    map filter-map map-in-order map!
+    fold fold-right pair-fold pair-fold-right
+    zip
+
+Issue of nil-termination does not apply to result or is trivial:
+    xcons tree-copy make-list list-tabulate list cons* alist-cons
+    circular-list iota
+    unfold unfold/tail
+	These are all constructors
+    first second third fourth fifth sixth seventh eighth ninth tenth
+	Exactly CAR, CADR, ...
+    append-reverse append-reverse!
+	(These follow the constraints of (APPEND (REVERSE x) y)
+	 and (APPEND (REVERSE! x) y).)
+    cons pair? null? not-pair? null-list? list?
+    circular-list? proper-list? dotted-list?
+    car cdr ... cdddar cddddr set-car! set-cdr! 
+
+All but last arg must be proper list; the final argument may any value at all.
+    append append!
+
+Accepts proper or dotted list:
+    list-copy [e.g., (list-copy '(a b . c)) =&gt; (a b . c)]
+    take-right drop-right drop-right!
+	By analogy to Common Lisp's LAST, BUTLAST &amp; NBUTLAST.
+    last last-pair
+
+Accepts proper, dotted, or circular list:
+    drop
+    list-ref 
+	By analogy to Common Lisp's NTHCDR and NTH.
+    take take!
+	As DROP goes, so should these.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00062" href="msg00062.html">Re: Restricting the procedures to proper lists</a></strong>
+<ul><li><em>From:</em> Sergei Egorov</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00060.html">Re: Compromise proposal for dotted-list functionality</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00062.html">Re: Restricting the procedures to proper lists</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00060.html">Re: Compromise proposal for dotted-list functionality</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00062.html">Re: Restricting the procedures to proper lists</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00061"><strong>Date</strong></a></li>
+<li><a href="threads.html#00061"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

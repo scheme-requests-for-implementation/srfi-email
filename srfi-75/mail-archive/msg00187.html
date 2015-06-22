@@ -1,0 +1,206 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: the "Unicode Background" section -->
+<!--X-From-R13: Fubznf Zbeq <ybeqNrzs.arg> -->
+<!--X-Date: Fri, 22 Jul 2005 05:28:00 +0200 (DFT) -->
+<!--X-Message-Id: 1122002894.6607.29.camel@dev1.seyza.com -->
+<!--X-Content-Type: multipart/mixed -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: the &quot;Unicode Background&quot; section</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00186.html">Date Prev</a>][<a href="msg00188.html">Date Next</a>][<a href="msg00188.html">Thread Prev</a>][<a href="msg00189.html">Thread Next</a>][<a href="maillist.html#00187">Date Index</a>][<a href="threads.html#00187">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: the &quot;Unicode Background&quot; section</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-75@DOMAIN.HIDDEN">srfi-75@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: the &quot;Unicode Background&quot; section</li>
+<li><em>From</em>: Thomas Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 21 Jul 2005 20:28:14 -0700</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-75@DOMAIN.HIDDEN">srfi-75@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>At Thu, 21 Jul 2005 15:45:34 -0700, Thomas Lord wrote:
+&gt;&gt; If CHARs are codepoints, more basic Unicode algorithms translate
+&gt;&gt; into Scheme cleanly.   
+
+&gt; I don't see what you mean. Can you provide an example?
+
+How about: Emitting a UTF-16 encoded stream of the contents
+of a string?   Doesn't that sound like an application for
+WRITE-CHAR?   Or is that the kind of thing one shouldn't
+be able to do in portable Scheme?
+
+&gt;&gt; What is gained by forcing surrogates to be unrepresentable as CHAR?
+
+&gt; Every string is representable in UTF-8, UTF-16, etc.
+
+You are concerned about sequences containing isolated (unpaired)
+surrogates and their implications for string algebra.  Your
+concerns are entirely reducible to a concern with UTF-16 --
+in all other encodings, there is no ambiguity.
+
+So... how can we represent a string containing an isolated
+surrogate in UTF-16?   One idea is for an implementation
+to privately allocate a range of characters for that purpose.
+Stuffing an isolated surrogate into a string in such an 
+implementation may result in storing 32-bytes (a surrogate
+pair encoding an isolated surrogate) but so what?  There
+are other techniques available too.
+
+In fact, it would be a MINOR arbitrary limitation of a
+conforming implementation (according to your own standards
+of what's important, evidenced by the draft) if that implementation
+simply aborted when an attempt to read or form an isolated
+surrogate happened.  Why, then, would the standard bother
+to forbid it?
+
+
+&gt;&gt; What kind of code will I wind up with if I want to iterate over
+&gt;&gt; a large range of CHAR values? 
+
+&gt; Two loops: one from 0 to #xD7FF, and one from #xE000 to #x10FFFF.
+
+I'm not sure what to say other than that I don't see why you
+are comfortable with that.  Surely people will want to paper
+that over and the net result will be what I suggested that you
+did not quote: we'll wind up with a separate set of APIs to 
+cope with character arithmetic -- odd since arithmetic is just
+arithmetic no matter how you spell it.
+
+
+&gt;&gt; It's not as if by excluding surrogates we arrive at a CHAR definition
+&gt;&gt; that is significantly more &quot;linguistic&quot; than if we don't.
+
+&gt; True, but we arrive at a definition that is more standards-friendly,
+
+I don't know what you mean by &quot;standards-friendly&quot; here.
+
+&gt; FWIW: MzScheme originally supported a larger set of characters, mainly
+&gt; because extra bits are available my implementation. The resulting bad
+&gt; experience convinced me to define characters in terms of scalar 
+&gt; values, instead.
+
+I don't see your point.  I don't see what &quot;extra bits&quot; have to do with
+surrogates.  You also don't explain why a set of characters larger
+than &quot;Unicode scalar values&quot; caused a bad experience and I don't take
+your word for it (maybe you guys made some other mistake that was
+the *real* cause of the problems you encountered -- maybe you
+misidentified the issues -- I can't tell from your account).
+
+-t
+
+
+</pre><blockquote><small>---&nbsp;<i>Begin&nbsp;Message</i>&nbsp;---</small>
+<ul>
+<li><em>To</em>: Thomas Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: the &quot;Unicode Background&quot; section</li>
+<li><em>From</em>: Matthew Flatt &lt;<a href="mailto:mflatt@DOMAIN.HIDDEN">mflatt@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 21 Jul 2005 17:52:28 -0600</li>
+<li><em>Cc</em>: <a href="mailto:srfi-75@DOMAIN.HIDDEN">srfi-75@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-75@DOMAIN.HIDDEN">srfi-75@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:1121985934.4501.46.camel@DOMAIN.HIDDEN">1121985934.4501.46.camel@xxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>List-help</em>: &lt;<a href="mailto:srfi-75-request@srfi.schemers.org?subject=help">mailto:srfi-75-request@srfi.schemers.org?subject=help</a>&gt;</li>
+<li><em>List-post</em>: &lt;<a href="mailto:srfi-75@srfi.schemers.org">mailto:srfi-75@srfi.schemers.org</a>&gt;</li>
+<li><em>List-subscribe</em>: &lt;<a href="mailto:srfi-75-request@srfi.schemers.org?subject=subscribe">mailto:srfi-75-request@srfi.schemers.org?subject=subscribe</a>&gt;</li>
+<li><em>List-unsubscribe</em>: 	&lt;<a href="mailto:srfi-75-request@srfi.schemers.org?subject=unsubscribe">mailto:srfi-75-request@srfi.schemers.org?subject=unsubscribe</a>&gt;</li>
+<li><em>Old-return-path</em>: &lt;<a href="mailto:mflatt@DOMAIN.HIDDEN">mflatt@xxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:1121985934.4501.46.camel@DOMAIN.HIDDEN">1121985934.4501.46.camel@xxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Resent-date</em>: Fri, 22 Jul 2005 01:54:17 +0200 (DFT)</li>
+<li><em>Resent-from</em>: <a href="mailto:srfi-75@DOMAIN.HIDDEN">srfi-75@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Resent-message-id</em>: &lt;<a href="mailto:I5orWB.A.o3H.nWD4CB@DOMAIN.HIDDEN">I5orWB.A.o3H.nWD4CB@rotkohl</a>&gt;</li>
+<li><em>Resent-sender</em>: <a href="mailto:srfi-75-request@DOMAIN.HIDDEN">srfi-75-request@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<pre>At Thu, 21 Jul 2005 15:45:34 -0700, Thomas Lord wrote:
+&gt; If CHARs are codepoints, more basic Unicode algorithms translate
+&gt; into Scheme cleanly.   
+
+I don't see what you mean. Can you provide an example?
+
+&gt; What is gained by forcing surrogates to be unrepresentable as CHAR?
+
+Every string is representable in UTF-8, UTF-16, etc.
+
+&gt; What kind of code will I wind up with if I want to iterate over
+&gt; a large range of CHAR values? 
+
+Two loops: one from 0 to #xD7FF, and one from #xE000 to #x10FFFF.
+
+&gt; It's not as if by excluding surrogates we arrive at a CHAR definition
+&gt; that is significantly more &quot;linguistic&quot; than if we don't.
+
+True, but we arrive at a definition that is more standards-friendly,
+and that's part of the overall compromise.
+
+FWIW: MzScheme originally supported a larger set of characters, mainly
+because extra bits are available my implementation. The resulting bad
+experience convinced me to define characters in terms of scalar values,
+instead.
+
+Matthew
+
+
+</pre><br><small>---&nbsp;<i>End Message</i>&nbsp;---</small></blockquote>
+
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00189" href="msg00189.html">Surrogates and character representation</a></strong>
+<ul><li><em>From:</em> Tom Emerson</li></ul></li>
+<li><strong><a name="00193" href="msg00193.html">Re: the &quot;Unicode Background&quot; section</a></strong>
+<ul><li><em>From:</em> Matthew Flatt</li></ul></li>
+<li><strong><a name="00194" href="msg00194.html">Re: the &quot;Unicode Background&quot; section</a></strong>
+<ul><li><em>From:</em> Alex Shinn</li></ul></li>
+<li><strong><a name="00197" href="msg00197.html">Re: the &quot;Unicode Background&quot; section</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00186.html">Re: new draft</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00188.html">Re: the &quot;Unicode Background&quot; section</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00188.html">Re: the &quot;Unicode Background&quot; section</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00189.html">Surrogates and character representation</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00187"><strong>Date</strong></a></li>
+<li><a href="threads.html#00187"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

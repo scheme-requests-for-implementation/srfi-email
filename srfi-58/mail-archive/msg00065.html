@@ -1,0 +1,150 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: SRFI&#45;10 syntax vs. #nA syntax -->
+<!--X-From-R13: "Penqq I. Embalr" <oenqq+fesvNfmbalr.pbz> -->
+<!--X-Date: Tue,  4 Jan 2005 23:28:57 +0100 (NFT) -->
+<!--X-Message-Id: 20050104222850.GB6573@ogre.szonye.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20050103041652.1BBA81B7717@voluntocracy.org -->
+<!--X-Reference: Pine.LNX.4.58.0501022156190.29713@bolt.sonic.net -->
+<!--X-Reference: 41D8E808.5000608@bothner.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: SRFI-10 syntax vs. #nA syntax</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00064.html">Date Prev</a>][<a href="msg00066.html">Date Next</a>][<a href="msg00057.html">Thread Prev</a>][<a href="msg00066.html">Thread Next</a>][<a href="maillist.html#00065">Date Index</a>][<a href="threads.html#00065">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: SRFI-10 syntax vs. #nA syntax</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-58@DOMAIN.HIDDEN">srfi-58@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: SRFI-10 syntax vs. #nA syntax</li>
+<li><em>From</em>: &quot;Bradd W. Szonye&quot; &lt;<a href="mailto:bradd%2Bsrfi@DOMAIN.HIDDEN">bradd+srfi@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 4 Jan 2005 14:28:50 -0800</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-58@DOMAIN.HIDDEN">srfi-58@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:41D8E808.5000608@DOMAIN.HIDDEN">41D8E808.5000608@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Mail-followup-to</em>: <a href="mailto:srfi-58@DOMAIN.HIDDEN">srfi-58@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>References</em>: &lt;<a href="mailto:20050103041652.1BBA81B7717@DOMAIN.HIDDEN">20050103041652.1BBA81B7717@xxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:Pine.LNX.4.58.0501022156190.29713@DOMAIN.HIDDEN">Pine.LNX.4.58.0501022156190.29713@xxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:41D8E808.5000608@DOMAIN.HIDDEN">41D8E808.5000608@xxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mutt/1.4.1i</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>bear wrote:
+&gt;&gt; At this point I have only one question:  For a rank-5
+&gt;&gt; array, why #5A(...) instead of #A5(...)?
+
+Per Bothner wrote:
+&gt; Maybe #A5 is marginally better, but I think compatibility with the
+&gt; prior art of Common Lisp argues for #5A.  That's not an overwheming
+&gt; argument, but (I think) tips the scales in favor of #5A.
+
+Putting the rank first is likely to cause confusion for PLT users. PLT
+Scheme has a shorthand notation for vectors with repeated elements:
+#N(&lt;E0&gt;...&lt;Ei&gt;) is shorthand for a vector N elements long, with &lt;Ei&gt;
+repeated as many times as necessary to produce N total elements. For
+example, #5(0 1) is shorthand for #(0 1 1 1 1). Likewise, #N() is
+shorthand for a vector of N zeroes; #5() is shorthand for #(0 0 0 0 0).
+
+It'd be confusing to mix #5(...) and #5A(...) syntax: Only a single
+character distinguishes between &quot;a vector of five /elements/&quot; and &quot;an
+array of five /ranks/.&quot; I'd expect users to occasionally mistype and
+misread the dimensions.
+
+Furthermore, I think it's a mistake to give the number of ranks instead
+of the dimension bounds. As I explained in a reply to Bear, you can't
+infer array shape from a list decomposition if the array has any
+0-bounded dimensions.
+
+Instead, the external representation for arrays should list the
+dimensions (e.g., #A2x3(...) or #A:2:3(...)). This permits unambiguous
+reading and writing of &quot;empty&quot; multi-dimension arrays, it permits the
+PLT shorthand notation for large, repetitive arrays, and it avoids
+confusion with the #n(...) syntax for vectors.
+
+&gt; More technical argument: What happens with a rank-0 array? In APL this
+&gt; is equivalent to a scalar, and in any case a rank-0 array has a single
+&gt; element.  Given the choice between #A0XXX and #0AXXX, the latter is
+&gt; better since the former leads to ambiguities.
+
+I don't think the Scheme reader should support this &quot;array notation&quot; for
+scalars. The Scheme writer should never produce it, and I suspect that
+very few human writers would ever use it. Even if you did want to
+support it, I think it'd be reasonable to require a separator (space)
+between the #A... token and the scalar.
+
+&gt;&gt; I'm thinking about parsers here, where it's easier on everybody if
+&gt;&gt; tokens differ as soon as possible.
+
+&gt; A (non-human) parser handles either just fine - except
+&gt; for the degenerate rank-0 case.
+
+I don't think that's true for dialects (like PLT Scheme) that already
+use #N... syntax for something else.
+-- 
+Bradd W. Szonye
+<a  rel="nofollow" href="http://www.szonye.com/bradd">http://www.szonye.com/bradd</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00066" href="msg00066.html">Re: SRFI-10 syntax vs. #nA syntax</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00051" href="msg00051.html">SRFI-10 syntax vs. #nA syntax</a></strong>
+<ul><li><em>From:</em> Aubrey Jaffer</li></ul></li>
+<li><strong><a name="00052" href="msg00052.html">Re: SRFI-10 syntax vs. #nA syntax</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+<li><strong><a name="00053" href="msg00053.html">Re: SRFI-10 syntax vs. #nA syntax</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00064.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00066.html">Re: SRFI-10 syntax vs. #nA syntax</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00057.html">Re: SRFI-10 syntax vs. #nA syntax</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00066.html">Re: SRFI-10 syntax vs. #nA syntax</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00065"><strong>Date</strong></a></li>
+<li><a href="threads.html#00065"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

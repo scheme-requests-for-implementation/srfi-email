@@ -1,0 +1,212 @@
+<!-- MHonArc v2.6.18 -->
+<!--X-Subject: SLIB and R7RS -->
+<!--X-From-R13: Xbua Qbjna <pbjnaNzrephel.ppvy.bet> -->
+<!--X-Date: Thu,  1 Jan 2015 07:19:49 +0000 (UTC) -->
+<!--X-Message-Id: 20150101071949.GA12781@mercury.ccil.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>SLIB and R7RS</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00000.html">Date Prev</a>][Date Next][<a href="msg00000.html">Thread Prev</a>][Thread Next][<a href="maillist.html#00002">Date Index</a>][<a href="threads.html#00002">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>SLIB and R7RS</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-96@DOMAIN.HIDDEN">srfi-96@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: SLIB and R7RS</li>
+<li><em>From</em>: John Cowan &lt;<a href="mailto:cowan@DOMAIN.HIDDEN">cowan@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 1 Jan 2015 02:19:49 -0500</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-96@DOMAIN.HIDDEN">srfi-96@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Sender</em>: John Cowan &lt;<a href="mailto:cowan@DOMAIN.HIDDEN">cowan@xxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mutt/1.5.20 (2009-06-14)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>The following information on SLIB and R7RS is being posted to the
+SRFI 96 mailing list so as to have it at a single point.  Note that
+&#x201C;r7rs-small&#x201D; and &#x201C;WG1-Scheme&#x201D; mean the same thing. The original
+emails are linked at the end.
+
+Note that things may have changed in SLIB since August 2011.
+
+John Cowan:
+ 
+SRFI 96, which is the foundation for SLIB, can't be implemented in its
+entirety in R7RS-small.  In particular, SRFI 96 includes define-macro.
+ 
+Aubrey Jaffer:
+ 
+SLIB includes 108 macro-free modules and 27 which define or use
+macros.
+ 
+9 of the 27 use scanf, which should be refactored to be macro-free.
+ 
+2 of the 27 use fluid-let.  SLIB developers have been rewriting
+modules to avoid fluid-let; only two remain.
+ 
+The SLIB promise module is superfluous in WG1-Scheme.
+ 
+4 of the 27 define macro-systems (macro-by-example, syntax-case,
+syntactic-closures, macros-that-work).  These would be eliminated in
+favor of WG1-Scheme macros.
+ 
+Seven implement SRFIs:
+ 
+  SRFI 0: Feature-based conditional expansion construct
+  SRFI 9: Defining Record Types
+  SRFI 39: Parameter objects
+ 
+These 3 are included in WG1-Scheme.
+ 
+  SRFI 8: receive: Binding to multiple values
+  SRFI 11: Syntax for receiving multiple values
+ 
+Multiple values are addressed in WG1-Scheme.
+ 
+  SRFI 2: AND-LET*: an AND with local bindings, a guarded LET* special form
+  SRFI 61: A more general cond clause
+ 
+No other SLIB modules uses these 2; they could be dropped without
+harm.
+ 
+That leaves only 4 syntax-defining packages: within-database, yasos,
+trace, and break; and one package (collect) which uses yasos.
+ 
+So 95% of SLIB would survive the transition to being macro-free.
+SRFI-96 could be amended or superseded.
+ 
+John Cowan:
+ 
+Scanf is non-hygienic, so yes.
+ 
+If the uses of fluid-let are essential, the syntax-rules definition in
+SRFI 15 could be provided.  Alternatively, the uses might be replaceable
+by parameters.
+ 
+SRFI 11 is provided in R7RS-small, and SRFIs 2 and 8 are trivial
+syntax-rules macros.
+ 
+It would be good to know which of the SRFI-96 procedures (if any) are no longer
+needed.
+ 
+Aubrey Jaffer:
+ 
+The procedural part of the SCANF module is SCANF-READ-LIST, which
+takes a format-string and input-port or string as arguments and
+returns a list of objects read.  Reading proceeds as far as the input
+matches the format-string.
+ 
+This would seem like a good application for multiple-value returns:
+SCANF-READ would return the number of format directives matched
+followed by the objects read.  But LET-VALUES, LET*-VALUES, and
+(srfi-8) RECEIVE expect the number of bindings to match the number of
+return values.  They can't be used if the number of return values is
+not known in advance.
+ 
+[Aaron Hsu noted that this is not true; LET-VALUES and LET*-VALUES
+both accept improper lambda lists.]
+ 
+So SCANF-READ must be used with CALL-WITH-VALUES; which is little help
+with destructuring the list of values.  The VALUES constructs have
+been disappointing because their use is not simpler or more powerful
+than using LIST and APPLY.
+ 
+CASE-LAMBDA can be used if the desired behavior changes radically with
+different numbers of values; but often there is a lot of commonality
+in the procedure.  A shared internal definition can't be called
+because CASE-LAMBDA is the outer binding of the definition.  So either
+code must be replicated in each clause or each clause must call an
+external procedure with all the arguments.
+ 
+[John Cowan noted that this is not true: LETREC can be used to bind
+the name outside a CASE-LAMBDA.]
+ 
+What would be helpful is something like:
+ 
+  (BIND-VALUES
+    &lt;expression&gt;
+    ((&lt;var1&gt; [ &lt;default-expression1&gt; ])
+     (&lt;var2&gt; [ &lt;default-expression2&gt; ])
+     ...)
+    &lt;body&gt;)
+ 
+where &lt;var1&gt; gets bound to the first value returned by &lt;expression&gt;,
+or to &lt;default-expression1&gt; if &lt;expression&gt; returned no values, or
+signals an error if there is no &lt;default-expression1&gt;;
+&lt;var2&gt; gets bound to the second value returned by &lt;expression&gt;, or to
+&lt;default-expression2&gt; if &lt;expression&gt; returned fewer than 2 values, or
+signals an error if there is no &lt;default-expression2&gt;, ...
+ 
+The R7RS port of SLIB would drop the procedures:
+ 
+  defmacro:eval
+  defmacro:load
+  macroexpand
+  defmacro:expand*
+  macro:expand
+ 
+and would define:
+ 
+  (define macro:eval slib:eval)
+  (define macro:load slib:load)
+ 
+ 
+URLs for email messages:
+ 
+<a  rel="nofollow" href="http://lists.scheme-reports.org/pipermail/scheme-reports/2011-August/001419.html">http://lists.scheme-reports.org/pipermail/scheme-reports/2011-August/001419.html</a>
+<a  rel="nofollow" href="http://lists.scheme-reports.org/pipermail/scheme-reports/2011-August/001420.html">http://lists.scheme-reports.org/pipermail/scheme-reports/2011-August/001420.html</a>
+<a  rel="nofollow" href="http://lists.scheme-reports.org/pipermail/scheme-reports/2011-August/001421.html">http://lists.scheme-reports.org/pipermail/scheme-reports/2011-August/001421.html</a>
+<a  rel="nofollow" href="http://lists.scheme-reports.org/pipermail/scheme-reports/2011-August/001422.html">http://lists.scheme-reports.org/pipermail/scheme-reports/2011-August/001422.html</a>
+<a  rel="nofollow" href="http://lists.scheme-reports.org/pipermail/scheme-reports/2011-August/001423.html">http://lists.scheme-reports.org/pipermail/scheme-reports/2011-August/001423.html</a>
+
+-- 
+John Cowan          <a  rel="nofollow" href="http://www.ccil.org/~cowan">http://www.ccil.org/~cowan</a>        cowan@xxxxxxxx
+You escaped them by the will-death and the Way of the Black Wheel.
+I could not.  --Great-Souled Sam
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00000.html">Final SRFI 96: SLIB Prerequisites</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00000.html">Final SRFI 96: SLIB Prerequisites</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00002"><strong>Date</strong></a></li>
+<li><a href="threads.html#00002"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

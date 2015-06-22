@@ -1,0 +1,193 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: threads &#38; dynamic environment &#38; continuations -->
+<!--X-From-R13: fuvirefNnv.zvg.rqh -->
+<!--X-Date: Fri, 12 May 2000 13:14:07 &#45;0500 (CDT) -->
+<!--X-Message-Id: 200005121814.OAA28071@mongkok.ai.mit.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200005120120.VAA26743@mongkok.ai.mit.edu -->
+<!--X-Reference: 200005120153.VAA17644@trex.IRO.UMontreal.CA -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: threads &amp; dynamic environment &amp; continuations</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00071.html">Date Prev</a>][<a href="msg00073.html">Date Next</a>][<a href="msg00068.html">Thread Prev</a>][<a href="msg00073.html">Thread Next</a>][<a href="maillist.html#00072">Date Index</a>][<a href="threads.html#00072">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: threads &amp; dynamic environment &amp; continuations</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: threads &amp; dynamic environment &amp; continuations</li>
+<li><em>From</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxx</a></li>
+<li><em>Date</em>: Fri, 12 May 2000 14:14:04 -0400</li>
+<li><em>Cc</em>: <a href="mailto:srfi-18@DOMAIN.HIDDEN">srfi-18@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:200005120153.VAA17644@DOMAIN.HIDDEN">200005120153.VAA17644@xxxxxxxxxxxxxxxxxxxxx</a>&gt; (message from Marc	Feeley on Thu, 11 May 2000 21:53:56 -0400)</li>
+<li><em>References</em>: &lt;<a href="mailto:200005120120.VAA26743@DOMAIN.HIDDEN">200005120120.VAA26743@xxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:200005120153.VAA17644@DOMAIN.HIDDEN">200005120153.VAA17644@xxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Reply-to</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>   &gt; I think the current document should state these things explicitly. To sum up:
+   &gt;     - dynamic env is part of the continuation, 
+   &gt;     - hence, throwing to a continuation changes the dynamic env.
+
+   This was so &quot;obvious&quot; to me that I did not mention it.  On the other
+   hand, is it the role of SRFI 18 to specify this, or a dynamic
+   environment SRFI?
+
+Well, your SRFI does not mention fluid-var sorts of notions at all, so
+if you are suggesting it's outside the scope of the SRFI, and up to a
+fluid-var SRFI to get it right, then I think you are right.
+
+However, SRFI-18 *does* explicitly mention the dynamic *exception*
+environment. So I think it *would* be a good thing to explicitly state this is
+part of the continuation.
+
+   As for call/null-continuation, you can get the same result with
+   call-with-current-continuation, if you also have dynamic variables.
+   I.e. you capture the primordial continuation of the thread and bind
+   that to a dynamic variable that you can then use to return to the
+   primordial continuation.
+
+I don't think this gets you all the way home. For example, assume K
+is a continuation -- something we made with CALL/CC. This won't work:
+    (k (thunk))
+That sort-of punts the current continuation and &quot;installs&quot; K as
+the continuation for the THUNK call. But a simple implementation of
+Scheme wouldn't even realise that K was a continuation until THUNK
+had returned -- we wanted to punt the current stack eagerly, *before*
+we leapt off to THUNK. See the problem?
+
+However, it's worse than implementation/storage-leak issue -- we don't even
+get everything we wanted *semantically*. THUNK runs in the current dynamic
+environment (e.g., for exception handlers). We don't get to install K's
+dynamic env until THUNK returns and we do the call (throw) to THUNK. Oops.
+What I *wanted* was the ability to say &quot;call THUNK with continuation K. That
+is, throw away the current continuation *now*, and *then* call THUNK -- run it
+with continuation K, *including* K's dynamic env.&quot;
+
+We still don't have that. So you gotta build it in. There are three paths
+I see:
+    - A primitive like (call/continuation kont thunk)
+      Calls THUNK with continuation KONT.
+
+      The problem with this is that we are not &quot;playing fair&quot; with our
+      continuations. Scheme continuations are *not* &quot;true continuations.&quot; They
+      are *procedures* that are somehow closed over a true continuation.
+      CALL/CONTINUATION has to reach into KONT and pull out the
+      true continuation in order to have KONT's dynamic env installed
+      before running THUNK. So the procedures constructed by CALL/CC
+      are somehow special -- i.e., KONT is not the same as 
+      (LAMBDA (X) (KONT X)) when KONT is a continuation made by CALL/CC.
+
+      Oops.
+
+    - A primitive like CALL/NULL-CONTINUATION
+      We can use it like this
+          (call/null-continuation (lambda () (kont (thunk))))
+      This solves our space-leak problem -- the CALL/NULL-CONTINUATION
+      operator can drop the current stack &amp; dynamic env *before* calling
+      THUNK. But we haven't solved  our semantics problem -- we still aren't
+      running THUNK in KONT's dynamic environment.
+
+      Oops.
+
+    - Export the actual underlying non-procedure continuations:
+        (call-with-current-kontinuation proc)
+	(throw k val ...) ; THROW is n-ary -- 0 or more VAL's
+	(call/kontinuation k thunk) ; Run THUNK with kontinuation K.
+
+	;; R5RS CALL/CC can be defined with the kontinuation mechanism:
+	(define (call-with-current-continuation proc)
+	  (call-with-current-kontinuation
+            (lambda (k) (proc (lambda vals (apply throw k vals))))))
+
+This is an issue that bedevils thread/continuation implementations *all the
+time.* And it's sufficiently subtle that people never figure it out until
+their threaded programs start blowing out the heap mysteriously... and then
+there's no simple fix. Get it right now.
+
+   Should SRFI 18 specify a mechanism for manipulating the dynamic
+   environment?  I'm fond of:
+
+      (dynamic-define var-name expression)
+      (dynamic-let ((var-name expression)) body)
+      (dynamic-ref var-name)
+      (dynamic-set! var-name expression)
+
+   Note that in this scheme, dynamic variables and lexically scoped
+   variables are completely independent.
+
+Uhh... I can see plusses &amp; minusses. I'd say punt it, and let's get that
+done in a separate SRFI, which can contain language mentioning how fluids
+interact with thread systems, explicitly citing SRFI-18 by way of example.
+
+But put into SRFI-18 some *generic* language saying that dynamic binding
+facilities should be part of the continuation, hence threads pick up
+a new dynamic env on a continuation throw.
+
+How do you like that?
+    -Olin
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00073" href="msg00073.html">Re: threads &amp; dynamic environment &amp; continuations</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00067" href="msg00067.html">threads &amp; dynamic environment &amp; continuations</a></strong>
+<ul><li><em>From:</em> shivers</li></ul></li>
+<li><strong><a name="00068" href="msg00068.html">Re: threads &amp; dynamic environment &amp; continuations</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00071.html">Re: threads &amp; dynamic environment &amp; continuations</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00073.html">Re: threads &amp; dynamic environment &amp; continuations</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00068.html">Re: threads &amp; dynamic environment &amp; continuations</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00073.html">Re: threads &amp; dynamic environment &amp; continuations</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00072"><strong>Date</strong></a></li>
+<li><a href="threads.html#00072"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

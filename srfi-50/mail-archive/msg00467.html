@@ -1,0 +1,198 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: More JNI vs. Pika comparison -->
+<!--X-From-R13: Fbz Zbeq <ybeqNrzs.arg> -->
+<!--X-Date: Tue, 24 Feb 2004 23:32:51 +0100 (NFT) -->
+<!--X-Message-Id: 200402242251.OAA01791@morrowfield.regexps.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: vt2d68dgulx.fsf@zenia.home -->
+<!--X-Reference: 200402201751.JAA02622@morrowfield.regexps.com -->
+<!--X-Reference: vt2d684nn61.fsf@zenia.home -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: More JNI vs. Pika comparison</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00466.html">Date Prev</a>][<a href="msg00468.html">Date Next</a>][<a href="msg00466.html">Thread Prev</a>][<a href="msg00468.html">Thread Next</a>][<a href="maillist.html#00467">Date Index</a>][<a href="threads.html#00467">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: More JNI vs. Pika comparison</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:jimb@DOMAIN.HIDDEN">jimb@xxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: More JNI vs. Pika comparison</li>
+<li><em>From</em>: Tom Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 24 Feb 2004 14:51:18 -0800 (PST)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:vt2d684nn61.fsf@DOMAIN.HIDDEN">vt2d684nn61.fsf@xxxxxxxxxx</a>&gt; (message from Jim Blandy on 24 Feb	2004 17:11:02 -0500)</li>
+<li><em>References</em>: &lt;<a href="mailto:vt2d68dgulx.fsf@DOMAIN.HIDDEN">vt2d68dgulx.fsf@xxxxxxxxxx</a>&gt;	&lt;<a href="mailto:200402201751.JAA02622@DOMAIN.HIDDEN">200402201751.JAA02622@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:vt2d684nn61.fsf@DOMAIN.HIDDEN">vt2d684nn61.fsf@xxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+    &gt; From: Jim Blandy &lt;jimb@xxxxxxxxxx&gt;
+
+    &gt; Tom Lord &lt;lord@xxxxxxx&gt; writes:
+    &gt; &gt;     &gt; It seems to me similar problems will occur working with any
+    &gt; &gt;     &gt; third-party tool that presumes it is sufficient to let people pass
+    &gt; &gt;     &gt; around pointers to data of their own definition.
+
+    &gt; &gt;     &gt; So, in the end, it looks to me as if Pika will need to provide a
+    &gt; &gt;     &gt; JNI-style interface anyway, in addition to the C compound-statement-
+    &gt; &gt;     &gt; bound interface, which would still be the preferred interface for C
+    &gt; &gt;     &gt; code written against Pika interfaces.
+
+    &gt; &gt; I think that has to be read as &quot;JNI-style&quot; in only the broadest sense
+    &gt; &gt; of the term -- a need for an interface to create locations whose
+    &gt; &gt; lifetime is explicitly managed.  Narrower &quot;JNI-style&quot; features that
+    &gt; &gt; are _not_ necessary include:
+
+    &gt; &gt; ~ reference counting for locations
+    &gt; &gt; ~ &quot;linear&quot; functions
+    &gt; &gt; ~ attachment of locations to a &quot;call&quot; structure whose lifetime
+    &gt; &gt;   trumps the reference count of attached locations
+
+    &gt; Where did reference counting come from?  I don't think I've ever
+    &gt; mentioned it.  
+
+My faulty memory, apparently.   I'm surprised you wouldn't have
+specified it that way in the first place.
+
+    &gt; The Minor interface doesn't include any, nor does the
+    &gt; actual JNI, as far as I know.  Is there some use case where simply
+    &gt; duplicating references won't work just as well?
+
+Obviously.   Anytime you want a location shared by multiple data
+structures whose lifetimes are independent of one another.
+
+
+    &gt; I see the idea of explicitly freed references with dynamic lifetimes
+    &gt; as the essential idea in the JNI model.
+
+I think the clearest way to look at things is in terms of (scheme)
+locations and values.   References are locations.   If you have an
+important class of locations that follow some constrained allocation
+pattern (like locals and intermediates), then it's worth looking for a
+nice interface for those other than explicit-free.
+
+
+    &gt;&gt; Second, all intermediate values constructed in this parse but _not_
+    &gt;&gt; stored in a reference that will be destructively updated (such as $2
+    &gt;&gt; in the action above) are GC protected for the lifetime of the parse.
+    &gt;&gt; To have a parse that protected a number of locations bound by the 
+    &gt;&gt; depth of the value stack, one would need to write something like:
+
+    &gt;&gt;       datum list_data { 
+    &gt;&gt;                         $$ = mn_to_cons (c, $1, $2); 
+    &gt;&gt;                         mn_unref (c, $2);
+    &gt;&gt;                       }
+
+    &gt;&gt; In other words, on two counts at least, the enticing simplicity 
+    &gt;&gt; of the exhibited code is at least a little bit misleading.
+
+    &gt; mn_to_cons is defined to free both its arguments.  Given that, there
+    &gt; shouldn't be any reference leak in the code as written, right?  
+
+Right, but -- ick.
+
+    &gt;&gt; I suppose that the brute force Pika solution would look something
+    &gt;&gt; like:
+
+    &gt;&gt;       datum list_data { 
+    &gt;&gt;                         $$ = scm_allocate_location (instance);
+    &gt;&gt;                         scm_cons ($$, instance, $1, $2);
+    &gt;&gt;                         scm_location_unref (instance, $1);
+    &gt;&gt;                         scm_location_unref (instance, $2);
+    &gt;&gt;                       }
+
+    &gt;&gt; which, although four times as verbose as your original code (twice as
+    &gt;&gt; verbose as the more robust form of your code), is not fragile wrt to
+    &gt;&gt; &quot;linear&quot; operations and is accurate wrt to GC.
+
+    &gt; I can't refer to $1 and $2 after those *_unref calls, right?  
+
+No, but you can between the CONS and the UNREFs.
+
+    &gt; The purpose of the linear versions of functions like mn_cons is
+    &gt; simply to reduce clutter from the 'free' calls (while leaving
+    &gt; them visible), and to put them someplace they could be
+    &gt; optimized.  But they're still there; I think our code is
+    &gt; essentially the same.
+
+You conclusion is fine with me.   How you got there is kind of goofy.
+
+It's a question of locality of changes.   In my code, with the
+explicit UNREFS, if I need to add an additional use of $1 and $2 I
+just insert code before the unrefs.   In your code, with the semantics
+of &quot;_to_cons&quot;, I need (1) change the _to_cons call to something else;
+(2) insert the new code; (3) append the explicit deallocations.
+
+In 3-10-line code fragments, that non-locality thing isn't a big
+deal.  In larger code, I would think it's a pain in the butt.
+
+-t
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00468" href="msg00468.html">Re: More JNI vs. Pika comparison</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00461" href="msg00461.html">More JNI vs. Pika comparison</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+<li><strong><a name="00465" href="msg00465.html">Re: More JNI vs. Pika comparison</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00466" href="msg00466.html">Re: More JNI vs. Pika comparison</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00466.html">Re: More JNI vs. Pika comparison</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00468.html">Re: More JNI vs. Pika comparison</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00466.html">Re: More JNI vs. Pika comparison</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00468.html">Re: More JNI vs. Pika comparison</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00467"><strong>Date</strong></a></li>
+<li><a href="threads.html#00467"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

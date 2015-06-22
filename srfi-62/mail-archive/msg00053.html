@@ -1,0 +1,155 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: new, simpler formal specification -->
+<!--X-From-R13: Bnhy Epuyvr <fpuyvrNpbzpnfg.arg> -->
+<!--X-Date: Wed, 23 Mar 2005 02:49:48 +0100 (NFT) -->
+<!--X-Message-Id: BE663561.991C%schlie@comcast.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: Pine.LNX.4.44.0503221504470.19204&#45;100000@autodrip.bloodandcoffee.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: new, simpler formal specification</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00052.html">Date Prev</a>][<a href="msg00054.html">Date Next</a>][<a href="msg00052.html">Thread Prev</a>][<a href="msg00054.html">Thread Next</a>][<a href="maillist.html#00053">Date Index</a>][<a href="threads.html#00053">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: new, simpler formal specification</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Taylor Campbell &lt;<a href="mailto:campbell@DOMAIN.HIDDEN">campbell@xxxxxxxxxxxxxxxxxx</a>&gt;,	&lt;<a href="mailto:srfi-62@DOMAIN.HIDDEN">srfi-62@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: new, simpler formal specification</li>
+<li><em>From</em>: Paul Schlie &lt;<a href="mailto:schlie@DOMAIN.HIDDEN">schlie@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 22 Mar 2005 20:49:37 -0500</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-62@DOMAIN.HIDDEN">srfi-62@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:Pine.LNX.4.44.0503221504470.19204-100000@DOMAIN.HIDDEN">Pine.LNX.4.44.0503221504470.19204-100000@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Microsoft-Entourage/11.1.0.040913</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>In hopes it may be helpful, the following is a somewhat simpler version of
+an earlier one: <a  rel="nofollow" href="http://srfi.schemers.org/srfi-62/mail-archive/msg00045.html">http://srfi.schemers.org/srfi-62/mail-archive/msg00045.html</a>
+which only modifies R5RS's definition of &lt;comment&gt; (effectively treated as
+separator/white-space); which includes &lt;block-comment&gt;, and removes legally
+quoting and/or commenting, a comment or &lt;empty&gt;:
+
+Only modifying one R5RS's exiting grammar specification:
+
+   &lt;comment&gt; -&gt; &lt;line-comment&gt; | &lt;block-comment&gt; | &lt;datum-comment&gt;
+
+And augmented it with these additions:
+
+  &lt;line-comment&gt; -&gt; ; &lt;all-chars-to-end-of-line&gt;
+
+  &lt;block-comment&gt; -&gt; #| &lt;all-char-except-#|-or-|#&gt; |#
+
+  &lt;datum-comment&gt; -&gt; #; &lt;datum&gt;
+
+(i.e. #;#; '#; (#;) (') etc. are illegal sequences, vs. earlier versions.)
+
+&gt; From: Taylor Campbell &lt;campbell@xxxxxxxxxxxxxxxxxx&gt;
+&gt; I recently wrote an alternative specification of Scheme's syntax using
+&gt; (roughly) BNF, but in such a way that is much more in the spirit of
+&gt; Lisp: the syntax of the external representation of S-expressions is
+&gt; separated from the syntax of Scheme, and S-expressions are specified in
+&gt; such a way as to resemble a recursive-descent parser as closely as
+&gt; possible.  That is not the point of this message, though.  In writing
+&gt; the alternative specification, I realized that S-expression comments
+&gt; can be specified much more simply.  Specifically, all it requires is
+&gt; that the &lt;datum&gt;, &lt;list&gt;, &amp; &lt;vector&gt; non-terminals be extended, and a
+&gt; &lt;commented datum&gt; be introduced.  (&lt;Token&gt; must of course be extended
+&gt; with a &quot;#;&quot; option, too.)  &lt;Datum&gt; becomes:
+&gt; 
+&gt;   &lt;datum&gt; ---&gt; &lt;simple datum&gt; | &lt;compound datum&gt; | &lt;commented datum&gt;
+&gt;   &lt;commented datum&gt; ---&gt; &quot;#;&quot; &lt;datum&gt; &lt;datum&gt;
+&gt; 
+&gt; &lt;List&gt; &amp; &lt;vector&gt; use a couple of auxiliary rules; they are all
+&gt; presented here:
+&gt; 
+&gt;   &lt;list&gt; ---&gt; &quot;(&quot; &lt;datum&gt;* &lt;optional dot&gt; &lt;delimiter prefix&gt; &quot;)&quot;
+&gt;   &lt;optional dot&gt; ---&gt; &lt;empty&gt; | &lt;datum&gt; &lt;delimiter prefix&gt; &quot;.&quot; &lt;datum&gt;
+&gt;   &lt;vector&gt; ---&gt; &quot;#(&quot; &lt;datum&gt;* &lt;delimiter prefix&gt; &quot;)&quot;
+&gt;   &lt;delimiter prefix&gt; ---&gt; &lt;empty&gt; | &quot;#;&quot; &lt;datum&gt; &lt;delimiter prefix&gt;
+&gt; 
+&gt; The first datum within a commented datum is ignored, as is any datum
+&gt; immediately following the &quot;#;&quot; token in a delimiter prefix.
+&gt; 
+&gt; This formal specification is much simpler than what Al* Petrofsky
+&gt; suggested earlier, and I think it should satisfy Paul Schlie's demands
+&gt; for a grammar more consistent with Scheme's existing one.  If no one
+&gt; sees any problems with it, I'll change the SRFI document to use it and
+&gt; finalize the SRFI, which is a bit overdue.
+&gt; 
+&gt; Should Paul Schlie still prefer his own specification, which I still
+&gt; don't understand, he should provide an implementation of it in terms of
+&gt; Scheme48's reader (as I show in the document), and he should explain
+&gt; why he wants to so drastically change the various reader abbreviations,
+&gt; those for QUOTE, QUASIQUOTE, &amp;c., to magically disappear due to their
+&gt; being in what was previously syntactically invalid locations.
+&gt; 
+&gt; (My alternative specification of Scheme's syntax, by the way, is at
+&gt; &lt;<a  rel="nofollow" href="http://www.bloodandcoffee.net/campbell/code/scm-syntax.text">http://www.bloodandcoffee.net/campbell/code/scm-syntax.text</a>&gt;, for
+&gt; those curious.  Any comments, questions, or other feedback on it would
+&gt; be appreciated, though such feedback should be sent to me directly, not
+&gt; to this mailing list.)
+&gt; 
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00054" href="msg00054.html">Re: new, simpler formal specification</a></strong>
+<ul><li><em>From:</em> Taylor Campbell</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00052" href="msg00052.html">new, simpler formal specification</a></strong>
+<ul><li><em>From:</em> Taylor Campbell</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00052.html">new, simpler formal specification</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00054.html">Re: new, simpler formal specification</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00052.html">new, simpler formal specification</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00054.html">Re: new, simpler formal specification</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00053"><strong>Date</strong></a></li>
+<li><a href="threads.html#00053"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

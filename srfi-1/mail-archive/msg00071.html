@@ -1,0 +1,150 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Killing the equality&#45;specific procedures -->
+<!--X-From-R13: fuvirefNnv.zvg.rqh -->
+<!--X-Date: Mon, 2 Aug 1999 18:52:24 &#45;0500 (CDT) -->
+<!--X-Message-Id: 199908022352.TAA03906@russell.ai.mit.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Killing the equality-specific procedures</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00070.html">Date Prev</a>][<a href="msg00072.html">Date Next</a>][<a href="msg00069.html">Thread Prev</a>][<a href="msg00072.html">Thread Next</a>][<a href="maillist.html#00071">Date Index</a>][<a href="threads.html#00071">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Killing the equality-specific procedures</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-1@DOMAIN.HIDDEN">srfi-1@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Killing the equality-specific procedures</li>
+<li><em>From</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxx</a></li>
+<li><em>Date</em>: Mon, 2 Aug 1999 19:52:16 -0400</li>
+<li><em>Reply-to</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>As I am writing up the documentation for the revised SRFI-1 library, I have
+cast my eye over the library as a whole, and am somewhat concerned with the
+size of the namespace. While there's no particular reason why a large
+namespace is bad, procedures exported by the library should &quot;pull their
+weight.&quot;
+
+The primary source of namespace bloat is the multiple versions of procedures
+defined over various equality procedurs -- instead of simply having a MEMBER
+procedure, we have MEM, MEMQ, MEMV, and MEMBER. This gives a quadrupling
+effect across certain classes of procedures.
+
+If we throw the EQ?, EQUAL?, and EQV? specific operators out, we can 
+eliminate 56 procedures from the library. At what cost? 
+
+- Well, some code will be slightly more awkward to write; interactive use might
+  be a little more irritating. 
+
+- Compilers may not generate code quite as good as they could when, for
+  instance, the EQ? call is embedded in-line into a client procedure. 
+
+- Putting the comparison procedure last (where it can be optional)
+  breaks with the standard convention of putting it first. 
+  
+
+I suggest the following modifications.
+
+1. Keep MEMBER, MEMQ, MEMV, ASSOC, ASSQ and ASSV, for historical purposes --
+   backwards compatibility with RnRS. Kill the general MEM and ASS, and 
+   instead extend MEMBER and ASSOC to take an optional third argument, 
+   the comparison procedure (as was suggested by Sergei and others):
+	(member 'a '(this is a list))
+        (member 3 '(1 2 3 4 5) =)
+
+2. Kill the comparison-specific deletion procedures
+   delq  delv  delete
+   delq! delv! delete!
+   delq-duplicates  delv-duplicates  delete-duplicates
+   delq-duplicates! delv-duplicates! delete-duplicates!
+   del-ass  del-assq  del-assv  del-assoc
+   del-ass! del-assq! del-assv! del-assoc!
+    
+   Alter the remaining procedures, changing the lexeme &quot;DEL&quot; to &quot;DELETE&quot;,
+   moving the comparison-procedure parameter to the last argument, making
+   it optional, defaulting to EQUAL?. So we wind up with
+
+   delete		delete!
+   delete-duplicates	delete-duplicates!
+   alist-delete		alist-delete!
+   
+   Example: (delete 5 '(3 5 7 9 5 4 3) =)
+
+   Making the comparison procedure default to the general EQUAL? makes casual,
+   interactive use convenient.
+
+3. Kill the 36 comparison-specific lists-as-sets operators, retaining only
+   lset-adjoin			lset-adjoin!
+   lset-union			lset-union!
+   lset-intersection		lset-intersection!
+   lset-difference		lset-difference!
+   lset-xor			lset-xor!
+   lset-diff+intersection	lset-diff+intersection!
+
+   As these operators are n-ary, the comparison procedure must come first,
+   hence cannot be made optional. So it goes.
+
+Notice that the deleted bindings are still available for programmers
+to define -- we haven't taken DELQ or DEL-ASSV!, so if the programmer
+wishes to write the one-liner defining any of these procedures, he can
+do so in a fashion that preserves the FOO?/FOOQ?/FOOV? convention.
+
+This cleans out 58 procedures from the library -- a very large size
+reduction in namespace for not much reduction in functionality.
+
+Opinions?
+    -Olin
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00070.html">No more required error detection</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00072.html">SRFI-1 final draft available</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00069.html">Apologies...</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00072.html">SRFI-1 final draft available</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00071"><strong>Date</strong></a></li>
+<li><a href="threads.html#00071"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

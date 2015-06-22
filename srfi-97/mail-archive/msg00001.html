@@ -1,0 +1,182 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Miscellanea -->
+<!--X-From-R13: Fnlybe D Qnzcoryy <pnzcoryyNzhzoyr.arg> -->
+<!--X-Date: Wed, 26 Mar 2008 21:36:02 +0100 (MET) -->
+<!--X-Message-Id: 20080326203600.A23D7981CF@pluto.mumble.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: Pine.SOC.4.64.0803261037080.9131@oow.het.brown.edu -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Miscellanea</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00000.html">Date Prev</a>][<a href="msg00002.html">Date Next</a>][<a href="msg00000.html">Thread Prev</a>][<a href="msg00005.html">Thread Next</a>][<a href="maillist.html#00001">Date Index</a>][<a href="threads.html#00001">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Miscellanea</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Miscellanea</li>
+<li><em>From</em>: Taylor R Campbell &lt;<a href="mailto:campbell@DOMAIN.HIDDEN">campbell@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 26 Mar 2008 16:34:26 -0400</li>
+<li><em>Cc</em>: <a href="mailto:srfi-97@DOMAIN.HIDDEN">srfi-97@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-97@DOMAIN.HIDDEN">srfi-97@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:Pine.SOC.4.64.0803261037080.9131@DOMAIN.HIDDEN">Pine.SOC.4.64.0803261037080.9131@xxxxxxxxxxxxxxxxx</a>&gt; (<a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxx</a>)</li>
+<li><em>User-agent</em>: IMAIL/1.21; Edwin/3.116; MIT-Scheme/7.7.90.+</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>   Date: Wed, 26 Mar 2008 11:20:39 -0400 (EDT)
+   From: AndrevanTonder &lt;andre@xxxxxxxxxxxxx&gt;
+
+   I would suggest that the export level be assumed to be 0 for all
+   exported bindings of all SRFIs /except/ SRFI-46: Basic syntax-rules
+   extensions, which should export SYNTAX-RULES for level 1, provided
+   the author agrees.
+
+I agree that this is the right thing to do for the R6RS.
+
+      SRFI 9, Defining Record Types, and R6RS Records. What relation
+      should SRFI 9 records have with R6RS records?
+
+   I do not think any relationship should be assumed.  It might not be
+   in harmony with the intent of the author, but even if it is,
+   assuming a relationship would amount to an effective
+   post-finalization modification or extension of SRFI-9 itself, which
+   would defeat the purpose of the actual original SRFI process.
+
+Would any assumed or stated relationship affect the semantics of
+programs written with SRFI 9?  Certain programs might lose certain
+abstraction barriers, but that is not so harmful as a loss of
+guarantees of security, of which SRFI 9 made none.  Identifying SRFI 9
+records with the R6RS's records, on the other hand, would avoid
+certain social problems that persistently plague Scheme, probably at
+very little technical cost.
+
+   This is a tricky one.  One has no choice but to export some
+   bindings for the conflicting literals (if, not, and, or).  If one
+   re-exports the same bindings as (rnrs base) for these conflicting
+   literals, the library will be more convenient to import into most
+   programs.  However, one then cannot write a program that uses
+   SRFI-42 but that, at the same time, excludes the (rnrs base)
+   meaning of IF (as for example PLT 4 that excludes one-armed IF).
+   It would really be much cleaner to export different bindings for
+   these literals, but then they would have to be renamed if imported
+   into an (rnrs base) program, which is inconvenient.
+
+One could argue that importing a library that exports a non-standard
+meaning of the name IF so fundamentally changes the meaning of the
+name so that it should no longer retain its meaning within miniature
+languages such as SRFI 42.  I don't expect to be persuaded strongly by
+any such argument, however.  It is not clear that hygienic name
+comparison is the right thing to do for many cases.  Whether it is the
+right thing for COND is debatable -- I know that one might like to
+write code along the lines of
+
+(LET ((THEN (MUMBLE FOO)) (ELSE (GRUMBLE FOO)))
+  (COND ((AND THEN ELSE) (EMIT-BRANCH THEN ELSE))
+        (THEN (EMIT-THEN THEN))
+        (ELSE (EMIT-ELSE ELSE)))
+  (EMIT-JOIN FOO)),
+
+but this is hardly persuasive (even though I have stumbled across this
+kind of code in the wild).  I can abstractly imagine a context in
+which it is infeasible to avoid the use of a certain name: in a
+pathological combination of two restricted miniature languages, in one
+of which there is a language keyword -- say FOO --, and in the other
+of which there is a variable-like thing also called FOO, and a use
+case where it is impossible to refer to variable-like things in any
+semantically equivalent but syntactically distinct way.
+
+For instance, suppose we strip BEGIN, LAMBDA, and everything else
+similar from the language so that we can't refer to a variable in any
+different way like (BEGIN FOO), and introduce a LET-ELSE form to bind
+a single variable named ELSE, and strip any other binding forms so
+that we can't refer to ELSE by any other name.  Then we shall have a
+problem using COND when our variable ELSE is a potential condition:
+either we can't use COND's ELSE clauses, or we can't refer to our
+variable ELSE in the condition position.
+
+Is this mind-numbingly pathological?  Yep.  I'm curious to hear
+whether anyone else has any practical examples of a pair of languages
+resistant to combination in this way.
+
+There are other contexts where it hygienic name comparison buys one
+nothing, such as CASE's ELSE clauses.  There is absolutely no way to
+use a name ELSE meaning anything else in the same context in a CASE.
+So it really would be nice to introduce non-hygienic name comparison
+for cases where it is useful.  And both CASE and SRFI 42 are examples
+of such cases where non-hygienic name comparison is useful.
+
+   Perhaps the author can be persuaded to use his colon-based naming
+   convention for keywords uniformly (making it :and, :or, ...  for
+   uniformity with :range, ...).
+
+The author of SRFI 42 may be persuaded of that, but not this author of
+other miniature languages with similar syntactic characteristics.
+(Very little of my code will run in the R6RS anyway, because of
+gratuitously incompatible changes to the language, of course, so
+perhaps my opinion doesn't matter here.)
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00005" href="msg00005.html">Re: Miscellanea</a></strong>
+<ul><li><em>From:</em> David Van Horn</li></ul></li>
+<li><strong><a name="00010" href="msg00010.html">Re: Miscellanea</a></strong>
+<ul><li><em>From:</em> AndrevanTonder</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00000" href="msg00000.html">Miscellanea</a></strong>
+<ul><li><em>From:</em> AndrevanTonder</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00000.html">Miscellanea</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00002.html">Broken naming convention</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00000.html">Miscellanea</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00005.html">Re: Miscellanea</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00001"><strong>Date</strong></a></li>
+<li><a href="threads.html#00001"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,227 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Unicode, case&#45;mapping, comparison &#38; the Java spec -->
+<!--X-From-R13: fuvirefNnv.zvg.rqh -->
+<!--X-Date: Sat, 1 Apr 2000 17:17:09 &#45;0600 (CST) -->
+<!--X-Message-Id: 200004012312.SAA01047@mongkok.ai.mit.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Unicode, case-mapping, comparison &amp; the Java spec</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00085.html">Date Prev</a>][<a href="msg00087.html">Date Next</a>][<a href="msg00083.html">Thread Prev</a>][<a href="msg00087.html">Thread Next</a>][<a href="maillist.html#00086">Date Index</a>][<a href="threads.html#00086">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Unicode, case-mapping, comparison &amp; the Java spec</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-13@DOMAIN.HIDDEN">srfi-13@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Unicode, case-mapping, comparison &amp; the Java spec</li>
+<li><em>From</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxx</a></li>
+<li><em>Date</em>: Sat, 1 Apr 2000 18:12:29 -0500</li>
+<li><em>Reply-to</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>I have sorted through the internationalisation issues, and have a fairly
+simple proposal for them, which essentially follows the Java spec, and punts
+complex handling of these properties to another &quot;text&quot; or collation SRFI. I
+believe this is the last really major issue outstanding on SRFI 13.
+
+* What Java Does
+----------------
+
+I should like to recommend to interested parties that you take the time to
+read the specs for Java's string libs. They strike me as being very carefully
+thought out. Here are some relevant links:
+
+For characters
+    <a  rel="nofollow" href="http://www.unicode.org/">http://www.unicode.org/</a>
+    <a  rel="nofollow" href="http://java.sun.com/docs/books/jls/html/javalang.doc4.html#14345">http://java.sun.com/docs/books/jls/html/javalang.doc4.html#14345</a>
+    <a  rel="nofollow" href="http://java.sun.com/products/jdk/1.2/docs/api/java/lang/Character.html">http://java.sun.com/products/jdk/1.2/docs/api/java/lang/Character.html</a>
+
+java.lang.string: (immutable strings)
+    <a  rel="nofollow" href="http://java.sun.com/docs/books/jls/html/javalang.doc11.html#14460">http://java.sun.com/docs/books/jls/html/javalang.doc11.html#14460</a>
+    <a  rel="nofollow" href="http://java.sun.com/products/jdk/1.2/docs/api/java/lang/String.html">http://java.sun.com/products/jdk/1.2/docs/api/java/lang/String.html</a>
+
+java.lang.StringBuffer: (mutable strings)
+    <a  rel="nofollow" href="http://java.sun.com/docs/books/jls/html/javalang.doc12.html#14461">http://java.sun.com/docs/books/jls/html/javalang.doc12.html#14461</a>
+    <a  rel="nofollow" href="http://java.sun.com/products/jdk/1.2/docs/api/java/lang/StringBuffer.html">http://java.sun.com/products/jdk/1.2/docs/api/java/lang/StringBuffer.html</a>
+
+Here are some notes summarising what these specs contain.
+
+- Java characters are Unicode. Period.
+
+  SRFI-13 does not require this.
+
+- Java provides a string hash routine. I consider this to be a checklist item;
+  I am adding one to SRFI-13.
+
+  Java gives a precise definition of the string-hash operation.
+  Unfortunately, it has changed over time. Here is the earlier spec:
+    If N is the length of the string, then 
+        n &lt;= 15: sum(i=0,n-1, s[i] * 37^i)
+        otw:     sum(i=0,m, s[i*k]*39^i) for k=floor(n/8), m=ceil(n/k)
+  which has the property that it only samples 8 or 9 chars from the
+  string, when the string is long.
+
+  Here is the later spec, which uses every char in the string:
+    s[0]*31^(n-1) + s[1]*31^(n-2) + ... + s[n-1]
+
+  Specifying the hash function has the benefit that one can write out
+  hash values and have them be invariant across implementations. This
+  presumably is required by Java's write-once/run-anywhere mandate.
+  The downside is that one loses implementation flexibility, of course.
+
+  I do *not* plan to specify a specific hash function in SRFI-13; I've
+  left it open to the implementation. I am willing to consider requiring
+  a specific hash, e.g., the Java hash, if there is wide support for this.
+
+- Java provides simple default-locale case-mapping operations that
+  are defined in terms of 1-1 character case mapping. So 
+  + the individual character transforms are context independent, and
+  + the result string is guaranteed to be the same length as the input string.
+
+- Java *also* provides case-mapping operations that take a locale parameter. 
+  These may return strings that differ in length from the input string.
+
+- Java provides string comparison and a simple case-insensitive comparison.
+  Case-insensitive comparison is simply 
+	(compare (lower (upper s1)) (lower (upper s2)))
+  Note that it has *no* locale-specific processing.
+
+  Java *also* provides a case-insensitive string equality predicate,
+  which has *different* semantics -- it's
+      (and (= (length s1) (length s2))
+           (every (lambda (c1 c2) (or (char=? c1 c2)
+                                      (char=? (upcase c1)   (upcase c2))
+                                      (char=? (downcase c1) (upcase c2))))
+                  s1 s2))
+
+  Could this be different from the comparison function? I'm not sure; it does
+  seems like a minor ugliness.
+
+- There are separate text and collator classes 
+       <a  rel="nofollow" href="http://java.sun.com/products/jdk/1.2/docs/api/java/text/Collator.html">http://java.sun.com/products/jdk/1.2/docs/api/java/text/Collator.html</a>
+       <a  rel="nofollow" href="http://java.sun.com/products/jdk/1.2/docs/api/java/text/package-summary.html">http://java.sun.com/products/jdk/1.2/docs/api/java/text/package-summary.html</a>
+  that provide much more complex operations on strings of text, such as
+  locale-specific collation. These are beyond the scope of SRFI-13.
+
+- Java's &quot;index&quot; methods search for the occurrence of a char or a substring
+  within a string. Java also has prefix? and suffix? ops.
+
+- Java's string class provides a set of primitive parsers &amp; unparsers for base
+  types such as ints, bools &amp; floats.
+
+
+* What SRFI-13 Does
+-------------------
+
+Having considered Java's solutions, I am doing the following for SRFI-13:
+
+Like Java, this library treats strings simply as sequences of characters or
+&quot;code points.&quot; It supports simple char-at-a-time, context-independent case
+mapping and case-insensitive operations. There are no locale parameters;
+case-mapping ops *are*, however, sensitive to some &quot;default&quot; locale (which
+could be dynamically bound by an extra-SRFI-13 facility).
+
+Like Java, and as Mikael has been strongly suggesting, we punt more complex
+functionality to a &quot;text&quot; or collation library. The simple operations defined
+in SRFI-13 are suitable for processing file names or program symbols. True
+text processing would want to use &quot;text process&quot; procedures.
+
+- *No* locales
+  This library does not have locale parameters, or mechanisms for
+  dynamically binding a default locale. These features are beyond the
+  scope of this SRFI, and are postponed for a separate collation or text 
+  library.
+
+  Case-mapping and case-folding operators *are* defined to be sensitive,
+  in a limited fashion, to a &quot;default locale,&quot; if the Scheme system
+  provides such a thing.
+
+- Case mapping
+  Case mapping is context-independent, char-by-char. It is locale-sensitive
+  to the default locale.
+
+  STRING-UPCASE! STRING-DOWNCASE! and STRING-TITLECASE! are back. As in Java,
+  they and their pure STRING-UPCASE STRING-DOWNCASE and STRING-TITLECASE
+  variants do 1-1 character context-insensitive case mapping, sensitive to the
+  default locale. This means, for example, that the German strasse character
+  does *not* upcase to &quot;SS.&quot; It maps to itself.
+
+  The simple rules for 1-1 char case mapping are laid out by the Unicode
+  standards and also by the Java specs.
+
+- String comparison
+
+  STRING-COMPARE STRING&lt; STRING&lt;= STRING&gt;= STRING&gt; STRING= STRING&lt;&gt;
+  are locale-blind, and work purely in terms of &quot;code points&quot; -- the individual
+  chars of the string. In a Unicode Scheme, then, the e-accent-acute character
+  would not compare equal to the e character followed by the zero width
+  accent-acute character. A kana character would not compare equal to
+  its half-width variant. And so forth.
+
+  The case-insensitive versions of these ops are sensitive to the default
+  locale for case-mapping (but *not* for character collation order), and are
+  defined to do a char-by-char code-point comparison on 
+      (char-downcase (char-upcase c)).
+
+  More sophisticated string comparison belongs in a separate &quot;text&quot; or
+  collation library, as Java does and Mikael has been suggesting. Such
+  a library would compute sort/collation keys, case mapping, text
+  normalisation, and operations that are blind to or fold away case,
+  accents/diacritical marks, ligatures, etc.
+
+I will modify the SRFI to reflect these decisions.
+    -Olin
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00085.html">Re: shared-text substrings</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00087.html">Hopefully final changes to SRFI-13</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00083.html">Is the end in sight?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00087.html">Hopefully final changes to SRFI-13</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00086"><strong>Date</strong></a></li>
+<li><a href="threads.html#00086"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

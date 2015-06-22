@@ -1,0 +1,308 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: gratuitous optimization and benchmarking -->
+<!--X-From-R13: "fbb" <vavgNvavFrez.pbz> -->
+<!--X-Date: Sat,  8 Apr 2006 03:38:19 +0200 (MST) -->
+<!--X-Message-Id: 000101c65aad$195fd230$9785093b@INITERM -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: gratuitous optimization and benchmarking</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00022.html">Date Prev</a>][<a href="msg00024.html">Date Next</a>][<a href="msg00022.html">Thread Prev</a>][<a href="msg00024.html">Thread Next</a>][<a href="maillist.html#00023">Date Index</a>][<a href="threads.html#00023">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: gratuitous optimization and benchmarking</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &lt;<a href="mailto:srfi-86@DOMAIN.HIDDEN">srfi-86@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: gratuitous optimization and benchmarking</li>
+<li><em>From</em>: &quot;soo&quot; &lt;<a href="mailto:init@DOMAIN.HIDDEN">init@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 8 Apr 2006 10:38:11 +0900</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-86@DOMAIN.HIDDEN">srfi-86@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Importance</em>: Normal</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+ * From: &quot;Taylor R. Campbell&quot; &lt;campbell@xxxxxxxxxx&gt;
+ * Date: Fri, 7 Apr 2006 16:54:44 +0000
+ * Subj: Re: gratuitous optimization and benchmarking
+
+ | I didn't see how you loaded the code in any of the systems, so I
+can't
+ | tell where the disparity is exactly, but here are my guesses:
+
+  1. In Scheme48, you probably neither set inline-values at the REPL
+     nor used the module system.  By default, the REPL will compile
+     code under the assumption that any binding can be redefined,
+     including standard R5RS ones, so it inhibits the compiler from
+     performing *any* kind of analyses on standard bindings.  This
+     means that it was given no chance to recognize CWV, and that it
+     must generate full, heap-allocated closures for the operands.
+     Either use the module system or type this at the REPL first:
+
+        ,set inline-values
+
+ | ...	
+ | For the record, this is how I ran the code:
+ | Scheme48: no special command-line options
+  ,set inline-values
+  ,load soo.scm
+  ,collect
+  ,time (test-m)
+  ,collect
+  ,time (test-v)
+  ,collect
+  ,time (test-mm)
+  ,collect
+  ,time (test-vv)
+ | ...
+
+
+  
+The following are test-results in Scheme48 as instructed by you.
+
+;;; mu-nu.scm
+(define-structure mu-nu
+  (export ((mu nu) :syntax))
+  (open scheme)
+  (begin
+(define-syntax mu
+  (syntax-rules ()
+    ((mu argument ...)
+     (lambda (m) (m argument ...)))))
+(define-syntax nu
+  (syntax-rules ()
+    ((nu argument ...)
+     (lambda (n) (apply n argument ...)))))
+))
+
+;;; mu-test.scm
+(define-structure mu-test
+  (export test-m test-v test-mm test-vv) 
+  (open scheme srfi-8 mu-nu)
+  (begin
+(define m (mu 1 2 3))
+(define v (lambda () (values 1 2 3)))
+(define mm (lambda (x)
+             (if (&lt; x 0)
+                 (mu 1 2 3)
+                 (if (= x 0)
+                     (mu 4 5 6)
+                     (mu 7 8 9)))))
+(define vv (lambda (x)
+             (if (&lt; x 0)
+                 (values 1 2 3)
+                 (if (= x 0)
+                     (values 4 5 6)
+                     (values 7 8 9)))))
+(define-syntax dotimes
+  (syntax-rules ()
+    ((dotimes (i count) body0 body1 ...)
+     (let ((%COUNT count))
+       (do ((i 0 (+ i 1)))
+           ((= i %COUNT))
+         body0
+         body1
+         ...)))))
+(define (test-m)
+  (dotimes (i 10000000)
+    (m (lambda (x y z)
+         (+ i x y z)))))
+(define (test-v)
+  (dotimes (i 10000000)
+    (receive (x y z) (v)
+      (+ i x y z))))
+(define (test-mm)
+  (dotimes (i 10000000)
+    ((mm i) (lambda (x y z)
+              (+ i x y z)))))
+(define (test-vv)
+  (dotimes (i 10000000)
+    (receive (x y z) (vv i)
+      (+ i x y z))))
+))      
+
+;;; mu-unfair-test.scm
+(define-syntax mu
+  (syntax-rules ()
+    ((mu argument ...)
+     (lambda (m) (m argument ...)))))
+(define-syntax receive
+  (syntax-rules ()
+    ((receive formals expression body ...)
+     (call-with-values (lambda () expression)
+                       (lambda formals body ...)))))    
+(define m (mu 1 2 3))
+(define v (lambda () (values 1 2 3)))
+(define mm (lambda (x)
+             (if (&lt; x 0)
+                 (mu 1 2 3)
+                 (if (= x 0)
+                     (mu 4 5 6)
+                     (mu 7 8 9)))))
+(define vv (lambda (x)
+             (if (&lt; x 0)
+                 (values 1 2 3)
+                 (if (= x 0)
+                     (values 4 5 6)
+                     (values 7 8 9)))))
+(define-syntax dotimes
+  (syntax-rules ()
+    ((dotimes (i count) body0 body1 ...)
+     (let ((%COUNT count))
+       (do ((i 0 (+ i 1)))
+           ((= i %COUNT))
+         body0
+         body1
+         ...)))))
+(define (test-m)
+  (dotimes (i 10000000)
+    (m (lambda (x y z)
+         (+ i x y z)))))
+(define (test-v)
+  (dotimes (i 10000000)
+    (receive (x y z) (v)
+      (+ i x y z))))
+(define (test-mm)
+  (dotimes (i 10000000)
+    ((mm i) (lambda (x y z)
+              (+ i x y z)))))
+(define (test-vv)
+  (dotimes (i 10000000)
+    (receive (x y z) (vv i)
+      (+ i x y z))))
+;;;
+
+soo@INITERM:~$ scheme48
+Welcome to Scheme 48 1.3 (made by soo on Mon Jul 11 09:51:36     2005)
+Copyright (c) 1993-2005 by Richard Kelsey and Jonathan Rees.
+Please report bugs to scheme-48-bugs@xxxxxxxx
+Get more information at <a  rel="nofollow" href="http://www.s48.org/">http://www.s48.org/</a>.
+Type ,? (comma question-mark) for help.
+&gt; ,set inline-values
+will compile some calls in line
+&gt; ,load mu-unfair-test.scm 
+&gt; ,collect
+Before: 868227 words free in semispace
+After:  983100 words free in semispace
+&gt; ,time (test-m)
+Run time: 22.66 seconds; Elapsed time: 23.04 seconds
+#t
+&gt; ,collect
+Before: 71195 words free in semispace
+After:  983088 words free in semispace
+&gt; ,time (test-v)
+Run time: 30.00 seconds; Elapsed time: 35.09 seconds
+#t
+&gt; ,collect
+Before: 515503 words free in semispace
+After:  983088 words free in semispace
+&gt; ,time (test-mm)
+Run time: 33.34 seconds; Elapsed time: 35.70 seconds
+#t
+&gt; ,collect
+Before: 523639 words free in semispace
+After:  983088 words free in semispace
+&gt; ,time (test-vv)
+Run time: 35.99 seconds; Elapsed time: 36.33 seconds
+#t
+&gt; ,exit
+soo@INITERM:~$ scheme48
+Welcome to Scheme 48 1.3 (made by soo on Mon Jul 11 09:51:36     2005)
+Copyright (c) 1993-2005 by Richard Kelsey and Jonathan Rees.
+Please report bugs to scheme-48-bugs@xxxxxxxx
+Get more information at <a  rel="nofollow" href="http://www.s48.org/">http://www.s48.org/</a>.
+Type ,? (comma question-mark) for help.
+&gt; ,config ,load mu-nu.scm mu-test.scm
+&gt; ,open mu-test
+&gt; ,collect
+Before: 828046 words free in semispace
+After:  980846 words free in semispace
+&gt; ,time (test-m)
+Run time: 22.63 seconds; Elapsed time: 24.66 seconds
+#t
+&gt; ,collect
+Before: 933975 words free in semispace
+After:  980828 words free in semispace
+&gt; ,time (test-v)
+Run time: 29.03 seconds; Elapsed time: 29.39 seconds
+#t
+&gt; ,collect
+Before: 340484 words free in semispace
+After:  980822 words free in semispace
+&gt; ,time (test-mm)
+Run time: 33.10 seconds; Elapsed time: 35.27 seconds
+#t
+&gt; ,collect
+Before: 337016 words free in semispace
+After:  980816 words free in semispace
+&gt; ,time (test-vv)
+Run time: 35.89 seconds; Elapsed time: 41.16 seconds
+#t
+
+
+Still, my results are different from yous.
+
+--
+Joo ChurlSoo
+
+
+
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00024" href="msg00024.html">Re: gratuitous optimization and benchmarking</a></strong>
+<ul><li><em>From:</em> Taylor R. Campbell</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00022.html">Re: gratuitous optimization and benchmarking</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00024.html">Re: gratuitous optimization and benchmarking</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00022.html">Re: gratuitous optimization and benchmarking</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00024.html">Re: gratuitous optimization and benchmarking</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00023"><strong>Date</strong></a></li>
+<li><a href="threads.html#00023"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,134 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: NAND &#38; NOR now n&#45;ary; Bug in BITWISE&#45;EQV? implementation -->
+<!--X-From-R13: Oynqqva Brgebsfxl <nynqqvaNcrgebsfxl.bet> -->
+<!--X-Date: Sun, 21 Jul 2002 21:09:03 +0200 (DFT) -->
+<!--X-Message-Id: 200207211908.MAA28778@radish.petrofsky.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200207211714.g6LHEDo01095@mongkok.dyndns.org -->
+<!--X-Reference: 200207211745.g6LHjGi27311@contour.iro.umontreal.ca -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: NAND &amp; NOR now n-ary; Bug in BITWISE-EQV? implementation</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00006.html">Date Prev</a>][<a href="msg00008.html">Date Next</a>][<a href="msg00005.html">Thread Prev</a>][<a href="msg00006.html">Thread Next</a>][<a href="maillist.html#00007">Date Index</a>][<a href="threads.html#00007">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: NAND &amp; NOR now n-ary; Bug in BITWISE-EQV? implementation</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: NAND &amp; NOR now n-ary; Bug in BITWISE-EQV? implementation</li>
+<li><em>From</em>: Aladdin Petrofsky &lt;<a href="mailto:aladdin@DOMAIN.HIDDEN">aladdin@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 21 Jul 2002 12:08:43 -0700</li>
+<li><em>Cc</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxxxxx</a>,	<a href="mailto:srfi-33@DOMAIN.HIDDEN">srfi-33@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-33@DOMAIN.HIDDEN">srfi-33@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:200207211745.g6LHjGi27311@DOMAIN.HIDDEN">200207211745.g6LHjGi27311@xxxxxxxxxxxxxxxxxxxxxxxx</a>&gt; (message	from Marc Feeley on Sun, 21 Jul 2002 13:45:16 -0400)</li>
+<li><em>References</em>: &lt;<a href="mailto:200207211714.g6LHEDo01095@DOMAIN.HIDDEN">200207211714.g6LHEDo01095@xxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:200207211745.g6LHjGi27311@DOMAIN.HIDDEN">200207211745.g6LHjGi27311@xxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; 
+&gt; &gt; I also discovered a bug in the spec for n-ary eqv. This is true:
+&gt; &gt;   (eqv i j) = (not (xor i j))
+&gt; &gt; But it does not generalise to the n-ary case. That is, it is *NOT
+&gt; &gt; TRUE* that
+&gt; &gt;   (eqv i ...)  =  (not (xor i ...))
+&gt; 
+&gt; Are you sure?  I've always thought that (eqv i ...)  = (not (xor i
+&gt; ...)) .  What does eqv mean anyway?  Does a 1 bit in the result mean
+&gt; that all arguments have the same value for that bit?  Or does it
+&gt; mean even-parity (odd-parity being computed by xor)?  What's your
+&gt; reference?
+
+One reference is common lisp.  The immediate reference is the part of
+the srfi that lists eqv as an associative operator, and hence the
+definition of (eqv a b c) is (eqv (eqv a b) c), which is eqv to (eqv a
+(eqv b c)).  It follows that xor tests for an odd number of truths and
+eqv tests for an even number of falses, so either can be expressed in
+terms of the other like so:
+
+  (define (bitwise-eqv . args)
+    (bitwise-not (apply bitwise-xor (map bitwise-not args))))
+
+  (define (bitwise-xor . args)
+    (bitwise-not (apply bitwise-eqv (map bitwise-not args))))
+
+I agree with Olin (and Common Lisp) that these symmetric associative
+operations are the correct base functions to include in the library.
+If you want to check for an even number of truths or odd number of
+falses, you can easily get that by complementing the result of one of
+these two operations.
+
+The fact that (= x1 x2 x3 ...) means (and (= x1 x2) (= x2 x3 ...))
+creates a reasonable expectation that (bitwise-eqv x1 x2 x3) might
+mean (bitwise-and (bitwise-eqv x1 x2) (bitwise-eqv x2 x3 ...)).  For
+this reason, perhaps xnor would be a better name than eqv.  Perhaps it
+would be useful to also have a bitwise= with the variadic behavior
+analogous to =:
+
+  (define (bitwise= . args)
+    (bitwise-or (apply bitwise-and args)
+                (apply bitwise-and (map bitwise-not args))))
+
+-al
+
+P.S. (bitwise-xor 3 10) is not 10.  (No, I didn't check all the
+examples in the draft, so that should be done.)
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00004" href="msg00004.html">NAND &amp; NOR now n-ary; Bug in BITWISE-EQV? implementation</a></strong>
+<ul><li><em>From:</em> shivers</li></ul></li>
+<li><strong><a name="00005" href="msg00005.html">Re: NAND &amp; NOR now n-ary; Bug in BITWISE-EQV? implementation</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00006.html">The boolean eqv function &amp; n-ary generalisation of associative ops</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00008.html">Re: The boolean eqv function &amp; n-ary generalisation of associative ops</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00005.html">Re: NAND &amp; NOR now n-ary; Bug in BITWISE-EQV? implementation</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00006.html">The boolean eqv function &amp; n-ary generalisation of associative ops</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00007"><strong>Date</strong></a></li>
+<li><a href="threads.html#00007"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

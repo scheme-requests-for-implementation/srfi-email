@@ -1,0 +1,145 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: new version with binary/character port distinction -->
+<!--X-From-R13: Oyrk Euvaa <sbbsNflagupbqr.pbz> -->
+<!--X-Date: Mon, 29 Nov 2004 04:31:40 +0100 (NFT) -->
+<!--X-Message-Id: 86653pbab0.wl@lain.inunome.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>new version with binary/character port distinction</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00063.html">Date Prev</a>][<a href="msg00065.html">Date Next</a>][<a href="msg00061.html">Thread Prev</a>][<a href="msg00066.html">Thread Next</a>][<a href="maillist.html#00064">Date Index</a>][<a href="threads.html#00064">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>new version with binary/character port distinction</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-56@DOMAIN.HIDDEN">srfi-56@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: new version with binary/character port distinction</li>
+<li><em>From</em>: Alex Shinn &lt;<a href="mailto:foof@DOMAIN.HIDDEN">foof@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 28 Nov 2004 21:31:31 -0600</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-56@DOMAIN.HIDDEN">srfi-56@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Wanderlust/2.10.1 (Watching The Wheels) SEMI/1.14.6 (Maruoka) FLIM/1.14.6 (Marutamachi) APEL/10.6 Emacs/21.3 (i386-pc-linux-gnu) MULE/5.0 (SAKAKI)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>While waiting for it to appear on srfi.schemers.org, you can get the
+latest version at <a  rel="nofollow" href="http://synthcode.com/scheme/srfi-56.tar.bz2">http://synthcode.com/scheme/srfi-56.tar.bz2</a>.
+
+I'll go into more detail about the rationale here.
+
+The only significant change is the addition of the binary/character
+port distinction.  There are several reasons why a Scheme may wish to
+make this distinction:
+
+  1) Java and other non-systems languages may have limited support for
+     intermixing binary and character operations on the same port.
+
+  2) Windows distinguishes between text and binary mode, and though
+     this is easy to workaround by always using binary ports, some
+     Schemes may wish to preserve the distinction.
+
+  3) Schemes may wish to disallow using binary operations on
+     string-ports for simplicity and performance reasons.
+
+In the interest of greater portability, we first acknowledge that
+there may be a distinction, and provide the binary-port? and
+character-port? predicates, which are not necessarily mutually
+exclusive (they may both be tautologies).
+
+Testing alone does not help portability, other than to possibly
+display more informative error messages:
+
+  (call-with-input-file my-database
+    (lambda (p)
+      (if (binary-port? p)
+        (load-database p)
+        (error &quot;shucks, files aren't opened in binary mode by default&quot;))))
+
+Indeed, providing this distinction without specifying how to open
+files in binary mode would hurt portability more than help, as people
+would simply use the native Scheme's method for opening binary files,
+and not bother to test the results of these predicates since they know
+how they opened the file anyway.
+
+So we provide a means of ensuring files are opened in binary (but not
+necessarily character) mode with six new procedures:
+
+    * OPEN-BINARY-INPUT-FILE path
+    * OPEN-BINARY-OUTPUT-FILE path
+    * CALL-WITH-BINARY-INPUT-FILE path proc
+    * CALL-WITH-BINARY-OUTPUT-FILE path proc
+    * WITH-INPUT-FROM-BINARY-FILE path thunk
+    * WITH-OUTPUT-TO-BINARY-FILE path thunk
+
+All of these return #t for BINARY-PORT?  The corresponding R5RS
+procedures are guaranteed to return #t for CHARACTER-PORT?
+
+The reason for using new procedures instead of extending the existing
+procedures with optional arguments is to avoid clashing with already
+existing extensions to those procedures.  In particular, a common
+extension is to make the port encoding an optional argument.  In the
+Java model, which tries to limit mixing of binary and character I/O,
+&quot;binary&quot; itself is considered an encoding, but in the more general
+case the ability to perform binary I/O is orthogonal to the port's
+character encoding.
+
+Existing R5RS (character) I/O procedures are then defined to all be
+guaranteed when CHARACTER-PORT? returns #t, and the binary procedures
+defined in the rest of SRFI-56 are guaranteed when BINARY-PORT?
+returns #t.  It is an error to use a character/binary operation on a
+port for which the corresponding predicate returns #f.
+
+-- 
+Alex
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00063.html">Re: Names and primitives in SRFI 56</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00065.html">Re: Names and primitives in SRFI 56</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00061.html">Re: vectors of numbers</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00066.html">update: can you pass the SRFI-56 challenge?</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00064"><strong>Date</strong></a></li>
+<li><a href="threads.html#00064"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

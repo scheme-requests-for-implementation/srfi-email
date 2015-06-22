@@ -1,0 +1,220 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: character predicates -->
+<!--X-From-R13: Fbz Zbeq <ybeqNrzs.arg> -->
+<!--X-Date: Tue, 10 Feb 2004 21:50:13 +0100 (NFT) -->
+<!--X-Message-Id: 200402102106.NAA13335@morrowfield.regexps.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>character predicates</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00007.html">Date Prev</a>][<a href="msg00009.html">Date Next</a>][<a href="msg00041.html">Thread Prev</a>][<a href="msg00009.html">Thread Next</a>][<a href="maillist.html#00008">Date Index</a>][<a href="threads.html#00008">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>character predicates</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-52@DOMAIN.HIDDEN">srfi-52@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: character predicates</li>
+<li><em>From</em>: Tom Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 10 Feb 2004 13:06:52 -0800 (PST)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-52@DOMAIN.HIDDEN">srfi-52@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+Alex raises this question:
+
+     &gt; The question remains how to handle R5RS character predicates
+     &gt; related to these values:
+
+     &gt;   * char-alphabetic? char
+     &gt;   * char-numeric? char
+     &gt;   * char-whitespace? char   ; rename to char-white-space? please!
+     &gt;   * char-upper-case? char   ; rename to char-uppercase? please!
+     &gt;   * char-lower-case? char   ; rename to char-lowercase? please!
+
+     &gt; As mentioned, it can be useful to have these functioning on
+     &gt; pure ASCII for use in parsers and tools for common protocols.
+     &gt; Moreover, the Unicode equivalents are often very expensive (if
+     &gt; not in time then in space).  Should a Scheme that wants to
+     &gt; provide the full Unicode equivalents of these extend the core
+     &gt; procedures or should we define disjoint procedures such as
+
+     &gt;   * char-unicode-alphabetic?
+
+
+First, while I like the suggested renames (e.g., CHAR-LOWER-CASE -&gt;
+CHAR-LOWERCASE), I think it is not the place of _this_ SRFI to propose
+those changes.   They would do nothing to help implementations provide
+Unicode support while also conforming to R6RS.
+
+Second, I think it is essential that, regardless of any changes
+proposed in this SRFI, those procedures must have the same behavior
+they have in R5RS when applied to the &quot;portable Scheme character
+set&quot;.   The portable character set is not quite ASCII (the integer
+mappings are specified and not all ASCII characters are included, even
+abstractly) -- but it can be regarded as a subset of the abstract
+characters encoded in ASCII.
+
+Third, should a Unicode Scheme extend those predicates?  or define new
+ones?  In a weak sense, that's not a question for this SRFI.   I've
+specified the answer I prefer in another draft (&quot;Scheme Characters as
+(Extended) Unicode Codepoints&quot;,
+<a  rel="nofollow" href="http://regexps.srparish.net/srfi-drafts/unicode-chars.srfi">http://regexps.srparish.net/srfi-drafts/unicode-chars.srfi</a>) but those
+answers should not be presumed by this SRFI.
+
+What _are_ questions for this SRFI are: should an implementation be
+_permitted_ to extend those predicates.  If so, should it be permitted
+to extend them in the &quot;most natural&quot; way for Unicode characters?  (The
+other draft I just mentioned explains what I think the &quot;most natural&quot;
+way is.)
+
+The strict letter of the law in R5RS says (by implication):
+
+  ~ Yes, implementations _may_ extend those predicates.
+    (They are, indeed, expected to do so.)
+
+  ~ No, implementations _may_not_ use the most natural Unicode
+    definitions.   In particular, R5RS requires that alphabetic
+    characters must return an upper case equivalent from CHAR-UPCASE
+    and a lower case equivalent from CHAR-DOWNCASE.   So the 
+    specifications for all of these procedures:
+
+	char-alphabetic?
+        char-upper-case?		
+        char-lower-case?
+        char-upcase
+        char-downcase
+        char-ci=?
+
+    are &quot;intertwingled&quot; in an unfortunate way: not all Unicode
+    characters that ought to be considered &quot;alphabetic&quot; satisfy
+    the case-mapping requirements of R5RS.
+
+The situation is worsened by the relationship between those
+procedures, STRING-CI=?, identifier equivalence, and the relationship
+between a literal symbol name in a program text and the string
+returned by SYMBOL-&gt;STRING for that symbol.  For example, R5RS says
+(by implication) that the SYMBOL-&gt;STRING value can be formed from an
+identifier name by applying one of (depending on the implementation's
+preferred case) CHAR-UPCASE or CHAR-DOWNCASE to each character of the
+identifier.  Unicode defines a (fairly complicated) algorithm defining
+&quot;case-insensitive identifier equivalence&quot; -- but it has little resemblence
+to the naive algorithm implied by R5RS.
+
+My opinion is that R5RS is wrong to forbid the &quot;most natural&quot; Unicode
+extensions of these standard procedures.  Some of the revisions
+proposed in this SRFI are aimed at removing that restriction.
+
+In designing the proposed revisions, I reasoned this way:
+
+~ Incompatible Changes Must Not Be Made.
+
+  Specifically, the unfortunate &quot;intertwingling&quot; of the procedures
+  listed above all hinges on CHAR-ALPHABETIC?.   By happy coincidence,
+  with a global character set, CHAR-ALPHABETIC? is a poor choice of
+  name for the concept that procedure is intended to capture --
+  CHAR-LETTER? (that's &quot;Letter&quot; in the broad sense of the Unicode
+  standard) is a better name.
+
+  Rather than undo the intertwingling by changing _any_ of the
+  procedures in an incompatible way, it is simpler to leave 
+  CHAR-ALPHABETIC? in its damaged state, deprecate it, and introduce a
+  new procedure -- CHAR-LETTER? -- defined in a way that doesn't
+  perpetuate the problems.
+
+
+~ Implementations Must Provide the Identifier -&gt; Symbol Mapping
+
+  The naive process of applying CHAR-UPCASE (or CHAR-DOWNCASE) to
+  every character in an identifier to yield it's canonical symbol name
+  is far removed from reality.
+
+  The Unicode process for canonicalizing a symbol name is quite
+  complicated and would require a great deal of more primitive
+  machinery to implement in Scheme.
+
+  Finally, this SRFI is _not_ intended to be Unicode-specific: only 
+  to be Unicode-permissive.   So it is not the place of this SRFI to 
+  specify a canonicalization algorithm.
+
+  Therefore, I have proposed that the revised report just give general
+  guidance (that case distincitions are ignored; that implementations
+  have a preferred case) -- but that they must also provide their
+  canonicalization algorithm as a required procedure.  Rather than
+  trying to &quot;casemap identifiers&quot; themselves, programs should use the
+  new STRING-&gt;SYMBOL-NAME procedure.
+
+
+~ The Portable Characte Set Must Retain Its Simple Structure
+
+  For example, if an identifier name is spelled using only the
+  portable character set, then the CHAR-UPCASE (or DOWNCASE) technique
+  for canonicalizing that identifier name should continue to work.
+
+  Really, this requirement is a kind of &quot;corallary&quot; of the earlier
+  one that &quot;Incompatible Changes Must Not Be Made&quot; but it is worth
+  mentioning specially.
+
+  In the draft SRFI, I have ensured that the portable character set
+  retains its simple structure by including explicit language to that
+  effect.   For example, CHAR-UPCASE and CHAR-DOWNCASE are described:
+
+     These procedures return a character CHAR2 such that 
+     (CHAR-CI=? CHAR CHAR2). In addition, CHAR-UPCASE must 
+     map a..z to A..Z and CHAR-DOWNCASE must map A..Z to a..z.
+
+
+-t
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00007.html">terminology</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00009.html">Bear's vigilence</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00041.html">Re: terminology</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00009.html">Bear's vigilence</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00008"><strong>Date</strong></a></li>
+<li><a href="threads.html#00008"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

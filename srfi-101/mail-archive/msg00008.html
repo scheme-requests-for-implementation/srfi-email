@@ -1,0 +1,301 @@
+<!-- MHonArc v2.6.16 -->
+<!--X-Subject: Re: performance -->
+<!--X-From-R13: Rnivq Hna Vbea <qinaubeaNpf.oenaqrvf.rqh> -->
+<!--X-Date: Fri, 18 Sep 2009 02:32:59 +0000 (UTC) -->
+<!--X-Message-Id: 4AB2F14F.7010201@cs.brandeis.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20090917194636.09643E403F@pluto.mumble.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: performance</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00007.html">Date Prev</a>][<a href="msg00009.html">Date Next</a>][<a href="msg00016.html">Thread Prev</a>][<a href="msg00010.html">Thread Next</a>][<a href="maillist.html#00008">Date Index</a>][<a href="threads.html#00008">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: performance</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Taylor R Campbell &lt;<a href="mailto:campbell@DOMAIN.HIDDEN">campbell@xxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: performance</li>
+<li><em>From</em>: David Van Horn &lt;<a href="mailto:dvanhorn@DOMAIN.HIDDEN">dvanhorn@xxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 17 Sep 2009 22:32:47 -0400</li>
+<li><em>Cc</em>: <a href="mailto:srfi-101@DOMAIN.HIDDEN">srfi-101@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-101@DOMAIN.HIDDEN">srfi-101@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20090917194636.09643E403F@DOMAIN.HIDDEN">20090917194636.09643E403F@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:20090917194636.09643E403F@DOMAIN.HIDDEN">20090917194636.09643E403F@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Thunderbird 2.0.0.23 (Macintosh/20090812)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+Taylor R Campbell wrote:
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Do you have any performance tests to show that the asymptotic
+improvements are worth the constant factors?  Examples of complex
+programs that are best expressed using this data structure, and which
+consequently perform much better than the would with vanilla lists?
+</pre></blockquote><pre style="margin: 0em;">
+
+</pre><tt>There are benchmarks in the Okasaki paper.  To me, the important cases 
+</tt><tt>are lookup and update.  These things are simply not feasible using 
+</tt><tt>sequential lists.  What this means is that algorithms where you might 
+</tt><tt>otherwise use a vector and mutation, you can now use a list and remain 
+</tt><tt>functional (and thus thread-safe, etc).
+</tt><pre style="margin: 0em;">
+
+</pre><tt>My random-access list library for PLT Scheme [*] includes benchmarks, 
+</tt><tt>which I append below.  See the links and read the PLaneT documentation 
+</tt><tt>for details.  The implementation is very similar to the reference 
+</tt><tt>implementation, so I expect the numbers to be representative of what 
+</tt><tt>benchmarks for this library would look like, but I'll admit that I have 
+</tt><tt>little time to develop benchmarks specific for the reference implementation.
+</tt><pre style="margin: 0em;">
+
+I would welcome contributed benchmarks.
+
+David
+
+</pre><tt>[*] 
+</tt><tt><a  rel="nofollow" href="http://planet.plt-scheme.org/display.ss?package=ralist.plt&amp;owner=dvanhorn">http://planet.plt-scheme.org/display.ss?package=ralist.plt&amp;owner=dvanhorn</a>
+</tt><pre style="margin: 0em;">
+
+Welcome to MzScheme v4.2.1.8 [3m], Copyright (c) 2004-2009 PLT Scheme Inc.
+&gt; (require (planet dvanhorn/ralist:1:13/run-benchmarks))
+RAList v. List benchmark
+========================
+dvanhorn/ralist:1:13
+
+(define ls1 (build-list 1000000 (lambda (i) i)))
+(define ls2 (build-list 1000000 (lambda (i) i)))
+
+(for ((j (in-range 10))) (build-list 1000000 (lambda (i) i)))
+ra: cpu time: 1650 real time: 1650 gc time: 241
+ls: cpu time: 1039 real time: 1038 gc time: 211
+
+(build-list 10000000 (lambda (i) i))
+ra: cpu time: 2506 real time: 2551 gc time: 1090
+ls: cpu time: 4619 real time: 4654 gc time: 2864
+
+(for ((j (in-range 10))) (make-list 1000000 (quote x)))
+ra: cpu time: 1 real time: 1 gc time: 0
+ls: cpu time: 360 real time: 360 gc time: 147
+
+(make-list 10000000 (quote x))
+ra: cpu time: 1 real time: 0 gc time: 0
+ls: cpu time: 2536 real time: 2541 gc time: 2322
+
+(equal? ls1 ls2)
+ra: cpu time: 104 real time: 105 gc time: 0
+ls: cpu time: 211 real time: 211 gc time: 0
+
+(length ls)
+ra: cpu time: 0 real time: 0 gc time: 0
+ls: cpu time: 7 real time: 7 gc time: 0
+
+(for ((i (in-range 10))) (map add1 ls))
+ra: cpu time: 994 real time: 994 gc time: 22
+ls: cpu time: 864 real time: 863 gc time: 46
+
+(foldl + 0 ls)
+ra: cpu time: 321 real time: 325 gc time: 4
+ls: cpu time: 202 real time: 205 gc time: 3
+
+(foldr + 0 ls)
+ra: cpu time: 626 real time: 628 gc time: 109
+ls: cpu time: 265 real time: 266 gc time: 26
+
+(for ((i (in-list ls))) i)
+ra: cpu time: 123 real time: 124 gc time: 0
+ls: cpu time: 8 real time: 8 gc time: 0
+
+(for ((i (in-range 100000))) (list-ref ls 0))
+ra: cpu time: 16 real time: 15 gc time: 0
+ls: cpu time: 5 real time: 4 gc time: 0
+
+(for ((i (in-range 100000))) (tenth ls))
+ra: cpu time: 32 real time: 32 gc time: 0
+ls: cpu time: 15 real time: 15 gc time: 0
+
+(for ((i (in-range 1000))) (list-ref ls 999999))
+ra: cpu time: 2 real time: 2 gc time: 0
+ls: cpu time: 7138 real time: 7129 gc time: 0
+
+(for ((i (in-range 1000))) (last ls))
+ra: cpu time: 2 real time: 2 gc time: 0
+ls: cpu time: 7434 real time: 7448 gc time: 0
+
+Frequency counting benchmark
+============================
+<a  rel="nofollow" href="http://list.cs.brown.edu/pipermail/plt-scheme/2009-April/032288.html">http://list.cs.brown.edu/pipermail/plt-scheme/2009-April/032288.html</a>
+Rewritten to use string ports in place of file IO.
+
+1000 @ vector: cpu time: 12 real time: 13 gc time: 0
+1000 @ a list: cpu time: 14 real time: 13 gc time: 0
+1000 @ bst   : cpu time: 15 real time: 15 gc time: 0
+1000 @ hash  : cpu time: 14 real time: 14 gc time: 0
+1000 @ ra.0  : cpu time: 21 real time: 20 gc time: 0
+1000 @ ra.1  : cpu time: 42 real time: 42 gc time: 0
+
+10000 @ vector: cpu time: 99 real time: 100 gc time: 0
+10000 @ a list: cpu time: 105 real time: 106 gc time: 0
+10000 @ bst   : cpu time: 144 real time: 145 gc time: 0
+10000 @ hash  : cpu time: 131 real time: 131 gc time: 0
+10000 @ ra.0  : cpu time: 143 real time: 143 gc time: 0
+10000 @ ra.1  : cpu time: 174 real time: 177 gc time: 0
+
+100000 @ vector: cpu time: 505 real time: 506 gc time: 0
+100000 @ a list: cpu time: 569 real time: 571 gc time: 8
+100000 @ bst   : cpu time: 1068 real time: 1071 gc time: 42
+100000 @ hash  : cpu time: 969 real time: 969 gc time: 47
+100000 @ ra.0  : cpu time: 935 real time: 935 gc time: 23
+100000 @ ra.1  : cpu time: 979 real time: 979 gc time: 23
+
+1000000 @ vector: cpu time: 3470 real time: 3469 gc time: 2
+1000000 @ a list: cpu time: 5980 real time: 5981 gc time: 690
+1000000 @ bst   : cpu time: 8723 real time: 8741 gc time: 241
+1000000 @ hash  : cpu time: 8148 real time: 8165 gc time: 284
+1000000 @ ra.0  : cpu time: 7676 real time: 7712 gc time: 114
+1000000 @ ra.1  : cpu time: 7779 real time: 7935 gc time: 115
+
+Garden fence encryption benchmark
+=================================
+<a  rel="nofollow" href="http://list.cs.brown.edu/pipermail/plt-scheme/2009-March/031310.html">http://list.cs.brown.edu/pipermail/plt-scheme/2009-March/031310.html</a>
+
+Key:
+
+ve = Van Horn imperative vector
+<a  rel="nofollow" href="http://list.cs.brown.edu/pipermail/plt-scheme/2009-March/031313.html">http://list.cs.brown.edu/pipermail/plt-scheme/2009-March/031313.html</a>
+
+ra = random access list (translation of above)
+
+dr = Felleisen output data driven design recipe
+<a  rel="nofollow" href="http://list.cs.brown.edu/pipermail/plt-scheme/2009-March/031344.html">http://list.cs.brown.edu/pipermail/plt-scheme/2009-March/031344.html</a>
+(Omitted from 1,000,000 chars case since it takes too long)
+
+co = Felleisen combinator
+<a  rel="nofollow" href="http://list.cs.brown.edu/pipermail/plt-dev/2009-April/000532.html">http://list.cs.brown.edu/pipermail/plt-dev/2009-April/000532.html</a>
+
+cy = Tobin-Hochstadt in-cycle
+<a  rel="nofollow" href="http://list.cs.brown.edu/pipermail/plt-dev/2009-April/000533.html">http://list.cs.brown.edu/pipermail/plt-dev/2009-April/000533.html</a>
+
+lv = Felleisen linear vector mutation
+
+lr = random access list (translation of above)
+(define str (build-string 10000 (lambda (i) #\x)))
+
+(encrypt str 20)
+ve: cpu time: 4 real time: 4 gc time: 0
+ra: cpu time: 15 real time: 15 gc time: 0
+dr: cpu time: 15 real time: 15 gc time: 0
+co: cpu time: 19 real time: 19 gc time: 0
+cy: cpu time: 32 real time: 31 gc time: 0
+lv: cpu time: 5 real time: 5 gc time: 0
+lr: cpu time: 4 real time: 5 gc time: 0
+
+(decrypt str 20)
+ve: cpu time: 3 real time: 4 gc time: 0
+ra: cpu time: 14 real time: 14 gc time: 0
+dr: cpu time: 24 real time: 25 gc time: 0
+co: cpu time: 33 real time: 34 gc time: 0
+cy: cpu time: 42 real time: 44 gc time: 0
+lv: cpu time: 8 real time: 8 gc time: 0
+lr: cpu time: 20 real time: 21 gc time: 0
+
+(define str (build-string 100000 (lambda (i) #\x)))
+
+(encrypt str 20)
+ve: cpu time: 45 real time: 45 gc time: 16
+ra: cpu time: 164 real time: 163 gc time: 32
+dr: cpu time: 1229 real time: 1245 gc time: 28
+co: cpu time: 308 real time: 308 gc time: 87
+cy: cpu time: 382 real time: 382 gc time: 55
+lv: cpu time: 43 real time: 44 gc time: 0
+lr: cpu time: 42 real time: 42 gc time: 0
+
+(decrypt str 20)
+ve: cpu time: 44 real time: 45 gc time: 16
+ra: cpu time: 168 real time: 169 gc time: 37
+dr: cpu time: 1256 real time: 1283 gc time: 109
+co: cpu time: 548 real time: 550 gc time: 133
+cy: cpu time: 596 real time: 604 gc time: 126
+lv: cpu time: 84 real time: 117 gc time: 0
+lr: cpu time: 211 real time: 213 gc time: 27
+
+(define str (build-string 1000000 (lambda (i) #\x)))
+
+(encrypt str 20)
+ve: cpu time: 986 real time: 988 gc time: 657
+ra: cpu time: 1959 real time: 1958 gc time: 634
+co: cpu time: 5160 real time: 5228 gc time: 1760
+cy: cpu time: 5869 real time: 5884 gc time: 1663
+lv: cpu time: 867 real time: 874 gc time: 427
+lr: cpu time: 910 real time: 916 gc time: 465
+
+(decrypt str 20)
+ve: cpu time: 988 real time: 992 gc time: 662
+ra: cpu time: 1960 real time: 1964 gc time: 635
+co: cpu time: 9334 real time: 9353 gc time: 3723
+cy: cpu time: 8767 real time: 8879 gc time: 2773
+lv: cpu time: 1612 real time: 1621 gc time: 712
+lr: cpu time: 2667 real time: 2667 gc time: 828
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00010" href="msg00010.html">Re: performance</a></strong>
+<ul><li><em>From:</em> Taylor R Campbell</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00002" href="msg00002.html">performance</a></strong>
+<ul><li><em>From:</em> Taylor R Campbell</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00007.html">Re: importing srfi-101</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00009.html">Re: performance</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00016.html">Re: performance</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00010.html">Re: performance</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00008"><strong>Date</strong></a></li>
+<li><a href="threads.html#00008"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,139 @@
+<!-- MHonArc v2.6.16 -->
+<!--X-Subject: helper macro construct&#45;from&#45;string for srfi&#45;108 -->
+<!--X-From-R13: Bre Pbguare <creNobguare.pbz> -->
+<!--X-Date: Thu, 21 Mar 2013 07:35:19 +0100 (MET) -->
+<!--X-Message-Id: 514AAA11.6010907@bothner.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>helper macro construct-from-string for srfi-108</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00045.html">Date Prev</a>][<a href="msg00047.html">Date Next</a>][<a href="msg00045.html">Thread Prev</a>][<a href="msg00047.html">Thread Next</a>][<a href="maillist.html#00046">Date Index</a>][<a href="threads.html#00046">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>helper macro construct-from-string for srfi-108</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-108@DOMAIN.HIDDEN">srfi-108@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: helper macro construct-from-string for srfi-108</li>
+<li><em>From</em>: Per Bothner &lt;<a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 20 Mar 2013 23:34:57 -0700</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-108@DOMAIN.HIDDEN">srfi-108@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Mozilla/5.0 (X11; Linux x86_64; rv:17.0) Gecko/20130311 Thunderbird/17.0.4</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+[Sorry for the long quiet - among other issues I just
+sold my house, which got a bit crazy at times.]
+
+In the current draft (<a  rel="nofollow" href="http://per.bothner.com/tmp/srfi-108/srfi-108.html">http://per.bothner.com/tmp/srfi-108/srfi-108.html</a>)
+section &quot;Resolving to constructor&quot; I suggest a common use-case would
+be to implement
+  &amp;cname[pre-exp ...]{abc&amp;[infix-exp1]def&amp;[infix-exp2]...xyz}
+as
+  (cname-maker pre-exp ... &amp;{abc&amp;[infix-exp1]def&amp;[infix-exp2]...xyz})
+
+I.e. map &amp;cname to a &quot;constructor function&quot; cname-maker that
+takes a string build from the non-initial arguments.  I figure this
+handles a common use-case in a flexible way, and in a way that
+builds on SRFI-109.  I've implemented a macro
+'constructor-from-string' to make such mapping easier.
+
+The idea is that you could implement $construct$:cname thus:
+
+(define-syntax $construct$:cname
+  (syntax-rules ()
+    ((_ . args) (construct-from-string cname-maker . args))))
+
+This assumes you also a function cname-maker.
+
+Then:
+&amp;cname{abc&amp;(+ 3 4)z} ==&gt; (cname-maker &quot;abc7z&quot;)
+&amp;cname[id: &quot;n7&quot;]{&amp;(+ 3 4)abc} ==&gt; (cname-maker id: &quot;n7&quot; &quot;7abc&quot;)
+
+So my question is:
+(1) Is this useful enough to include in the specification?
+(I'm obviously leaning towards &quot;yes&quot; here.)
+(2) Any suggestions for a better name than construct-from-string?
+That name suggests a &quot;constructor function&quot;, but it's really
+a macro to simplify writing constructor bindings, so it's not
+a good name.
+(3) Other tweaks to the API beside the name?
+
+FWIW here is the implementation. It assumes initial arguments,
+if any, are ended by the symbol $&gt;&gt;$.
+
+(define-syntax construct-from-string
+  (syntax-rules ()
+    ((_ fun . args) (%construct-from-string-builder fun () . args))))
+
+(define-syntax %construct-from-string-builder
+  (syntax-rules ($&lt;&lt;$ $&gt;&gt;$)
+    ((%construct-from-string-builder fun (seen ...) $&lt;&lt;$ . rest)
+     (fun ($string$ seen ... $&lt;&lt;$ . rest)))
+    ((%construct-from-string-builder fun (seen ...) $&gt;&gt;$ . rest)
+     (fun seen ... ($string$ . rest)))
+    ((%construct-from-string-builder fun (seen ...) x . rest)
+     (%construct-from-string-builder fun (seen ... x) . rest))
+    ((%construct-from-string-builder fun (seen ...))
+     (fun seen ...))))
+--
+	--Per Bothner
+per@xxxxxxxxxxx   <a  rel="nofollow" href="http://per.bothner.com/">http://per.bothner.com/</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00047" href="msg00047.html">Re: helper macro construct-from-string for srfi-108</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00045.html">Re: updated SRFI-108</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00047.html">Re: helper macro construct-from-string for srfi-108</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00045.html">Re: updated SRFI-108</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00047.html">Re: helper macro construct-from-string for srfi-108</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00046"><strong>Date</strong></a></li>
+<li><a href="threads.html#00046"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

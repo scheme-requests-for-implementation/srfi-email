@@ -1,0 +1,492 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: FIXNUM (aka Re: Arithmetic issues) -->
+<!--X-From-R13: Eronfgvna Stare <fronfgvna.rtareNcuvyvcf.pbz> -->
+<!--X-Date: Wed, 19 Oct 2005 16:29:42 +0200 (MST) -->
+<!--X-Message-Id: OF0FF941C8.6463E5F1&#45;ONC125709F.004D7F24&#45;C125709F.004F9D20@philips.com -->
+<!--X-Content-Type: multipart/alternative -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>FIXNUM (aka Re: Arithmetic issues)</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00050.html">Date Prev</a>][<a href="msg00052.html">Date Next</a>][<a href="msg00331.html">Thread Prev</a>][<a href="msg00055.html">Thread Next</a>][<a href="maillist.html#00051">Date Index</a>][<a href="threads.html#00051">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>FIXNUM (aka Re: Arithmetic issues)</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: FIXNUM (aka Re: Arithmetic issues)</li>
+<li><em>From</em>: Sebastian Egner &lt;<a href="mailto:sebastian.egner@DOMAIN.HIDDEN">sebastian.egner@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 19 Oct 2005 16:27:43 +0200</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+
+<br><font size=2 face="sans-serif">Dear authors of SRFI 77 and readers
+of the discussion list,</font>
+<br>
+<br><font size=2 face="sans-serif">&gt; SRFI 77 issue #5:</font>
+<br><font size=2 face="sans-serif">&gt; The fixnum operators wrap on overflow,
+i.e., they perform modular</font>
+<br><font size=2 face="sans-serif">&gt; arithmetic. For many purposes,
+it would be better for them to </font>
+<br><font size=2 face="sans-serif">&gt; signal an error in safe mode. Since
+the modulus is implementation-</font>
+<br><font size=2 face="sans-serif">&gt; dependent, portable code cannot
+generally take advantage of the </font>
+<br><font size=2 face="sans-serif">&gt; wrapping. Instead, applications
+are likely to use fixnums simply </font>
+<br><font size=2 face="sans-serif">&gt; to avoid the overhead of generic
+arithmetic under the assumption </font>
+<br><font size=2 face="sans-serif">&gt; that all quantities computed fit
+in the fixnum range, and feedback</font>
+<br><font size=2 face="sans-serif">&gt; if this turns out not to be the
+case will be valuable. On the other</font>
+<br><font size=2 face="sans-serif">&gt; hand, the wrapping semantics can
+also be useful, i.e., in the coding </font>
+<br><font size=2 face="sans-serif">&gt; of a practical implementation of
+bignums in terms of fixnums. It </font>
+<br><font size=2 face="sans-serif">&gt; may be that we should consider
+including two sets of operators: </font>
+<br><font size=2 face="sans-serif">&gt; fx operators that signal an error
+upon overflow and wfx operators </font>
+<br><font size=2 face="sans-serif">&gt; that wrap.</font>
+<br>
+<br><font size=2 face="sans-serif">Unfortunately, there are more useful
+arithmetic models for fixnums:</font>
+<br><font size=2 face="sans-serif">a) modular (aka wrapping) arithmetics,</font>
+<br><font size=2 face="sans-serif">b) subrange arithmetics, raising an
+exception on overflow,</font>
+<br><font size=2 face="sans-serif">c) exact arithmetics returning several
+fixnums (sum+carry), and</font>
+<br><font size=2 face="sans-serif">d) saturated arithmetics (clamping values
+to range boundaries).</font>
+<br>
+<br><font size=2 face="sans-serif">Clearly, a), b) and d) can easily be
+emulated from c). C) can be </font>
+<br><font size=2 face="sans-serif">emulated inefficiently from b). Using
+a) for emulating either b) </font>
+<br><font size=2 face="sans-serif">or c) is horribly inefficient because
+the argument range must </font>
+<br><font size=2 face="sans-serif">essentially be sqrt'ed, losing about
+an order of magnitude in speed</font>
+<br><font size=2 face="sans-serif">and a factor of two in storage consumption.
+D) is also bad for </font>
+<br><font size=2 face="sans-serif">emulating the other models.</font>
+<br>
+<br><font size=2 face="sans-serif">Model d) is used</font>
+<br><font size=2 face="sans-serif">in signal processing (RGB components,
+audio samples)---often as</font>
+<br><font size=2 face="sans-serif">SIMD operations, e.g. Intel MMX has
+8-way 8-bit signed or unsigned</font>
+<br><font size=2 face="sans-serif">saturated arithmetics.</font>
+<br>
+<br><font size=2 face="sans-serif"><b>Proposal:</b> Provide operations
+for b) and c). Do not include a) or d).</font>
+<br>
+<br><font size=2 face="sans-serif">Rationale for dropping a): It is hardly
+ever useful because the</font>
+<br><font size=2 face="sans-serif">precision is not a 'porting-time constant',
+as you acknowledge</font>
+<br><font size=2 face="sans-serif">yourself (cited above). Wrapping semantics
+is *not* useful for</font>
+<br><font size=2 face="sans-serif">implementing bignums---it is too inefficient.</font>
+<br>
+<br><font size=2 face="sans-serif">Rationale for dropping d): Too specialized
+application. </font>
+<br><font size=2 face="sans-serif">Saturated arithmetic is absolutely essential
+in fixpoint</font>
+<br><font size=2 face="sans-serif">signal processing applications, e.g.
+processing RGB components</font>
+<br><font size=2 face="sans-serif">or PCM audio samples. Usually the operations
+are used with SIMD,</font>
+<br><font size=2 face="sans-serif">e.g. Intel's MMX has an 8-way 8-bit
+signed or unsigned saturated</font>
+<br><font size=2 face="sans-serif">addition---and lots of other modes.</font>
+<br>
+<br><font size=2 face="sans-serif">Rational for including b): Even if the
+full tower is present</font>
+<br><font size=2 face="sans-serif">in a given system, as an implementor
+you might want to use</font>
+<br><font size=2 face="sans-serif">FIXNUMs as a basis for implementing
+BIGNUMs. Now for the workhorse</font>
+<br><font size=2 face="sans-serif">arithmetics the model of choice is c),
+but for the rest of the</font>
+<br><font size=2 face="sans-serif">program (loops, counters, indices into
+vectors etc.) you might</font>
+<br><font size=2 face="sans-serif">want to have b). Moreover, FIXNUMs are
+often useful as efficient</font>
+<br><font size=2 face="sans-serif">alternatives for exact integer arithmetics,
+provided they are</font>
+<br><font size=2 face="sans-serif">used with care (proof obligations are
+taken seriously).</font>
+<br>
+<br><font size=2 face="sans-serif">Concerning the set of operations for
+b), the rationale suggests</font>
+<br><font size=2 face="sans-serif">not to be too 'minimal'---which is reflected
+in the current </font>
+<br><font size=2 face="sans-serif">design in SRFI 77: full set of comparisons,
+min/max, etc.</font>
+<br><font size=2 face="sans-serif">As matter of personal preference, a
+few minor things I would modify:</font>
+<br>
+<br><font size=2 face="sans-serif"><b>Proposal:</b></font>
+<br><font size=2 face="sans-serif">* Add the following operations:</font>
+<br><font size=2 face="sans-serif">&nbsp; &nbsp; fxsign fxnot fxcompare</font>
+<br><font size=2 face="sans-serif">* Allow multiple arguments in the following
+operations:</font>
+<br><font size=2 face="sans-serif">&nbsp; &nbsp; fx+ fx- fx* fxmin fxmax</font>
+<br><font size=2 face="sans-serif">* Extend the following predicates to
+test chains:</font>
+<br><font size=2 face="sans-serif">&nbsp; &nbsp; fx= fx&gt; fx&lt; fx&gt;=
+fx&lt;=</font>
+<br><font size=2 face="sans-serif">* Rename the following identifiers:</font>
+<br><font size=2 face="sans-serif">&nbsp; &nbsp; least-fixnum -&gt; fx-min-value</font>
+<br><font size=2 face="sans-serif">&nbsp; &nbsp; greatest-fixnum -&gt;
+fx-max-value</font>
+<br><font size=2 face="sans-serif">&nbsp; &nbsp; fxbitwise-&lt;op&gt; -&gt;
+fx&lt;op&gt; for &lt;op&gt; in {and, ior, xor}</font>
+<br><font size=2 face="sans-serif">&nbsp; &nbsp; fxarithmetic-shift -&gt;
+fxshift</font>
+<br><font size=2 face="sans-serif">&nbsp; &nbsp; fxdiv+mod -&gt; fxmod+div
+&nbsp;</font>
+<br><font size=2 face="sans-serif">&nbsp; &nbsp; &nbsp; &nbsp;[In fact,
+'div+mod' -&gt; 'mod+div' everywhere in the SRFI</font>
+<br><font size=2 face="sans-serif">&nbsp; &nbsp; &nbsp; &nbsp;in order
+to have the least significant values come first,</font>
+<br><font size=2 face="sans-serif">&nbsp; &nbsp; &nbsp; &nbsp;see below.]</font>
+<br><font size=2 face="sans-serif">* Drop the following operations:</font>
+<br><font size=2 face="sans-serif">&nbsp; &nbsp; fxzero? fxpositive? fxnegative?
+fxodd? fxeven? </font>
+<br><font size=2 face="sans-serif">&nbsp; &nbsp; fxquotient fxmodulo fxremainder
+fxmodulo+remainder</font>
+<br><font size=2 face="sans-serif">&nbsp; &nbsp; fxgcd fxlcm</font>
+<br><font size=2 face="sans-serif">Furthermore I would not distribute the
+fixnum ops over the </font>
+<br><font size=2 face="sans-serif">language and a library; I would rather
+include them all in</font>
+<br><font size=2 face="sans-serif">the language or leave them out altogether.</font>
+<br>
+<br><font size=2 face="sans-serif">Now for c), i.e. arithmetics with carry.</font>
+<br>
+<br><font size=2 face="sans-serif">&gt; SRFI 77 issue #4:</font>
+<br><font size=2 face="sans-serif">&gt; The fixnum operations provide efficient
+fixnums that &quot;wrap.&quot; </font>
+<br><font size=2 face="sans-serif">&gt; However, they do not give efficient
+access to the hardware</font>
+<br><font size=2 face="sans-serif">&gt; facilities for carry and overflow.
+This would be desirable</font>
+<br><font size=2 face="sans-serif">&gt; to implement efficient generic
+arithmetic on fixnums portably.</font>
+<br><font size=2 face="sans-serif">&gt; On the other hand, there isn't
+much experience with formulating </font>
+<br><font size=2 face="sans-serif">&gt; a portable interface to these facilities.</font>
+<br>
+<br><font size=2 face="sans-serif">Yes there is. Consult for example pages
+3 and 4 of</font>
+<br>
+<br><font size=2 face="sans-serif">&nbsp; Henri Cohen: A course in computational
+algebraic number theory.</font>
+<br><font size=2 face="sans-serif">&nbsp; Springer, 1993. </font>
+<br>
+<br><font size=2 face="sans-serif">Cohen's solution is the following: Add
+operations for +, -, *,</font>
+<br><font size=2 face="sans-serif">div+mod, shift, and bfffo (= x -&gt;
+ceil(log2(M/(2 x)))) where </font>
+<br><font size=2 face="sans-serif">arguments are in {0..M-1}, where M is
+a word size modulus,</font>
+<br><font size=2 face="sans-serif">for example 2^32 or 2^31. The arithmetic
+operations return the </font>
+<br><font size=2 face="sans-serif">(mod M)-part of the result and store
+the (div M)-part of the</font>
+<br><font size=2 face="sans-serif">result in two global variables called
+'overflow' (in {0,1}, for </font>
+<br><font size=2 face="sans-serif">+ and -) and 'remainder' (in {0..M-1}.
+for *, div+mod, and shift).</font>
+<br>
+<br><font size=2 face="sans-serif">This solution is a favorable compromise
+between efficiency and</font>
+<br><font size=2 face="sans-serif">avoiding low level programming. My main
+concern is the use of</font>
+<br><font size=2 face="sans-serif">global variables for the carry. Another
+issue is the use of</font>
+<br><font size=2 face="sans-serif">an unsigned range, whereas the model
+b) above (i.e. subrange</font>
+<br><font size=2 face="sans-serif">arithmetics) is certainly most useful
+with a range including</font>
+<br><font size=2 face="sans-serif">negative integers (and there should
+at least be -1).</font>
+<br>
+<br><font size=2 face="sans-serif">Concerning the 'global variables' issue,
+I propose to </font>
+<br><font size=2 face="sans-serif">replace it by procedures returning two
+values, i.e. </font>
+<br><font size=2 face="sans-serif">sum+carry, difference+borrow, and lsb+msb
+(for multiplication </font>
+<br><font size=2 face="sans-serif">and shift). The clumsiness of dealing
+with multiple values</font>
+<br><font size=2 face="sans-serif">is largely gone with wider acceptance
+of LET-VALUES or </font>
+<br><font size=2 face="sans-serif">SRFI-71's LET, i.e. (LET ((sum carry
+(+carry x y c))) ...)).</font>
+<br>
+<br><font size=2 face="sans-serif">The unsigned vs. signed issue is a little
+trickier. The primary</font>
+<br><font size=2 face="sans-serif">purpose for arithmetics with carry is
+for implementing (fixed</font>
+<br><font size=2 face="sans-serif">or arbitrary) multiprecision arithmetics,
+e.g. for implementing</font>
+<br><font size=2 face="sans-serif">bignums, implementing crypto primitives
+(say &gt;=1024 bit mod N),</font>
+<br><font size=2 face="sans-serif">implementing pseudo-random number generators,
+or emulating floats.</font>
+<br><font size=2 face="sans-serif">In all these cases, unsigned arithmetics
+with carry is more useful</font>
+<br><font size=2 face="sans-serif">than signed arithmetics with carry,
+as far as the workhorse ops</font>
+<br><font size=2 face="sans-serif">are concerned. This has two reasons:
+a) after cascading signed</font>
+<br><font size=2 face="sans-serif">operations I always have to untie a
+knot in my head, b) more</font>
+<br><font size=2 face="sans-serif">seriously the 2-complement interpretation
+of a word depends on</font>
+<br><font size=2 face="sans-serif">the wordsize, i.e. #b1000 = -1 as a
+4-bit word but = 4 as a 5-bit </font>
+<br><font size=2 face="sans-serif">word. In the unsigned interpretation
+the wordsize does not matter.</font>
+<br>
+<br><font size=2 face="sans-serif">Sadly, using signed arithmetics for
+emulating unsigned operations,</font>
+<br><font size=2 face="sans-serif">i.e. only using the non-negative values
+of the signed range, is </font>
+<br><font size=2 face="sans-serif">less efficient itself because the ordinary
+signed carry word is</font>
+<br><font size=2 face="sans-serif">not adjacent in valuation to the sum
+word. (Try adding 3-bit signed</font>
+<br><font size=2 face="sans-serif">integers, i.e. in {-4..3}, cascading
+2-bit integers in {0..3}.)</font>
+<br>
+<br><font size=2 face="sans-serif">There are several ways to deal with
+the signed/unsigned issue:</font>
+<br><font size=2 face="sans-serif">* Define FIXNUM to be signed, only provide
+signed arithmetic.</font>
+<br><font size=2 face="sans-serif">* Define FIXNUM to be unsigned, only
+provide unsigned arithmetic.</font>
+<br><font size=2 face="sans-serif">* Define two FIXNUM types for signed
+and unsigned.</font>
+<br><font size=2 face="sans-serif">* Define FIXNUM values as having two
+interpretations: signed/unsigned.</font>
+<br><font size=2 face="sans-serif">* Define FIXNUM signed, add another
+type for vectors of unsigned values.</font>
+<br><font size=2 face="sans-serif">* ...and lots more</font>
+<br>
+<br><font size=2 face="sans-serif">In the following proposal a different
+approach is taken: We define</font>
+<br><font size=2 face="sans-serif">FIXNUM to be a signed 2-complement range
+and add operations that</font>
+<br><font size=2 face="sans-serif">use only the non-negative subrange---but
+these operations return the</font>
+<br><font size=2 face="sans-serif">proper carry values for the *subrange*.
+Limiting to 2-complement</font>
+<br><font size=2 face="sans-serif">representation and power-of-2 sized
+range is necessary to make</font>
+<br><font size=2 face="sans-serif">the ranges fit together properly. This
+is hardly a restriction.</font>
+<br><font size=2 face="sans-serif">&nbsp; &nbsp;Moreover, wasting the sign
+bit is tolerable in terms of speed</font>
+<br><font size=2 face="sans-serif">and space---and FIXNUM are probably
+not native hardware integers</font>
+<br><font size=2 face="sans-serif">anyhow due to one or more tag bits.
+</font>
+<br><font size=2 face="sans-serif">&nbsp; &nbsp;In practice, the following
+proposal represents a reasonable</font>
+<br><font size=2 face="sans-serif">compromise between efficiency and avoiding
+low-level programming.</font>
+<br><font size=2 face="sans-serif">It can be used for implementing multiprecision
+arithmetics and</font>
+<br><font size=2 face="sans-serif">implementing efficient bitfield operations
+in Scheme itself.</font>
+<br>
+<br><font size=2 face="sans-serif"><b>Proposal:</b></font>
+<br>
+<br><font size=2 face="sans-serif">1. Define the FIXNUMs to represent w-bit
+signed 2-complement</font>
+<br><font size=2 face="sans-serif">integers, i.e. the range is {-2^(w-1)..2^(w-1)-1}
+for some</font>
+<br><font size=2 face="sans-serif">global integer constant w (read 'width'),
+w &gt;= 2, which is</font>
+<br><font size=2 face="sans-serif">also available as a symbolic constant
+(e.g. fx-width).</font>
+<br>
+<br><font size=2 face="sans-serif">2. Add operations with carry using only
+the non-negative subrange,</font>
+<br><font size=2 face="sans-serif">i.e. {0..2^(w-1)-1} of FIXNUM. The behavior
+of these operations</font>
+<br><font size=2 face="sans-serif">for negative or non-FIXNUM argument
+values is left unspecified in</font>
+<br><font size=2 face="sans-serif">order to allow for 'nearly 1 instruction'
+implementations. The operations</font>
+<br><font size=2 face="sans-serif">are not for the casual user, but for
+the implementor of libraries---so they</font>
+<br><font size=2 face="sans-serif">fall into the 'all bets are off' category
+(unlike the model b) operations).</font>
+<br>
+<br><font size=2 face="sans-serif">The unsigned operations (define M =
+2^(w-1)) are:</font>
+<br>
+<br><font size=2 face="sans-serif">(fx-carry+ x y c)</font>
+<br><font size=2 face="sans-serif">&nbsp; &nbsp; the two values (mod+div
+(+ x y c) M)</font>
+<br><font size=2 face="sans-serif">&nbsp; &nbsp; for fixnums x, y in {0..M-1},
+c in {0,1}.</font>
+<br>
+<br><font size=2 face="sans-serif">Note: Let s0 s1 denote the results of
+(fx-carry+ x y c). </font>
+<br><font size=2 face="sans-serif">&nbsp; &nbsp; &nbsp; Then s0 + s1 M
+= x + y + c, s0 in {0..M-1}, s1 in {0,1}.</font>
+<br>
+<br><font size=2 face="sans-serif">(fx-carry- x y c)</font>
+<br><font size=2 face="sans-serif">&nbsp; &nbsp; the two values (mod+div
+(- x y c) M)</font>
+<br><font size=2 face="sans-serif">&nbsp; &nbsp; for fixnums x, y in {0..M-1},
+c in {0,1}.</font>
+<br>
+<br><font size=2 face="sans-serif">Note: Let s0 s1 denote the results of
+(fx-carry- x y c).</font>
+<br><font size=2 face="sans-serif">&nbsp; &nbsp; &nbsp; Then s0 - s1 M
+= x - y - c, s0 in {0..M-1}, s1 in {0,1}.</font>
+<br>
+<br><font size=2 face="sans-serif">(fx-carry* x y c)</font>
+<br><font size=2 face="sans-serif">&nbsp; &nbsp; compute (mod+div (+ (*
+x y) c) M)</font>
+<br><font size=2 face="sans-serif">&nbsp; &nbsp; for fixnums x, y, c in
+{0..M-1}.</font>
+<br>
+<br><font size=2 face="sans-serif">Note: Let p0 p1 denote the results of
+(fx-carry* x y c).</font>
+<br><font size=2 face="sans-serif">&nbsp; &nbsp; &nbsp; Then p0 + p1 2^(w-1)
+= x y + c, p0, p1 in {0..M-1}.</font>
+<br>
+<br><font size=2 face="sans-serif">(fx-mod+div x y)</font>
+<br><font size=2 face="sans-serif">&nbsp; &nbsp; the two values (mod+div
+x y) </font>
+<br><font size=2 face="sans-serif">&nbsp; &nbsp; for fixnums x in {0..M-1},
+y in {1..M-1}.</font>
+<br>
+<br><font size=2 face="sans-serif">Note: Let r q denote the result of (fx-mod+div
+x y). </font>
+<br><font size=2 face="sans-serif">&nbsp; &nbsp; &nbsp; Then r + q y =
+x, r in {0..y-1}, q in {0..M-1}.</font>
+<br>
+<br><font size=2 face="sans-serif">(fx-shift-left x0 x1 k) </font>
+<br><font size=2 face="sans-serif">&nbsp; &nbsp; the two values (mod+div
+(* (+ x0 (* x1 M)) (expt 2 k)) M)</font>
+<br><font size=2 face="sans-serif">&nbsp; &nbsp; for fixnums x in {0..M-1}
+and k in {0..w-2}.</font>
+<br>
+<br><font size=2 face="sans-serif">(fx-shift-right x0 x1 k)</font>
+<br><font size=2 face="sans-serif">&nbsp; &nbsp; the two values (mod+div
+(div (+ x0 (* x1 M)) (expt 2 k)) M)</font>
+<br><font size=2 face="sans-serif">&nbsp; &nbsp; for fixnums x0, x1 in
+{0..M-1} and k in {0..w-2}.</font>
+<br>
+<br><font size=2 face="sans-serif">(fx-lsb-index x)</font>
+<br><font size=2 face="sans-serif">&nbsp; &nbsp; k in {0..w-1} such that
+the k-th bit is the least significant</font>
+<br><font size=2 face="sans-serif">&nbsp; &nbsp; bit set in the fixnum
+x in {1..M-1}, or k = w-1 if x = 0.</font>
+<br>
+<br><font size=2 face="sans-serif">(fx-msb-index x)</font>
+<br><font size=2 face="sans-serif">&nbsp; &nbsp; k in {-1..w-2} such that
+the k-th bit is the most significant</font>
+<br><font size=2 face="sans-serif">&nbsp; &nbsp; bit set in the fixnum
+x in {0..M-1}.</font>
+<br>
+<br><font size=2 face="sans-serif">(fx-weight x)</font>
+<br><font size=2 face="sans-serif">&nbsp; &nbsp; number of bits set for
+fixnum x in {0..M-1}.</font>
+<br>
+<br><font size=2 face="sans-serif">Rationale: carry+/-/*/mod+div are the
+basic arithmetic operations</font>
+<br><font size=2 face="sans-serif">on unsigned (w-1)-bit words. The shift
+operations work on pairs of</font>
+<br><font size=2 face="sans-serif">words in order to be able to shift long
+vectors efficiently. The</font>
+<br><font size=2 face="sans-serif">index finding operations and the weight
+operation are critical to</font>
+<br><font size=2 face="sans-serif">implementing vectors of bits. Boolean
+ops and comparison</font>
+<br><font size=2 face="sans-serif">are already included as part of the
+model b).</font>
+<br>
+<br><font size=2 face="sans-serif">Combined, the proposals in this email
+allow for much more efficient</font>
+<br><font size=2 face="sans-serif">implementations of important data structures
+(bignums, vectors of</font>
+<br><font size=2 face="sans-serif">bits, float emulations, many more...),
+while hardly being more</font>
+<br><font size=2 face="sans-serif">complicated (remove 11 ops, add 12,
+introduce some variable arity).</font>
+<br>
+<br><font size=2 face="sans-serif">Sebastian.</font>
+<br><font size=2 face="sans-serif"><br>
+----<br>
+Dr. Sebastian Egner<br>
+Senior Scientist<br>
+Philips Research Laboratories<br>
+Prof. Holstlaan 4 (WDC 1-051, 1st floor, room 51)<br>
+5656 AA Eindhoven<br>
+The Netherlands<br>
+tel: &nbsp; &nbsp; &nbsp; +31 40 27-43166<br>
+fax: &nbsp; &nbsp; &nbsp;+31 40 27-44004<br>
+email: sebastian.egner@xxxxxxxxxxx</font>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00050.html">Re: Arithmetic issues</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00052.html">Re: Arithmetic issues</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00331.html">Generic Exact Arithmetic</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00055.html">My comments</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00051"><strong>Date</strong></a></li>
+<li><a href="threads.html#00051"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

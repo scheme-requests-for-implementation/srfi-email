@@ -1,0 +1,401 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: no constants please -->
+<!--X-From-R13: Fbz Zbeq <ybeqNrzs.arg> -->
+<!--X-Date: Sun,  4 Jan 2004 01:51:22 +0100 (NFT) -->
+<!--X-Message-Id: 200401040116.RAA17309@morrowfield.regexps.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: E1AboMX&#45;0005VN&#45;00@mail.mumble.net -->
+<!--X-Reference: 200312312242.OAA28664@morrowfield.regexps.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: no constants please</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00136.html">Date Prev</a>][<a href="msg00138.html">Date Next</a>][<a href="msg00130.html">Thread Prev</a>][<a href="msg00139.html">Thread Next</a>][<a href="maillist.html#00137">Date Index</a>][<a href="threads.html#00137">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: no constants please</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a></li>
+<li><em>Subject</em>: Re: no constants please</li>
+<li><em>From</em>: Tom Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 3 Jan 2004 17:16:58 -0800 (PST)</li>
+<li><em>Cc</em>: <a href="mailto:kelsey@DOMAIN.HIDDEN">kelsey@xxxxxxx</a>, <a href="mailto:tb@DOMAIN.HIDDEN">tb@xxxxxxxxxx</a>, <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:200312312242.OAA28664@DOMAIN.HIDDEN">200312312242.OAA28664@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt; (message from Tom	Lord on Wed, 31 Dec 2003 14:42:54 -0800 (PST))</li>
+<li><em>References</em>: &lt;<a href="mailto:E1AboMX-0005VN-00@DOMAIN.HIDDEN">E1AboMX-0005VN-00@xxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:200312312242.OAA28664@DOMAIN.HIDDEN">200312312242.OAA28664@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+
+  me&gt; Ok, I don't care about this srfi anymore.
+
+Somebody asked me offlist not to give up on this srfi and it 
+got me thinking that that was a pretty bitchy comment for me
+to make.  Sorry.  Let me rephrase.
+
+The thing that set me off was this comment:
+
+    &gt; From: Richard Kelsey &lt;kelsey@xxxxxxx&gt;
+
+    &gt; Within the context of this SRFI I don't care about asynchronous
+    &gt; execution (I do care about threads, but as long as C code is not
+    &gt; interrupted asychronously they don't matter).  The GC protection
+    &gt; mechanism described in the SRFI is inadequate if GCs can occur
+    &gt; asynchronously.  Even if variables 'a' and 'b' are protected,
+    &gt; there is no guarentee that a = b; will not temporarily store the
+    &gt; value of 'b' in some unprotected location such as a register.
+
+which I perhaps misinterpreted to mean that there is in effect a final
+decision by the authors not to change the calling conventions to
+either the JNI/minor-style or Pika-style conventions that jimb and I
+proposed.  It would be a mistake, in my opinion, to finalize the FFI
+with the current calling conventions in place --- to the same extent
+that such a finalized FFI became popular I would feel discouraged from
+calling my implementation-in-progress, Pika, &quot;Scheme&quot;.  Instead of
+&quot;Pika Scheme&quot; I'll wind up with &quot;Pika WhatSchemeShouldBeInsteadOfWhatItIs&quot;.
+
+Let me try to begin to restate the issues that lead me to the
+conclusion that the current calling conventions in the draft are not
+acceptable.  If I can convince you of these issues, then I'll be happy
+to move on to reasons why Pika-style is better than JNI/minor-style.
+
+
+* Foreign Functions Extend the Root Set
+
+  A useful way to look at the GC situation is that foreign functions
+  extend the root set that the GC must honor.
+
+  The Scheme valued parameters, locals, intermediate results and
+  return values that arise during the evaluation of a foreign function 
+  must be GC protected for a dynamic extent equal to the &quot;liveness&quot; of
+  those values in the C code.
+
+  Similarly, Scheme values stored in C global or heap allocated C data
+  structures are part of the root set.
+
+  What does &quot;part of the root set&quot; mean?   Let's explore:
+
+
+* Transient Root Values
+
+  One possibility is that _some_ root set values are &quot;transient&quot; -- we
+  try to design an FFI in which those values are only live during
+  periods of time during which the GC is guaranteed not to run.
+
+  The draft proposal takes this approach with respect to return values
+  and parameters of FFI entry points.  For example, the draft allows
+  code like:
+
+	x = SCHEME_CONS (a, b);
+
+  The return value of SCHEME_CONS, before it is stored in the
+  (presumably GCPROtected) variable x exists only as an intermediate
+  result -- it's in some register or on the stack in some random
+  location or is in some random static area.  No non-conservative GC
+  could find (and protecct) that intermediate result.  No conservative
+  GC could protect it in a portable way.  No fully (rather than
+  &quot;mostly&quot;) copying GC could cope with that intermediate result
+  _at_all_.
+
+  Therefore, the draft proposal relies on GC being excluded between
+  (roughly speaking) the execution of the `return' instruction of
+  SCHEME_CONS and the completion of the `store' instruction of the
+  assignment to x.
+
+  In a single-threaded system that makes only inconsequential use of
+  signal handlers, excluding GC for that period of time is guaranteed.
+  There are simply no other instructions in that path that could
+  trigger GC.  The intermediate value, the return value of
+  SCHEME_CONS, is safe not because we've pointed it out to the GC --
+  but because we're certain that the GC is quiescent during the life
+  of that intermediate value.  From the GC perspective, a &quot;transient
+  root set member&quot; like this is a bit like Schroedinger's cat: the
+  right answer isn't &quot;live&quot; and isn't &quot;dead&quot; but more like &quot;what do
+  you care?  it has no causality relationship to you -- it's in
+  another universe entirely.  Assume &quot;live&quot; _or_ &quot;dead&quot; -- it will
+  make no difference in your observable results.&quot;
+
+  In a multi-threaded system, the situation is not so convenient.  The
+  schroedinger box leaks.  There are two possibilities: (a) Another
+  thread can be running GC at _any_ time -- in this case, our
+  intermediate result is _not_ GC protected, _is_ in danger of being
+  collected, and the variable x may wind up holding a bogus value; (b)
+  Other threads can be running GC _only_ when _all_ threads are either
+  not executing a foreign function or are at a point during the
+  execution of a foreign function when GC is permissable.
+
+  The draft standard clearly requires (b) (since (a) simply means that
+  the FFI is not reliable).  But (b) is really quite unacceptable
+  because it means that GC activity is permitted only while foreign
+  functions are not executing or are executing certain FFI calls.  A
+  thread running a foreign function that tries to make a network
+  connection or calls ackerman's function or whatever can block GC
+  _indefinately_ using only the most innocent seeming code.  (Imagine
+  your multi-threaded browser crashing or else flushing all other
+  processes from RAM while one browser tab is waiting to connect to
+  yahoo.com.  The failure occurs because a foreign function is taking
+  &quot;too long&quot; to complete.)
+
+  So, for threaded systems and, equivalently, for systems that do
+  interesting things from signal handlers: the current draft is no
+  good.  It can require FFI implementations to block GC unreasonably.
+  It can result in FFI-using C libraries that simply don't work 
+  well with some implementations.
+
+  It gets worse, though.
+
+  Let's consider just _single_threaded_ systems which _do_not_ do
+  anything from signal handlers.   The current FFI invites people
+  to write code like:
+
+	foobar (SCHEME_CONS (a, b), SCHEME_CONS (c, d));
+
+  Note that in _this_ example, the return values of the two calls to
+  SCHEME_CONS are transient root set members for the _entire_ dynamic
+  extent of the call to `foobar' unless `foobar' copies them to
+  GCPROtected locations.   Should `foobar' do anything that might
+  trigger GC, those parameters can be collected prematurely.
+
+  Even worse, there is nothing the second-to-be-executed CONS call can
+  do to protect the return value of the first-to-be-executed CONS
+  call.
+
+  Now I understand that, if we're focused only on single-threaded
+  implementations that don't use signal handlers in interesting ways
+  that we can just say, &quot;Well, that code is an error.   The programmer
+  made a mistake.  He should have written:&quot;
+
+	x = SCHEME_CONS (a, b);
+	y = SCHEME_CONS (c, d);
+        foobar (x, y);
+
+  That's true but with a Pika or JNI/minor-style calling convention,
+  such mistakes are _effectively_impossible_to_make_.  With the draft
+  proposal conventions, such mistakes are _easy_and_inviting_to_make_.
+
+  Aside from the discussion of transient roots, what else can we say 
+  about the root values added by FFI-using functions:
+
+
+** Root Set Values Must be Known to the GC
+
+  The GC must be able to enumerate all root set values.   That much
+  should be pretty obvious.
+
+  The C language presents a problem for enumeration of root values:
+  it provides no reliable implicit mechanism for finding, for example,
+  local variables and the intermediate results of expressions.   It's 
+  therefore required that the FFI involve foreign function authors
+  writing code to explicitly make these values enumerable by the GC.
+
+  The draft proposal takes the approach of providing GCPRO and GCUNRO
+  entry points and in that regard is fine.
+
+
+
+** Root Set Values Must be Mutable by the GC
+
+  Copying collection (and most likely some other techniques as well)
+  require not only that the GC be able to enumerate all root-set
+  values, but also that it be able to _replace_ such values.
+
+  This is a thorny problem for C programs.   The compiler is permitted
+  in a wide and difficult to reason about set of circumstances to copy
+  values to registers.   Consider, for example, a function:
+
+	scheme_value
+        foo (scheme_value x)
+        {
+          ....;
+          &lt;something that can cause gc&gt;;
+          ....;
+          return x;
+        }
+
+  With a copying GC, this function can return garbage.  The value of
+  x, though somehow presumably GC-protected by callers, has been
+  copied to a register to be passed as a parameter.  When the value
+  referred to by x is moved the caller's protecting variable will be
+  updated but the copy in the register will not.
+
+  (This particular problem could, perhaps, be solved by adding a
+  requirement to the FFI that callees GCPRO parameters but recall
+  that we already have other reasons to change the calling conventions
+  such that no such requirement is needed.   
+
+  Also, with such a requirement, the FFI would be asking people to
+  write the somewhat perplexing:
+
+	scheme_value
+        foo (scheme_value x)
+        {
+          GCPRO (X);
+          ....;
+          &lt;something that can cause gc&gt;;
+          ....;
+          GCUNPRO (x);
+          return x;
+        }
+
+  which aside from just the strangeness of it, precludes a debugging
+  aid in which GCUNPRO overwrites the value of its argument variable
+  with a value likely to cause a trap.)
+
+
+** Root Set Values Need (Potential) Read and Write Barriers
+
+  Generational, copying, or incremental GCs sometimes operate on the
+  basis of read or write barriers.  Such barriers should apply to the
+  FFI-caused root-sets too.
+
+  For that reason alone, an FFI interface that permits something like:
+
+	scheme_value x = some_fn (....);
+
+        SCHEME_FN (x, other_fn (...));
+
+  (where, even if we make the corrections suggested above, `other_fn' 
+  might be producing a value which is _not_ a scheme value.)
+
+  Here, x has been read without a read barrier.  Although x may refer
+  to a heap-allocated value which has been relocated since x was
+  assigned to, what we have produced here is (in effect) the _old_
+  address of the scheme value to which x is bound.
+
+  When control reaches SCHEME_FN, this is not obviously a problem.  
+  For example, when SCHEME_FN reads the value of its first parameter,
+  it can itself impose a read barrier.   Although `x' itself is
+  pointing to the old address -- nevertheless, SCHEME_FN can correctly
+  trap that and substitute the new address.
+
+  The problem concerns what happens _before_ control reaches SCHEME_FN
+  but _after_ x has been read by the caller.   In particular, the
+  execution of `other_fn' may take place, and may take an aribtrarilly
+  long time.
+
+  For that reason, the _unupdated_ (old address) value of `x' may 
+  persist in a register, on the stack in an anonymous location, or
+  really _anywhere_ the GC doesn't know about for an _indefinate_
+  amount of time.   Should `other_fn' itself trigger GC activity in a
+  single threaded system, or should GC activity occur in another
+  thread or in a signal handler -- we're screwed:  the GC can not
+  actually reclaim the _old_ heap space used for the value referred to
+  by x.  Ever.  Because the C compiler may still be hanging on to
+  references constructed from that old heap address.
+
+
+** Summing Up
+
+  The draft proposal:
+
+    ~ has an unacceptable approach to transient root set members
+      in threaded systems and systems in which asynchronous activity
+      takes place
+
+    ~ has an error-encouraging approach to transient root set members
+      in single threaded systems
+
+    ~ has an unacceptable approach from the perspective of copying GCs
+
+    ~ has an unacceptable approach from the perspective of GCs using
+      read or write barriers
+
+
+* Fixing It
+
+  All of the problems with the draft proposal have a single root
+  cause:  that the FFI contains features which permit and require
+  scheme values to be produced as intermediate results of FFI-using
+  C expressions.
+
+  The solution is, therefore, to change the calling conventions in 
+  the FFI so that scheme values as intermediate results are not
+  required and, indeed, are not even permitted.
+
+  That solution implies that FFI parameters, return values, and
+  expression values may not be scheme values -- it requires a 
+  change in the calling conventions.
+
+  There may be other ways to implement that solution but I admit I
+  only know of one reasonable way: to pass parameters and return
+  values using not scheme values, but references to locations in which
+  scheme values are stored.  Let's call this &quot;the handle based
+  solution&quot;.
+
+  And again, perhaps because of a failure of imagination, I see only
+  two broad classes of ways to implement the handle based solution:  
+  One way is to let FFI-using functions manage the allocation of
+  handles: the Pika approach.   The other way is to have the FFI entry
+  points allocate handles but require FFI-using functions to free
+  them: the JNI/minor approach.
+
+  I can argue for the Pika approach over the JNI/minor approach -- but
+  let's sync up in recognizing the problem first.
+
+-t
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00139" href="msg00139.html">Re: no constants please</a></strong>
+<ul><li><em>From:</em> Richard Kelsey</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00129" href="msg00129.html">Re: no constants please</a></strong>
+<ul><li><em>From:</em> Richard Kelsey</li></ul></li>
+<li><strong><a name="00130" href="msg00130.html">Re: no constants please</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00136.html">Re: Couple things...</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00138.html">Re: non-local exits are icky</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00130.html">Re: no constants please</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00139.html">Re: no constants please</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00137"><strong>Date</strong></a></li>
+<li><a href="threads.html#00137"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

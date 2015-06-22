@@ -1,0 +1,167 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: More JNI vs. Pika comparison -->
+<!--X-From-R13: Fbz Zbeq <ybeqNrzs.arg> -->
+<!--X-Date: Wed, 25 Feb 2004 01:16:52 +0100 (NFT) -->
+<!--X-Message-Id: 200402250036.QAA02187@morrowfield.regexps.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: vt2d68dgulx.fsf@zenia.home -->
+<!--X-Reference: 200402201751.JAA02622@morrowfield.regexps.com -->
+<!--X-Reference: vt2d684nn61.fsf@zenia.home -->
+<!--X-Reference: 200402242251.OAA01791@morrowfield.regexps.com -->
+<!--X-Reference: vt2smh0m5bs.fsf@zenia.home -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: More JNI vs. Pika comparison</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00468.html">Date Prev</a>][<a href="msg00470.html">Date Next</a>][<a href="msg00468.html">Thread Prev</a>][Thread Next][<a href="maillist.html#00469">Date Index</a>][<a href="threads.html#00469">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: More JNI vs. Pika comparison</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:jimb@DOMAIN.HIDDEN">jimb@xxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: More JNI vs. Pika comparison</li>
+<li><em>From</em>: Tom Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 24 Feb 2004 16:36:30 -0800 (PST)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:vt2smh0m5bs.fsf@DOMAIN.HIDDEN">vt2smh0m5bs.fsf@xxxxxxxxxx</a>&gt; (message from Jim Blandy on 24 Feb	2004 18:21:43 -0500)</li>
+<li><em>References</em>: &lt;<a href="mailto:vt2d68dgulx.fsf@DOMAIN.HIDDEN">vt2d68dgulx.fsf@xxxxxxxxxx</a>&gt;	&lt;<a href="mailto:200402201751.JAA02622@DOMAIN.HIDDEN">200402201751.JAA02622@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:vt2d684nn61.fsf@DOMAIN.HIDDEN">vt2d684nn61.fsf@xxxxxxxxxx</a>&gt;	&lt;<a href="mailto:200402242251.OAA01791@DOMAIN.HIDDEN">200402242251.OAA01791@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:vt2smh0m5bs.fsf@DOMAIN.HIDDEN">vt2smh0m5bs.fsf@xxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+    &gt; From: Jim Blandy &lt;jimb@xxxxxxxxxx&gt;
+
+    &gt;&gt;&gt; The Minor interface doesn't include any, nor does the
+    &gt;&gt;&gt; actual JNI, as far as I know.  Is there some use case where simply
+    &gt;&gt;&gt; duplicating references won't work just as well?
+
+    &gt;&gt; Obviously.   Anytime you want a location shared by multiple data
+    &gt;&gt; structures whose lifetimes are independent of one another.
+
+    &gt; I guess I'm having a hard time imagining when that's necessary.
+    &gt; Minor references aren't mutable, so there's no question of
+    &gt; allowing one data structure to &quot;see&quot; changes made by another
+    &gt; one.  It seems like you can replace scm_location_unref with
+    &gt; mn_free_reference, scm_location_ref with mn_make_local_ref, and
+    &gt; '==' on 't_scm_word *' values with 'mn_ref_eq', and you must be
+    &gt; done.  What am I missing?
+
+Surely you want a sharable, mutable location.
+
+In implementation, aside from not being reference counted, mn_refs
+with linear operators presumably provide that.   I suppose that
+formally, i.e. in specification, they aren't promised to.
+
+It just seems odd -- a bit forced.   You have these locations that you
+want to only be used in value-like ways except that they need explicit
+storage management except where they dont' because the free of the
+call cleans them up except where that's lame because it results in a
+storage leak.   Why not, instead, just give me real locations?
+
+
+    &gt;&gt; It's a question of locality of changes.   In my code, with the
+    &gt;&gt; explicit UNREFS, if I need to add an additional use of $1 and $2 I
+    &gt;&gt; just insert code before the unrefs.   In your code, with the semantics
+    &gt;&gt; of &quot;_to_cons&quot;, I need (1) change the _to_cons call to something else;
+    &gt;&gt; (2) insert the new code; (3) append the explicit deallocations.
+
+    &gt; How is this different from what you have to do when you discover you
+    &gt; need a Pika value after the point where it's currently freed?  You
+    &gt; have to:
+
+    &gt; 1) delete the extant scm_location_unref call,
+    &gt; 2) add your new use of the location, and then
+    &gt; 3) add a new scm_location_unref call at an appropriate place.
+
+I don't get these steps (1) and (3).   Aren't I just going to be
+inserting new code before the explicit free of the location?   In the
+worst case -- aren't I just moving the point of that free?
+
+
+    &gt; In the Minor interface, the original 'free' is harder to spot, because
+    &gt; it's folded into the name of a function whose primary job is something
+    &gt; else (consing).  In the Pika interface, the original free is easy to
+    &gt; spot, but it's an extra line of code that must appear whether you
+    &gt; actually need it to be distinct or not.
+
+    &gt; I think this is a disagreement about whether it's helpful to introduce
+    &gt; abbreviations that must be un-abbreviated when they no longer apply;
+    &gt; reasonable people's tastes can differ.  But neither proposal for this
+    &gt; Bison scenario escapes the need for careful reading --- explicit free
+    &gt; is a pain in the butt in both cases.
+
+    &gt; Regardless of whether Minor's legibility is legit or not, we agree
+    &gt; that explicitly-freed references, much like Minor's, are also
+    &gt; necessary in Pika --- that's what's important to me.
+
+Well, sure.  As I said -- I didn't spec an interface for them in the
+original proposal.  The explicit-free/pseudo-value-locations stuff
+isn't quite right for parameters and locations -- central to FFI
+calling conventions -- and that's what's important to me.
+
+-t
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00461" href="msg00461.html">More JNI vs. Pika comparison</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+<li><strong><a name="00465" href="msg00465.html">Re: More JNI vs. Pika comparison</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00466" href="msg00466.html">Re: More JNI vs. Pika comparison</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+<li><strong><a name="00467" href="msg00467.html">Re: More JNI vs. Pika comparison</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00468" href="msg00468.html">Re: More JNI vs. Pika comparison</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00468.html">Re: More JNI vs. Pika comparison</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00470.html">Re: Clarification of SCHEME_GC_PROTECT/SCHEME_GC_UNPROTECT</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00468.html">Re: More JNI vs. Pika comparison</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00469"><strong>Date</strong></a></li>
+<li><a href="threads.html#00469"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,227 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Problem with (force (lazy (delay expr))) -->
+<!--X-From-R13: Xbua Euhgg <wfuhggNpf.IBW.SRG> -->
+<!--X-Date: Fri, 11 Jun 2004 14:44:09 +0200 (DFT) -->
+<!--X-Message-Id: 200406111242.i5BCgrds018280@cs.WPI.EDU -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20040611070831.GA29954@bachue.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Problem with (force (lazy (delay expr)))</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00066.html">Date Prev</a>][<a href="msg00068.html">Date Next</a>][<a href="msg00066.html">Thread Prev</a>][<a href="msg00068.html">Thread Next</a>][<a href="maillist.html#00067">Date Index</a>][<a href="threads.html#00067">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Problem with (force (lazy (delay expr)))</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-45@DOMAIN.HIDDEN">srfi-45@xxxxxxxxxxxxxxxxx</a>, <a href="mailto:srfi-40@DOMAIN.HIDDEN">srfi-40@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Problem with (force (lazy (delay expr)))</li>
+<li><em>From</em>: John Shutt &lt;<a href="mailto:jshutt@DOMAIN.HIDDEN">jshutt@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 11 Jun 2004 08:42:53 -0400</li>
+<li><em>Cc</em>: <a href="mailto:bachue@DOMAIN.HIDDEN">bachue@xxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-40@DOMAIN.HIDDEN">srfi-40@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20040611070831.GA29954@DOMAIN.HIDDEN">20040611070831.GA29954@xxxxxxxxxx</a>&gt; (message from Alejandro	Forero Cuervo on Fri, 11 Jun 2004 02:08:31 -0500)</li>
+<li><em>References</em>: &lt;<a href="mailto:20040611070831.GA29954@DOMAIN.HIDDEN">20040611070831.GA29954@xxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>There is also a second problem.  I believe I have solutions for both (given
+below); unfortunately, as I understand the SRFI editorial policy, the only
+changes allowed to finalized SRFIs are to correct typos --- which makes
+some sense, since people can reasonably expect to write code based on a
+finalized SRFI without having it change under them, but in this case
+probably means that a new SRFI will be needed to fix the problems.
+
+
+Here was my code for the problem you mentioned:
+
+  (define p1 (lazy (begin (display &quot;*&quot;) (eager ()))))
+  (define p2 (lazy p1))
+
+  p1          ==&gt;   (lazy . #&lt;procedure&gt;)
+  p2          ==&gt;   (lazy . #&lt;procedure&gt;)
+  (force p2)  ==&gt;   *
+                    ()
+  p1          ==&gt;   (lazy . #&lt;procedure&gt;)
+  p2          ==&gt;   (eager)
+  (force p1)  ==&gt;   *
+                    ()
+
+My solution is to have a third possible tag, 'delegated, indicating that the
+cdr of the promise points to another promise.  When force stashes the concents
+of another lazy promise into this one, and before it makes its tail call,
+it sets the other promise to delegate to this one.  (I also changed 'lazy
+to 'pending and 'eager to 'done, to help myself keep straight which versions
+was which.)  So instead of the above dialogue,
+
+  p1          ==&gt;   (pending . #&lt;procedure&gt;)
+  p2          ==&gt;   (pending . #&lt;procedure&gt;)
+  (force p2)  ==&gt;   *
+                    ()
+  p1          ==&gt;   (delegated done)
+  p2          ==&gt;   (done)
+  (force p1)  ==&gt;   ()
+
+The other problem is one that actually existed in the R3RS, and was then
+fixed in the R4RS (and stayed fixed in the R5RS).  It's mentioned in the
+R4/5RS, but I don't think the sample code they give actually exercises the
+bug.  Here's the test code I used:
+
+  (define p
+    (let ((count 5))
+      (define (get-count) count)
+      (define p (delay (if (&lt;= count 0)
+                           count
+                           (begin (set! count (- count 1))
+                                  (force p)
+                                  (set! count (+ count 2))
+                                  count))))
+      (list get-count p)))
+  (define get-count (car p))
+  (define p (cadr p))
+
+A correct dialogue using this code would be:
+
+  (get-count)   =&gt;   5
+  (force p)     =&gt;   0
+  (get-count)   =&gt;   10
+
+Incorrect would be:
+
+  (get-count)   =&gt;   5
+  (force p)     =&gt;   10
+  (get-count)   =&gt;   10
+
+This one is easy to fix; just check, after calling the procedure of a lazy
+promise, to make sure the current promise hasn't been forced.
+
+So here is my code; I found in practice that checking everywhere for the
+'delegated tag was quite complicated.
+
+  (define-syntax lazy
+    (syntax-rules ()
+      ((lazy exp) (cons 'pending (lambda () exp)))))
+
+  (define (eager value) (cons 'done value))
+
+  (define-syntax delay
+    (syntax-rules ()
+      ((delay exp) (lazy (eager exp)))))
+
+  (define force
+    (letrec
+  
+      ((force
+        (lambda (promise)
+          (case (car promise)
+            ((done)  (cdr promise))
+            ((pending)  (step promise ((cdr promise))))
+            ((delegated)
+               (shorten promise)
+               (if (eq? (cadr promise) 'done)
+                   (begin (set-car! promise 'done)
+                          (set-cdr! promise (cddr promise))
+                          (cdr promise))
+                   (force (cdr promise)))))))
+
+       (shorten            ; reduce depth of delegation
+         (lambda (promise)
+           (cond ((eq? (cadr promise) 'delegated)
+                    (set-cdr! promise (cddr promise))
+                    (shorten promise)))))
+
+       (step
+         (lambda (promise next)
+           (case (car promise)
+             ((done)  (cdr promise))
+             ((delegated)
+                ; if the delegatee weren't done,
+                ; our eval couldn't have returned
+                (shorten promise)
+                (set-car! promise 'done)
+                (set-cdr! promise (cddr promise))
+                (cdr promise))
+             ((pending)
+                (case (car next)
+                  ((done)
+                     (set-car! promise 'done)
+                     (set-cdr! promise (cdr next))
+                     (cdr promise))
+                  ((pending)
+                     (set-car! promise 'pending)
+                     (set-cdr! promise (cdr next))
+                     (set-car! next 'delegated)
+                     (set-cdr! next promise)
+                     (force promise))
+                  ((delegated)
+                     (shorten next)
+                     (step promise (cdr next)))))))))
+
+      force))
+
+
+JNS (John N. Shutt)
+  WPI
+  <a  rel="nofollow" href="http://www.cs.wpi.edu/~jshutt/">http://www.cs.wpi.edu/~jshutt/</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00068" href="msg00068.html">Re: Problem with (force (lazy (delay expr))) - Bug Fix</a></strong>
+<ul><li><em>From:</em> Andre van Tonder</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00066" href="msg00066.html">Problem with (force (lazy (delay expr)))</a></strong>
+<ul><li><em>From:</em> Alejandro Forero Cuervo</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00066.html">Problem with (force (lazy (delay expr)))</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00068.html">Re: Problem with (force (lazy (delay expr))) - Bug Fix</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00066.html">Problem with (force (lazy (delay expr)))</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00068.html">Re: Problem with (force (lazy (delay expr))) - Bug Fix</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00067"><strong>Date</strong></a></li>
+<li><a href="threads.html#00067"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

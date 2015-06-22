@@ -1,0 +1,185 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: SRFI 61: A more general COND clause (fwd) -->
+<!--X-From-R13: Fnlybe Qnzcoryy <pnzcoryyNoybbqnaqpbssrr.arg> -->
+<!--X-Date: Fri,  7 Jan 2005 03:57:49 +0100 (NFT) -->
+<!--X-Message-Id: Pine.LNX.4.44.0501061734120.8276&#45;100000@autodrip.bloodandcoffee.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: Pine.GSO.4.60.0501061544080.15842@cascade.cs.ubc.ca -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: SRFI 61: A more general COND clause (fwd)</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00000.html">Date Prev</a>][Date Next][<a href="msg00000.html">Thread Prev</a>][Thread Next][<a href="maillist.html#00001">Date Index</a>][<a href="threads.html#00001">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: SRFI 61: A more general COND clause (fwd)</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Christopher Dutchyn &lt;<a href="mailto:cdutchyn@DOMAIN.HIDDEN">cdutchyn@xxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: SRFI 61: A more general COND clause (fwd)</li>
+<li><em>From</em>: Taylor Campbell &lt;<a href="mailto:campbell@DOMAIN.HIDDEN">campbell@xxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 6 Jan 2005 19:40:56 -0800 (PST)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-61@DOMAIN.HIDDEN">srfi-61@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-61@DOMAIN.HIDDEN">srfi-61@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:Pine.GSO.4.60.0501061544080.15842@DOMAIN.HIDDEN">Pine.GSO.4.60.0501061544080.15842@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>On Thu, 6 Jan 2005, Christopher Dutchyn wrote:
+
+&gt; On Thu, 6 Jan 2005, Taylor Campbell wrote:
+&gt; 
+&gt; &gt; However, it might be a bit deceptive or confusing in the syntax, in that 
+&gt; &gt; it looks like a regular procedure call at first, though it's not.
+&gt; 
+&gt; Yes; but it's just as surprising to encounter a guard? and then =&gt; too.
+
+One could find anything that one is unfamiliar with surprising.  I'm
+not sure what you find surprising in specific about that, however, and
+the deception that it could look like a procedure call is very specific
+&amp; concrete.  Furthermore, the order I chose is more consistent with the
+order in which things are evaluated: first the generator, then the
+guard, and finally -- conditionally -- the receiver.
+
+&gt; &gt; Also, the guard is usually in that position in similar constructions 
+&gt; &gt; that linearize nested conditionals: SYNTAX-CASE, Andrew Wright's MATCH, 
+&gt; &gt; &amp;c.
+&gt; 
+&gt; I don't know MATCH, but SYNTAX-CASE must place fender-expr second because 
+&gt; it doesn't have the special &quot;=&gt;&quot; marker.
+
+No, there is no such constraint.  It could just as easily put the guard
+first.
+
+&gt;                                           Do you think of the guard as 
+&gt; optional?  If so, then you're logically talking about sub-casing the 
+&gt; existing =&gt; clause, not adding another cond clause syntax.  Recast your 
+&gt; proposal in those terms.
+
+If it helps you to think of it that way (with the default guard being
+the identity function), go ahead; the way I wrote the specification was
+intended to be as simple &amp; straightforward as possible.  I'm not going
+to change the wording just because you demand that it better match your
+thoughts.
+
+&gt; &gt; Yes.  What you suggest here are some workarounds for the real problem,
+&gt; &gt; which is having more general way to conditionalize.  Essentially, this
+&gt; &gt; proposal more cleanly separates the condition from a temporary value
+&gt; &gt; that is useful if the condition holds true, while the existing COND =&gt;
+&gt; &gt; syntax multiplexes the temporary value and the condition.
+&gt; 
+&gt; On what basis do you believe that the value is temporary?  See my comments 
+&gt; below.
+
+I was using the word loosely, for the purposes of describing what the
+new COND clause does.  'Local' or 'generated' value might have been
+better choices of words, but it is not as significant as you make it
+out to be.
+
+&gt; &gt; Not only do your suggested workarounds require either writing several
+&gt; &gt; new routines for every possible application or inserting clumsy IFs in
+&gt; &gt; COND clauses,
+&gt; 
+&gt; I would construct something like
+&gt; (define (anaphoric x) (if x x #f))   ;;make macro and with-values easily
+&gt; and get
+&gt;  	(cond
+&gt;  		(((anaphoric char?) (read-char port)) =&gt; (lambda (c) ...))
+&gt;  	...)
+
+That is still a workaround that requires inserting a few extra tokens
+into the conditional and still exhibits all of the temporary boxing
+problems.
+
+&gt; &gt; but they may also require complicating the matter by constructing 
+&gt; &gt; temporary boxes to hide #F if it is a possible useful temporary value.
+&gt; 
+&gt; I don't see how your proposal avoids this ... #F means &quot;go to next clause&quot; 
+&gt; for cond.  Maybe I don't understand this point; can you explain?
+
+If #F is considered a useful value -- e.g., as a table entry --, then
+it would not work for the conditional part of a (&lt;conditional&gt; =&gt;
+&lt;receiver&gt;) clause to return #F, because that would make the clause
+fail.  Instead, it must box #F somehow to pass to the receiver, so that
+COND doesn't take its result to mean failure, and the receiver must
+remove the contents of the box.
+
+&gt; &gt; This overhead is also necessary in order to support multiple possibly 
+&gt; &gt; useful temporary values, which you must store in a temporary list; such 
+&gt; &gt; a list is harder for a compiler to optimize than the way I have designed 
+&gt; &gt; it.
+&gt; 
+&gt; Convince me that the guard will *always* treat the value(s) as temporary: 
+&gt; ie. the guard doesn't memoize or perform some other operation that forces 
+&gt; it to be a listified anyway.  Otherwise, you can't safely do what you're 
+&gt; proposing, unless the guard is so simple that a decent peephole or 
+&gt; inter-procedural optimizer can see its way clear to doing this.
+
+I'm not trying to convince you of that.  It isn't true.  What I _did_
+argue is that the way it is currently designed is easier to optimize
+for most cases than your kludgey workarounds.  Even ignoring boxing of
+#F, what you suggest for multiple return values requires boxed lists.
+For example, consider your MY-PROJ0 procedure (which probably ought to
+have a different name, since it is very different from PROJ0): it takes
+any number of arguments; if the first argument is true, it returns a
+list containing all of the arguments.  This is harder to analyze &amp;
+optimize: even if it is a known procedure, only if either all call
+sites are also known or the call is integrated can the list be easily
+unboxed by the compiler.
+
+With my design, the list is never returned: it is only propagated to
+different procedures in quick succession.  What those procedures do is
+immaterial: if the guard stores its argument list somewhere, sure, a
+list will have to be allocated.  However, the design I constructed does
+not _intrinsically_ necessitate allocating a list, unless the compiler
+does not even optimize rest argument propagation.  It is specific to
+the guard anyway.
+
+In brief, your workarounds are harder to optimize in the general case,
+whereas mine are trivial, unless the specific application intrinsically
+uses a heap-allocated list anyway, in which case the point is moot.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00000.html">Re: SRFI 61: A more general COND clause (fwd)</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00000.html">Re: SRFI 61: A more general COND clause (fwd)</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00001"><strong>Date</strong></a></li>
+<li><a href="threads.html#00001"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

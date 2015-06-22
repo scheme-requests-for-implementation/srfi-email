@@ -1,0 +1,236 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Proposed amendments to SRFI&#45;13 -->
+<!--X-From-R13: Rbanyq Iryfu <qjryfuNzryocp.bet.nh> -->
+<!--X-Date: Sat, 23 Oct 1999 09:55:48 &#45;0500 (CDT) -->
+<!--X-Message-Id: 199910231455.AAA07520@emu.melbpc.org.au -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Proposed amendments to SRFI-13</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00004.html">Date Prev</a>][<a href="msg00006.html">Date Next</a>][<a href="msg00004.html">Thread Prev</a>][<a href="msg00006.html">Thread Next</a>][<a href="maillist.html#00005">Date Index</a>][<a href="threads.html#00005">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Proposed amendments to SRFI-13</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: String Library &lt;<a href="mailto:srfi-13@DOMAIN.HIDDEN">srfi-13@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Proposed amendments to SRFI-13</li>
+<li><em>From</em>: Donald Welsh &lt;<a href="mailto:dwelsh@DOMAIN.HIDDEN">dwelsh@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 23 Oct 1999 22:15:34 +1000</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Hello everyone.  A few comments and suggestions on SRFI-13.
+
+string-take
+string-drop
+string-take-right
+string-drop-right
+substring-move-left
+substring-move-right
+
+These (if needed) can all be defined as special cases of a more general
+function, string-replace.
+
+string-replace s1 start end s2 -&gt; string
+    replace the substring of s1 from start to end with s2
+
+A variant, string-replace! could also be defined, which is allowed to reuse
+the original storage of s1.
+
+With a regexp package, regexp matching could used to find start and end
+points, then string-replace could perform the replacement.
+
+My sample code defines two equivalent versions of string-replace.
+String-replace-simple does string replacement using substrings and append;
+string-replace allocates a new string and copies characters into it.
+
+------------
+
+reverse-string-concatenate string-list [end] -&gt; string
+reverse-string-concatenate/shared string-list [end] -&gt; string
+
+Why are these included?  Without the optional parameter, the stated
+equivalents are clearer.  With END these functions are odd -- why are they
+needed?
+
+------------
+
+string-filter s char/char-set/pred [start end] -&gt; string
+string-delete s char/char-set/pred [start end] -&gt; string
+
+The char/char-set/pred isn't intuitive.  If char-sets are needed, perhaps
+there should be a set package SRFI (is there one already?), or the
+functionality could be provided by a regexp package.  Suggest dropping
+string-delete and using an alternative version of string-filter which uses
+a string -&gt; string function f instead of char/char-set/pred.  (String
+deletion can be done by f returning &quot;&quot;.)  The function f should go first,
+as with map and string-map.
+
+string-filter f s [start end] -&gt; string
+    construct a string by applying f to each character of s
+    function f should take a string of length one as input, and output a
+string (of any length)
+
+------------
+
+Example code (written in MzScheme) is below.  Enjoy.
+
+;;; dw-string.scm -- a few string manipulation functions
+;;; these functions are for illustration, and lack error checking
+
+; filter a string s using function f
+(define (string-filter f s . endpoints)
+  (let ((start 0)
+        (end (string-length s)))
+    (if (not (null? endpoints))
+        (begin
+          (set! start (car endpoints))
+          (set! end (cadr endpoints))))
+    (string-append
+     (substring s 0 start)
+     (apply string-append
+            (map f
+                 (map string
+                      (string-&gt;list (substring s start end)))))
+     (substring s end (string-length s)))))
+
+; map a character-transforming function over a string
+; does not take substring endpoints
+(define (string-map f s)
+  (list-&gt;string
+         (map f
+              (string-&gt;list s))))
+
+; destructive version of string-map
+; modifies the original string
+; does not take substring endpoints
+(define (string-map! f s)
+  (do ((i (- (string-length s) 1) (- i 1)))
+    ((&lt; i 0) 'ok)
+    (string-set! s i (f (string-ref s i)))))
+
+; replace substring of s1 with s2
+(define (string-replace-simple s1 start end s2)
+  (string-append (substring s1 0 start)
+                 s2
+                 (substring s1 end (string-length s1))))
+
+; string-copy!, needed for efficient version of replacement
+; substring endpoints should be optional
+(define (string-copy! target tstart s start end)
+  (do ((i tstart (+ i 1))
+       (j start (+ j 1)))
+    ((= j end) 'ok)
+    (string-set! target i (string-ref s j))))
+
+; replacement, efficient version
+; equivalent to string-replace-simple
+(define (string-replace s1 start end s2)
+  (let ((result
+         (make-string
+          (+ (string-length s1)
+             (- start end)              ; this should be nonpositive
+             (string-length s2)))))
+    ; copy first part of s1 into result
+    (string-copy! result 0 s1 0 start)
+    ; copy s2 into result
+    (string-copy! result start s2 0 (string-length s2))
+    ; copy second part of s1 into result
+    (string-copy! result (+ start (string-length s2))
+                  s1 end (string-length s1))
+    ; return result
+    result))
+
+;; the first two functions below demonstrate uses of string-filter
+;; which could not be done by string-map
+
+; test string-filter:  remove the vowels from a string
+(define (remove-vowels s)
+  (string-filter
+   (lambda (s1)
+     (if (member (string-ref s1 0)
+                 (string-&gt;list &quot;AEIOUaeiou&quot;))
+         &quot;&quot;
+         (substring s1 0 1)))
+   s))
+
+; another example of string-filter
+(define (local-echo s)
+  (string-filter
+   (lambda (s1)
+     (string-append s1 s1))
+   s))
+
+;; example of using string-map
+
+; rot13 of a character
+(define (rot13 c)
+  (cond ((char-upper-case? c)
+         (integer-&gt;char
+          (if (char&lt;? c #\N)
+              (+ (char-&gt;integer c) 13)
+              (- (char-&gt;integer c) 13))))
+         ((char-lower-case? c)
+         (integer-&gt;char
+          (if (char&lt;? c #\n)
+              (+ (char-&gt;integer c) 13)
+              (- (char-&gt;integer c) 13))))
+         (else c)))
+
+; rot13 of a string
+(define (string-rot13 s)
+  (string-map rot13 s))
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00004.html">Naming conventions, mismatch indices, CHAR/CHAR-SET/PRED,...</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00006.html">string-replace!</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00004.html">Naming conventions, mismatch indices, CHAR/CHAR-SET/PRED,...</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00006.html">string-replace!</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00005"><strong>Date</strong></a></li>
+<li><a href="threads.html#00005"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

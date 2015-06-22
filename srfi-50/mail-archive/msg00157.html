@@ -1,0 +1,142 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: I don't believe in "(may GC)" -->
+<!--X-From-R13: Euveb Ynjnv <fuvebNynin.arg> -->
+<!--X-Date: Mon,  5 Jan 2004 13:45:58 +0100 (NFT) -->
+<!--X-Message-Id: 20040105.024548.512269595.shiro@lava.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200401050121.RAA21326@morrowfield.regexps.com -->
+<!--X-Reference: E1AdTVM&#45;0000D3&#45;00@mail.mumble.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: I don't believe in &quot;(may GC)&quot;</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00156.html">Date Prev</a>][<a href="msg00158.html">Date Next</a>][<a href="msg00154.html">Thread Prev</a>][<a href="msg00163.html">Thread Next</a>][<a href="maillist.html#00157">Date Index</a>][<a href="threads.html#00157">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: I don't believe in &quot;(may GC)&quot;</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: I don't believe in &quot;(may GC)&quot;</li>
+<li><em>From</em>: Shiro Kawai &lt;<a href="mailto:shiro@DOMAIN.HIDDEN">shiro@xxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 05 Jan 2004 02:45:48 -1000 (HST)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:E1AdTVM-0000D3-00@DOMAIN.HIDDEN">E1AdTVM-0000D3-00@xxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:200401050121.RAA21326@DOMAIN.HIDDEN">200401050121.RAA21326@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:E1AdTVM-0000D3-00@DOMAIN.HIDDEN">E1AdTVM-0000D3-00@xxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>From: Richard Kelsey &lt;kelsey@xxxxxxx&gt;
+Subject: Re: I don't believe in &quot;(may GC)&quot;
+Date: Mon, 05 Jan 2004 07:06:44 -0500
+
+&gt; This does worry me (it's listed in the 'issues' section of the SRFI).
+&gt; I think we went overboard here.  Something like
+&gt; 
+&gt;     SCHEME_EXTRACT_STRING_CONTENTS(scheme_value, index, count, buffer)
+&gt; 
+&gt; which copies 'count' characters starting from 'index' into 'buffer'
+&gt; would be better.  Presumably this can be done without GCing.
+
+If the function fills the buffer with the internal character
+encoding, yes, it can probably be done without GC.
+If the function specifies the buffer to be filled by a specific
+encoding (such as utf-8), this may call GC, since the system need to
+do conversion, which may allocates memory.
+
+(BTW, The semantics of 'index' and 'count' need to be clearified,
+w.r.t. the what-is-a-character issue.)
+
+&gt;    Even something innocent like:
+&gt; 
+&gt; 	int SCHEME_CHAR_P(scheme_value)
+&gt; 
+&gt;    can cause GC if my implementation let's me attach to a hook in its
+&gt;    implementation.
+&gt; 
+&gt; Again, I don't think this will be very common.  Is there an existing
+&gt; implementation for which this (or anything similar) is an issue?
+
+For the primitive types such as chars, numbers and strings, no, AFAIK.
+However, SCHEME_RECORD_P could cause GC in Gauche at least in the
+current implementaiton.   Though it is pretty nasty situation in the
+srfi-50 style record API, so I can avoid it if required.
+
+Gauche has CLOS-style object system, and srfi-9 record type
+is implemented as a &lt;record&gt; class.  It can be subclassed by Scheme,
+so SCHEME_RECORD_P theoretically needs to check the passed object
+is either an instance of &lt;record&gt; or its subclasses.
+In order to check that, Gauche takes the class of the passed
+object; now, Gauche also allows an instance to change its classes,
+(including redefining class), and when the instance's class has
+been changed or redefined, the ClassOf() operation invokes instance
+update protocol, which allocates memory.
+
+Mainly for performance reasons, Gauche prohibits changing
+classes of primitive types.  I'd do that for record types
+as well, if I'd ever implement srfi-50 in the current style.
+
+--shiro
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00163" href="msg00163.html">Re: I don't believe in &quot;(may GC)&quot;</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00149" href="msg00149.html">I don't believe in &quot;(may GC)&quot;</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00154" href="msg00154.html">Re: I don't believe in &quot;(may GC)&quot;</a></strong>
+<ul><li><em>From:</em> Richard Kelsey</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00156.html">Re: null-terminated strings vs. strings with length</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00158.html">Re: no constants please</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00154.html">Re: I don't believe in &quot;(may GC)&quot;</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00163.html">Re: I don't believe in &quot;(may GC)&quot;</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00157"><strong>Date</strong></a></li>
+<li><a href="threads.html#00157"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

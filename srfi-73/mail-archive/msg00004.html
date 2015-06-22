@@ -1,0 +1,181 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: comparison operators and *typos -->
+<!--X-From-R13: "Qubatxnv Luh" <zngurzngvpnNpvgvm.arg> -->
+<!--X-Date: Thu, 23 Jun 2005 05:17:22 +0200 (DFT) -->
+<!--X-Message-Id: 20050623031600.80DD8135@mx1.informatik.uni&#45;tuebingen.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: comparison operators and *typos</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00003.html">Date Prev</a>][<a href="msg00005.html">Date Next</a>][<a href="msg00002.html">Thread Prev</a>][<a href="msg00005.html">Thread Next</a>][<a href="maillist.html#00004">Date Index</a>][<a href="threads.html#00004">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: comparison operators and *typos</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &quot;Aubrey Jaffer&quot; &lt;<a href="mailto:agj@DOMAIN.HIDDEN">agj@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: comparison operators and *typos</li>
+<li><em>From</em>: &quot;Chongkai Zhu&quot; &lt;<a href="mailto:mathematica@DOMAIN.HIDDEN">mathematica@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 23 Jun 2005 11:15:38 +0800</li>
+<li><em>Cc</em>: &quot;srfi-73&quot; &lt;<a href="mailto:srfi-73@DOMAIN.HIDDEN">srfi-73@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-73@DOMAIN.HIDDEN">srfi-73@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>  
+======= At 2005-06-22, 00:44:30 Aubrey Jaffer wrote: =======
+
+&gt; | Date: Mon, 20 Jun 2005 12:48:21 +0800
+&gt; | From: &quot;Chongkai Zhu&quot; &lt;mathematica@xxxxxxxxx&gt;
+&gt; | 
+&gt; | ======= At 2005-06-20, 10:06:21 Aubrey Jaffer wrote: =======
+&gt; | &gt;...
+&gt; | 
+&gt; | (= -0 0) should be #f.
+&gt;
+&gt;Then (eqv? -0 0) ==&gt; #f; which will break much existing Scheme code
+&gt;which tests for 0.  The ZERO? procedure expects a number; one can test
+&gt;whether an arbitrary object is 0 with (eqv? obj 0).  Because of -0,
+&gt;this test must be replaced by (and (number? obj) (&lt;= -0 obj 0)).
+
+(and (number? obj) (zero? obj))
+
+&gt;
+&gt;Another example where -0 breaks existing code is:
+&gt;
+&gt;  (case val
+&gt;    ((0) ...)
+&gt;    ((1) ...)
+&gt;    (else ...))
+&gt;
+&gt;will not match when VAL is -0.
+&gt;
+&gt;(exact-&gt;string (my* -5 0)) ==&gt; &quot;-0&quot;.  So -0 will occur often.
+
+Yes. Some existing code will be broke up. 
+
+&gt;
+&gt; | &gt; | procedure: numerator q
+&gt; | &gt; | procedure: denominator q
+&gt; | &gt; |     These procedures return the numerator or denominator of their
+&gt; | &gt; |     argument; the result is computed as if the argument was
+&gt; | &gt; |     represented as a fraction in lowest terms.  The denominator is
+&gt; | &gt; |     always positive or zero.  The denominator of 0 is defined to be
+&gt; | &gt; |     1.
+&gt;
+&gt; (my-numerator |-0|)	==&gt; 0
+&gt; (my-denominator |-0|)	==&gt; 1
+&gt; (numerator 0)		==&gt; 0
+&gt; (denominator 0)	==&gt; 1
+
+This is a bug of my implement. 'my-numerator should return an &quot;exact-record&quot; 
+instead of a &quot;R5RS number&quot;. So (my-numerator |-0|) should be |-0|. 
+
+&gt;
+&gt;If the NUMERATORs and DENOMINATORs of -0 and 0 are equal, then -0 and
+&gt;0 must be the same number.  But as you wrote, &quot;(= -0 0) should be #f.&quot;
+&gt;
+&gt;If (&lt; -0 0), then -0 must be negative; but:
+&gt;
+&gt;(my-negative? |-0|) ==&gt; #f
+
+&quot;-0&quot; is zero instead of negative.
+&gt;
+&gt;If (&lt; -0 0), then (- 0 -0) must be nonzero; but
+&gt;
+&gt;(exact-&gt;string (my- 0 |-0|)) ==&gt; &quot;0&quot;
+&gt;
+
+Adding a &quot;-0&quot; does cause some strange result. But it is a compromise to 
+allow -1/0. Here I would like to say more about it.
+
+First, when I saw your SRFI-70, I realized that there should not only 
+be inexact infinities in Scheme, but also exact infinities. As SRFI-70
+says, &quot;The interpretation of real infinities is that 1/0 represents 
+real numbers greater than can be encoded by finite inexacts in the 
+implementation ...&quot; Obviously, exact infinities should be rational 
+infinities, or infinities in mathematical meaning. And the need for
+exact infinities should not be oppugned (either for aesthetic reasons
+or utility).
+
+Then comes the pragmatic problem, the details. Two ideas comes to my 
+mind. One is from Richard J. Fateman and his paper at 
+<a  rel="nofollow" href="http://www.cs.berkeley.edu/~fateman/papers/extrat.ps">http://www.cs.berkeley.edu/~fateman/papers/extrat.ps</a> , and is what 
+I used now in SRFI-73. As you pointed out, it is not backward 
+compatible. The problem comes from &quot;-0&quot;, the reciprocal of &quot;-1/0&quot;. 
+But there are also reasons for supporting it.
+
+Another ideas originates when I implement MrMathematica. This one is more
+mathematical &quot;right&quot;, but will be somewhat unefficient. The principle
+is, only define one exact infinity, &quot;1/0&quot;, the positive infinity, and 
+use polar coordinates to represent numbers(other infinities). This will
+require the systme to support inner polar representation of complex 
+munbers that contains a hidden PI. Now negative infinity can be 
+represented as (make-polar #e1/0 1); complex infinity (undirected 
+infinity) can be represented as (make-polar #e1/0 #i0/0). One of the
+problem of this model is that it needs even bigger change on most
+existing Scheme system to support it.
+
+Any suggestions on exact infinity implementation details are welcome. 
+Maybe there should be better solutions.
+
+-
+Chongkai Zhu
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00005" href="msg00005.html">Re: comparison operators and *typos</a></strong>
+<ul><li><em>From:</em> Aubrey Jaffer</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00003.html">Revision of SRFI 73 available</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00005.html">Re: comparison operators and *typos</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00002.html">Re: comparison operators and *typos</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00005.html">Re: comparison operators and *typos</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00004"><strong>Date</strong></a></li>
+<li><a href="threads.html#00004"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

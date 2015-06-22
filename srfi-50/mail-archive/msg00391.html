@@ -1,0 +1,284 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: strings draft -->
+<!--X-From-R13: Euveb Ynjnv <fuvebNynin.arg> -->
+<!--X-Date: Sat, 24 Jan 2004 04:27:07 +0100 (MET) -->
+<!--X-Message-Id: 20040123.172656.899859146.shiro@lava.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200401221745.JAA20519@morrowfield.regexps.com -->
+<!--X-Reference: 20040122.190329.579644543.shiro@lava.net -->
+<!--X-Reference: 200401240045.QAA28248@morrowfield.regexps.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: strings draft</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00390.html">Date Prev</a>][<a href="msg00392.html">Date Next</a>][<a href="msg00390.html">Thread Prev</a>][<a href="msg00392.html">Thread Next</a>][<a href="maillist.html#00391">Date Index</a>][<a href="threads.html#00391">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: strings draft</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a></li>
+<li><em>Subject</em>: Re: strings draft</li>
+<li><em>From</em>: Shiro Kawai &lt;<a href="mailto:shiro@DOMAIN.HIDDEN">shiro@xxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 23 Jan 2004 17:26:56 -1000 (HST)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:200401240045.QAA28248@DOMAIN.HIDDEN">200401240045.QAA28248@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:200401221745.JAA20519@DOMAIN.HIDDEN">200401221745.JAA20519@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:20040122.190329.579644543.shiro@DOMAIN.HIDDEN">20040122.190329.579644543.shiro@xxxxxxxx</a>&gt;	&lt;<a href="mailto:200401240045.QAA28248@DOMAIN.HIDDEN">200401240045.QAA28248@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Thanks for the detailed reply.  Now I'm getting the point.
+
+ * An implementation are free to have non-Unicode-compatible
+   char/string, as far as it shares the mimimum requirement,
+   which is not much more than current R5RS with some
+   clearification (case mapping issues aside).
+
+ * _If_ an implementation can also have a subset of Unicode-
+   compatible char/string, this subset of char/string should
+   follow the codepoint-index.  The index handling of the rest
+   of char/string is up to the implementation.
+
+Did I get it right?
+
+So, when the EUCJP Scheme reads a string
+
+ &quot;\U+30AB.\U+309A.&quot;
+
+Then it can produce a string which consists of a single characetr
+EUCJP #xA5F7.  It is outside of the scope of your document,
+so the implementation is free to imlement such as
+
+ (define x &quot;\U+30AB.\U+309A.&quot;)
+ (string-length x) =&gt; 1
+ (string-ref x 1)  =&gt; &lt;character EUCJP #xA5F7&gt;
+ (let ((y (string-copy x)))
+   (string-set! y 0 #\a)
+   y) =&gt; &quot;a&quot;
+
+If so, I have no problem to adopt the &quot;codepoint index&quot; proposal.
+
+
+[About O(1) property]
+
+From: Tom Lord &lt;lord@xxxxxxx&gt;
+Subject: Re: strings draft
+Date: Fri, 23 Jan 2004 16:45:16 -0800 (PST)
+
+&gt;     &gt; No.  String search, regexp match, or precalculated prefix/suffix
+&gt;     &gt; database, all can return some sort of reference that directly
+&gt;     &gt; points into the string, so that the subsequent use of such 
+&gt;     &gt; reference wouldn't need to count characters.
+&gt;     &gt; (The implementation that shares substrings and uses write-on-copy
+&gt;     &gt; for string mutation, those basic operations even can efficiently
+&gt;     &gt; return substring directly.)
+&gt; 
+&gt; Well, I don't think it's that simple.
+&gt; 
+&gt; It would be hard to implement those &quot;string reference objects&quot; to
+&gt; preserve the O(1) property in the face of STRING-SET! given a flat, 
+&gt; variable-width, string representation.
+&gt;
+&gt; And if you have a tree representation or something like what I
+&gt; described for Pika -- then you don't need those &quot;string reference
+&gt; objects&quot; after all.   They might be nice for indepenent reasons -- but
+&gt; you won't need them to get O(1) string-ops.
+
+I'm not sure we're talking about the same issue.
+Probably I mixed up two issues.
+
+ * For STRING-REF and SUBSTRING, a string pointer object
+   will allow O(1) access property to known locations of a string,
+   in variable-width character string representation.  And we hardly
+   lose anything on &quot;array of characters&quot; implementation, since
+   such implementation can just use integer index as a string pointer
+   object---it doesn't need to be a disjoint object at all.
+
+   What it loses is an ability to extract a character/string using
+   index without prior knowledge of the target string.  And what I'm
+   saying is it is not a common case (maybe only when you're
+   parsing fixed-column syntax?)   But I might be missing something,
+   and I'll appreciate if a concrete example is given.
+
+ * For STRIGN-SET!, the copy-on-write of whole string implementation
+   can't have O(1) property, regardless of whether it uses &quot;array
+   of characters&quot;, variable-width charcter, rope or other tree
+   representation (you can be close though, if you use tree and only
+   share the leaf, for exmaple).  And I argue that it wouldn't be a
+   common case that you want to replace exactly one character within
+   a string of specific location---it is rather a special case of
+   generic string replacement as srfi-13's string-xcopy!.   There may
+   be an application that uses such &quot;one character replacement&quot; heavily,
+   but I don't think it is such a common case so that O(1) STRING-SET!
+   should be a &quot;strong recommendation&quot;.   Again, I may miss something,
+   though.
+
+You mentioned that you came to O(1) recommentation through your
+experience.  If it's not too much trouble, I'd like to hear the
+concrete experience that made you think so.
+
+&gt;     &gt; It's OK to have STRING-REF as well---after all, we have LIST-REF
+&gt;     &gt; and nobody complains its O(N) complexity.
+&gt; 
+&gt; In some sense, I think that the strong recommendation for O(1)
+&gt; string-ops is already present in the spec.   Were it not, why wouldn't
+&gt; the string syntax be a fancy way to write lists and STRING? and LIST?
+&gt; not disjoint?
+
+The same argument can be done that why the string syntax wouldn't 
+be a fancy way to write vectors and STRING? and VECTOR? not disjoint.
+
+I don't know what the rrrs authors thought when they decided to have
+disjoint string type.  Some old discussion, such as:
+<a  rel="nofollow" href="http://www.swiss.ai.mit.edu/ftpdir/scheme-mail/HTML/rrrs-1985/msg00002.html">http://www.swiss.ai.mit.edu/ftpdir/scheme-mail/HTML/rrrs-1985/msg00002.html</a>
+suggests that they viewed a string as an array of characters.
+But at least such a view isn't explicitly in R5RS, and I see it
+fortunate.
+
+
+[About character-set independence]
+
+&gt;     &gt; What I felt ambiguous is the degree of &quot;character-set independence&quot;
+&gt;     &gt; you're aiming at.   If we'd like to have a character-set independent
+&gt;     &gt; language spec,  we need to be much more careful to separate
+&gt;     &gt; Unicode-specific issues and character-set independent issues.
+&gt; 
+&gt; Hey, I'm partisan but fair, I think.
+&gt; 
+&gt; My recommendations suggest _requirements_ for the portable character
+&gt; set.  Those aren't Unicode specific.  My recommendations suggest
+&gt; _requirements_for_implementations_providing_optional_features_: and
+&gt; some of those are indeed Unicode specific.  
+
+As far as it is clear that the portable Scheme can't rely on those
+features,  I'll settle on it.
+
+&gt;     &gt; &gt; How would you remove that restriction in a way that supports writing
+&gt;     &gt; &gt; portable FFI-using code?
+&gt; 
+&gt;     &gt; What I'm picking there is the word &quot;must&quot;. 
+&gt;     &gt; scm_extract_string8 can put answer in eucjp packed format into
+&gt;     &gt; t_uchar* array if the implementation supports that, so I don't
+&gt;     &gt; see why this restriction is needed.
+&gt; 
+&gt; I would not object to an addition to the portable FFI which is
+&gt; 
+&gt; 	scm_extract_string_opaque
+&gt; 	scm_enter_string_opaque
+&gt; 
+&gt; that returns/accepts the data from a string, plus its length, but says
+&gt; nothing about how the data is encoded.  It's purpose would be to
+&gt; extract that data in the &quot;most convenient form&quot; for a given
+&gt; implementation.   Would that do?
+
+I don't object that scm_{extract|enter}_string_opaque, but
+still fail to see why scm_{extract|enter}_string8 shouldn't
+handle both.
+
+&gt;     &gt; Of course using such encoding wouldn't be portable.  But so
+&gt;     &gt; as iso8859_1 implementation is asked to convert the string
+&gt;     &gt; into iso8859_2.
+&gt; 
+&gt; I don't see why it wouldn't be portable.   I was thinking it would be
+&gt; helpful to have a &quot;libscheme-ffi-helpers.a&quot; with the necessary tables.
+
+Because iso8859-2 doesn't have INVERTED EXCLAMATION (iso8859-1 #xA1),
+for example.  The implementation can return an error and it's fine,
+but then, why not eucjp?
+
+Alternatively, you can specify &quot;when iso8859-1 implementation is
+asked to extract the string in iso8859-2, then it can map iso8859-1
+characters that don't have correspondence to iso8859-2 characters
+to the iso8859-2 characters with the same codepoint&quot;.
+Although it's a hack, it's what the CCS/CES-unaware software does
+all the time.  But then again, there's no reason that iso8859-1
+implementation can extract string as jisx0201, with the similar
+rule described above.
+
+&gt; Neither the 0..256 mapping nor the O(1) access time are _required_
+&gt; in the proposed Scheme changes.
+[...]
+&gt; Requiring the 0..256 mapping in the FFI means just that `char' can
+&gt; always be converted to CHAR? and back again.   Is that really so
+&gt; onerous?
+
+C 'char' doesn't have encoding information, but merely an
+integer with limited range.  If we want to have Scheme
+character to be defined more strictly, the programmer should
+be more conscious about distinction between octets and characters.
+
+It wasn't requirement in the proposal, but &quot;explicitly and
+strongly encouraging&quot; will in fact encourage the bad practice
+that regards an octet and a character the same.  I'm afraid that
+it encourages people to write a code that uses strings as a
+buffer of octet stream, for example.
+
+--shiro
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00392" href="msg00392.html">Re: strings draft</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00416" href="msg00416.html">Octet vs Char (Re: strings draft)</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00344" href="msg00344.html">Re: strings draft</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00365" href="msg00365.html">Re: strings draft</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+<li><strong><a name="00388" href="msg00388.html">Re: strings draft</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00390.html">Re: strings draft</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00392.html">Re: strings draft</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00390.html">Re: strings draft</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00392.html">Re: strings draft</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00391"><strong>Date</strong></a></li>
+<li><a href="threads.html#00391"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

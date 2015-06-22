@@ -1,0 +1,173 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: My ideas about infinity in Scheme (revised) -->
+<!--X-From-R13: Ohoerl Xnssre <ntwNnyhz.zvg.rqh> -->
+<!--X-Date: Fri, 27 May 2005 17:11:12 +0200 (DFT) -->
+<!--X-Message-Id: 20050527151055.B41691B77B4@voluntocracy.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20050523053421.96DE3139@mx1.informatik.uni&#45;tuebingen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: My ideas about infinity in Scheme (revised)</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00037.html">Date Prev</a>][<a href="msg00039.html">Date Next</a>][<a href="msg00021.html">Thread Prev</a>][<a href="msg00024.html">Thread Next</a>][<a href="maillist.html#00038">Date Index</a>][<a href="threads.html#00038">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: My ideas about infinity in Scheme (revised)</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:mathematica@DOMAIN.HIDDEN">mathematica@xxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: My ideas about infinity in Scheme (revised)</li>
+<li><em>From</em>: Aubrey Jaffer &lt;<a href="mailto:agj@DOMAIN.HIDDEN">agj@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 27 May 2005 11:10:55 -0400 (EDT)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-70@DOMAIN.HIDDEN">srfi-70@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-70@DOMAIN.HIDDEN">srfi-70@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20050523053421.96DE3139@DOMAIN.HIDDEN">20050523053421.96DE3139@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	(<a href="mailto:mathematica@DOMAIN.HIDDEN">mathematica@xxxxxxxxx</a>)</li>
+<li><em>References</em>: &lt;<a href="mailto:20050523053421.96DE3139@DOMAIN.HIDDEN">20050523053421.96DE3139@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre> | Date: Mon, 23 May 2005 13:33:49 +0800
+ | From: &quot;Chongkai Zhu&quot; &lt;mathematica@xxxxxxxxx&gt;
+ |   
+ | ======= Aubrey Jaffer wrote: =======
+ | &gt; 
+ | &gt;  | Date: Fri, 20 May 2005 10:28:12 +0800
+ | &gt;  | From: &quot;Chongkai Zhu&quot; &lt;mathematica@xxxxxxxxx&gt;
+ | &gt; 
+ | &gt;  | For the same reason, the syntax of &quot;indeterminate&quot; should be &quot;0/0&quot;
+ | &gt;  | (exact) and &quot;nan.0&quot; (inexact).  The names +inf.0, -inf.0 and nan.0
+ | &gt;  | were borrowed from PLT scheme.
+ | &gt; 
+ | &gt; While the number syntax of R5RS can be readily extended to include
+ | &gt; +inf.0, -inf.0 (because of the leading sign). &quot;nan.0&quot; runs afoul of
+ | &gt; R5RS 2.1 Identifiers:
+ | &gt; 
+ | &gt;    ... in all implementations a sequence of letters, digits, and
+ | &gt;    &quot;extended alphabetic characters&quot; that begins with a character that
+ | &gt;    cannot begin a number is an identifier.
+ | &gt; 
+ | &gt; If NAN.0 is syntactically a number, then NOT, NULL-ENVIRONMENT, NULL?,
+ | &gt; NUMBER-&gt;STRING, NUMBER?, and NUMERATOR are not identifiers.
+ | 
+ | PLT Scheme has both &quot;+nan.0&quot; and &quot;-nan.0&quot;, and it actually doesn't have
+ | &quot;nan.0&quot;. So actually it doesn't run afoul of R5RS. A tricky solution.
+
+In MzScheme version 205:
+
+-nan.0                  ==&gt;  +nan.0
+(eq? +nan.0 -nan.0)	==&gt;  #t
+
+ | &gt;  | Another rationale is utility.  For example, interval arithmetic
+ | &gt;  | will need exact infinity.
+ | &gt; 
+ | &gt; I have used interval arithmetic in Scheme (coding #f for infinity).
+ | &gt; Why does it need exact infinity?
+ | 
+ | Although you use #f for infinity, it means an exact infinity.
+
+You have not seen the interval arithmetic implementation I used.
+Don't presume to know its details.
+
+ | If we have exact infinity, than an interval is a pair of two rational,
+ | which will simplify the code of interval arithmetic (and made it more
+ | readable).
+
+In the interval arithmetic package I used, all rational non-integers
+were inexact.  Thus an interval could be designated by two inexact
+real numbers; which would include the two real infinities.
+
+ | But how can you ensure the limit always return the right answer?  I
+ | read the reference implementation only to find that it is a
+ | numerical one and can be easily cheated.
+
+It is possible to fool LIMIT, but it is possible to fool any
+programmed transcendental function.  The rewritten specification of
+limit (Re: [srfi-70] Limit) is much clearer about its conditions for
+operation.
+
+ | AFAIK, CASs do some limits symbolically.  And I can accept a CAS
+ | give some wrong result (even different CASs return different result
+ | giving the same input).  But Scheme can't do so.  Then must be an
+ | exact algorithm to do each thing in a Scheme spec!
+
+All the inexact operations and functions in Scheme return approximate
+presults.
+
+ | &gt; (limit (lambda (x) (/ (sin x) x)) 0 1.0e-9)
+ | 1.0
+ | &gt; (limit (lambda (x) (/ (sin x) x)) 0 1)
+ | bug /: division by zero
+
+The revised LIMIT has a provision:
+
+    z2 should be chosen so that proc is expected to be monotonic or
+    constant on arguments between z1 and z1 + z2.
+
+So LIMIT gets it correct with a z2 (much) smaller than 1.
+
+ | &gt; (limit (lambda (x) (if (exact? x) 1 0)) 0 1.0e-9)
+ | 0
+ | &gt; (limit (lambda (x) (if (rational? x) 1 0)) 0 1.0e-9)
+ | 1
+ | 
+ | Note that the final case can't be solved with any numerical method.
+
+I will add a provision:
+
+  PROC must be continuous on the half-open interval ( Z1 to Z1 + Z2 ].
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00021" href="msg00021.html">Re: My ideas about infinity in Scheme (revised)</a></strong>
+<ul><li><em>From:</em> Chongkai Zhu</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00037.html">Re: infinities reformulated</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00039.html">New revision of SRFI 70 available</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00021.html">Re: My ideas about infinity in Scheme (revised)</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00024.html">Re: My ideas about infinity in Scheme (revised)</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00038"><strong>Date</strong></a></li>
+<li><a href="threads.html#00038"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

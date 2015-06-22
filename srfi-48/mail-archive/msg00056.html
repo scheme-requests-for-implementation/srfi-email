@@ -1,0 +1,251 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: customizing write&#45;char (was Re: Format strings are wrong) -->
+<!--X-From-R13: Oyrk Euvaa <sbbsNflagupbqr.pbz> -->
+<!--X-Date: Tue, 30 Dec 2003 05:07:20 +0100 (NFT) -->
+<!--X-Message-Id: 20031230040710.GA24727@synthcode.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: y9lekur77gi.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: 20031228043744.GA30222@synthcode.com -->
+<!--X-Reference: 27BAA5B1&#45;397C&#45;11D8&#45;8C98&#45;000A95CCCEE4@evdev.ath.cx -->
+<!--X-Reference: 87u13ke4if.wl@strelka.synthcode.com -->
+<!--X-Reference: BEA9F702&#45;39BA&#45;11D8&#45;BAEF&#45;000A95CCCEE4@evdev.ath.cx -->
+<!--X-Reference: 87pte8drwm.wl@strelka.synthcode.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>customizing write-char (was Re: Format strings are wrong)</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00055.html">Date Prev</a>][<a href="msg00057.html">Date Next</a>][<a href="msg00048.html">Thread Prev</a>][<a href="msg00032.html">Thread Next</a>][<a href="maillist.html#00056">Date Index</a>][<a href="threads.html#00056">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>customizing write-char (was Re: Format strings are wrong)</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-48@DOMAIN.HIDDEN">srfi-48@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: customizing write-char (was Re: Format strings are wrong)</li>
+<li><em>From</em>: Alex Shinn &lt;<a href="mailto:foof@DOMAIN.HIDDEN">foof@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 29 Dec 2003 22:07:10 -0600</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-48@DOMAIN.HIDDEN">srfi-48@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:87pte8drwm.wl@DOMAIN.HIDDEN">87pte8drwm.wl@xxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:y9lekur77gi.fsf@DOMAIN.HIDDEN">y9lekur77gi.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20031228043744.GA30222@DOMAIN.HIDDEN">20031228043744.GA30222@xxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:27BAA5B1-397C-11D8-8C98-000A95CCCEE4@DOMAIN.HIDDEN">27BAA5B1-397C-11D8-8C98-000A95CCCEE4@xxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:87u13ke4if.wl@DOMAIN.HIDDEN">87u13ke4if.wl@xxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:BEA9F702-39BA-11D8-BAEF-000A95CCCEE4@DOMAIN.HIDDEN">BEA9F702-39BA-11D8-BAEF-000A95CCCEE4@xxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:87pte8drwm.wl@DOMAIN.HIDDEN">87pte8drwm.wl@xxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Sender</em>: Alex Shinn &lt;<a href="mailto:foof@DOMAIN.HIDDEN">foof@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mutt/1.5.4i</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Taylor's idea of passing a custom write-char is not so useful by
+itself, but if you turn it into a FOLD operation then you can get more
+interesting results.  Below is an implementation of fundamental
+write/display enumerators and some examples of customizing them.
+
+Although interesting, I don't think this could taken seriously due to
+being extremely slow.
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; general string utilities
+
+(define (display-&gt;string x)
+  (with-output-to-string (lambda () (display x))))
+
+(define (write-&gt;string x)
+  (with-output-to-string (lambda () (write x))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; kind of a fold for folders, or a partial application compose
+
+;; (procN kons ... (proc2 kons (proc1 kons knil)))
+(define (cat&gt;&gt; kons knil procs)
+  (let loop ((ls procs) (acc knil))
+    (if (null? ls) acc (loop (cdr ls) ((car ls) kons acc)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; basic formatters
+
+(define (display&gt;&gt; obj)
+  (lambda (kons knil)
+    (cond
+      ((string? obj)
+       (string-fold kons knil obj))
+      ((pair? obj)
+       (kons
+        #\)
+        (let loop ((acc (kons #\( knil))
+                   (ls obj))
+          (let ((acc2 ((display&gt;&gt; (car ls)) kons acc))
+                (rest (cdr ls)))
+            (cond
+              ((null? rest) acc2)
+              ((pair? rest) (loop (kons #\space acc2) rest))
+              (else
+               ((display&gt;&gt; rest) kons ((display&gt;&gt; kons) acc2 &quot; . &quot;))))))))
+      ((vector? obj)
+       ((display&gt;&gt; (vector-&gt;list obj)) kons (kons #\# knil)))
+      (else ;; add more cases to avoid this
+       ((display&gt;&gt; (display-&gt;string obj)) kons knil)))))
+
+(define (write&gt;&gt; obj)
+  (lambda (kons knil)
+    (cond
+      ((string? obj)
+       (kons #\&quot; (string-fold kons (kons #\&quot; knil) obj)))
+      ((pair? obj)
+       (kons
+        #\)
+        (let loop ((acc (kons #\( knil))
+                   (ls obj))
+          (let ((acc2 ((write&gt;&gt; (car ls)) kons acc))
+                (rest (cdr ls)))
+            (cond
+              ((null? rest) acc2)
+              ((pair? rest) (loop (kons #\space acc2) rest))
+              (else
+               ((write&gt;&gt; rest) kons ((write&gt;&gt; &quot; . &quot;) kons acc2))))))))
+      ((vector? obj)
+       ((write&gt;&gt; (vector-&gt;list obj)) kons (kons #\# knil)))
+      (else ;; note, intentionally display&gt;&gt;
+       ((display&gt;&gt; (write-&gt;string obj)) kons knil)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; example 1: formatting with a column counter
+
+(define (column-writer c i)
+  (write-char c)
+  (if (eqv? c #\newline) 0 (+ i 1)))
+
+(define (fmt&gt;&gt; . procs)
+  (cat&gt;&gt; column-writer 0 procs))
+
+;; a &quot;constant&quot; procedure
+(define (fresh-line kons knil)
+  (if (zero? knil)
+    knil
+    (kons #\newline knil)))
+
+(define (tab&gt;&gt; col . opt)
+  (lambda (kons knil)
+    (let* ((modulo? (and (pair? opt) (car opt)))
+           (width (if modulo? (modulo col knil)
+                      (- col knil))))
+      (if (positive? width)
+        ((display&gt;&gt; (make-string width #\space)) kons knil)
+        knil))))
+
+; (fmt&gt;&gt; (display&gt;&gt; &quot;value: &quot;) (write&gt;&gt; '(a &quot;b&quot; 3)) fresh-line)
+
+; (fmt&gt;&gt; (display&gt;&gt; &quot;Name: &quot;) (write&gt;&gt; &quot;Socrates&quot;) (tab&gt;&gt; 20)
+;        (display&gt;&gt; &quot;Sex: &quot;) (write&gt;&gt; &quot;male&quot;) fresh-line
+;        (display&gt;&gt; &quot;Location: &quot;) (write&gt;&gt; &quot;Athens&quot;) (tab&gt;&gt; 20)
+;        (display&gt;&gt; &quot;Job: &quot;) (write&gt;&gt; &quot;corrupting the youth&quot;) fresh-line)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; example 2: case folding
+
+(define (upcase&gt;&gt; . procs)
+  (lambda (kons knil)
+    (cat&gt;&gt; (lambda (c i) (kons (char-upcase c) i)) knil procs)))
+
+(define (downcase&gt;&gt; . procs)
+  (lambda (kons knil)
+    (cat&gt;&gt; (lambda (c i) (kons (char-downcase c) i)) knil procs)))
+
+;; titlecase requires storing previous char's script type in the
+;; accumulator
+
+; (fmt&gt;&gt; (upcase&gt;&gt; (display&gt;&gt; &quot;hElLo &quot;)) (downcase&gt;&gt; (display&gt;&gt; &quot;WOrlD!&quot;)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; example 3: default radix
+
+;; This example changes the meaning of the accumulator from
+;; current-column to current-radix.  Similarly you could specify default
+;; precision for floating point numbers.  A full-featured set of
+;; formatting procedures would probably define a record to hold various
+;; state information and pass that as the accumulator.
+
+;; current radix is stored in knil
+(define (number&gt;&gt; n . opt)
+  (lambda (kons knil)
+    (let ((radix (if (pair? opt) (car opt) knil)))
+      ((display&gt;&gt; (number-&gt;string n radix)) kons knil))))
+
+;; just overrides current radix
+(define (radix&gt;&gt; radix . procs)
+  (lambda (kons knil)
+    (cat&gt;&gt; kons radix procs)))
+
+;; start off with default radix 10
+(define (fmt-radix&gt;&gt; . procs)
+  (cat&gt;&gt; (lambda (c i) (write-char c) i) 10 procs))
+
+; (fmt-radix&gt;&gt; (display&gt;&gt; &quot;decimal: &quot;) (number&gt;&gt; 123)
+;              (radix&gt;&gt; 16
+;                       (display&gt;&gt; &quot; hex: &quot;) (number&gt;&gt; 123)
+;                       (display&gt;&gt; &quot; octal: &quot;) (number&gt;&gt; 123 8)))
+
+-- 
+Alex
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00031" href="msg00031.html">Re: Format strings are wrong</a></strong>
+<ul><li><em>From:</em> Paul Schlie</li></ul></li>
+<li><strong><a name="00035" href="msg00035.html">Re: Format strings are wrong</a></strong>
+<ul><li><em>From:</em> Alex Shinn</li></ul></li>
+<li><strong><a name="00038" href="msg00038.html">Re: Format strings are wrong</a></strong>
+<ul><li><em>From:</em> Taylor Campbell</li></ul></li>
+<li><strong><a name="00041" href="msg00041.html">Re: Format strings are wrong</a></strong>
+<ul><li><em>From:</em> Alex Shinn</li></ul></li>
+<li><strong><a name="00045" href="msg00045.html">Re: Format strings are wrong</a></strong>
+<ul><li><em>From:</em> Taylor Campbell</li></ul></li>
+<li><strong><a name="00048" href="msg00048.html">Re: Format strings are wrong</a></strong>
+<ul><li><em>From:</em> Alex Shinn</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00055.html">Re: Another alternative</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00057.html">Re: Another alternative (Re: format strings are the Right Thing)</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00048.html">Re: Format strings are wrong</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00032.html">Re: Format strings are wrong</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00056"><strong>Date</strong></a></li>
+<li><a href="threads.html#00056"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,148 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: stream&#45;define -->
+<!--X-From-R13: Dvpuneq Yryfrl <xryfrlNf48.bet> -->
+<!--X-Date: Wed, 12 Feb 2003 03:06:43 +0100 (NFT) -->
+<!--X-Message-Id: E18imGu&#45;0005QY&#45;00@rosebud -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>stream-define</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00002.html">Date Prev</a>][<a href="msg00004.html">Date Next</a>][<a href="msg00016.html">Thread Prev</a>][<a href="msg00004.html">Thread Next</a>][<a href="maillist.html#00003">Date Index</a>][<a href="threads.html#00003">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>stream-define</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-40@DOMAIN.HIDDEN">srfi-40@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: stream-define</li>
+<li><em>From</em>: Richard Kelsey &lt;<a href="mailto:kelsey@DOMAIN.HIDDEN">kelsey@xxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 11 Feb 2003 21:05:12 -0500</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-40@DOMAIN.HIDDEN">srfi-40@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Sender</em>: &lt;<a href="mailto:kelsey@DOMAIN.HIDDEN">kelsey@xxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>I think you should replace STREAM-DEFINE with a non-DEFINE version.
+In introducing STREAM-DEFINE the SRFI says:
+
+  ... with the (delay (force ...)) hidden within stream-define, which
+  is the syntax used to create a function that returns a stream:
+
+The problem is that STREAM-DEFINE is syntax used to define a function
+that returns a stream, not just to create such a function.  What about
+the LAMBDA's that are not the value in a DEFINE?  Not to mention those
+benighted individuals who don't like the (DEFINE (F ...) ...) syntax
+in the first place.
+
+You could replace STREAM-DEFINE with STREAM-DELAY:
+
+ (define-syntax stream-delay
+   (syntax-rules ()
+     ((stream-delay x)
+      (make-stream (delay (force (stream-promise x)))))))
+  
+Then (stream-define (foo a b) stuff) could be written as
+
+ (define (foo a b) (stream-delay stuff))
+   
+which has the advantage of making it possible to control which expressions
+get delayed and which don't.  But mostly, it makes it clearer what is going
+on.  Unless I am missing something the code in the SRFI uses STREAM-DEFINE
+more often than necessary.  Take MAP2 and COUNTDOWN2 from the initial
+explanation of even and odd streams:
+
+  (define (map2 func strm)
+    (delay (force (if (nil2? strm)
+                      nil2	  
+                      (cons2 (func (car1 strm))
+                             (map2 func (cdr2 strm)))))))
+
+  (define (countdown2 n)
+    (delay (force (cons2 n (countdown2 (- n 1))))))
+
+The DELAY-FORCE in MAP2 is needed to delay the call to NIL2?.  Without
+it MAP2 wouldn't return a fully-lazy stream.  But the DELAY-FORCE in
+COUNTDOWN2 is only delaying a CONS2 expression, which expands into a
+DELAY.  There is no utility in delaying the creation of a delay.
+
+The reference implementation itself uses STREAM-DEFINE in many places
+where DEFINE would work, including the definitions of STREAM-FROM,
+STREAM-FROM-TO, STREAM-REPEAT, and STREAM-ITERATE.  Many of the
+functions that do need a delay would benefit from moving the delay
+after some initial error checks.  For example, writing STREAM-UNIQ
+using STREAM-DELAY allows it to signal errors when it is called
+instead of waiting until the result is forced:
+
+  (define (stream-uniq eql? strm)
+    (if (not (procedure? eql?))
+        (stream-error &quot;non-functional argument to uniq&quot;))
+    (if (not (stream? strm))
+        (stream-error &quot;non-stream argument to uniq&quot;))
+    (stream-delay (if (stream-null? strm)
+                      stream-null
+                      (let ((first (stream-car strm)))
+                        (stream-cons first
+                        (stream-uniq-aux eql? strm first)))))
+
+           -Richard Kelsey
+
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00004" href="msg00004.html">Re: stream-define</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+<li><strong><a name="00010" href="msg00010.html">Re: stream-define</a></strong>
+<ul><li><em>From:</em> Phil Bewig</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00002.html">some suggestions</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00004.html">Re: stream-define</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00016.html">Re: some suggestions</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00004.html">Re: stream-define</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00003"><strong>Date</strong></a></li>
+<li><a href="threads.html#00003"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

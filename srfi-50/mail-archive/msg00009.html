@@ -1,0 +1,215 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Strings/chars -->
+<!--X-From-R13: Euveb Ynjnv <fuvebNynin.arg> -->
+<!--X-Date: Mon, 22 Dec 2003 22:51:42 +0100 (NFT) -->
+<!--X-Message-Id: 20031222.115128.628193033.shiro@lava.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: opr0lf0hi7w2xcd0@mx.freenet.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Strings/chars</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00008.html">Date Prev</a>][<a href="msg00010.html">Date Next</a>][<a href="msg00004.html">Thread Prev</a>][<a href="msg00011.html">Thread Next</a>][<a href="maillist.html#00009">Date Index</a>][<a href="threads.html#00009">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Strings/chars</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Strings/chars</li>
+<li><em>From</em>: Shiro Kawai &lt;<a href="mailto:shiro@DOMAIN.HIDDEN">shiro@xxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 22 Dec 2003 11:51:28 -1000 (HST)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:opr0lf0hi7w2xcd0@DOMAIN.HIDDEN">opr0lf0hi7w2xcd0@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:opr0lf0hi7w2xcd0@DOMAIN.HIDDEN">opr0lf0hi7w2xcd0@xxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Handling large character sets in 'proper' way is a difficult
+task, but I think we can assume there will be layers (e.g.
+octets, codepoints, graphemes, ...), and the current
+level of string/character abstraction may be retained in some way.
+So I focus on how to interface with R5RS-level Scheme string/character 
+object.
+
+Before going details, I point out that if we want maximum
+portability, we probably should stick to one encoding,
+&quot;ucs4 character and utf8 string&quot;, and let implementations to 
+handle all conversion works.  I'll discuss it later.
+
+First, I'll go through APIs with assumption that we want
+efficient treatment of native Scheme strings.
+
+- A Scheme character may be just an octet, or an immediate
+  object that fits in a word, or a multi-word object.
+  (In Gauche, a Scheme character is an immeidate object, and fits
+  in a machine word.)
+
+  Thus SCHEME_STRING_REF should return an implementation-dependent
+  type scheme_char or something.  So do SCHEME_EXTRACT_CHAR.
+  SCHEME_ENTER_CHAR and SCHEME_MAKE_STRING would take scheme_char.
+
+  If a Scheme character is a multi-word object,  SCHEME_STRING_REF
+  may invoke GC.  Or if a scheme_char can be allocated on C stack,
+  SCHEME_STRING_REF might receive a region to store the result.
+    SCHEME_STRING_REF(scheme_value str, long k, scheme_char *ch)
+  to avoid unnecessary allocation on such implementations.
+  But it is less efficient in the implementations that uses just
+  an octet per character.
+
+- A Scheme string may not be an array of scheme_char objects.
+  (In Gauche, Scheme string uses multibyte encoding, i.e. each
+  character occupies different number of bytes.)
+  So it is a good question that SCHEME_EXTRACT_STRING and
+  SCHEME_ENTER_STRING should use scheme_char* or char*.
+  In wide-character string implementations, scheme_char*
+  would be much more efficient; in multi-bypte implementations,
+  char* would be much more efficient.
+
+- The body of Scheme string may be read-only (it is so in Gauche,
+  and it may be shared by may Scheme strings), and/or it may
+  consist of chunks of memory.  In such implementatinos:
+
+  -- SCHEME_STRING_SET may invoke GC, and potentially
+     very inefficient.
+  -- To return a mutable (char *) string, SCHEME_EXTRACT_STRING
+     may need to allocate memory and copy the content to it.
+     Returning (const char *) can be cheaper.
+
+- Preventing SCHEME_ENTER_STRING from creating a string that
+  includes NUL character seems an unnecessary restriction.
+  Passing length as well enables including NUL character.
+  However, we need to specify that the &quot;length&quot; is whether number
+  of octets or number of characters.
+
+- If the implementation has sharable string body, it is useful
+  to tell SCHEME_ENTER_STRING whether it should copy the content
+  or not, so that it can avoid unnecessary copy.
+
+- SCHEME_GET_IMPORTED_BINDING and SCHEME_DEFINE_EXPORTED_BINDING
+  take char*.  Implementation may use internal Scheme string to
+  represent the names of symbols.  So we need to specify a
+  clear mapping between them.
+  The safest way is to limit binding names within ASCII.
+  (A bit off-topic, but why these API takes char*, instead of const char*?).
+
+For me, native Scheme string represetation can vary too much
+to have one single efficient C API.   However, if we think
+this srfi to ease writing portable &quot;bindings&quot; to other existing
+C libraries, then we have to convert internal Scheme string
+to C char* of well-known encodings anyway.
+If so, the most practical choice of encoding would be ucs4 character
+and utf8 string (although it isn't the case in my daily working
+environment).
+
+So, suppose we have something like these:
+
+ typedef long ucs4char;
+ typedef char * ucs8string;
+
+And the APIs are:
+
+ ucs4char SCHEME_EXTRACT_CHAR(scheme_value); (may GC)
+ scheme_value SCHEME_ENTER_CHAR(ucs4char);  (may GC)
+
+ utf8string* SCHEME_EXTRACT_STRING(scheme_value);   (may GC)
+ scheme_value SCHEME_ENTER_STRING(const utf8string*, long); (may GC)
+   /* always copy the passed string */
+ 
+ ucs4char SCHEME_STRING_REF(scheme_value, long);  (may GC)
+ void SCHEME_STRING_SET(scheme_value, long, ucs4char); (may GC)
+ scheem_value SCHEME_MAKE_STRING(long, ucs4char); (may GC)
+
+Note that SCHEME_EXTRACT_CHAR may invoke GC as well, since
+the implementation may need to run a character-code conevrsion
+routine which needs a dynamic buffer.
+
+Furthermore, I think there need to be a way to extract
+&quot;raw&quot; byte stream of the internal string body; the
+above API assumes all the Scheme strings are convertible
+to Unicode strings, and in reality it is not true.
+So something like these would help.
+
+ char *SCHEME_EXTRACT_STRING_RAW(scheme_value);  (may GC)
+ scheme_value SCHEME_ENTER_STRING_RAW(const char*, long); (may GC)
+
+And also I think it's reasonable to have read-only reference.
+(it is debatable wether we should make this default and have
+mutable reference optional).
+
+ const utf8string* SCHEME_EXTRACT_STRING_CONST(scheme_value); (may GC)
+ const char *SCHEME_EXTRACT_STRING_RAW_CONST(scheme_value); (may GC)
+
+--shiro
+
+
+ 
+
+
+
+
+ 
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00011" href="msg00011.html">Re: Strings/chars</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00032" href="msg00032.html">Re: Strings/chars</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00004" href="msg00004.html">Couple things...</a></strong>
+<ul><li><em>From:</em> felix</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00008.html">Re: GC safety and return values</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00010.html">Re: character strings versus byte strings</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00004.html">Couple things...</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00011.html">Re: Strings/chars</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00009"><strong>Date</strong></a></li>
+<li><a href="threads.html#00009"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

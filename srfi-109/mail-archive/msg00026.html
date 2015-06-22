@@ -1,0 +1,168 @@
+<!-- MHonArc v2.6.16 -->
+<!--X-Subject: Re: optional user&#45;specified end&#45;delimiters -->
+<!--X-From-R13: Xbua Qbjna <pbjnaNzrephel.ppvy.bet> -->
+<!--X-Date: Tue, 16 Apr 2013 23:46:35 +0200 (MST) -->
+<!--X-Message-Id: 20130416214631.GA3672@mercury.ccil.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 516DA727.109@bothner.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: optional user-specified end-delimiters</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00025.html">Date Prev</a>][<a href="msg00027.html">Date Next</a>][<a href="msg00025.html">Thread Prev</a>][<a href="msg00027.html">Thread Next</a>][<a href="maillist.html#00026">Date Index</a>][<a href="threads.html#00026">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: optional user-specified end-delimiters</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Per Bothner &lt;<a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: optional user-specified end-delimiters</li>
+<li><em>From</em>: John Cowan &lt;<a href="mailto:cowan@DOMAIN.HIDDEN">cowan@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 16 Apr 2013 17:46:31 -0400</li>
+<li><em>Cc</em>: <a href="mailto:srfi-108@DOMAIN.HIDDEN">srfi-108@xxxxxxxxxxxxxxxxx</a>, <a href="mailto:srfi-109@DOMAIN.HIDDEN">srfi-109@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-109@DOMAIN.HIDDEN">srfi-109@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:516DA727.109@DOMAIN.HIDDEN">516DA727.109@xxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:516DA727.109@DOMAIN.HIDDEN">516DA727.109@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Sender</em>: John Cowan &lt;<a href="mailto:cowan@DOMAIN.HIDDEN">cowan@xxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mutt/1.5.20 (2009-06-14)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Per Bothner scripsit:
+
+&gt; It seems reasonable to allow an integer label, so we allow starting
+&gt; with a digit.  Thus for simplicity we also allow hyphen, underscore,
+&gt; or period.
+
+I think starting with a digit is just an extra complication, and
+we shouldn't have it.  It's a special case that needs to be tested,
+documented, and learned separately.
+
+&gt; (In an unrelated change, I think tagname-subsequent should allow
+&gt; periods.  XML compatibility is one reason.)
+
++1
+
+&gt; extended-string-literal ::= &quot;&amp;&quot; string-starttag?
+&gt;    &quot;{&quot; initial-ignored? string-literal-part* &quot;}!&quot; string-endtag?
+&gt; string-starttag ::= &quot;!&quot; label
+&gt; string-endtag ::= &quot;!&quot; label
+&gt; 
+&gt; The string-endtag is required if the string-starttag is specified,
+&gt; and of course the labels must match.
+
+I think the string-endtag should be label followed by &quot;!&quot; instead.
+That way all the content, including both labels, is between &quot;!&quot; and &quot;!&quot;.
+
+&gt; Note this chance means that an extended-string-literal must be
+&gt; followed by a delimiter or end of input.
+&gt; 
+&gt; For a named quasi-literal, we can use the constructor-name as an end-tag:
+&gt; 
+&gt; &amp;example{
+&gt;   &amp;|line1
+&gt;   &amp;|line2
+&gt; }example
+
+I am very much against this, for reasons given earlier:  &quot;}example&quot; should not
+be distinct from &quot;} example&quot;, since &quot;}&quot; is a delimiter.
+
+&gt; You can add an explicit label:
+
+I think an explicit label is the way to go.
+
+&gt; &amp;example!23{
+&gt;   &amp;|line1
+&gt;   &amp;|line2
+&gt; }example!23
+
+I'd change this to &quot;}23!&quot;, modulo not allowing digit-strings.
+
+&gt; If may occasionally be useful to make labels available for
+&gt; semantic information.  One  example is as implicit &quot;id&quot; attributes.
+
+I think that is a very bad mistake.  The labels should be purely syntactic
+and discardable, like the numbers used in #2# and #2= datum labels; it's
+all the same if you write #2=(a . #2#) or #333=(a . #333#), and the Lisp
+system does not have to distinguish.
+
+&gt; There are some plausible alternatives.  For example we can put the
+&gt; end-tag just before the right brace.  For named constructors we
+&gt; could use:
+&gt; 
+&gt; &amp;cname{
+&gt; line1
+&gt; line2
+&gt; &amp;cname}
+
+That won't fly, because &quot;&amp;cname&quot; is a perfectly cromulent substring.
+
+I really dislike your other alternatives as well.
+
+-- 
+John Cowan   <a  rel="nofollow" href="http://ccil.org/~cowan">http://ccil.org/~cowan</a>    cowan@xxxxxxxx
+We want more school houses and less jails; more books and less arsenals;
+more learning and less vice; more constant work and less crime; more
+leisure and less greed; more justice and less revenge; in fact, more of
+the opportunities to cultivate our better natures.  --Samuel Gompers
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00027" href="msg00027.html">Re: optional user-specified end-delimiters</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00025" href="msg00025.html">optional user-specified end-delimiters</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00025.html">optional user-specified end-delimiters</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00027.html">Re: optional user-specified end-delimiters</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00025.html">optional user-specified end-delimiters</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00027.html">Re: optional user-specified end-delimiters</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00026"><strong>Date</strong></a></li>
+<li><a href="threads.html#00026"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

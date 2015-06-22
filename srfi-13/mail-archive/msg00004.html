@@ -1,0 +1,193 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Naming conventions, mismatch indices, CHAR/CHAR&#45;SET/PRED,... -->
+<!--X-From-R13: "Eretrv Stbebi" <rfyNvasbeznkvap.pbz> -->
+<!--X-Date: Fri, 22 Oct 1999 02:03:35 &#45;0500 (CDT) -->
+<!--X-Message-Id: 002a01bf1c5c$75d908b0$0389accf@meurglys&#45;iv -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Naming conventions, mismatch indices, CHAR/CHAR-SET/PRED,...</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00003.html">Date Prev</a>][<a href="msg00005.html">Date Next</a>][<a href="msg00003.html">Thread Prev</a>][<a href="msg00005.html">Thread Next</a>][<a href="maillist.html#00004">Date Index</a>][<a href="threads.html#00004">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Naming conventions, mismatch indices, CHAR/CHAR-SET/PRED,...</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &lt;<a href="mailto:srfi-13@DOMAIN.HIDDEN">srfi-13@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Naming conventions, mismatch indices, CHAR/CHAR-SET/PRED,...</li>
+<li><em>From</em>: &quot;Sergei Egorov&quot; &lt;<a href="mailto:esl@DOMAIN.HIDDEN">esl@xxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 22 Oct 1999 03:09:59 -0400</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>This library is the best one I have seen so far
+(thanks, Olin!), but I still have some comments 
+and suggestions. 
+
+;;; rationale:
+
+First, I only partially agree with the rationale.
+Yes, RNRS's set of string operations is poor, but 
+there's nothing wrong with naming conventions (the 
+choice between string= and string=? is mainly a matter 
+of taste; the former is compatible with = (=? variants
+existed in R2RS to make everybody happy), but the 
+latter is compatible with char=? and other predicates,
+and it is both familiar and standard).
+
+Shared substrings are practically unknown to
+the Scheme community and, even if they are
+implemented somewhere, I see no reason to
+make incompatible changes to the semantics
+of SUBSTRING (adding SUBSTRING/SHARED is
+definitely a better idea, but why put normal
+and /SHARED versions in one SRFI?).
+
+I also oppose &quot;dropping&quot; of standard Scheme
+procedures. Does this mean that to claim 
+support for SRFI-13 (or SRFI-1) my implementation 
+should make them unavailable? If not, then why
+mention it at all? I believe the whole idea belongs 
+to a separate &quot;Scheme Request For Non-implementation&quot;
+process (SRFN-0: drop TRANSCRIPT-ON and TRANSCRIPT-OFF).
+
+I believe that &lt;&gt; convention for &quot;not equal&quot; is not
+the best choice: it doesn't look right when applied
+to domains with no natural order (i.e. MY-RECORD&lt;&gt;).
+Other possible choices are ~=, /=, ^=, and != (all
+of them are subpar, but if forced to make a choice,
+I would pick ~=).
+
+
+;;; my votes on the Issues:
+
+Add STRING-REDUCE &amp; STRING-REDUCE-RIGHT:  No
+STRING-APPEND accepts chars:              No
+N-ary comparison functions:               No 
+Add STRING-TOKENIZE:                      No
+
+
+;;; CHAR/CHAR-SET/PRED parameters:
+
+In my opinion, this is an example of ad-hoc genericity:
+the choice of variants is more or less arbitrary (why
+STRING or CHAR-LIST are missing? How can I specify 
+-ci search for a char?) The whole idea does not fail 
+only because strings cannot contain char-sets or 
+procedures (this trick doesn't work with lists or
+vectors). I agree that something should be done 
+to stop the namespace pollution, but there are other
+ways: regular higher-order procedures. Besides,
+the CHAR/CHAR-SET/PRED approach is another slippery slope: 
+why don't we just define generic sequence procedures?
+
+
+;;; Mismatch index in string-comparison procedures:
+
+Why do we need this mismatch index in each and every comparison
+procedure? The fact that it can be returned doesn't necessarily
+mean that it should; if somebody's procedure ends in (string= s1 s2)
+and I have to rewrite it, say, using lists instead of strings,
+I don't want to scan all the code looking for call sites to
+check if the return value is just used as a boolean (imitating
+mismatch index in my new code may be problematic). I will
+have all this imaginary trouble because INTENTIONS of the
+original author were not clear. This, however, didn't stop
+the designers of MEM*, ASS* and dozens of other functions,
+but in many cases I can see some advantages in returning
+non-#t value. But, judging from my modest experience, I beleive
+that in regular lexicographical string comparison the
+mismatch index is NEVER needed. It is definitely less 
+useful in practice than n-ary string comparison predicates;
+and the unfortunate fact is that STRING{&gt;...} returning a
+mismatch index cannot be generalized to n-ary case!
+
+
+;;; small stuff:
+
+SUBSTRING-COMPARE{-CI}: is mismatch index (!?) relative or absolute?
+STRING-ITER: why not STRING-ITERATE?
+
+{SUB}STRING-{PRE,SUF}FIX-COUNT{-CI}: why not -LENGTH- instead of -COUNT-? 
+In both CommonLisp and SRFI-1, COUNT is associated with selective counting,
+not measuring the length of contiguous subsequences.
+
+SUBSTRING{-CI}? : why do these names end in question mark? They
+behave more like SUBSTRING-INDEX{-CI} and other MEMQ-like procedures.
+
+
+;;; proposed additions (actually these were defined in R^2RS):
+
+(substring-move-left! string1 start1 end1 string2 start2)
+(substring-move-right! string1 start1 end1 string2 start2)
+
+String1 and string2 must be a strings, and start1, start2 and
+end1 must be exact integers satisfying
+
+ 0 &lt;= start1 &lt;= end1 &lt;= (string-length string1)
+ 0 &lt;= start2 &lt;= end1-start1+start2 &lt;= (string-length string2).
+
+Substring-move-left! and substring-move-right! store characters of
+string1 beginning with index start1 (inclusive) and ending with
+index end1 (exclusive) into string2 beginning with index start2
+(inclusive).
+
+Substring-move-left! stores characters in time order of increasing
+indices.  Substring-move-right! stores characters in time order of
+decreasing indices.
+
+
+-- Sergei
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00003.html">string-copy/string-copy! inconsistency</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00005.html">Proposed amendments to SRFI-13</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00003.html">string-copy/string-copy! inconsistency</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00005.html">Proposed amendments to SRFI-13</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00004"><strong>Date</strong></a></li>
+<li><a href="threads.html#00004"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

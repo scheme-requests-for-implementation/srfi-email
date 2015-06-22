@@ -1,0 +1,418 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: A portable read implementation -->
+<!--X-From-R13: Oyohf Brgebsfxl <nyohfNcrgebsfxl.bet> -->
+<!--X-Date: Thu, 26 Dec 2002 02:00:13 +0100 (NFT) -->
+<!--X-Message-Id: 200212260100.RAA23765@radish.petrofsky.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: Pine.LNX.4.40.0212182220210.28811&#45;100000@bolt.sonic.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>A portable read implementation</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00031.html">Date Prev</a>][<a href="msg00033.html">Date Next</a>][<a href="msg00029.html">Thread Prev</a>][<a href="msg00031.html">Thread Next</a>][<a href="maillist.html#00032">Date Index</a>][<a href="threads.html#00032">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>A portable read implementation</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-38@DOMAIN.HIDDEN">srfi-38@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: A portable read implementation</li>
+<li><em>From</em>: Albus Petrofsky &lt;<a href="mailto:albus@DOMAIN.HIDDEN">albus@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 25 Dec 2002 17:00:06 -0800</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-38@DOMAIN.HIDDEN">srfi-38@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>References</em>: &lt;<a href="mailto:Pine.LNX.4.40.0212182220210.28811-100000@DOMAIN.HIDDEN">Pine.LNX.4.40.0212182220210.28811-100000@xxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Below are portable implementations of a read and write that use the
+srfi-38 notation.
+
+Some nitty gritty:
+
+* The composition of characters into tokens and of tokens into data
+  should be explicitly described in BNF and in English.  Points
+  to cover:
+    -- The #nn# and #nn= tokens are self-terminating
+    -- Leading zeros allowed?  #007#
+    -- Multiple labels allowed?  #1=#2=(#1# #2#)
+    -- Labeled references allowed?  #1=(#2=#1# #2#)
+    -- Require that #1=#1# signal an error rather than cause an infinite loop.
+
+* Mention explicitly that numbers do not survive across reads and
+  writes.
+
+* May the numbers start at any number?  Must they be used
+  sequentially?  May they be reused?  May they be used before they are
+  declared, (#1# #1=foo)?  I think all these answers should be No.
+
+The implementations below are not heavily tested.
+Read-with-numbered-parts should be able to handle any correct r5rs
+datum.  It signals some errors but allows several non-standard things
+as well, like (. x) and #(x . (y)).
+
+-al
+
+(define (read-with-numbered-parts . optional-port)
+  (define port
+    (if (null? optional-port) (current-input-port) (car optional-port)))
+
+  (define (read-char*) (read-char port))
+  (define (peek-char*) (peek-char port))
+
+  (define (looking-at? c)
+    (eqv? c (peek-char*)))
+
+  (define (delimiter? c)
+    (case c
+      ((#\( #\) #\&quot; #\;) #t)
+      (else (or (eof-object? c)
+		(char-whitespace? c)))))
+
+  (define (not-delimiter? c) (not (delimiter? c)))
+
+  (define (eat-intertoken-space)
+    (define c (peek-char*))
+    (cond ((eof-object? c))
+	  ((char-whitespace? c) (read-char*) (eat-intertoken-space))
+	  ((char=? c #\;)
+	   (do ((c (read-char*) (read-char*)))
+	       ((or (eof-object? c) (char=? c #\newline))))
+	   (eat-intertoken-space))))
+
+  (define (read-string)
+    (read-char*)
+    (let read-it ((chars '()))
+      (let ((c (read-char*)))
+	(case c
+	  ((#\&quot;) (list-&gt;string (reverse chars)))
+	  ((#\\) (read-it (cons (read-char*) chars)))
+	  (else (read-it (cons c chars)))))))
+
+  ;; reads chars that match PRED and returns them as a string.
+  (define (read-some-chars pred)
+    (let iter ((chars '()))
+      (let ((c (peek-char*)))
+	(if (or (eof-object? c) (not (pred c)))
+	    (list-&gt;string (reverse chars))
+	    (iter (cons (read-char*) chars))))))
+
+  ;; reads a character after the #\ has been read.
+  (define (read-character)
+    (let ((c (peek-char*)))
+      (if (char-alphabetic? c)
+	  (let ((name (read-some-chars char-alphabetic?)))
+	    (cond ((= 1 (string-length name)) (string-ref name 0))
+		  ((string-ci=? name &quot;space&quot;) #\space)
+		  ((string-ci=? name &quot;newline&quot;) #\newline)
+		  (else (error &quot;Unknown named character: &quot; name))))
+	  (read-char*))))
+
+  (define (read-number first-char)
+    (let ((str (string-append (string first-char)
+			      (read-some-chars not-delimiter?))))
+      (or (string-&gt;number str)
+	  (error &quot;Malformed number: &quot; str))))
+
+  (define char-standard-case
+    (if (char=? #\a (string-ref (symbol-&gt;string 'a) 0))
+	char-downcase
+	char-upcase))
+
+  (define (string-standard-case str)
+    (let* ((len (string-length str))
+	   (new (make-string len)))
+      (do ((i 0 (+ i 1)))
+	  ((= i len) new)
+	(string-set! new i (char-standard-case (string-ref str i))))))
+
+  (define (read-identifier)
+    (string-&gt;symbol (string-standard-case (read-some-chars not-delimiter?))))
+
+  (define (read-part-spec)
+    (let ((n (string-&gt;number (read-some-chars char-numeric?))))
+      (let ((c (read-char*)))
+	(case c
+	  ((#\=) (cons 'label n))
+	  ((#\#) (cons 'use n))
+	  (else (error &quot;Malformed shared part specifier&quot;))))))
+
+  ;; Tokens: strings, characters, numbers, booleans, and
+  ;; identifiers/symbols are represented as themselves.
+  ;; Single-character tokens are represented as (CHAR), the
+  ;; two-character tokens #( and ,@ become (#\#) and (#\@).
+  ;; #NN= and #NN# become (label NN) and (use NN).
+  (define (read-token)
+    (eat-intertoken-space)
+    (let ((c (peek-char*)))
+      (case c
+	((#\( #\) #\' #\`) (read-char*) (list c))
+	((#\,)
+	 (read-char*)
+	 (if (looking-at? #\@)
+	     (begin (read-char*) '(#\@))
+	     '(#\,)))
+	((#\&quot;) (read-string))
+	((#\.)
+	 (read-char*)
+	 (cond ((delimiter? (peek-char*)) '(#\.))
+	       ((not (looking-at? #\.)) (read-number #\.))
+	       ((begin (read-char*) (looking-at? #\.)) (read-char*) '...)
+	       (else (error &quot;Malformed token starting with \&quot;..\&quot;&quot;))))
+	((#\+) (read-char*) (if (delimiter? (peek-char*)) '+ (read-number c)))
+	((#\-) (read-char*) (if (delimiter? (peek-char*)) '- (read-number c)))
+	((#\#)
+	 (read-char*)
+	 (let ((c (peek-char*)))
+	   (case c
+	     ((#\() (read-char*) '(#\#))
+	     ((#\\) (read-char*) (read-character))
+	     ((#\t #\T) (read-char*) #t)
+	     ((#\f #\F) (read-char*) #f)
+	     (else (cond ((char-numeric? c) (read-part-spec))
+			 (else (read-number #\#)))))))
+	(else (cond ((eof-object? c) c)
+		    ((char-numeric? c) (read-char*) (read-number c))
+		    (else (read-identifier)))))))
+
+  ;; Maps the number of each part to a thunk that returns the part.
+  (define parts-alist '())
+
+  (define (read-object)
+    (finish-reading-object (read-token)))
+
+  (define (finish-reading-object first-token)
+    (if (not (pair? first-token))
+	first-token
+	(case (car first-token)
+	  ((#\() (read-tail))
+	  ((#\#) (list-&gt;vector (read-tail)))
+	  ((#\. #\)) (error &quot;Unexpected \&quot;&quot; token &quot;\&quot;&quot;))
+	  ((use) (let ((n (cdr first-token)))
+		   (cond ((assv n parts-alist) =&gt; cdr)
+			 (else (error &quot;Use of undeclared part &quot; n)))))
+	  ((label)
+	   ;; This is complicated in order to allow #1=#2=() and
+	   ;; #1=(#2=#1#) and not to loop forever when given #1=#1#.
+	   (let ((n (cdr first-token)))
+	     (if (assv n parts-alist)
+		 (error &quot;Double declaration of part &quot; n)
+		 (let read-labels ((labels (list n)))
+		   (define (add-labels-to-alist! thunk)
+		     (set! parts-alist
+			   (append (map (lambda (n) (cons n thunk)) labels)
+				   parts-alist)))
+		   (let ((token (read-token)))
+		     (cond ((and (pair? token) (eq? 'label (car token)))
+			    ;; An additional label in a chain of them.
+			    (let ((n (cdr token)))
+			      (if (or (assv n parts-alist) (memv n labels))
+				  (error &quot;Double declaration of part &quot; n))
+			      (read-labels (cons n labels))))
+			   ((and (pair? token) (eq? 'use (car token)))
+			    ;; The labeled object is a use of a previous label:
+			    ;; reuse its thunk for our thunk.
+			    (let* ((n (cdr token)) (p (assv n parts-alist)))
+			      (if (not p)
+				  (error &quot;Use of undeclared part &quot; n)
+				  (let ((thunk (cdr p)))
+				    (add-labels-to-alist! thunk)
+				    thunk))))
+			   (else
+			    ;; Normal case.  Make a thunk (which doesn't
+			    ;; need to be usable until the read is complete.)
+			    (letrec
+				((obj (begin
+					(add-labels-to-alist! (lambda () obj))
+					(finish-reading-object token))))
+			      obj))))))))
+	  (else (list (caadr (assv (car first-token)
+				   '((#\' 'x) (#\, ,x) (#\` `x) (#\@ ,@x))))
+		      (read-object))))))
+
+  (define (read-tail)
+    (let ((token (read-token)))
+      (cond ((eof-object? token) (error &quot;EOF inside a list or vector&quot;))
+	    ((not (pair? token)) (cons token (read-tail)))
+	    (else (case (car token)
+		    ((#\)) '())
+		    ((#\.) (let* ((obj (read-object))
+				  (tok (read-token)))
+			     (if (and (pair? tok) (char=? #\) (car tok)))
+				 obj
+				 (error &quot;Extra junk after a dot&quot;))))
+		    (else (let ((obj (finish-reading-object token)))
+			    (cons obj (read-tail)))))))))
+
+  (let ((obj (read-object)))
+    (let fill-in-parts ((obj obj))
+      (cond ((pair? obj)
+	     (if (procedure? (car obj))
+		 (set-car! obj ((car obj)))
+		 (fill-in-parts (car obj)))
+	     (if (procedure? (cdr obj))
+		 (set-cdr! obj ((cdr obj)))
+		 (fill-in-parts (cdr obj))))
+	    ((vector? obj)
+	     (let ((len (vector-length obj)))
+	       (do ((i 0 (+ i 1)))
+		   ((= i len))
+		 (let ((elt (vector-ref obj i)))
+		   (if (procedure? elt)
+		       (vector-set! obj i (elt))
+		       (fill-in-parts elt))))))))
+    obj))
+
+
+(define (write-with-numbered-parts obj . optional-port)
+  (define port
+    (if (null? optional-port) (current-output-port) (car optional-port)))
+
+  (define (write* obj) (write obj port))
+  (define (display* obj) (display obj port))
+  
+  (define (acons key val alist)
+    (cons (cons key val) alist))
+  ;; We only track duplicates of pairs, vectors, and strings.  We
+  ;; ignore zero-length vectors and strings because r5rs doesn't
+  ;; guarantee that eq? treats them sanely (and they aren't very
+  ;; interesting anyway).
+  (define (interesting? obj)
+    (or (pair? obj)
+	(and (vector? obj) (not (zero? (vector-length obj))))
+	(and (string? obj) (not (zero? (string-length obj))))))
+
+  ;; (write-obj OBJ ALIST):
+  ;; ALIST has an entry for each interesting part of OBJ.  The
+  ;; associated value will be:
+  ;;  -- a number if the part has been given one,
+  ;;  -- #t if the part will need to be assigned a number but has not been yet,
+  ;;  -- #f if the part will not need a number.
+  ;; The cdr of ALIST's first element should be the most recently
+  ;; assigned number.
+  ;; Returns an alist with new shadowing entries for any parts that
+  ;; had numbers assigned.
+  (define (write-obj obj alist)
+    (define (write-interesting alist)
+      (cond ((pair? obj)
+	     (let ((caro (car obj)) (cdro (cdr obj)))
+	       (cond ((and (pair? cdro)
+			   (null? (cdr cdro))
+			   (let ((abbrev (assq caro '('&quot;'&quot; `&quot;`&quot; ,&quot;,&quot; ,@&quot;,@&quot;))))
+			     (and abbrev
+				  ;; we can't abbreviate (quote . #1#)
+				  (not (cdr (assq cdro alist)))
+				  abbrev)))
+		      =&gt; (lambda (abbrev)
+			   (display* (cadr abbrev))
+			   (write-obj (car cdro) alist)))
+		     (else (display* &quot;(&quot;)
+			   (let write-cdr ((obj cdro)
+					   (alist (write-obj caro alist)))
+			     (cond ((and (pair? obj)
+					 (not (cdr (assq obj alist))))
+				    (display* &quot; &quot;)
+				    (write-cdr (cdr obj)
+					       (write-obj (car obj) alist)))
+				   ((null? obj) (display* &quot;)&quot;) alist)
+				   (else (display* &quot; . &quot;)
+					 (let ((alist (write-obj obj alist)))
+					   (display* &quot;)&quot;)
+					   alist))))))))
+	    ((vector? obj)
+	     (display* &quot;#(&quot;)
+	     (let ((len (vector-length obj)))
+	       (do ((i 1 (+ i 1))
+		    (alist (write-obj (vector-ref obj 0) alist)
+			   (write-obj (vector-ref obj i) alist)))
+		   ((= i len) (display* &quot;)&quot;) alist)
+		 (display* &quot; &quot;))))
+	    ;; else it's a string
+	    (else (write* obj) alist)))
+
+    (cond ((interesting? obj)
+	   (let ((val (cdr (assq obj alist))))
+	     (cond ((not val) (write-interesting alist))
+		   ((number? val)
+		    (display* &quot;#&quot;) (write* val) (display* &quot;#&quot;) alist)
+		   (else
+		    (let ((n (+ 1 (cdar alist))))
+		      (display* &quot;#&quot;) (write* n) (display* &quot;=&quot;)
+		      (write-interesting (acons obj n alist)))))))
+	  (else (write* obj) alist)))
+
+  ;; Scan computes the initial value of the alist, which maps each
+  ;; interesting part of the object to #t if it occurs multiple times,
+  ;; #f if only once.
+  (define (scan obj alist)
+    (cond ((not (interesting? obj)) alist)
+	  ((assq obj alist) =&gt;
+	   (lambda (p) (if (cdr p) alist (acons obj #t alist))))
+	  (else
+	   (let ((alist (acons obj #f alist)))
+	     (cond ((pair? obj) (scan (car obj) (scan (cdr obj) alist)))
+		   ((vector? obj)
+		    (let ((len (vector-length obj)))
+		      (do ((i 0 (+ 1 i))
+			   (alist alist (scan (vector-ref obj i) alist)))
+			  ((= i len) alist))))
+		   (else alist))))))
+
+  (write-obj obj (acons 'dummy 0 (scan obj '())))
+  ;; Don't want to return the big alist that write-obj did, lest it hinder gc.
+  (if #f #f))
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00029" href="msg00029.html">Second Draft forthcoming, probably monday.</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00031.html">Re: new function or modify read</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00033.html">New Draft updated</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00029.html">Second Draft forthcoming, probably monday.</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00031.html">Re: new function or modify read</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00032"><strong>Date</strong></a></li>
+<li><a href="threads.html#00032"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

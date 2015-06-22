@@ -1,0 +1,300 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Three&#45;way action -->
+<!--X-From-R13: fuvirefNpp.tngrpu.rqh -->
+<!--X-Date: Wed, 24 Jul 2002 18:56:50 +0200 (DFT) -->
+<!--X-Message-Id: 200207241656.g6OGuNB12790@mongkok.dyndns.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Three-way action</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00022.html">Date Prev</a>][<a href="msg00024.html">Date Next</a>][<a href="msg00022.html">Thread Prev</a>][<a href="msg00024.html">Thread Next</a>][<a href="maillist.html#00023">Date Index</a>][<a href="threads.html#00023">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Three-way action</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-32@DOMAIN.HIDDEN">srfi-32@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Three-way action</li>
+<li><em>From</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxxxxx</a></li>
+<li><em>Date</em>: Wed, 24 Jul 2002 12:56:23 -0400</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-32@DOMAIN.HIDDEN">srfi-32@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Reply-to</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>    From: Sven Hartrumpf &lt;Sven.Hartrumpf@xxxxxxxxxxxxxxxx&gt; 
+    Comparison predicates.
+    I saw the discussion about &lt; and &lt;=. But is not a three-valued comparison
+    function (symbols less, greater, equal) more efficient for some data types
+    if many duplicates are present? I often sort lists of some million strings
+    of average length 20 and many duplicates. I remember that some sort
+    algorithms will test (&lt; a b) and (&lt; b a) in certain constellations for one
+    setting of a and b. (Olin, for things like this a look at your reference
+    implementation would be helpful, although concentrating on the design was
+    a clever move for the discussion so far.) A three-valued comparison
+    function also speeds up vector-binary-search. A problem for three-valued
+    comparison functions is that their implementation can range from efficient
+    to inefficient:
+    - you can write an efficient string-compare for strings
+    - but, for numbers you would need support from the underlying Scheme system
+      beyond R5RS (?) although an implementation using &gt; and &lt; is not too slow.
+
+OK, here's what I know about sorts that use three-way order predicates.
+
+I only know of one sorting algorithm that can exploit this: it is a variant
+of quicksort which I learned from Jon Bentley and was tagged to him and Doug
+McIlroy. It is described in the comments at the end of the quicksort code
+in my reference implementation; I append it for interested readers.
+
+People with your needs deserve support from this SRFI. Now, we have two
+basic approaches to putting a three-way-comparison sort into the SRFI:
+  - I could add it in the &quot;general&quot; sorting lib, perhaps
+      (vector-sort3! v compare [start end])
+    and so forth (possibly for stable, non-destructive, and list variants).
+
+  - I could just add it to the quicksort module
+      (quick-sort3! v compare [start end])
+
+I do *not* think this function fits into the &quot;general&quot; category. For one,
+I don't know of any *stable* variants, or list variants. I only know of
+one, non-stable algorithm that works in-place on a vector. Period.
+
+(I don't mean I don't know how to sort a list or stably sort a vector
+using a three-way comparison function. After all, you could just use
+your three-way comparison function in a &quot;dumb&quot; two-way &lt; mode in any
+of the standard algorithms. I mean I don't know of a way to do it that
+*exploits* the extra discrimination provided by the three-way comparison.)
+
+So unless there is a sorting honcho out there that can tell me three-way
+comparison sorts come in a variety of functionalities (stable, in-place,
+list, vector), it seems best to claim it's an *algorithm*, not a *general
+operation* and file it that way: three-way in-place vector quick sort.
+OK? If that's what you need, you pull it out of the quick-sort module.
+
+Final remark: I think the comparison function f should return an integer:
+    (f x y) &lt; 0		x &lt; y
+    (f x y) = 0		x = y
+    (f x y) &gt; 0		x &gt; y
+I prefer this to having it return a symbol, e.g. {'less, 'equal, 'greater}.
+Why? First, the integer is frequently the natural result of the actual
+comparison operation, e.g. consider the trivial comparison function -.
+In fact, keeping in mind that - is the &quot;model&quot; for this comparison function
+is a nice, simple, easy-to-remember way to decide &quot;polarity,&quot; that is,
+if a negative number means x &lt; y or y &lt; x.
+
+Second, integers can be tested by the underlying hardware against zero
+quickly. Using symbols is more expensive.
+
+In summary, I propose adding
+    (quick-sort3! v compare [start end]) -&gt; unspecified
+to the vector quick-sort module. COMPARE returns an integer.
+I'm not even going to add a non-in-place version.
+
+The current quick-sort code from the ref implementation follows; see the
+comments at the end. They will have to be turned into code.
+
+That's my story on three-way comparison sorting. Comments?
+    -Olin
+
+-------------------------------------------------------------------------------
+;;; The SRFI-32 sort package -- quick sort			-*- Scheme -*-
+;;; Copyright (c) 1998 by Olin Shivers.
+;;; This code is open-source; see the end of the file for porting and
+;;; more copyright information.
+;;; Olin Shivers 10/98.
+
+;;; Exports:
+;;; (quick-sort  v &lt; [start end]) -&gt; vector
+;;; (quick-sort! v &lt; [start end]) -&gt; unspecific
+
+;;; This quicksort is at least somewhat non-naive -- it uses the median of
+;;; three elements as the partition pivot, so pathological n^2 run time is
+;;; much rarer (but not eliminated completely). If you really wanted to get
+;;; fancy, you could use a random number generator to choose pivots. The key
+;;; to this trick is that you only need to pick one random number for each
+;;; *level* of recursion -- i.e. you only need (lg n) random numbers.  See the
+;;; end of the file for a further trick, which I learned from Jon Bentley, 
+;;; for exploiting ordering procedures that discriminate 3 ways (&lt;, =, &gt;)
+;;; to partition each subvector into 3 regions.
+
+(define (quick-sort! v &lt; . maybe-start+end)
+  (let-vector-start+end (start end) quick-sort! v maybe-start+end
+    (%quick-sort! v &lt; start end)))
+
+(define (quick-sort v &lt; . maybe-start+end)
+  (let-vector-start+end (start end) quick-sort v maybe-start+end
+    (let ((ans (vector-copy v start end)))
+      (%quick-sort! ans &lt; 0 (- end start))
+      ans)))
+
+
+;;; %QUICK-SORT! is not exported.
+;;; Preconditions:
+;;;   V vector
+;;;   START END fixnums
+;;;   0 &lt;= START, END &lt;= (vector-length V)
+;;; If these preconditions are ensured by the cover functions, you
+;;; can safely change this code to use unsafe fixnum arithmetic and vector
+;;; indexing ops, for *huge* speedup.
+;;;
+;;; We bail out to insertion sort for small ranges; feel free to tune the
+;;; crossover -- it's just a random guess. If you don't have the insertion
+;;; sort routine, just kill that branch of the IF and change the recursion
+;;; test to (&lt; 1 (- r l)) -- the code is set up to work that way.
+
+(define (%quick-sort! v elt&lt; start end)
+  (let recur ((l start) (r end))	; Sort the range [l,r).
+    (if (&lt; 5 (- r l))
+
+	;; Choose the median of V[l], V[r], and V[middle] for the pivot.
+	(let* ((median (lambda (v1 v2 v3)
+			 (receive (little big)
+			     (if (elt&lt; v1 v2) (values v1 v2) (values v2 v1))
+			   (if (elt&lt; big v3) big
+			       (if (elt&lt; little v3) v3 little)))))
+	       (pivot (median (vector-ref v l)
+			      (vector-ref v (quotient (+ l r) 2))
+			      (vector-ref v (- r 1)))))
+
+	  (let loop ((i l) (j (- r 1)))
+	    (let ((i (let scan ((i i)) (if (elt&lt; (vector-ref v i) pivot)
+					   (scan (+ i 1))
+					   i)))
+		  (j (let scan ((j j)) (if (elt&lt; pivot (vector-ref v j))
+					   (scan (- j 1))
+					   j))))
+	      (if (&lt; i j)
+		  (let ((tmp (vector-ref v j)))		
+		    (vector-set! v j (vector-ref v i))	; Swap V[I]
+		    (vector-set! v i tmp)		;  and V[J].
+		    (loop (+ i 1) (- j 1)))
+
+		  (begin (recur l i) (recur (+ j 1) r))))))
+
+	;; Small segment =&gt; punt to insert sort.
+	;; Use the dangerous subprimitive.
+	;; NOTE: It can happen that (&lt; r l), which means an empty range. 
+	;; If %INSERT-SORT! didn't tolerate such a degenerate range, we'd 
+	;; have to check for this case.
+	(%insert-sort! v elt&lt; l r)
+	)))
+
+;;; Note: If you're ambitious, you might consider a variant of this quicksort
+;;; routine. If you have a comparison routine that returns *three* 
+;;; indicators -- &lt;, =, or &gt; -- then the partition code can partition the
+;;; vector into a left part that is &lt;, a middle region that is =, and a right
+;;; part that is &gt; the pivot. Here's how it is done:
+;;;   The partition loop divides the range being partitioned into five 
+;;;   subranges:
+;;;       =======&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;?????????&gt;&gt;&gt;&gt;&gt;&gt;&gt;=======
+;;;   where = marks a value that is = to the pivot, &lt; marks a value that is
+;;;   less than the pivot, ? marks a value that hasn't been scanned, and
+;;;   &gt; marks a value that is greater than the pivot. Let's consider the 
+;;;   rightward scan. If it checks a ? value that is &lt;, it keeps scanning.
+;;;   If the ? value is &gt;, we stop the scan -- we are ready to start the
+;;;   leftward scan and then do a swap. But if the rightward scan checks a
+;;;   ? value that is =, we swap it *down* to the end of the initial chunk
+;;;   of ====='s -- we exchange it with the leftmost &lt; value -- and then
+;;;   continue our rightward scan. The leftwards scan works in a similar 
+;;;   fashion, scanning past &gt; elements, stopping on a &lt; element, and swapping
+;;;   up = elements. When we are done, we have a picture like this
+;;;       ========&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;=========
+;;;   Then swap the = elements up into the middle of the vector to get
+;;;   this:
+;;;       &lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;&lt;=================&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;&gt;
+;;;   Then recurse on the &lt;'s and &gt;'s. Working out all the tricky little
+;;;   boundary cases I leave an exercise to the interested reader.
+;;;     -Olin
+
+
+;;; Copyright
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; This code is
+;;;     Copyright (c) 1998 by Olin Shivers.
+;;; The terms are: You may do as you please with this code, as long as
+;;; you do not delete this notice or hold me responsible for any outcome
+;;; related to its use.
+;;;
+;;; Blah blah blah.
+
+
+;;; Code tuning &amp; porting
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;; This is very portable code. It's R4RS with the following exceptions:
+;;; - VECTOR-COPY
+;;; - The scsh LET-VECTOR-START+END macro for parsing and defaulting optional
+;;;   START/END arguments.
+;;; - The R5RS multiple-value VALUES procedure and the simple RECEIVE
+;;;   multiple value-binding macro.
+;;; - The quicksort recursion bottoms out in a call to an insertion sort
+;;;   routine, %INSERT-SORT!. But you could even punt this and go with pure
+;;;   recursion in a pinch.
+;;;
+;;; This code is *tightly* bummed as far as I can go in portable Scheme.
+;;;
+;;; The internal primitive %QUICK-SORT! that does the real work can be
+;;; converted to use unsafe vector-indexing and fixnum-specific arithmetic ops
+;;; *if* you alter the two small cover functions to enforce the invariants.
+;;; This should provide *big* speedups. In fact, all the code bumming I've
+;;; done pretty much disappears in the noise unless you have a good compiler
+;;; and also can dump the vector-index checks and generic arithmetic -- so
+;;; I've really just set things up for you to exploit.
+;;;
+;;; The optional-arg parsing, defaulting, and error checking is done with a
+;;; portable R4RS macro. But if your Scheme has a faster mechanism (e.g., 
+;;; Chez), you should definitely port over to it. Note that argument defaulting
+;;; and error-checking are interleaved -- you don't have to error-check 
+;;; defaulted START/END args to see if they are fixnums that are legal vector
+;;; indices for the corresponding vector, etc.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00022.html">some late comments</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00024.html">quick-sort3!</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00022.html">some late comments</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00024.html">quick-sort3!</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00023"><strong>Date</strong></a></li>
+<li><a href="threads.html#00023"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,328 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: fundamental design issues (long message) -->
+<!--X-From-R13: Fnlybe Qnzcoryy <pnzcoryyNzhzoyr.arg> -->
+<!--X-Date: Sat,  3 Dec 2005 17:22:17 +0100 (CET) -->
+<!--X-Message-Id: y9l4q5qgnic.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>fundamental design issues (long message)</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00046.html">Date Prev</a>][<a href="msg00048.html">Date Next</a>][<a href="msg00053.html">Thread Prev</a>][<a href="msg00048.html">Thread Next</a>][<a href="maillist.html#00047">Date Index</a>][<a href="threads.html#00047">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>fundamental design issues (long message)</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-83@DOMAIN.HIDDEN">srfi-83@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: fundamental design issues (long message)</li>
+<li><em>From</em>: Taylor Campbell &lt;<a href="mailto:campbell@DOMAIN.HIDDEN">campbell@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri,  2 Dec 2005 22:17:00 +0000 (UTC)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-83@DOMAIN.HIDDEN">srfi-83@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Gnus/5.110003 (No Gnus v0.3) XEmacs/21.5-b21 (darwin)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Already there has been a great deal of contention over several items in
+this SRFI.  Although I know that this is a very difficult issue to
+tackle, and my initial reaction was reservation about joining the
+discussion, I think there are several ways to significantly improve the
+design of the system.  Some of them I'm sure the authors will disagree
+with, but I'll put them forth anyway.  My alternative proposal and some
+examples of it are available on the web at
+
+  &lt;<a  rel="nofollow" href="http://mumble.net/~campbell/proposals/module.text">http://mumble.net/~campbell/proposals/module.text</a>&gt;
+
+1. Source storage and naming.  We have seen several different view-
+   points about how source should be stored and modules named.  Some
+   want a convenient mechanism for listing many modules in a single
+   file, i.e. a module-&gt;file surjection; others want a bijective
+   file&lt;-&gt;module mapping; and there are still others, such as myself,
+   who at times want certain modules to be able to be spread throughout
+   multiple files, i.e. a file-&gt;module surjection.  There is another
+   position of wanting independence of the file system and module
+   system, which I agree with as being useful.  Furthermore, there are
+   strong reasons to prefer being able to identify top-level forms in a
+   module's body by being aligned at column 0 of lines in the file.
+   All of these points are useful, and I think none of them really
+   takes any significant precedence over the others.
+
+   I suggest, though, that there is a way to support all of these
+   desirable properties of the module system.  What I am about to offer
+   also has several more properties as well: it provides easy static
+   analysis of a software system's organization at a high level, and it
+   could allow for easier transition to R6RS.  My suggestion is this,
+   based on Scheme48's module system: that module descriptions be in a
+   simple language distinct from Scheme, which would be in general
+   placed in a file separate from those of the source code of modules'
+   implementations.  There would be one module descriptions file for a
+   collection of related modules that would describe the high-level
+   organization of the components of the system.  In each module
+   definition, there might be a (FILES pathname ...) clause specifying
+   that there is implementation source in the supplied pathnames; there
+   might be a (CODE command or definition ...) clause specifying
+   embedded source; and there might be yet other clausess for more
+   exotic forms of source storage.  The module definition would also
+   contain IMPORT(S?) clauses, clauses specifying the interface that
+   the module implements (on which I shall elaborate below), FOR-SYNTAX
+   clauses specifying the macro environment (akin to SRFI 83's current
+   (FOR ... EXPAND), but arbitrarily nestable), and possibly more
+   clauses.
+
+   This structure has a number of advantages:
+
+     a. Those who wish to embed multiple libraries in a single file can
+        do so simply by using embedded CODE clauses in a module
+        description file.
+
+     b. Those who wish to have a file&lt;-&gt;module bijection can simply use
+        a single FILES clause for each of their modules.
+
+     c. Those who wish to support multiple files in a single module can
+        simply use multiple FILES clauses, or FILES clauses with
+        multiple pathnames.
+
+     d. The program's high-level organization is very clearly specified
+        and laid out, making it easy to examine how all modules are
+        interrelated -- easy not just for a human but also for a
+        machine, simplifying, for instance, cross-referencing tools or
+        editor features.
+
+     e. This organization is conducive to static processing without
+        delving into all the Scheme code.  For example, one could load
+        a single module description file for one software bundle,
+        without requiring that all of the source be touched until the
+        modules be actually needed: each module in the set of module
+        descriptions could be loaded on demand (and not even the whole
+        set at once would be needed, only the individually necessary
+        ones).  In this way, many, many modules can be available in a
+        running image, with plenty of information about them supplied
+        (e.g., for browsing) without requiring that they all be loaded,
+        bloating the image.
+
+     f. The organization I propose more clearly separates the module
+        language from the Scheme language, which in the present
+        proposal is not so clear, though the separation is certainly
+        still equally present.  The meaning of program terms at 'the
+        top level' is relegated to a small remark in the issues section
+        noting that no such semantics is specified to only very briefly
+        explain this separation.
+
+     g. By specifying module descriptions separately from module
+        source, reader extensions are *much* more easily isolable into
+        the module description and pose no problems of needing to read
+        a module's source before all the information necessary to do so
+        is available.
+
+     h. In my experience, I have found that the Scheme48 module system
+        is very conducive to rapid development for a number of reasons,
+        some of which I shall get into later, but chief among which
+        here is the ability to load a module definition into an image
+        and then to incrementally load definitions for that module's
+        source into the image without having to reload the whole
+        module for each tiny change: the system can determine what
+        environment the new code should be evaluated in and acts
+        accordingly.  This is very beneficial to developing many
+        initially small modules very rapidly and conveniently.
+
+2. 'Language' module.  I have always been puzzled by this peculiarity
+   in MzScheme's module system.  The only reason I have heard for it is
+   that it allows for control of REQUIRE in module bodies by magical
+   mystery macros in PLT, but I am very equivocal toward the inclusion
+   of such limited-use extensibility in the standard.  Now, clearly, if
+   there were no language specifying the available names in the first
+   place, there could be no IMPORT name bound in module bodies to
+   import other names for actual usage, but this becomes irrelevant if
+   the method of specifying module imports is moved to the level of a
+   module description language explained above.(*)  The imported
+   modules can be uniformly listed without requiring some special
+   position for a 'language' module.
+
+   (*) The module language could still, in fact, be extensible in this
+       way.  In Scheme48, for instance, the module language is
+       implemented as a set of macros that expand to Scheme procedure
+       calls operating on module objects.  Macros are also supported in
+       the module language, so custom module system macros could be
+       defined that control OPEN clauses.  Also, module language
+       environments, which are no different from regular Scheme
+       environments except in what bindings are available, can be
+       controlled as well to a similar effect.
+
+3. Syntactic tower.  For over a decade, I believe, Scheme48's module
+   system has supported a simple mechanism, with a simple
+   implementation, for specifying the environment of macro definitions
+   in modules:
+
+    i. The OPEN (IMPORT) clauses specify the names bound at the regular
+       lexical environment of the module's body.
+   ii. The OPEN clauses within one level of (FOR-SYNTAX &lt;clause&gt; ...)
+       specify the lexical environment for the right-hand sides of
+       macro bindings.
+  iii. Within another FOR-SYNTAX level, OPEN clauses specify the
+       lexical environment of right-hand sides of macro bindings within
+       the right-hand sides of macro bindings.
+   iv. ...and so on, arbitrarily deeply nested.
+
+      (FOR-SYNTAX clauses can also contain other clauses; they could,
+       for instance, contain FILES clauses for definitions that should
+       be visible in the macro environment to be used in macros defined
+       in the module.)
+
+   Also, every module is instantiated once.  After being compiled, it
+   need not be compiled again; after being loaded, it need not be
+   loaded again.  (Actually, in the current implementation, modules are
+   always immediately loaded after compilation, but this is not
+   strictly necessary.)  There is no strange tower of modules being
+   loaded once for some other module using it at compilation time and
+   being loaded (and compiled?) again if the same module uses it at
+   run-time, and perhaps yet again if another module uses the second
+   one at compilation time and run-time both.  (I still don't
+   understand the exact details of how this is all interrelated.)  This
+   is all very difficult to follow, and it makes it especially hard to
+   work in a traditional image-based Lisp development environment if
+   a module does not mean a single thing but rather a tower of possible
+   instantiations of a module template.  The ability to very quickly
+   work in many different modules at once, editing &amp; re-evaluating
+   definitions incrementally, in a running system, has proven utterly
+   invaluable in my experience to rapid development of complex systems.
+
+4. Indirect exports.  I think it would be much simpler if a macro's
+   indirect exports were listed within the macro's definition.  In some
+   macros, this would not even be necessary; a SYNTAX-RULES compiler,
+   for example, can determine quite easily what auxiliary names are
+   needed by the macro.  In instances where the list is statically
+   undecidable, it is most convenient to list it along with the macro's
+   definition, and it does not pollute the specification of the
+   interface, since the list is really an implementation detail of the
+   macro.  So I propose that the INDIRECT-EXPORT form be eliminated in
+   favour of adding an indirect export list to macro transformers where
+   it is necessary; e.g.:
+
+     (define-syntax foo
+       (explicit-renaming-transformer
+         (lambda (form rename compare)
+           `(,(rename 'BAR) ,(caddr form) ,(cadr form)))
+         (BAR)))
+
+     (define-syntax baz
+       (syntactic-closure-transformer
+         (lambda (form usage-env transformer-env)
+           (close-syntax `(QUUX ,(close-syntax (cadr form) usage-env)
+                                ZOT)
+                         transformer-env))
+         (QUUX ZOT)))
+
+5. The issue of separating interface from implementation is clearly
+   omitted as noted in the issues section.  This is a very glaring
+   omission which is easy to correct and whose inclusion would
+   dramatically improve the usefulness and applicability of the module
+   system, as well as expanding the room for extension, such as to
+   parametric modules (discussed below).  I propose that a top-level
+   module language form be introduced for defining named interfaces,
+   and that the LIBRARY form or equivalent be modified to have a single
+   interface listed, not many EXPORTs scattered throughout the body.
+
+   I have found that the separate specification of interfaces from
+   implementations is very useful in designing complex systems for many
+   reasons:
+
+     a. It conduces extra thought to be put to the design of modular
+        components, which may potentially be reused in more general
+        ways or reimplemented easily preserving the interface.
+
+     b. It simplifies cross-referencing and static analysis of programs
+        by providing the static information of what names are made
+        available by what modules, without, as noted earlier, needing
+        to delve into the modules' bodies.  This kind of static
+        analysis can be very useful in the transition to the R6RS
+        module system, because a simple compiler can be used whose
+        input is the R6RS module language and whose output is module
+        definitions for particular Scheme systems that have not yet
+        adopted the R6RS module system.
+
+     c. Interface definitions are very convenient places for locating
+        API documentation.  This could be on-line or off-line, and
+        either embedded as (optional) strings in the interface
+        definition or written as comments in the region of the
+        interface definition.  This better separates the interface
+        documentation from internal comments, where previously the two
+        would often be confounded.
+
+     d. Interfaces can also be used to specify optional static types,
+        for debugging or optimization convenience; Scheme48 allows
+        this, for example.  (This is somewhat of an extension of (a)
+        and (c).)
+
+     e. As interface definitions are separated from the modules that
+        implement them, they can be redefined separately, too.  In
+        Scheme48, redefining an interface has the effect of making all
+        new names specified by it available in all modules that opened
+        modules that implement the redefined interface.  This is very
+        helpful when developing modules whose interfaces are in a state
+        of flux and the developer has no inclination to reload all of
+        his modules just to make a single newly exported name available
+        in some already loaded module.
+
+     f. Although I do not propose to include parametric modules in the
+        base module system of R6RS, interface specifications make the
+        concept a much more feasible and simple extension to the module
+        system: the specification of interfaces separately from their
+        implementations allows parametric modules to request parameters
+        with particular interfaces, regardless of the implementation,
+        which would not be possible, or which would be at least
+        extremely cumbersome and repetitive, if all of the interfaces
+        were implicitly specified within the modules that implemented
+        them.  Standard ML's  functors are an example of this kind of
+        parametric module which have shown themselves to be very useful
+        in practice.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00046.html">wrapping procedures</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00048.html">Re: fundamental design issues (long message)</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00053.html">Re: wrapping procedures</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00048.html">Re: fundamental design issues (long message)</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00047"><strong>Date</strong></a></li>
+<li><a href="threads.html#00047"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

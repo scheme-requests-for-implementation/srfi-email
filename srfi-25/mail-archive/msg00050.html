@@ -1,0 +1,176 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Bad things Re: Some thoughts... -->
+<!--X-From-R13: Rnivq Dhfu <qehfuNargfpncr.pbz> -->
+<!--X-Date: Thu, 22 Nov 2001 17:10:37 +0100 (MET) -->
+<!--X-Message-Id: okfg076pz1b.fsf@netscape.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: okfwv0korh0.fsf@bellsouth.net -->
+<!--X-Reference: qotvgg3ub13.fsf@donner.ling.helsinki.fi -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Bad things Re: Some thoughts...</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00049.html">Date Prev</a>][<a href="msg00051.html">Date Next</a>][<a href="msg00049.html">Thread Prev</a>][<a href="msg00051.html">Thread Next</a>][<a href="maillist.html#00050">Date Index</a>][<a href="threads.html#00050">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Bad things Re: Some thoughts...</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Jussi Piitulainen &lt;<a href="mailto:jpiitula@DOMAIN.HIDDEN">jpiitula@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Bad things Re: Some thoughts...</li>
+<li><em>From</em>: David Rush &lt;<a href="mailto:drush@DOMAIN.HIDDEN">drush@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: 22 Nov 2001 16:10:08 +0000</li>
+<li><em>Cc</em>: <a href="mailto:srfi-25@DOMAIN.HIDDEN">srfi-25@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-25@DOMAIN.HIDDEN">srfi-25@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:qotvgg3ub13.fsf@DOMAIN.HIDDEN">qotvgg3ub13.fsf@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:okfwv0korh0.fsf@DOMAIN.HIDDEN">okfwv0korh0.fsf@xxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:qotvgg3ub13.fsf@DOMAIN.HIDDEN">qotvgg3ub13.fsf@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Gnus/5.0808 (Gnus v5.8.8) XEmacs/21.1 (Channel Islands)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Jussi Piitulainen &lt;jpiitula@xxxxxxxxxxxxxxxx&gt; writes:
+&gt; David Rush writes:
+&gt; &gt; I have just scanned through the SRFI document and a fair bit of the
+&gt; &gt; discussion. Just two quick thoughts.
+&gt; &gt; 
+&gt; &gt; 1) (array-set! a dim0 dim1 ... dimn val) is a *really* bad specification
+&gt; &gt;    for this API. Yes, I know it's compatible with vector-set!, but
+&gt; &gt;    it's still not right. This form is deeply inefficient, requiring
+&gt; &gt;    list packaging of the dimensions (because of the variable length
+&gt; 
+&gt; Any implementation of a variable number of arguments requires such
+&gt; packaging. Yours do, below.
+
+Except that once you've created an indexing object you can also modify
+it. Since much array access follows predictable patterns this agains
+provides opportunities for significant speed-ups. To summarize:
+package once, iterate many. You'll still have the assignments from
+loop indicies (unles you macrologize them away with iteration
+combinators), but I would be surprised if that took more time than
+repeated packaging.
+
+&gt; &gt;    argument list) *and* the value to be placed in the array is bundled
+&gt; &gt;    into the same data structure as the indicies.
+
+&gt; In the worst case, if a user really is in a hurry and insists on using
+&gt; array-set! and building its argument lists dynamically and then using
+&gt; apply, they can stash the values to the end with set-car! to avoid any
+&gt; allocation.
+
+But then they have to iterate out to find the cons which will hold the
+value. There is just *no way* that having the value to be stored in
+the array be the last parameter is a good idea (when you're dealing
+with varargs).
+
+&gt; &gt;    either of the following is far better:
+&gt; &gt;         1 (array-set! a val dim0 dim1 ... dimn)
+&gt; &gt;         2 (array-set! a (array-index dim0 dim1 ... dimn) val)
+&gt; 
+&gt; Both of these use variable length argument lists. 
+
+But in a loop #2 can do it *many* less times. Multi-dim arrays
+*always* get looped over.
+
+&gt; &gt;    I like 2 because of symmetry with the array-shap concept. Also it
+&gt; &gt;    has the nice possibility of allowing assignments to larger units of
+&gt; &gt;    the underlying array than just single elements.
+&gt; 
+&gt; I'm rather hoping that array-set! would not be the most common tool in
+&gt; practice. 
+
+If you don't want a mutable data structure, then you shouldn't even
+let mutability into the spec. I didn't notice any other mutation
+operators, am I just blind?
+
+&gt; The latter case here seems more like an array thing already:
+&gt; treating an arrangement of values as a unit.
+
+Well, I'd call it a record thing, except for type issues. But yeah.
+
+&gt; &gt; 2) The SRFI should be a completely abstract proposition. There are so
+&gt; &gt;    many different array implementations that might be desirable in a
+&gt; [...]
+&gt; &gt;    for production (I am specifically thinking of numerical &amp; graph
+&gt; &gt;    applications here where sparse arrays/matrices can be very common).
+&gt; 
+&gt; Hm. Could the sharing mechanism be useful with sparse arrays? Perhaps
+&gt; it could. I haven't thought of that at all.
+
+Specifically, I'm looking at building a large sparse array of
+something like 20,000 x 500,000 elements. The vast majority of those
+entries are going to be zero. The rest will have values computed when
+they're needed. I'll be obviously implementing all of the
+infrastructure for the big arrays myself, but I would like to be able
+to test the algorithms on something rather smaller. This is why I'd
+like a purely abstract specification.
+
+&gt; &gt;    This means that any vector/array equivalence is a *bad thing* IMO.
+&gt; &gt;    Preserve disjointness!
+
+david rush
+-- 
+With guns, we are citizens. Without them, we are subjects.
+	-- YZGuy, IPL
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00051" href="msg00051.html">Access time of elements Re: Bad things []</a></strong>
+<ul><li><em>From:</em> Jussi Piitulainen</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00047" href="msg00047.html">Some thoughts...</a></strong>
+<ul><li><em>From:</em> David Rush</li></ul></li>
+<li><strong><a name="00049" href="msg00049.html">Bad things Re: Some thoughts...</a></strong>
+<ul><li><em>From:</em> Jussi Piitulainen</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00049.html">Bad things Re: Some thoughts...</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00051.html">Access time of elements Re: Bad things []</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00049.html">Bad things Re: Some thoughts...</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00051.html">Access time of elements Re: Bad things []</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00050"><strong>Date</strong></a></li>
+<li><a href="threads.html#00050"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

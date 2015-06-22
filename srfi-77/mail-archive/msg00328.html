@@ -1,0 +1,394 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Contagious Inexactness, revision 2 -->
+<!--X-From-R13: Oaqerj Ivypbk <njvypbkNnaqerjjvypbk.anzr> -->
+<!--X-Date: Wed, 16 Nov 2005 04:59:09 +0100 (CET) -->
+<!--X-Message-Id: 20051116035854.5F0FC600037@iris.wilcoxsoftware.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Contagious Inexactness, revision 2</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00327.html">Date Prev</a>][<a href="msg00329.html">Date Next</a>][<a href="msg00327.html">Thread Prev</a>][<a href="msg00329.html">Thread Next</a>][<a href="maillist.html#00328">Date Index</a>][<a href="threads.html#00328">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Contagious Inexactness, revision 2</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Contagious Inexactness, revision 2</li>
+<li><em>From</em>: Andrew Wilcox &lt;<a href="mailto:awilcox@DOMAIN.HIDDEN">awilcox@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 15 Nov 2005 19:58:54 -0800 (PST)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>My thanks to Marcin 'Qrczak' Kowalczyk, John Cowan, Bear, and Dave
+Mason for their comments on my proposal.
+
+What particularly struck me was how confusing many readers found the
+wording of my first revision.
+
+Some people ended up arguing against a position that I had not
+actually intended to propose...
+
+I've rewritten the proposal and elaborated my treatment of inexactness
+in the hope that my presentation will now be more clear.
+
+I welcome comments, both for and against the proposal, as well as
+questions.
+
+Thank you.
+
+
+
+Contagious Inexactness in R5RS
+
+R5RS provides a mechanism whereby the result of a numeric calculation
+may be determined to be an exact result, or a possibly inaccurate
+approximation:
+
+  A number is inexact if it was written as an inexact constant, if it
+  was derived using inexact ingredients, or if it was derived using
+  inexact operations. Thus inexactness is a contagious property of a
+  number.
+
+However, it is well known that the design of contagious inexactness in
+R5RS has serious problems [Egner et al. 2004]:
+
+  * The existing exactness or inexactness of a number is used to
+    determine whether further mathematical operations perform
+    (perhaps slow) accurate calculations or (hopefully fast)
+    approximate ones.
+
+    This violation of good design for generic procedures engenders
+    difficult bugs.
+
+    In addition, the programmer is forced to lose exactness
+    information in order to obtain either an accurate or fast
+    calculation.
+
+  * The standard treats *numbers* as being exact or inexact, which is
+    untrue and confuses the issue of whether the result of the
+    computer calculation (which is a particular number) is exactly
+    equal to the ideal mathematical result of the calculation (which
+    is another particular number, perhaps the same, perhaps
+    different).
+
+  * R5RS cannot tell us whether the result of a calculation is exact
+    for some expressions for which knowing that would be particularly
+    useful, such as (&lt; x y).
+
+
+In SRFI-77 there are two competing alternatives for generic
+arithmetic. R5RS-style Generic Arithmetic preserves contagious
+inexactness without solving the serious problems of R5RS, while 
+Generic Exact Arithmetic avoids these problems at the cost of losing
+contagious inexactness.
+
+As a professional programmer with sixteen years of experience in
+financial, manufacturing, non-profit, higher education, and software
+industries, I am particularly sensitive to pernicious bugs: bugs that
+arise in production software and harm users, even when code has been
+written by experienced programmers and tested with due diligence.  I
+see the use of higher level languages as especially important in
+avoiding the most common of pernicious bugs such as dangling pointers
+and buffer overflows.
+
+From this perspective I cannot support R5RS style generic arithmetic.
+However, I view the idea contagious inexactness as a useful one and
+worth the effort to see if a useful and safe design can be developed.
+
+This proposal aims to provide a useful model for contagious
+inexactness, while avoiding the problems of R5RS.
+
+
+A New Definition of Exactness
+
+In this proposal, exactness is no longer a property of a number or a
+particular numeric representation.
+
+Instead, it is an indication of whether or not a computation is
+returning a result precisely equal to the true, mathematical
+result.
+
+Two Scheme implementations returning results flagged as exact, from
+the same computation, performed on the same inputs, will return
+equal values.
+
+Note however, that simply because one Scheme implementation is able to
+return an exact result from a particular computation does not imply
+that another Scheme implementation will be able to do so.
+
+The result of evaluating an expression may be tested with the
+predicates EXACT? and INEXACT?
+
+    (exact? (calculate-something))
+
+Because there is no longer &quot;exact&quot; or &quot;inexact&quot; representations of
+numbers, I do not include the EXACT-&gt;INEXACT and INEXACT-&gt;EXACT
+procedures.
+
+Instead, I will use an INEXACT procedure to explicitly flag the
+returned value as not being known to be equal to its true value.
+
+For example, if I perform a measurement in the physical world, I may
+get a particular number as a the result of the measurement, but I know
+that it is approximate to the actual value.
+
+    (exact? (&gt; (inexact 4) 5))   =&gt; #f
+
+Note that INEXACT does only one thing: it sets the &quot;inexactness bit&quot;
+on its return value.  It does not, for example, change its argument
+from one representation to another.
+
+    (exact? (if (&lt; 4 (inexact 5)) 'a 'b))  =&gt; #f
+
+It may seem strange that expressions that return values such as
+symbols and strings may be flagged as &quot;inexact&quot;.  However, it is not
+the symbol or string that is considered inexact, it is the computation
+that produced the value that is inexact.
+
+For example, my secret decoder ring may yield a string with letters
+between A and Z.  However, on occasion I may fumble the decoding
+process.  Thus while I get one and only string from the secret decoder
+ring, the process that produced the string may have introduced errors.
+The value is flagged as &quot;inexact&quot;, indicating the string I received
+may not be equal to its true value.
+
+In general an operation returns an inexact result if any of its
+arguments are inexact.  However, a Scheme implementation may return a
+result flagged as exact if the inexactness of an argument does not
+affect the exactness of the result.
+
+    (exact? (* 0 (inexact 5)))             =&gt; #t
+
+    (exact? (car (cons 'a (inexact 'b))))  =&gt; #t
+
+Unlike R5RS, two values do not become unequal if they are flagged with
+differing exactness -- exactness is an orthogonal property.  A string
+is a string, and I may compare one against another regardless of
+whether the string resulted from a precise computation or not.
+
+However, inexactness is contagious across equivalence procedures as
+usual, so the result of checked whether two values are the same will
+be flagged as inexact if any of the arguments are inexact.
+
+    (eqv? 4 (inexact 4))            =&gt; #t
+
+    (exact? (eqv? 4 (inexact 4)))   =&gt; #f
+
+
+
+Flonums Are Not Fuzzy
+
+Creating confusion is the common description of floating point
+numbers as being an &quot;inexact&quot; representation.
+
+Floating point *operations* are, of course, approximate.  They return
+a number close to, but often different than, the true mathematical
+result of the operation.
+
+If you wish to convert an arbitrary rational into a floating point
+representation, naturally you will often end up with a number that is
+close to, but usually different than, the number you started with.
+
+However, once you have a floating point number (aside from the special
+cases of INF and NaN), you have one specific particular rational
+number.
+
+The number you have may not be EQUAL to the mathematically correct
+number, but it is a specific number.
+
+This misperception that &quot;flonums are inexact&quot; creates confusion over
+expressions that are valid in my proposal, such as:
+
+    (exact? &quot;hello&quot;)
+
+The idea of an &quot;inexact string&quot; is obviously nonsensical.  A string is
+not fuzzy, it is one and only one string.  Yet that is exactly my
+point about rational flonums.  (Please forgive the pun!)
+
+
+
+Useful Generic Operators
+
+I move on to constructing useful generic procedures, now that we have
+orthogonal inexactness.
+
+Generic operators are useful if they implement the *same* operation
+while accepting different types.
+
+For example, in Perl &quot;.&quot; is a string concatenation operator.  It
+always concatenates.  But it accepts numbers, which it will convert to
+strings.  
+
+    1 . 2 =&gt; &quot;12&quot;
+
+In practice this works well.  I use this principle throughout my
+proposal.
+
+
+
+Accurate Add
+
+ACCURATE+ performs an accurate (if perhaps slow) add calculation.  It
+returns a result precisely equal to the ideal mathematical addition of
+its arguments.
+
+Note that the *calculation* performed by ACCURATE+ is not affected
+by any arguments which happen to be flagged as inexact.
+
+Like other operators, inexactness is contagious.  Calling ACCURATE+ on
+an argument flagged as inexact will return a result also flagged as
+inexact.
+
+ACCURATE+ is a generic procedure that accepts numbers in any
+representation, as long as they can be added accurately.  In
+particular, ACCURATE+ accepts rational flonums.
+
+I agree with [Egner et al. 2004] that flonum +0 and -0 should be
+treated as 0 in accurate calculations.
+
+The Scheme implementation is free to return any type representing the
+number, as long as the result is accurate.
+
+ACCURATE+ signals an error if it is passed an argument that cannot be
+added accurately, such as INF.
+
+
+
+Fast Add
+
+FAST+ performs a fast (if perhaps approximate) calculation.
+
+FAST+ is a generic procedure, which like ACCURATE+, accepts numbers in
+any representation.
+
+Usually, and any time an approximate calculation is performed, FAST+
+will return a result flagged as inexact.
+
+FAST+ is allowed to return a result flagged as exact when passed exact
+arguments, if the calculation was not approximate.  For example, a
+Scheme implementation might choose to perform an accurate fixnum
+addition on fixnum arguments.
+
+FAST+ is free to convert its arguments into a representation which is
+convenient for fast arithmetic, such as a flonum.  Such conversion may
+occur even if a large amount of precision is lost.  For example, a
+bignum larger than the largest flonum might be converted to INF.
+
+Naturally, if any approximate conversions do take place, the result is
+flagged as inexact.
+
+
+
+Comparison with Generic Exact Arithmetic
+
+ACCURATE+ isn't *required* to make any conversions in the types of its
+arguments in the way that Generic Exact Arithmetic converts all
+arguments to &quot;exact&quot; representations.
+
+Unlike with Generic Exact Arithmetic, inexactness information is not
+lost when an accurate add is used.
+
+
+
+Comparison with R5RS-style Generic Arithmetic
+
+Like R5RS-style Generic Arithmetic, in my proposal inexactness is
+contagious.  This is a natural reflection of the idea that if you
+perform an operation on inexact arguments, you're going to get an
+inexact result.
+
+My proposal avoids some of the limitations of R5RS:
+
+  * Inexactness is truly contagious.
+
+  * Programmers are not forced to lose exactness information to use
+    accurate procedures.
+
+  * Generic procedures always perform the same operation across
+    arguments of different types.
+
+
+
+Comparison with Exact Arithmetic
+
+ACCURATE+ is similar to ex+, given that what SRFI-77 calls &quot;exact
+operations&quot; is what I call &quot;accurate operations&quot;.
+
+The differences are that ACCURATE+ accepts any kind of number,
+including flonums (leaving out only NaN and the infinities), and that
+inexactness information is not lost when the programmer wishes to use
+an accurate operation.
+
+
+
+Incomplete Though It Is 
+
+Again, there are obviously many more issues that would need to be
+dealt with for a complete proposal.
+
+My focus on this revision was to attempt to clarify my explanation of
+the proposal.  I welcome comments, both for and against.
+
+
+Cheers,
+
+Andrew Wilcox
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00329" href="msg00329.html">Re: Contagious Inexactness, revision 2</a></strong>
+<ul><li><em>From:</em> Marcin 'Qrczak' Kowalczyk</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00327.html">Re: Unifying the two generic arithmetic alternatives</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00329.html">Re: Contagious Inexactness, revision 2</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00327.html">Re: Unifying the two generic arithmetic alternatives</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00329.html">Re: Contagious Inexactness, revision 2</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00328"><strong>Date</strong></a></li>
+<li><a href="threads.html#00328"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

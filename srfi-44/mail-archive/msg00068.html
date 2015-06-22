@@ -1,0 +1,217 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: *&#45;GET for dicts &#45;&#45; failure continuation versus default value -->
+<!--X-From-R13: Fnlybe Qnzcoryy <pnzcoryyNriqri.ngu.pk> -->
+<!--X-Date: Thu, 21 Aug 2003 03:50:17 +0200 (DFT) -->
+<!--X-Message-Id: C9E8A92E&#45;D379&#45;11D7&#45;A15D&#45;00039309311E@evdev.ath.cx -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>*-GET for dicts -- failure continuation versus default value</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00067.html">Date Prev</a>][<a href="msg00069.html">Date Next</a>][<a href="msg00066.html">Thread Prev</a>][<a href="msg00069.html">Thread Next</a>][<a href="maillist.html#00068">Date Index</a>][<a href="threads.html#00068">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>*-GET for dicts -- failure continuation versus default value</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: *-GET for dicts -- failure continuation versus default value</li>
+<li><em>From</em>: Taylor Campbell &lt;<a href="mailto:campbell@DOMAIN.HIDDEN">campbell@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 20 Aug 2003 21:50:06 -0400</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<tt>Scott and I seem to disagree on this.  Here's a log of our debate about 
+</tt><tt>it
+</tt><pre style="margin: 0em;">
+on IRC tonight:  (I'm Riastradh; Scott is FoxFire)
+
+</pre><tt>&lt;Riastradh&gt; Dictionaries' *-GET should take an optional failure 
+</tt><tt>continuation, not default value.
+</tt><tt>&lt;Riastradh&gt; Default values are easy to implement in terms of FKs, but 
+</tt><tt>for many purposes (like calling ERROR in the FK), default values make 
+</tt><tt>code messy -- e.g.:
+</tt><tt>&lt;Riastradh&gt; (dict-get some-dict some-key (lambda () (error &quot;She's not 
+</tt><tt>there!&quot;))) ;; FK version
+</tt><tt>&lt;Riastradh&gt; (let ((maybe-value (dict-get some-dict some-key 
+</tt><tt>special-not-there-token))) ;; default value version
+</tt><pre style="margin: 0em;">
+&lt;Riastradh&gt;   (if (eq? maybe-value special-not-there-token)
+&lt;Riastradh&gt;     (error &quot;She's not there!&quot;)
+&lt;Riastradh&gt;     maybe-value))
+&lt;FoxFire&gt; Yes, but capturing that closure can be expensive
+&lt;FoxFire&gt; And in the majority of cases, it can be written as:
+</pre><tt>&lt;Riastradh&gt; Sure, but the latter is equally expensive, if not more so 
+</tt><tt>-- a closure must be consed _and_ a comparison be made.
+</tt><pre style="margin: 0em;">
+&lt;FoxFire&gt; (unless (eq? token (dict-get some-dict some-key token))
+&lt;FoxFire&gt;   (error &quot;She's not there!&quot;))
+&lt;Riastradh&gt; But then you don't get the value.
+</pre><tt>&lt;Riastradh&gt; You can use COND, but then you're going to cons _two_ 
+</tt><tt>closures -- one implicitly by COND's expansion and one explicitly by 
+</tt><tt>the success continuation.
+</tt><pre style="margin: 0em;">
+&lt;FoxFire&gt; cond's expansion has no closure
+&lt;Riastradh&gt; Yes it does.
+&lt;FoxFire&gt; You would get one closure for the success continuation
+&lt;Riastradh&gt; (cond (foo =&gt; bar) (else baz))
+&lt;Riastradh&gt; expands to:
+&lt;Riastradh&gt; (let ((key foo)) (if key (bar key) baz))
+&lt;FoxFire&gt; not true
+&lt;FoxFire&gt; you're thinking of case
+&lt;FoxFire&gt; sarahbot: expand (cond (foo =&gt; bar) (else baz))
+&lt;sarahbot&gt; ((lambda (|t_if-R9-X_m|)
+&lt;sarahbot&gt;    (if |t_if-R9-X_m|
+&lt;sarahbot&gt;      (bar |t_if-R9-X_m|)
+&lt;sarahbot&gt;      (begin '#t baz)))
+&lt;sarahbot&gt;  foo)
+&lt;Riastradh&gt; See there, a lambda!
+&lt;FoxFire&gt; Yeah, for the success continuation
+&lt;FoxFire&gt; still only one lambda
+</pre><tt>&lt;Riastradh&gt; No.  I used BAR for the SK, which in fact didn't cons a 
+</tt><tt>closure.
+</tt><pre style="margin: 0em;">
+&lt;Riastradh&gt; If I did:
+</pre><tt>&lt;Riastradh&gt; (cond ((dict-get foo bar) =&gt; (lambda (baz) ...)) (else 
+</tt><tt>quux))
+</tt><pre style="margin: 0em;">
+&lt;Riastradh&gt; Well:
+</pre><tt>&lt;Riastradh&gt; sarahbot: expand (cond ((dict-get foo bar) =&gt; (lambda (baz) 
+</tt><tt>quux)) (else zot))
+</tt><pre style="margin: 0em;">
+&lt;sarahbot&gt; ((lambda (|t_ifkO7rY_m|)
+&lt;sarahbot&gt;    (if |t_ifkO7rY_m|
+&lt;sarahbot&gt;      ((lambda (|baz_ifGK5UY_m|) quux) |t_ifkO7rY_m|)
+&lt;sarahbot&gt;      (begin '#t zot)))
+&lt;sarahbot&gt;  (dict-get foo bar))
+&lt;FoxFire&gt; Yeah, thats true
+&lt;FoxFire&gt; But solveable with a macro
+&lt;Riastradh&gt; How so?
+&lt;FoxFire&gt; I don't think it justifies complicating the simpler cases
+</pre><tt>&lt;Riastradh&gt; Give me an example of a simpler case, where the value at 
+</tt><tt>the key gets used.
+</tt><pre style="margin: 0em;">
+&lt;Riastradh&gt; (i.e. your original example doesn't count)
+&lt;FoxFire&gt; (let ([result (dict-get lookup-table key 0)])
+&lt;FoxFire&gt;   .. some computation ..)
+</pre><tt>&lt;FoxFire&gt; Ie all the cases where we just want a default value, not that 
+</tt><tt>a missing value implies an exceptional case.
+</tt><pre style="margin: 0em;">
+&lt;Riastradh&gt; That's about as common as REDUCE is.
+&lt;FoxFire&gt; I disagree.
+&lt;FoxFire&gt; Thats the most common case for me.
+&lt;FoxFire&gt; (/ (dict-get lut key 0) 2) for example
+</pre><tt>&lt;Riastradh&gt; I can't think of any instance where I've used that sort of 
+</tt><tt>case.
+</tt><pre style="margin: 0em;">
+&lt;FoxFire&gt; Or more schemely:
+&lt;FoxFire&gt; (cons 'foo (dict-get dict key '()))
+</pre><tt>&lt;Riastradh&gt; Anyhow, a good compiler would optimize away the closure for 
+</tt><tt>the FK.
+</tt><pre style="margin: 0em;">
+&lt;FoxFire&gt; It would optimize the need to create a full closure perhaps.
+</pre><tt>&lt;FoxFire&gt; But we should be reasonably efficient on mediocre compilers 
+</tt><tt>and no-compilers
+</tt><tt>&lt;Riastradh&gt; I don't think a few extra closures are going to affect the 
+</tt><tt>performance of many programs.
+</tt><tt>&lt;Riastradh&gt; Those programs that it would affect on bad/nonexistent 
+</tt><tt>compilers would be run using better compilers.
+</tt><tt>&lt;Riastradh&gt; Unless the programmer were an idiot, in which case blame 
+</tt><tt>idiocy, and don't complicate exceptional case checking.
+</tt><tt>&lt;FoxFire&gt; The same could be said of creating the fk version out of a 
+</tt><tt>default values version
+</tt><tt>&lt;Riastradh&gt; Non-exceptional case checking would only involve wrapping a 
+</tt><tt>lambda around a value.
+</tt><tt>&lt;Riastradh&gt; Default values might involve complicated computations.  You 
+</tt><tt>wouldn't want those to occur in the arguments to DICT-GET, so you'd 
+</tt><tt>have to use the large and ugly method for them if there were no FKs.
+</tt><tt>&lt;FoxFire&gt; Now that is a more decent argument, but I would come back and 
+</tt><tt>say if you expect a large complicated computation in an exceptional 
+</tt><tt>case, it shouldn't occur as the argument to the function producing the 
+</tt><tt>exception
+</tt><pre style="margin: 0em;">
+&lt;FoxFire&gt; But rather in a handler outside the function
+&lt;FoxFire&gt; Doing it otherwise convolutes the program flow
+</pre><tt>&lt;Riastradh&gt; No, in my last statement I wasn't talking about exceptional 
+</tt><tt>situations at all -- I was referring to default values.
+</tt><tt>&lt;FoxFire&gt; Right, but if the default value takes a long time to compute, 
+</tt><tt>then it should appear to happen outside the call to the (simple) 
+</tt><tt>dict-get
+</tt><tt>&lt;Riastradh&gt; I find it much cleaner to deal with that sort of thing in 
+</tt><tt>the FK, not only because it involves more complicated code, but it also 
+</tt><tt>requires you to create special 'not-there' tokens.
+</tt><tt>&lt;FoxFire&gt; Also, the dictionary lookup may occur at a very low level.  
+</tt><tt>It seems onerous for its completion to require another function call to 
+</tt><tt>injected code
+</tt><pre style="margin: 0em;">
+&lt;Riastradh&gt; Er, let me rephrase my sentence.
+</pre><tt>&lt;FoxFire&gt; I agree with the not-there token ugliness, but again, that is 
+</tt><tt>only a small subset of a default value's usage.
+</tt><tt>&lt;Riastradh&gt; I find it much cleaner not to deal with that sort of thing 
+</tt><tt>with ordinary default values, not only ...
+</tt><tt>&lt;FoxFire&gt; And it looks uglier to me to write (dict-get dict key (lambda 
+</tt><tt>() '()))
+</tt><pre style="margin: 0em;">
+&lt;Riastradh&gt; To wrap it in a simple thunk for that one sort of case?
+</pre><tt>&lt;FoxFire&gt; Its clear though that we probably aren't going to agree on 
+</tt><tt>this, so you should bring it up on the list.
+</tt><pre style="margin: 0em;">
+
+What do other Schemers think about this topic?
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00069" href="msg00069.html">Re: *-GET for dicts -- failure continuation versus default value</a></strong>
+<ul><li><em>From:</em> Jim White</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00067.html">New draft available</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00069.html">Re: *-GET for dicts -- failure continuation versus default value</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00066.html">Re: A few typos in the latest SRFI-44 drafts</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00069.html">Re: *-GET for dicts -- failure continuation versus default value</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00068"><strong>Date</strong></a></li>
+<li><a href="threads.html#00068"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

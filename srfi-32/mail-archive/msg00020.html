@@ -1,0 +1,170 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: <= and < and partial orders and Common Lisp -->
+<!--X-From-R13: fuvirefNpp.tngrpu.rqh -->
+<!--X-Date: Tue, 23 Jul 2002 19:24:22 +0200 (DFT) -->
+<!--X-Message-Id: 200207231723.g6NHNtM08985@mongkok.dyndns.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>&lt;= and &lt; and partial orders and Common Lisp</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00019.html">Date Prev</a>][<a href="msg00021.html">Date Next</a>][<a href="msg00032.html">Thread Prev</a>][<a href="msg00021.html">Thread Next</a>][<a href="maillist.html#00020">Date Index</a>][<a href="threads.html#00020">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>&lt;= and &lt; and partial orders and Common Lisp</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-32@DOMAIN.HIDDEN">srfi-32@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: &lt;= and &lt; and partial orders and Common Lisp</li>
+<li><em>From</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxxxxx</a></li>
+<li><em>Date</em>: Tue, 23 Jul 2002 13:23:55 -0400</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-32@DOMAIN.HIDDEN">srfi-32@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Reply-to</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>    From: David Feuer &lt;dfeuer@xxxxxxxxxxxxx&gt; 
+    Date: Tue, 23 Jul 2002 10:28:50 -0400 (EDT) 
+
+    DOH!  I finally understood an earlier comment someone else made about &lt;=
+    being worse for stable sorting.  This is because with a partial rather
+    than total order,
+
+    (&lt; x y) !=== (not (&lt;= y x)), but rather
+    (&lt; x y) === (and (&lt;= x y) (not (&lt;= y x)))
+
+    It seems plausible that this is why CL did what it did.  Probably more
+    efficient...
+
+Well... I don't think that any of these sorting algos are going to do
+something interesting when given a partial order, even the stable algos.
+
+Consider insertion sort, which is going to swap pairs ... x y ... when y &lt; x.
+Suppose we're using a partial order and there's an adjacent pair ... x y ...
+that are incomparable. They won't get swapped. But y might nonetheless be less
+than some item occuring to the left of x. Too bad -- you don't swap y &amp; x, so
+you never move it left into adjacency with that item for the comparison to be
+made. So when your insertion sort is done, you really can't conclude much of
+anything at all about your result data set. (You'd *like* to be able to
+conclude something like &quot;the result is *a* topological-sort linearisation of
+the data by partial order &lt;.&quot; But you can't.)
+
+Ok, so worrying about partial orders is a snare &amp; a delusion. We don't have
+to stress out about them; that's not a game we can win.
+
+Have I made a mistake in my reasoning? Does that all make sense?
+
+I received a reply from Kent Pitman, one of the two most knowledgeable Common
+Lisp gurus in the world, about Common Lisp's use of &lt;. He basically said it
+was for no compelling technical reason, possibly just backward compatibility
+with CL. I'm appending Kent's mail to this msg for the record.
+
+In summary:
+- I don't see a compelling technical reason to use one over the other.
+- It is clear, however, that a uniform convention must be adopted.
+- The convention in wide, if not universal use, today is &lt;.
+- The only downside of &lt; is that the English defn of &quot;sorted&quot; with &lt;= is a 
+  little simpler (not quite so much nested negation in the statement).
+
+So I'm going to stick with &lt;.
+    -Olin
+
+-------------------------------------------------------------------------------
+Date: Tue, 23 Jul 2002 09:49:27 -0400
+From: Kent M Pitman &lt;pitman@xxxxxxxxxxxxx&gt;
+To: shivers@xxxxxxxxxxxxx
+In-reply-to: &lt;200207210330.g6L3U7J27168@xxxxxxxxxxxxxxxxxx&gt;
+        (shivers@xxxxxxxxxxxxx)
+Subject: Re: sorting comparison function -- &lt; vs. &lt;=
+
+   Date: Sat, 20 Jul 2002 23:30:07 -0400
+   From: shivers@xxxxxxxxxxxxx
+
+[Sorry about the slow reply.]
+
+   I'm designing a sorting library spec for Scheme. You must decide if
+   you do such a thing if your functions take a &lt; comparison function
+   or a &lt;= function; it affects stability.
+
+   It seems to me the two choices are interconvertible:
+       &lt;  is (lambda (x y) (not (&lt;= y x)))
+       &lt;= is (lambda (x y) (not (&lt;  y x)))
+
+   I see no real reason to settle on one as opposed to the other.
+
+   Common Lisp chose &lt;. I am wondering why. Do you know?
+
+I suspect the choice comes through from Maclisp compatibility.
+
+Looking at the Maclisp manual, I don't see a &lt;=, &gt;=, or /= [for
+fixnums and flonums].  (I'm looking at online text that presently has
+no index, so I may be missing something.)  I _believe_ those were
+added in Common Lisp.  I remember being surprised in CL by the choice
+of /= rather than != ...  (Maclisp also had GREATERP, LESSP, and EQUAL
+for bignums, but had nothing like NGREATERP nor NOT-GREATERP nor
+LESS-THAN-OR-EQUAL-P.)
+
+(When designing ISLISP, there was some similar push by some to not have
+all 6 comparison operators.  I thought this foolish, and grumbled
+some, but didn't put my foot down until the same people didn't want to
+include TAN (figuring SIN and COS were &quot;enough&quot;).  I believe ISLISP
+ended up with TAN and with all 6 comparison functions, though I'm too
+lazy to look right now to be sure. Phew...)
+
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00021" href="msg00021.html">Re: &lt;= and &lt; and partial orders and Common Lisp</a></strong>
+<ul><li><em>From:</em> David Feuer</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00019.html">RE: Almost OT, &lt; and &lt;=</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00021.html">Re: &lt;= and &lt; and partial orders and Common Lisp</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00032.html">RE: Almost OT, &lt; and &lt;=</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00021.html">Re: &lt;= and &lt; and partial orders and Common Lisp</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00020"><strong>Date</strong></a></li>
+<li><a href="threads.html#00020"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

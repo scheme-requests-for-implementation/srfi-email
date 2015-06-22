@@ -1,0 +1,188 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: format strings are the Right Thing -->
+<!--X-From-R13: Bnhy Epuyvr <fpuyvrNpbzpnfg.arg> -->
+<!--X-Date: Mon, 29 Dec 2003 20:52:52 +0100 (NFT) -->
+<!--X-Message-Id: BC15F037.9C8B%schlie@comcast.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 87r7yoe341.wl@strelka.synthcode.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: format strings are the Right Thing</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00050.html">Date Prev</a>][<a href="msg00052.html">Date Next</a>][<a href="msg00047.html">Thread Prev</a>][<a href="msg00052.html">Thread Next</a>][<a href="maillist.html#00051">Date Index</a>][<a href="threads.html#00051">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: format strings are the Right Thing</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Alex Shinn &lt;<a href="mailto:foof@DOMAIN.HIDDEN">foof@xxxxxxxxxxxxx</a>&gt;, &lt;<a href="mailto:srfi-48@DOMAIN.HIDDEN">srfi-48@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: format strings are the Right Thing</li>
+<li><em>From</em>: Paul Schlie &lt;<a href="mailto:schlie@DOMAIN.HIDDEN">schlie@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 29 Dec 2003 14:52:39 -0500</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-48@DOMAIN.HIDDEN">srfi-48@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:87r7yoe341.wl@DOMAIN.HIDDEN">87r7yoe341.wl@xxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Microsoft-Entourage/10.1.4.030702.0</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Simple honest and hopefully constructive feedback, w/ proposed alternative:
+
+Good:
+- it does likely satisfy most basic static text formatting requirements,
+and doesn't stress implementations/memory by potentially producing large
+intermediate strings; however there are other ways to skin the same cat.
+
+Bad:
+- format control is disassociated from the data itself (as it's embedded
+within the the constant text field), thereby inhibiting the ability to
+compose formatted text, and/or variable formatting, as a function of control
+state or variable data at run time; which is likely it's true flaw.
+
+Ugly:
+- a function that may return nothing or a string, dual semantics?
+- the constant text and formatted variable data parameters don't appear
+in the same linear order as the resulting composed text/string/stream;
+basically making the composition of the less ideal and likely error prone.
+
+Potential alternative solution:
+
+&lt;input-port&gt; (fmt-string &lt;scheme-element&gt; ...)
+
+Which simply accepts a list of scheme data and formats them into their
+default string equivalents based on their type, where elements other than
+input-ports not enclosed in lists or vectors are formatted as their
+display-equivalent, and elements enclosed in list or vectors are formatted
+as their write-equivalent, and input port parameters are lazily read until
+empty, thereby enabling a hierarchical composition of text from a sequential
+combination of basic scheme elements, and/or higher-level formatters proving
+access to their formatted text via input ports, thereby enabling simple
+sequential efficient composition of basic output text streams.
+
+&lt;input-port&gt; (fmt-XXXXX (&lt;scheme-element&gt; &lt;format-specifier&gt; ...)
+
+Which is simply a generic template for the definition of arbitrary scheme
+element formatters, producing a text input-port returning as a function of
+its the element type and optional format-parameters, the element formatted
+in a text stream of characters; thereby allowing both the definition of
+standard format procedures, as well as arbitrary user defined ones following
+the same template naming convention and semantics.
+
+Yielding something reasonably flexible like:
+
+(get-output-string (fmt-string &quot;I have &quot; N (fmt-plural &quot;apple&quot; N) &quot;.&quot;))
+
+-&gt; &quot;I have 3 apples.&quot;
+
+Where then either display could be extended to accept input-port inputs, or:
+
+&lt;boolean&gt; (pipe &lt;input-port&gt; &lt;output-port&gt; max-characters)
+
+; which simply repeatedly writes to the output-port (which defaults to
+(current-output-port) what it reads from the input-port until exhausted (or
+exceeds max-characters, which defaults to 0 meaning infinite), returning #t
+if input is exhausted, or #f if not.
+
+Yielding something like:
+
+(pipe (fmt-string &quot;I have &quot; (fmt-number N 'digits 4) &quot; lbs. of stuff.\n&quot;))
+
+-&gt; I have 3.234 lbs. f stuff. ; to (current-output-port)
+
+-paul-
+
+&gt; From: Alex Shinn &lt;foof@xxxxxxxxxxxxx&gt;
+&gt; 
+&gt; I retract my previous apologetic attitude towards format and wishy-washy
+&gt; &quot;it's ugly but handy&quot; attitude.  I now consider format superior both
+&gt; practically *and* theoretically.  I won't fall into the &quot;it's not
+&gt; functional, kill it!&quot; camp.
+&gt; 
+&gt; Yes, format is a mini-language.  Mini-languages are not inherently bad.
+&gt; R5RS itself uses a mini-language for macros rather than give the full
+&gt; functional power of Scheme to macros as CL does.
+&gt; 
+&gt; In this case format is the bottom tier of a long and rich tradition of
+&gt; templated output.  If you work with HTML template systems you know that
+&gt; one of the Holy Grails of templating is to achieve a clean separation of
+&gt; data and logic.  Then you can just pour the data into the template, and
+&gt; re-use the same template for different data, or pass the data into
+&gt; different templates, or modify a template safely without risk of
+&gt; breaking any code.  Full CL format is Turing-complete and therefore
+&gt; falls short of this Holy Grail (as do most template systems in practice)
+&gt; but still has most of these properties for the common cases, and
+&gt; SRFI-{2,4}8 both *do* preserve this distinction.
+&gt; 
+&gt; HTML template systems usually use a more verbose syntax, but that
+&gt; doesn't mean that format syntax is bad, nor does it mean we can't revise
+&gt; or extend format syntax.  One possibility is to define a full XML-based
+&gt; template system and use automatic abbreviations for short format
+&gt; strings.  This is a rich area of study and I don't think we should
+&gt; abandon it or label it as ugly just &quot;because it's not functional.&quot;
+&gt; 
+&gt; Don't be sheep!  The time for that is over, it's almost the year of the
+&gt; monkey!  Not everything has to be a function.
+&gt; 
+&gt; -- 
+&gt; Alex
+&gt; 
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00052" href="msg00052.html">Another alternative (Re: format strings are the Right Thing)</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00043" href="msg00043.html">format strings are the Right Thing</a></strong>
+<ul><li><em>From:</em> Alex Shinn</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00050.html">[IGNORABLE] Scruffies vs Neats</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00052.html">Another alternative (Re: format strings are the Right Thing)</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00047.html">Re: format strings are the Right Thing</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00052.html">Another alternative (Re: format strings are the Right Thing)</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00051"><strong>Date</strong></a></li>
+<li><a href="threads.html#00051"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

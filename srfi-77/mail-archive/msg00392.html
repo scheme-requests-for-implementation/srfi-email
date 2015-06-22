@@ -1,0 +1,171 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: straw&#45;man [was Re: arithmetic issues] -->
+<!--X-From-R13: orne <orneNfbavp.arg> -->
+<!--X-Date: Sat, 21 Jan 2006 19:50:57 +0100 (MET) -->
+<!--X-Message-Id: Pine.LNX.4.58.0601211003460.13205@bolt.sonic.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: E1F04IM&#45;0007Yi&#45;Gb@adara.ccs.neu.edu -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: straw-man [was Re: arithmetic issues]</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00391.html">Date Prev</a>][<a href="msg00393.html">Date Next</a>][<a href="msg00391.html">Thread Prev</a>][<a href="msg00393.html">Thread Next</a>][<a href="maillist.html#00392">Date Index</a>][<a href="threads.html#00392">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: straw-man [was Re: arithmetic issues]</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: William D Clinger &lt;<a href="mailto:will@DOMAIN.HIDDEN">will@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: straw-man [was Re: arithmetic issues]</li>
+<li><em>From</em>: bear &lt;<a href="mailto:bear@DOMAIN.HIDDEN">bear@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 21 Jan 2006 10:50:34 -0800 (PST)</li>
+<li><em>Cc</em>: <a href="mailto:agj@DOMAIN.HIDDEN">agj@xxxxxxxxxxxx</a>, <a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>,	<a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:E1F04IM-0007Yi-Gb@DOMAIN.HIDDEN">E1F04IM-0007Yi-Gb@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:E1F04IM-0007Yi-Gb@DOMAIN.HIDDEN">E1F04IM-0007Yi-Gb@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+On Fri, 20 Jan 2006, William D Clinger wrote:
+
+&gt; Secondly, the standardization of the fixnum/flonum base
+&gt; will improve the portability of programs that, for whatever
+&gt; reason, already use implementation-specific fixnum or flonum
+&gt; operations.
+
+Erf....  Aesthetics aside, yes, it *is* correct, if you're
+going to have these modular-ring fx-foo and limited-precision
+fl-foo operations, to make them different from general numeric
+operations.  This is because they are different operations
+from the general numeric operations, and in some circumstances
+give different answers.
+
+A type declaration form, like this:
+
+   (the fixnum (+ (the fixnum x) (the fixnum y)))
+
+Has the advantage of not changing the semantics of the code
+at all in the case that the type declarations are correct
+and keeping the type stuff simple and separate from the
+code, which I like; if the type declarations are not
+correct (for example, if the result is not a fixnum)
+the expression is simply an error.
+
+The disadvantage is that the semantics of an error are
+unspecified.  Various implementations could return the
+modular answer for a representation in ones-complement
+or signed-magnitude instead of twos-complement, or return
+an error value, call an error continuation, or invoke
+nasal demons, and if there are things you want to do
+that *RELY* on a particular roundoff/rollover behavior,
+you'd like to specify the semantics of the case that
+with plain-vanilla addition would be an error.
+
+This SRFI suggests fx+ as an operation that performs a
+modular addition instead of actual addition, thereby
+giving an addition-like operation that is closed over
+a limited subrange of numbers and has predictable
+behavior in boundary cases.  But its semantics are not
+the semantics of addition, and it would be wrong to
+use the unadorned '+' symbol, regardless of declarations
+on its operands or results, to refer to it; the operation
+that '+' refers to is addition, which is not closed on
+any subrange of the real numbers except the trivial
+subrange consisting of zero.
+
+So, yeah, I get it.  If you want to rely on a *particular*
+roundoff or rollover behavior on a fixed-width representation,
+then you need specialized operations that have well-defined
+semantics in cases that are simply errors in a system with
+non-modular addition and optional type declarations.
+
+BUT....  I never, ever, want to write code that relies on
+a *particular* roundoff or rollover behavior, except for
+actually *implementing* the numeric tower with bignums and
+an orthogonal set of exact and inexact numbers, and once it
+exists, I want all those modular and fixed-size-rounding
+operations swept under a rug where I never ever have to
+look at 'em or think about 'em or have 'em polluting my
+namespace again.
+
+The reference implementation that this SRFI provides takes
+care of that need with code that implementors who have not
+implemented the full tower can just drop in -- leaving
+programmers access to the full numeric tower and giving
+them no particular motivation - aside from speed dinking at
+risk to program correctness - to use these operations for
+anything else.
+
+So I think that what we have here is motivated by one
+problem -- implementations that don't provide the full
+numeric tower -- proposes a minimum ground on which to
+solve it, and provides the solution given that minimum
+ground.  There is no reason once the solution is in
+place to leave that ground exposed.
+
+				Bear
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00393" href="msg00393.html">Re: straw-man [was Re: arithmetic issues]</a></strong>
+<ul><li><em>From:</em> Paul Schlie</li></ul></li>
+<li><strong><a name="00397" href="msg00397.html">Re: straw-man [was Re: arithmetic issues]</a></strong>
+<ul><li><em>From:</em> Alan Watson</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00381" href="msg00381.html">Re: straw-man [was Re: arithmetic issues]</a></strong>
+<ul><li><em>From:</em> William D Clinger</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00391.html">Re: straw-man [was Re: arithmetic issues]</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00393.html">Re: straw-man [was Re: arithmetic issues]</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00391.html">Re: straw-man [was Re: arithmetic issues]</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00393.html">Re: straw-man [was Re: arithmetic issues]</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00392"><strong>Date</strong></a></li>
+<li><a href="threads.html#00392"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

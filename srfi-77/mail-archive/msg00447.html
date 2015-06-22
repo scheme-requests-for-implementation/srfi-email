@@ -1,0 +1,234 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: fixnumXXX and fxXXX names, and other things -->
+<!--X-From-R13: Ivyyvnz R Qyvatre <jvyyNppf.arh.rqh> -->
+<!--X-Date: Mon, 19 Jun 2006 16:35:14 +0200 (MST) -->
+<!--X-Message-Id: E1FsKqG&#45;0003Cj&#45;Tt@adara.ccs.neu.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: fixnumXXX and fxXXX names, and other things</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00446.html">Date Prev</a>][<a href="msg00448.html">Date Next</a>][<a href="msg00443.html">Thread Prev</a>][<a href="msg00448.html">Thread Next</a>][<a href="maillist.html#00447">Date Index</a>][<a href="threads.html#00447">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: fixnumXXX and fxXXX names, and other things</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>, <a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: fixnumXXX and fxXXX names, and other things</li>
+<li><em>From</em>: William D Clinger &lt;<a href="mailto:will@DOMAIN.HIDDEN">will@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 19 Jun 2006 10:35:04 -0400</li>
+<li><em>Cc</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a>, <a href="mailto:will@DOMAIN.HIDDEN">will@xxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Marc Feeley wrote:
+&gt; The rationale for the two sets of names is wrong.
+&gt; Adding redundant procedures adds confusion.
+
+Your opinion is contrary to mine.  When I use the
+fixnum or fx primitives, I first decide whether I
+want the quotient ring (with results that may depend
+upon the implementation-dependent precision) or the
+more errorful primitives (that raise an exception
+rather than return a result that might depend upon
+the precision).
+
+Having made that decision, I find it less confusing
+to use the appropriate prefix consistently than to
+mix prefixes.  Indeed, I find it hard to remember
+which pairs of primitives behave exactly the same,
+as the differences that do exist are often subtle.
+If I use the same prefix consistently, however, I
+know the operations I use will behave consistently.
+
+&gt; I didn't make this up.  It is the only rationale
+&gt; for fixnums in the SRFI 77 rationale:
+&gt; 
+&gt; Fixnum/flonum arithmetic is already supported by
+&gt; many systems, mainly for efficiency. Standardization
+&gt; of fixnum/flonum arithmetic would increase the portability
+&gt; of code that uses it, but we cannot standardize the
+&gt; precision of fixnum/flonum arithmetic without making
+&gt; it inefficient on some systems, which would defeat its
+&gt; purpose.
+
+You overlooked the word &quot;portability&quot;, not only in
+the paragraph you quoted but in the paragraphs that
+precede it.  Note also the word &quot;portable&quot; in those
+paragraphs.
+
+Furthermore the first rationale given in the section
+on fixnums explains that *the* rationale for the fx
+operations is a specific issue of portability.
+
+&gt; By using a multiple values API for some fixnum operations,
+&gt; you are limiting the practical portability of those operations.
+&gt; This is inconsistent with the rationale.
+
+Your argument, Marc, is that multiple values are slow in
+some systems, so portable code shouldn't use them.  That's
+like arguing that procedure calls are slow in some systems,
+so portable code shouldn't use procedure calls.  The proper
+solution is to improve the implementations, and to count on
+users being smart enough to avoid slow implementations when
+efficiency is a major concern.
+
+&gt; I repeat: in which implementations of Scheme will the
+&gt; multiple values API be faster than the equivalent pair
+&gt; of operations which return single values?
+
+Implementors are an unpredictable bunch, and efficiency
+is not an issue that lends itself to simple answers in
+any case.
+
+In Larceny and Petit Larceny, however, I would expect the
+fixnum-div+mod, fixnum-div0+mod0, fxdiv+mod, fxdiv0+mod0,
+fldiv+mod, fldiv0+mod0, fixnum+/carry, fixnum-/carry, and
+fixnum*/carry procedures to be faster than the corresponding
+series of calls to single-result procedures.  I would not
+expect them to be a great deal faster, however, because
+inlining followed by common subexpression elimination would
+reduce the duplication these multiple-values-returning
+procedures were designed to prevent.  In my opinion, their
+performance advantages will be most evident in interpreted
+systems that support multiple values efficiently; MzScheme
+is one such system.
+
+&gt; I believe that efficient implementations of multiple
+&gt; values based on Ashley and Dybvig's method...will not
+&gt; gain with the MV API because they need to return the
+&gt; multiple values using a function call, and the overhead
+&gt; of the function call will drown the few machine cycles
+&gt; saved by the combined operation.
+
+You lost me there.  I don't know the instruction-level
+details of how multiple values are returned in Chez Scheme,
+but I do know you are arguing that two closed calls (to the
+separate procedures you favor) and two returns are faster
+than one closed call (to the SRFI 77 procedure), a tail
+call to values (which will probably be inlined, and consist
+of just a few machine instructions), and the return from
+the values procedure.  Your argument doesn't add up.
+
+&gt; The choice of a MV API for these operations is poor engineering.
+
+Your conclusion is unsupported.  I agree with your earlier
+argument that many systems are using poorly engineered
+implementations of multiple values, but the responsibility
+for fixing that problem lies with implementors, not with
+Scheme programmers in general.
+
+&gt; Can you quantify what you mean by &quot;reasonably efficient&quot;
+&gt; for the fixnum operations?
+
+To some extent, but it should be obvious that the efficiency
+will vary greatly from one implementation to another, and
+also from operation to operation.
+
+&gt; Do you mean as fast as the equivalent operation in C?
+
+Since C is an unsafe language, it would seem that the proper
+comparison would be with implementations of Scheme that will
+implement the unsafe mode mentioned in SRFI 77.  In unsafe
+mode, on most architectures, the fixnum and fx comparisons
+and basic arithmetic operations should compile into a single
+machine instruction, the same as in C.
+
+Even in safe code, and even for generic operations such as +,
+some compilers can, in some circumstances, compile the call
+to + into a single machine instruction.  My Twobit compiler
+does that sometimes, even today.  With the proposed R6RS
+library system, that will happen more often.  (That, by the
+way, is my response to one of Per Bothner's points.)
+
+As for the worst case, in safe code, with generic arithmetic,
+inlining the usual procedures (which I expect to be justified
+by the R6RS library system), a call to + with two arguments
+that turn out to be fixnums, whose sum is a fixnum, currently
+takes somewhere between three (Sparc) and seven (IA32) dynamic
+instructions.
+
+&gt; I fear that unless the fixnum operations are inlined, the
+&gt; procedure call to the definition in the reference implementation
+&gt; will slow down the operation by a factor of 10 or more, rendering
+&gt; it useless in practice for writing efficient code.
+
+I assume that, in compiled implementations that aspire to
+efficiency, the fixnum comparisons and basic arithmetic
+operations (e.g. fixnum+) will be inlined.  Most of those
+implementations already inline the fixnum case for generic
+arithmetic, and most already inline their own idiosyncratic
+extensions for fixnum-specific arithmetic.
+
+The potential standardization represented by SRFI 77 won't
+make efficient implementations less efficient, and it won't
+make inefficient implementations more efficient.  What it
+will accomplish is to make Scheme programs more portable.
+
+Programmers won't have to worry about implementations that
+convert to inexact numbers because they don't support
+exact rational arithmetic of unlimited precision, and they
+will be able to write fixnum-specific, flonum-specific,
+exact-specific, and inexact-specific arithmetic without
+having to change the procedure names when porting to a
+different implementation.
+
+Will
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00448" href="msg00448.html">Re: fixnumXXX and fxXXX names, and other things</a></strong>
+<ul><li><em>From:</em> John Cowan</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00446.html">Re: fixnumXXX and fxXXX names, and other things</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00448.html">Re: fixnumXXX and fxXXX names, and other things</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00443.html">Re: fixnumXXX and fxXXX names, and other things</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00448.html">Re: fixnumXXX and fxXXX names, and other things</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00447"><strong>Date</strong></a></li>
+<li><a href="threads.html#00447"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

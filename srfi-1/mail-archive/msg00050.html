@@ -1,0 +1,494 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: SRFI&#45;1 round 3 discussion -->
+<!--X-From-R13: Ayva Euviref <fuvirefNzbatxbx.nv.zvg.rqh> -->
+<!--X-Date: Sat, 26 Jun 1999 10:20:28 &#45;0500 (CDT) -->
+<!--X-Message-Id: 199906261525.LAA06087@shivers.ne.mediaone.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>SRFI-1 round 3 discussion</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00049.html">Date Prev</a>][<a href="msg00051.html">Date Next</a>][<a href="msg00045.html">Thread Prev</a>][<a href="msg00051.html">Thread Next</a>][<a href="maillist.html#00050">Date Index</a>][<a href="threads.html#00050">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>SRFI-1 round 3 discussion</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-1@DOMAIN.HIDDEN">srfi-1@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: SRFI-1 round 3 discussion</li>
+<li><em>From</em>: Olin Shivers &lt;<a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 26 Jun 1999 11:25:59 -0400</li>
+<li><em>Reply-to</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Sorry for the down time on this discussion. I have collected all the feedback
+I've gotten on the last two major rounds of discussion. Based on that
+interaction, I have resolved most issues; five remain open. You can find the
+summary of the resolved and outstanding issues on the AI Lab ftp server at
+    <a  rel="nofollow" href="ftp://ftp.ai.mit.edu/people/shivers/srfi/srfi-1/issues.txt">ftp://ftp.ai.mit.edu/people/shivers/srfi/srfi-1/issues.txt</a>
+    <a  rel="nofollow" href="ftp://ftp.ai.mit.edu/people/shivers/srfi/srfi-1/closed-issues.txt">ftp://ftp.ai.mit.edu/people/shivers/srfi/srfi-1/closed-issues.txt</a>
+I would particularly like to get feedback on the naming issues for
+right &amp; left variants of procedures.
+
+I believe we will be able to put this SRFI to bed pretty quickly from this
+point.
+
+Below, I append issues.txt. See also closed-issues.txt to find out how
+the other issues have been resolved.
+    -Olin
+
+-------------------------------------------------------------------------------
+This is the list of the ongoing issues. For each issue, I list some of the
+people who have raised it, and quote some of the email to sum up various
+points of view.
+
+In discussion, please refer to the relevant topic by its tag or header. 
+That will help us stay organised as we range over a lot of different
+issues.
+
+I am pretty sure that the draft reference implementation no longer precisely
+conforms to the spec as modified by these topics. Once discussion has
+converged, I will hack the ref imp into conformance.
+
+Here is a list of the current issues/discussion topics I have identified from
+the email. You may wish to read only the topics about which you care.  To aid
+navigation, this document format can be parsed using emacs' outline mode.
+    length and circular lists
+    circular lists
+    improper lists
+    TAKE &amp; DROP
+    Naming: right &amp; left variants
+
+This document, along with current drafts of the reference implementation
+and the draft SRFI (in ASCII format) can be found at
+    <a  rel="nofollow" href="ftp://ftp.ai.mit.edu/people/shivers/srfi/srfi-1/issues.txt">ftp://ftp.ai.mit.edu/people/shivers/srfi/srfi-1/issues.txt</a>
+I'll HTML'ize them for the final SRFI format when discussion is done.
+
+Related documents:
+    <a  rel="nofollow" href="ftp://ftp.ai.mit.edu/people/shivers/srfi/srfi-1/small-stuff.txt">ftp://ftp.ai.mit.edu/people/shivers/srfi/srfi-1/small-stuff.txt</a>
+      Minor issues -- typos, things I went ahead and changed without feeling
+      they required discussion
+
+    <a  rel="nofollow" href="ftp://ftp.ai.mit.edu/people/shivers/srfi/srfi-1/closed-issues.txt">ftp://ftp.ai.mit.edu/people/shivers/srfi/srfi-1/closed-issues.txt</a>
+      Topics of discussion that I have closed out. Feel free to flame me
+      if you think any have been resolved in a bad way, but I am basically
+      moving ahead on these.
+
+-Olin
+
+-------------------------------------------------------------------------------
+* length and circular lists
+
+I have introduced a new function LENGTH+ that properly handles circular lists.
+
+LENGTH+ returns the length of a list if the list is finite. If it is circular,
+    it returns #F.
+
+LENGTH is guaranteed to always return an integer. If the argument is circular,
+    it may either raise an error exception or diverge, depending upon the
+    implementation.
+
+-------------------------------------------------------------------------------
+* circular lists
+
+From: Doug Currie &lt;e@xxxxxxxxxxx&gt;
+    2 General Comment: The srfi should say which procedures work on improper
+    lists and also which work on circular lists. A quick glance at the model
+    implementation indicates to me that you did not intend the procedures to
+    work on circular lists; the stfi should say so. On the other hand, maybe
+    some procedures should work on circular lists (especially list-length, and
+    maybe list-copy).
+
+Good point. Here is my proposed taxonomy, which corresponds pretty
+closely to the natural, straightforward definitions of these functions,
+with some room left in for fancier implementations:
+
+Works on circular lists: 
+   xcons cons*
+   first ... tenth
+   Taking and dropping from the left
+   zip with at least one finite list
+   append append! reverse-append reverse-append! -- last arg may be circular
+   acons
+   cons pair? null? circular-list? dotted-list? proper-list?
+   car cdr ... cdddar cddddr set-car! set-cdr! list-ref
+   length+
+
+May diverge / is an error / bad thing:
+(Plus'd entries have meaningful definitions for circular lists; we might
+ leave these cases open to the implementation. Discussion?)
++  list-copy
+   Taking and dropping from the right
+   last last-pair
+   zip with no finite list
+   append append! reverse-append reverse-append! -- initial args must be finite
++  unzip2 unzip3 unzip4 unzip5
++  filter  partition  remove
++  filter! partition! remove! 
++  del  delq  delv  delete 
++  del! delq! delv! delete!
++  alist-copy
++  delq-duplicates  delv-duplicates  delete-duplicates  del-duplicates 
++  delq-duplicates! delv-duplicates! delete-duplicates! del-duplicates!
++  alist-delete  del-ass  del-assq  del-assv  del-assoc
++  alist-delete! del-ass! del-assq! del-assv! del-assoc!
+   reverse!
+   length reverse 
+
+Some lists may be circular; at least one must be finite:
+   foldl foldr pair-foldl pair-foldr reducel reducer
+   append-map append-map! map! pair-for-each filter-map map-in-order
+   map for-each
+
+May diverge if no hit:
+(Some implementations might do a fancy implementation 
+and *not* diverge. Sure.)
+   find find-tail any every list-index
+   mem member memq memv ass assoc assq assv
+
+
+-------------------------------------------------------------------------------
+* improper lists
+
+The issue has been raised (see, for example, Currie's email quoted in
+topic &quot;circular lists&quot;) of what the list-lib procedures do when applied
+to improper lists.
+
+I try for an &quot;accept a wide spectrum&quot; approach to the inputs the list
+functions take, and intend to spec as many of these procedures to work on
+improper lists as possible. Procedures that work on improper lists must be
+able to treat any non-pair as a list-tail signifying the end of the list --
+that is, the empty list. E.g. a robust LENGTH function that handles improper
+lists must be spec'd so that both of these calls return three:
+    (length '(a b c . ())) =&gt; 3		; Proper
+    (length '(a b c . d))  =&gt; 3		; Improper
+This means that *any non-pair* must be treated as the empty list. This
+fact falls out naturally from the straightforward base cases of these
+recursive functions. Hence
+    (length '()) =&gt; 0	; Proper
+    (length 'd)  =&gt; 0	; Improper
+This is the simplest, most consistent spec that covers improper lists.
+The functions in the current reference implementation have this property.
+
+In this spirit, *all* of the procedures in list-lib are defined to work
+on improper lists. 
+
+As a related design criteria, I am specifying these procedures to replicate
+the proper/improperness of their args in their results where this can
+straightforwardly be defined. So, for example:
+    (filter even? '(2 7 1 8 2))       =&gt; (2 8 2)
+    (filter even? '(2 7 1 8 2 . end)) =&gt; (2 8 2 . end)
+
+There is a trade-off here. On one hand, widening the set of arguments
+acceptable to our utilities reduces our ability to provide error-checks
+when an improper list means an error. On the other, it widens the
+applicability of these procedures. I tilt towards the latter. Scheme
+supports improper lists; so I will support them. Were this ML, the issue
+would not arise -- tuple-trees and lists are statically distinguished by
+the type system.
+
+Or, let's put it another way: CONS, CAR and CDR support improper lists,
+so we need to follow through.
+
+Replicates the argument's terminating value:
+    list-copy [e.g., (list-copy '(a b . c)) =&gt; (a b . c)]
+    filter  partition  remove
+    filter! partition! remove! 
+    del  delq  delv  delete 
+    del! delq! delv! delete!
+    alist-copy
+    delq-duplicates  delv-duplicates  delete-duplicates  del-duplicates 
+    delq-duplicates! delv-duplicates! delete-duplicates! del-duplicates!
+    alist-delete  del-ass  del-assq  del-assv  del-assoc
+    alist-delete! del-ass! del-assq! del-assv! del-assoc!
+    take take! (from right) drop drop! (from left)
+    member memq memv assoc assq assv
+    map filter-map map-in-order map!
+        -- These n-ary funcs use the terminator from left-most shortest list
+        arg. Simple to implement, and produces the desired result in the
+        single-list map case. Example:
+	    (map + '(1 2 3 4 . a) '(1 0 1 . b) '(0 1 0 . c)) =&gt;
+                (2 3 4 . b)
+    unzip2 unzip3 unzip4 unzip5
+
+Not specified (may either replicate or nil-terminate):
+    reverse! 
+
+Produces nil-terminated result:
+    take take! (from left, always) 
+    drop drop! (from right, always)
+    reverse
+
+Handles improper-list args, but issue of nil-termination does not
+apply to result or is trivial:
+    xcons tree-copy make-list list-tabulate list* 
+    circular-list :iota iota:
+    first second third fourth fifth sixth seventh eighth ninth tenth
+    append append! reverse-append reverse-append!
+    unfold unfold/tail
+    pair-for-each append-map append-map! 
+    foldl foldr pair-foldl pair-foldr reducel reducer
+    find find-tail any every list-index
+    mem ass acons 
+    last last-pair
+    zip
+    cons pair? null? list? list length 
+    car cdr ... cdddar cddddr set-car! set-cdr! list-ref for-each
+
+-------------------------------------------------------------------------------
+* TAKE &amp; DROP
+
+From: Doug Currie &lt;e@xxxxxxxxxxx&gt;
+    3. I like Sergei's comments on TAKE and DROP:
+    &gt;I would prefer to see (SUBLIST list start end) which
+    &gt;is both generic and quite natural, and (LIST-HEAD list k)
+    &gt;to complement existing (LIST-TAIL list k).
+    Perhaps for DROP, LIST-BUTLAST ala Common Lisp and LIST-BUTFIRST (or NTH-CDR).
+
+From: Maciej Stachowiak &lt;mstachow@xxxxxxx&gt;
+    Why not `list-head' and `list-tail' for these, I think those are more
+    intuitive names. `list-ref' vs. `nth' is more an open question, why
+    not have both.
+
+I do not like LIST-HEAD and LIST-TAIL because I find the names confusing.
+Does (LIST-TAIL list k) *drop* K elements or *give* you a K-element tail? With
+TAKE and DROP there is no such confusion. If you *want* K elements, you TAKE
+them. If you want to *remove* K elements, you DROP them.
+
+I particularly dislike the names LIST-HEAD and LIST-TAIL. By all rights,
+these names should be synonyms for CAR and CDR. The head of a list is its
+car; the tail of a list is its cdr.
+
+Matt Flatt argues that separate functions to take from the front and
+back of the list gives better error checking; similarly for dropping.
+
+This is a good point. Note that we currently have four procedures:
+    take drop take! drop!
+This would split each of these procedures into two, for a total of eight
+procedures. We could call them
+    take take/right   take! take/right!
+    drop drop/right   drop! drop/right
+So (DROP LIST 3) would drop the first 3 elements of LIST and
+   (DROP/RIGHT LIST 3) would drop the last 3 elements of LIST.
+This is good &amp; bad. Good is that is might give better dynamic error checking,
+should a client erroneously pass a negative index to the function. On the
+other hand, I don't think it's a very common error. Fencepost errors are when
+you confuse 0 &amp; 1. Drifting over into negative values is much, much rarer. Bad
+is that is induces namespace bloat, and there's a hidden multiplier lurking in
+store: I will be proposing string and vector libs with TAKE and DROP functions
+(e.g., STRING-TAKE and VECTOR-DROP), so the factor of two will hit these libs
+as well.
+
+There are two issues here:
+    The actual functionality -- punting the negative-indexing for twice
+        as many function bindings.
+    In the event of punting negative-indexing, we must deal with the
+        naming choices for the left-end and right-end variants.
+	This relates to the larger naming issue discussed in topic
+	&quot;Naming: right &amp; left variants.&quot;
+
+I am coming around to Flatt's point of view, and now support splitting
+the functionality. If there are dissenting voices, speak up now, otherwise
+that's what I am going to do.
+
+[By the way, in response to questions of the source of the right-end
+negative-indexing convention -- it's a popular feature in APL and J.]
+
+Votes:
+    Split functionality into left &amp; right versions: Egorov, Stone, lth, shivers
+
+    John Stone prefers TAKE &amp; DROP names to LIST-HEAD &amp; LIST-TAIL.
+
+-------------------------------------------------------------------------------
+* Naming: right &amp; left variants
+
+This is a *thorny* naming issue. Many of the procedures in this list lib, and
+also in the upcoming vector and string libs I will be proposing, come in
+left/right pairs. I have been using an L and R suffix to name these pairs,
+e.g. FOLDL and FOLDR, REDUCEL and REDUCER. This has the charm of being concise
+-- as should be obvious by now, I code in 80-column buffers and do not like to
+waste columns gratuitously. However, many people prefer longer names. Also,
+some of the resultant names are unfortunate -- the most glaringly awkward one
+is REDUCER, which really just means &quot;REDUCE from the Right.&quot;  So my L and R
+suffix convention is not without its downsides. But I like short. I like 
+simple. And FOLDL, in particular, is well-established in the FP world.
+
+As will be obvious below, this is a very important naming convention to get
+right, due to its pervasiveness across multiple libraries and many, many
+names. So it really takes some careful thought.
+
+I see three alternatives to consider:
+
+- use *no* suffix for the left operator, and a /R suffix for the right
+  operator. This is based on the idea that left-to-right is the &quot;natural&quot;
+  processing order for lists. This gives us the following list, vector and
+  string bindings (assuming we split the TAKE and DROP ops into left &amp; right
+  variants):
+
+    fold	fold/r		reduce	reduce/r
+    take	take/r    	take!	take!/r
+    drop	drop/r    	drop!	drop!/r
+    pair-fold	pair-fold/r
+
+    vector-take vector-take/r vector-take/shared vector-take/rshared
+    vector-drop vector-drop/r vector-drop/shared vector-drop/rshared
+    vector-find vector-find/r vector-skip vector-skip/r
+    vector-fold vector-fold/r vector-reduce vector-reduce/r 
+    vector-scan vector-scan/r
+
+    string-fold  string-fold/r
+    string-take string-take/r
+    string-drop string-drop/r
+    string-pad  string-pad/r
+    string-trim string-trim/r
+    string-index string-index/r
+    string-skip string-skip/r
+
+- use an /L suffix for the left operator, and an /R suffix for the right
+  operator. This gives us the following list, vector and string bindings:
+
+    fold/l	fold/r		reduce/l	reduce/r
+    take/l	take/r    	take!/l		take!/r
+    drop/l	drop/r    	drop!/l		drop!/r
+    pair-fold/l	pair-fold/r
+
+    vector-take/l vector-take/r vector-take/lshared vector-take/rshared
+    vector-drop/l vector-drop/r vector-drop/lshared vector-drop/rshared
+    vector-find/l vector-find/r vector-skip/l vector-skip/r
+    vector-fold/l vector-fold/r vector-reduce/l vector-reduce/r 
+    vector-scan/l vector-scan/r
+
+    string-fold/l  string-fold/r
+    string-take/l string-take/r
+    string-drop/l string-drop/r
+    string-pad/l  string-pad/r
+    string-trim/l string-trim/r
+    string-index/l string-index/r
+    string-skip/l string-skip/r
+
+- use a -left suffix for the left operator, and a -right suffix for the right
+  operator. This gives us the following list, vector and string bindings:
+
+    fold-left	fold-right	reduce-left	reduce-right
+    take-left	take-right    	take-left!	take-right!
+    drop-left	drop-right    	drop-left!	drop-right!
+    pair-fold-left		pair-fold-right
+
+    vector-take-left vector-take-right vector-take-left/shared vector-take-right/shared
+    vector-drop-left vector-drop-right vector-drop-left/shared vector-drop-right/shared
+    vector-find-left vector-find-right vector-skip-left vector-skip-right
+    vector-fold-left vector-fold-right vector-reduce-left vector-reduce-right 
+    vector-scan-left vector-scan-right
+
+    string-fold-left	string-fold-right
+    string-take-left	string-take-right
+    string-drop-left	string-drop-right
+    string-pad-left	string-pad-right
+    string-trim-left	string-trim-right
+    string-index-left	string-index-right
+    string-skip-left	string-skip-right
+
+  Ouch, I find these names painfully verbose for primitive, low-level
+  operations. It makes it hard to use functional composition -- 
+  (f (g (h x))) -- without drifting off the right side of the screen or
+  shifting over to awkward, multiline indenting styles. Also, the actual 
+  operation (fold, reduce, pad, trim) gets lost amidst all the tacked-on
+  modifiers.
+
+- use no suffix for the left operator, and a -right suffix for the right
+  operator. This gives us the following list, vector and string bindings:
+
+    fold	fold-right	reduce	reduce-right
+    take	take-right    	take!	take-right!
+    drop	drop-right    	drop!	drop-right!
+    pair-fold	pair-fold-right
+
+    vector-take vector-take-right vector-take/shared vector-take-right/shared
+    vector-drop vector-drop-right vector-drop/shared vector-drop-right/shared
+    vector-find vector-find-right vector-skip vector-skip-right
+    vector-fold vector-fold-right vector-reduce vector-reduce-right 
+    vector-scan vector-scan-right
+
+    string-fold		string-fold-right
+    string-take		string-take-right
+    string-drop		string-drop-right
+    string-pad		string-pad-right
+    string-trim		string-trim-right
+    string-index	string-index-right
+    string-skip		string-skip-right
+
+
+However, I listen attentively to the community voice.
+
+[Let's not worry about what exactly these &quot;vector shared&quot; ops are; that is
+a topic for another SRFI and another time. Let's focus on this issue of
+left and right variant names.]
+
+Votes:
+    no left suffix; /r right suffix: Will Fitzgerald
+    /l and /r suffix: Will Fitzgerald
+    -left and -right suffix: lth
+    no left suffix; -right right suffix: lth 2nd choice
+
+I have received very little feedback on this issue. In the absence of further
+votes, I intend to go with no left suffix; -right right suffix, e.g.
+    FOLD and FOLD-RIGHT
+
+-------------------------------------------------------------------------------
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00051" href="msg00051.html">Left &amp; right [Was: SRFI-1 round 3 discussion]</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr. Preprocessor]</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00049.html">Re: LIST-LENGTH &amp; circular lists</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00051.html">Left &amp; right [Was: SRFI-1 round 3 discussion]</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00045.html">'everything is a list' as a separate issue</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00051.html">Left &amp; right [Was: SRFI-1 round 3 discussion]</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00050"><strong>Date</strong></a></li>
+<li><a href="threads.html#00050"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

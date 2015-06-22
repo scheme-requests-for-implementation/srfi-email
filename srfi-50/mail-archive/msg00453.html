@@ -1,0 +1,465 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Permitting and Supporting Extended Character Sets: response. -->
+<!--X-From-R13: Fbz Zbeq <ybeqNrzs.arg> -->
+<!--X-Date: Mon,  9 Feb 2004 18:00:53 +0100 (NFT) -->
+<!--X-Message-Id: 200402091716.JAA24462@morrowfield.regexps.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200402072249.OAA18427@morrowfield.regexps.com -->
+<!--X-Reference: Pine.LNX.4.58.0402081919550.26398@bolt.sonic.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Permitting and Supporting Extended Character Sets: response.</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00452.html">Date Prev</a>][<a href="msg00454.html">Date Next</a>][<a href="msg00451.html">Thread Prev</a>][<a href="msg00455.html">Thread Next</a>][<a href="maillist.html#00453">Date Index</a>][<a href="threads.html#00453">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Permitting and Supporting Extended Character Sets: response.</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:bear@DOMAIN.HIDDEN">bear@xxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Permitting and Supporting Extended Character Sets: response.</li>
+<li><em>From</em>: Tom Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 9 Feb 2004 09:16:44 -0800 (PST)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a>, <a href="mailto:pika-dev@DOMAIN.HIDDEN">pika-dev@xxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:Pine.LNX.4.58.0402081919550.26398@DOMAIN.HIDDEN">Pine.LNX.4.58.0402081919550.26398@xxxxxxxxxxxxxx</a>&gt; (message from	bear on Sun, 8 Feb 2004 21:02:49 -0800 (PST))</li>
+<li><em>References</em>: &lt;<a href="mailto:200402072249.OAA18427@DOMAIN.HIDDEN">200402072249.OAA18427@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:Pine.LNX.4.58.0402081919550.26398@DOMAIN.HIDDEN">Pine.LNX.4.58.0402081919550.26398@xxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+    &gt; From: bear &lt;bear@xxxxxxxxx&gt;
+
+I'll mostly answer your points in order but the last one is the most
+interesting:
+
+    &gt; I think that if we have the new procedures char-cased? and
+    &gt; char-uncased?  we do not need the proposed char-letter?
+    &gt; predicate.
+
+(I argue below that your definition of &quot;cased&quot; characters is
+problematic but that's not the main point here.)
+
+A while back, tb argued that the case-mapping procedures of R5RS could
+simply be dropped.   There's something to that.
+
+In fact, R6RS could go further -- it could:
+
+
+	DROP:			RETAIN:
+        (case and classes)	(type, order, integer isomorphism)
+
+				char?
+	char-ci=?               char=? 	
+        char-ci&lt;?               char&lt;? 
+        char-ci&gt;?               char&gt;? 
+        char-ci&lt;=?              char&lt;=?
+        char-ci&gt;=?              char&gt;=?
+        char-alphabetic?	char-&gt;integer
+        char-numeric?		integer-&gt;char
+        char-whitespace?
+        char-upper-case?
+        char-lower-case?
+        char-upcase
+        char-downcase
+        string-ci=?
+        string-ci&lt;?
+        string-ci&gt;?
+        string-ci&lt;=?
+        string-ci&gt;=?
+
+
+        ADD:
+        (metacircularity procedures)
+
+	char-delimiter?
+        string-&gt;character
+        string-&gt;string
+        string-&gt;symbol-name
+        form-identifier
+
+Why do that?  I'm not convinced we should but the arguments for doing
+so would include:
+
+~ it would remove from R5RS all traces of the naive approach
+  to character case
+
+~ it would remove from R5RS the culturally biased character
+  class &quot;alphabetic&quot;
+
+~ it would evaded the tricky problem of define &quot;numeric&quot; usefully
+  yet without cultural bias
+
+~ those changes would leave only the class CHAR-WHITESPACE? which
+  seems particularly odd in isolation
+
+~ the ability to write metacircular programs would still be 
+  present -- and improved
+
+~ the basic structure of the CHAR? type, a well-ordered set isomorphic
+  to a subset of the integers, would be retained
+
+Why not do it?
+
+~ pedagogical reasons -- for the portable character set, the 
+  metacircularity procedures can be defined using the dropped
+  procedures
+
+~ practical reason -- it wouldn't leave enough standard machinary in
+  Scheme to parse simple formats like &quot;whitespace separated fields&quot;
+
+~ practical reason -- implementors will want to provide all of the
+  procedures in the DROP column for years to come, at least.  Useful
+  libraries will continue to rely on them.  It is worthwhile to
+  (continue to) say what they should mean.
+  
+
+But, on to the proposed revisions to the proposed revisions to the
+revised^5 specification:
+
+
+    &gt;&gt; It should say:
+
+    &gt;&gt; Returns the name of symbol as a string. [...] will be in the
+    &gt;&gt; implementation's preferred standard case [...]
+    &gt;&gt; will prefer upper case, others lower case. If the symbol was
+    &gt;&gt; returned by string-&gt;symbol, [....] string=? to
+    &gt;&gt; the string that was passed to string-&gt;symbol. [....]
+
+
+    &gt; I would propose instead:
+
+    &gt;  Returns the name of symbol as a string. [...] all cased
+    &gt;  characters in the identifier (see the definition of char-cased?
+    &gt;  for a precise definition of cased and uncased characters) will
+    &gt;  be in the implementation's preferred standard case [....].  If
+    &gt;  the symbol was returned by string-&gt;symbol, the case of the
+    &gt;  characters in the string returned will be the same as the case
+    &gt;  in the string that was passed to string-&gt;symbol. [....]
+
+    &gt; Rationale; I think it's simply clearer.  The above wording
+    &gt; specifically permits uncased characters (ie, characters which do not
+    &gt; conform to &quot;normal&quot; expectations of cased characters) to be present
+    &gt; in lowercase in identifiers even if the preferred case is uppercase,
+    &gt; and presumably vice versa.
+
+Huh.  I thought that my wording permitted that already.  I mostly
+dislike your wording.
+
+This part:
+
+    &gt;  all cased characters in the identifier [...] will be in the
+    &gt;  implementation's preferred standard case
+
+seems too strong to me.  I'd be willing to accept it if (a) we nail a
+good STRING-&gt;SYMBOL-NAME definition for the &quot;Unicode Identifiers&quot;
+draft; (b) prove that the property you named is true for that
+STRING-&gt;SYMBOL-NAME and for all future versions of Unicode.
+
+This part:
+
+    &gt;  If the symbol was returned by string-&gt;symbol, the case of the
+    &gt;  characters in the string returned will be the same as the case
+    &gt;  in the string that was passed to string-&gt;symbol.
+
+is too weak.  The two strings must be STRING=?.  For example, a
+Unicode STRING-&gt;SYMBOL must not canonicalize its argument (and
+STRING=? is a codepoint-wise comparison).
+
+
+    &gt;&gt; With regard to character class predicates such as char-alphabetic?
+    &gt;&gt; [...]
+    &gt;&gt; The procedure char-alphabetic? is deprecated. New programs should
+    &gt;&gt; usually use char-letter? (see below) instead. char-alphabetic? has a
+    &gt;&gt; precise definition in terms of char-letter?:
+
+    &gt;&gt;    (define (char-alphabetic? c)
+    &gt;&gt;      (and (char-letter? c)
+    &gt;&gt;           (char-upper-case? (char-upcase c))
+    &gt;&gt;           (char-lower-case? (char-downcase c))))
+
+    &gt; This is not how linguists use the term &quot;alphabetic.&quot;  Please do
+    &gt; not propose &quot;alphabetic&quot; as a procedure to use to mean this, as
+    &gt; it will frustrate and confuse people.
+
+It's true that that is not how linguists use the term &quot;alphabetic&quot;.
+
+It's also true that not all &quot;letters&quot;, in the sense of Unicode, are
+alphabetic characters.   For example, ideographic characters are
+categorized in Unicode as &quot;letters&quot;;  syllabaries are classified as
+&quot;letters&quot;.
+
+In a Unicode implementation, a linguistic definition of
+CHAR-ALPHABETIC? would be a subset of letters generally and would
+include both characters which are not cased (U+13A0 (&quot;CHEROKEE LETTER
+A&quot;)) and characters with no single-character case-mappings (U+00DF
+(&quot;LATIN SMALL LETTER SHARP S&quot;)).
+
+That would, in some sense, be a an interesting procedure to have
+around -- but really it belongs in a general library for linguistic
+text processing (along with many other procedures).
+
+Worse, a linguistically proper definition of CHAR-ALPHABETIC? would be
+upwards incompatible with R5RS which requires that alphabetic
+characters have upper and lowercase forms (which are themselves
+characters).
+
+When thinking about how to handle this situation, I reasoned this way:
+
+1) One use for the R5RS character classes is to write programs which 
+   process s-expressions (e.g. source text) over the portable
+   character set.   This use should be preserved.
+
+2) Another use for the R5RS character classes is to write programs
+   which parse other simple kinds of syntax.   For example, parsing
+   a line of text into white-space separated fields.   This use should
+   be preserved and expanded.  For example, CHAR-LETTER? allows for a
+   field of letters which are not alphabetic characters or which 
+   are alphabetic but not case-mapped in the naive way.
+
+3) The R5RS character classes have never been well suited for
+   linguistic processing over anything but the portable character
+   set.   Their use for such purposes for extended characters is
+   unrealistic.
+
+4) Upward compatability with R5RS is desirable.
+
+5) The specifications for the character classes defined in R6RS 
+   should be consistent with definitions that satisfy the 
+   usual expectations of a Unicode programmer.   In other words,
+   in a Unicode-based implementation, these procedures should 
+   function as a useful subset of a comprehensive library for
+   Unicode text processing.
+
+
+So, I proposed: adding CHAR-LETTER? which is (consistent with being)
+the generalization of CHAR-ALPHABETIC? to all &quot;letters&quot; (in the
+Unicode sense); deprecating CHAR-ALPHABETIC? (which is esoteric at
+best, nonsense at worst); and defining the class of CHAR-ALPHABETIC?
+characters to be the largest subset of CHAR-LETTER?  which is
+consistent with the R5RS definition.
+
+Now, having said all of that, the definition of CHAR-ALPHABETIC? could
+be improved: The possibilitiy of non-alphabetic letters with both
+upper and lowercase forms seems plausble to me (are there any in
+Unicode already?)  So, instead of that definition of CHAR-ALPHABETIC?
+I would agree to:
+
+      CHAR-ALPHABETIC? must be defined in such a way that
+      this is true of all characters:
+
+          (or (not (char-alphabetic? c))
+              (and (char-letter? c)
+                   (char-upper-case? (char-upcase c))
+                   (char-lower-case? (char-downcase c))))
+          =&gt; #t
+
+      Note: this requirement is necessary for a combination of upward
+      compatability with earlier versions of the Revised Report and
+      consistency with the new CHAR-LETTER?, yet it is also
+      linguistically undesirable.  This is the reason that
+      CHAR-ALPHABETIC? is described as &quot;deprecated&quot; -- new programs
+      should avoid using this procedure and should, in most cases, use
+      CHAR-LETTER? instead.  Programmers should be aware that the
+      class CHAR-LETTER? may include letters such as syllables and
+      ideographs which are not, in any sense, &quot;alphabetic&quot;.  It can
+      also include alphabetic characters which are neither upper or
+      lowercase, lowercase letters with no uppercase form, uppercase
+      letters with no lowercase form, lowercase characters which are
+      not returned by CHAR-DOWNCASE of their CHAR-UPCASE mapping, and
+      uppercase charactes which are not returned by CHAR-UPCASE of
+      their CHAR-DOWNCASE mapping.  Programmers should also be aware
+      that in some situations, a string may contain a letter followed
+      by non-letters -- the sequence being &quot;what a user would think of
+      as a single letter&quot; -- a fact which limits the utility of even
+      CHAR-LETTER? unless additional facilities for text processing
+      are provided by an implementation.  Yet at the same time, for
+      the portable character set and for many extended characters,
+      none of these peculiar circumstances apply -- programmers not
+      trying to write &quot;fully general&quot; text processing algorithms can
+      often ignore these complexities.   Programmers wanting to 
+      write &quot;fully general&quot; text algorithms, on the other hand, can
+      define additional procedures which complement the standard 
+      character classes.
+
+
+    &gt; char-alphabetic?
+    &gt; char-numeric?
+    &gt; char-whitespace?
+    &gt; char-upper-case?
+    &gt; char-lower-case?
+
+    &gt;  These procedures return #t if their arguments are alphabetic,
+    &gt;  numeric, whitespace, uppercase, or lowercase characters, respectively.
+    &gt;  Otherwise they return #f. The characters a..z and A..Z are required to
+    &gt;  be alphabetic. The digits 0..9 must be numeric.  The space, newline, and
+    &gt;  tab characters must be whitespace.  The characters a..z are required to
+    &gt;  be lowercase.  The characters A..Z are required to be uppercase.  No
+    &gt;  character may be both uppercase and lowercase.
+
+That's consistent with my proposed revisions.  I think CHAR-LETTER?
+ought to be added and CHAR-ALPHABETIC? either dropped entirely or
+mentioned as deprecated.  If it is mentioned as deprecated, the
+invariant shown above should be stated here.  The corresponding
+sentence in the definition of CHAR-UPCASE and CHAR-DOWNCASE should be
+dropped.
+
+
+
+    &gt; char-cased?
+    &gt; char-uncased?
+
+    &gt;  Char-cased? returns #t if its argument is a character which conforms to
+    &gt;  &quot;normal&quot; case expectations, (see below) and #f otherwise. [....]
+
+    &gt; Rationale: This allows char-lower-case?, char-upper-case?, and
+    &gt; char-alphabetic? to go on meaning the same thing with respect to the
+    &gt; 96-character portable character set and meaning the same thing
+    &gt; linguists mean when they use these terms.  This will reduce confusion
+    &gt; in the long run.  This particular notion of cased and uncased
+    &gt; characters is also useful in other parts of the standard for saying
+    &gt; exactly which characters case requirements should apply to.  It leaves
+    &gt; implementors free to not sweat about what to do with identifiers
+    &gt; containing eszett, regardless of what they do with calls to
+    &gt; (char-upcase #\eszett).
+
+Among the rationales:  I think this one is false (see above):
+
+    &gt; This particular notion of cased and uncased characters is also
+    &gt; useful in other parts of the standard for saying exactly which
+    &gt; characters case requirements should apply to.
+
+The other rationales are are good reasons to say _something_ but I
+don't think two new procedures are needed.  Instead, the possibilitiy
+of oddly-cased characters can be explicitly mentioned in the
+definitions of CHAR-LOWER-CASE?, CHAR-UPPER-CASE?, and CHAR-LETTER?.
+
+(Additionally, CASED and UNCASED seems like poor names for the classes
+of characters they describe.)
+
+
+
+
+    &gt;&gt; With regard to [...] char-upcase and char-upcase
+
+    &gt;&gt; It should say
+
+    &gt;&gt; [....] char-upcase must map a..z to A..Z and
+    &gt;&gt; char-downcase must map A..Z to a..z.
+
+    &gt; I would propose instead:
+
+    &gt;  [...] if char is alphabetic and cased, then the result of
+    &gt;  char-upcase is upper case and the result of char-downcase is
+    &gt;  lower case.
+
+I'm not sure I see any value to the stronger requirement, especially
+since CHAR-ALPHABETIC? should be deprecated and there is otherwise no
+need to introduce the concept of a &quot;cased&quot; character.  Your
+alternative is implied by the definition of CHAR-ALPHABETIC? I gave in
+the draft -- but you've earlier convinced me to weaken that
+definition.
+
+
+    &gt;&gt; The introduction to strings [....] should say:
+
+    &gt;&gt; Some of the procedures that operate on strings ignore the difference
+    &gt;&gt; between strings in which upper and lower case variants of the same
+    &gt;&gt; character occur in corresponding positions. The versions that ignore
+    &gt;&gt; case have ``-ci'' (for ``case insensitive'') embedded in their
+    &gt;&gt; names.
+
+    &gt; I would propose instead:
+
+    &gt;  Some of the procedures that operate on strings ignore the difference
+    &gt;  between upper and lower case cased characters. The versions that
+    &gt;  ignore case in cased characters have ``-ci'' (for ``case
+    &gt;  insensitive'') embedded in their names.
+
+I believe that this should be true:
+
+	(char=? #\dotless-i #\U+0131) =&gt; #t
+	(char-ci=? #\I #\dotless-i) =&gt; #t
+
+and that STRING-CI=? is just the string equivalence induced by
+CHAR-CI=?.
+
+However, #\dotless-i is not &quot;cased&quot; as you have defined it.  Are you
+saying that #\dotless-i and #\I are not CHAR-CI=? or that STRING-CI=?
+is not the equivalence induced by CHAR-CI=??  Either way: why in the
+world do that?
+
+-t
+----
+Like my work on GNU arch, Pika Scheme, and other technical contributions 
+to the public sphere?   Show your support!
+
+<a  rel="nofollow" href="https://www.paypal.com/xclick/business=lord%40emf.net&amp;item_name=support+for+arch+and+other+free+software+efforts+by+tom+lord&amp;no_note=1&amp;tax=0&amp;currency_code=USD">https://www.paypal.com/xclick/business=lord%40emf.net&amp;item_name=support+for+arch+and+other+free+software+efforts+by+tom+lord&amp;no_note=1&amp;tax=0&amp;currency_code=USD</a>
+
+and
+
+lord@xxxxxxx for www.moneybookers.com payments.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00455" href="msg00455.html">Re: Permitting and Supporting Extended Character Sets: response.</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00443" href="msg00443.html">Unicode and Scheme</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00451" href="msg00451.html">Permitting and Supporting Extended Character Sets: response.</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00452.html">Re: Unicode and Scheme</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00454.html">Re: Unicode and Scheme</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00451.html">Permitting and Supporting Extended Character Sets: response.</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00455.html">Re: Permitting and Supporting Extended Character Sets: response.</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00453"><strong>Date</strong></a></li>
+<li><a href="threads.html#00453"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,159 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: hygiene when using multiple instances of a macro..? -->
+<!--X-From-R13: Oaqer ina Fbaqre <naqerNabj.urg.oebja.rqh> -->
+<!--X-Date: Tue,  9 Aug 2005 15:53:54 +0200 (DFT) -->
+<!--X-Message-Id: Pine.GSO.4.60.0508090939390.8828@now.het.brown.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20050808142226.GD5351@maim.it.helsinki.fi -->
+<!--X-Reference: Pine.GSO.4.60.0508081044380.6390@now.het.brown.edu -->
+<!--X-Reference: 20050809065703.GA27249@sange.fi -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: hygiene when using multiple instances of a macro..?</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00024.html">Date Prev</a>][<a href="msg00026.html">Date Next</a>][<a href="msg00022.html">Thread Prev</a>][<a href="msg00015.html">Thread Next</a>][<a href="maillist.html#00025">Date Index</a>][<a href="threads.html#00025">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: hygiene when using multiple instances of a macro..?</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &quot;Panu A. Kalliokoski&quot; &lt;<a href="mailto:atehwa@DOMAIN.HIDDEN">atehwa@xxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: hygiene when using multiple instances of a macro..?</li>
+<li><em>From</em>: Andre van Tonder &lt;<a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 9 Aug 2005 09:53:04 -0400 (EDT)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-72@DOMAIN.HIDDEN">srfi-72@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-72@DOMAIN.HIDDEN">srfi-72@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20050809065703.GA27249@DOMAIN.HIDDEN">20050809065703.GA27249@xxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:20050808142226.GD5351@DOMAIN.HIDDEN">20050808142226.GD5351@xxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:Pine.GSO.4.60.0508081044380.6390@DOMAIN.HIDDEN">Pine.GSO.4.60.0508081044380.6390@xxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20050809065703.GA27249@DOMAIN.HIDDEN">20050809065703.GA27249@xxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+On Tue, 9 Aug 2005, Panu A. Kalliokoski wrote:
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+On Mon, Aug 08, 2005 at 10:55:51AM -0400, Andre van Tonder wrote:
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+
+  (define-syntax (can-we-stand-duplicates a-macro)
+    (quasisyntax
+     (if ',a-macro                     ; note quote
+         (let ((x 3)) (,a-macro #f))
+         x)))
+</pre></blockquote><pre style="margin: 0em;">
+
+I don't understand why the quote is needed, though; and it seems I was
+not the only one...
+</pre></blockquote><pre style="margin: 0em;">
+
+</pre><tt>Without the quote, one would get the expansion (I have kept the LETs for 
+</tt><tt>readability)
+</tt><pre style="margin: 0em;">
+
+  (if can-we-stand-duplicates
+      (let ((x#1 3))
+         (if #f
+             (let ((x#2 3)) (#f #f))
+             x))
+      x)
+
+</pre><tt>but can-we-stand-duplicates is a macro, not a runtime value, and is 
+</tt><tt>therefore unbound in the above expression (to an extent this can be regarded as 
+</tt><tt>an implementation-dependent detail, since one could legitimately also have 
+</tt><tt>expected t to be bound to a transformer even at runtime).
+</tt><pre style="margin: 0em;">
+
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Ah, so it's the _expansion_ that creates the new colour for the
+(quasi)syntax form.  Great.
+</pre></blockquote><pre style="margin: 0em;">
+
+
+</pre><tt>Well almost :)  Each evaluation of (quasi)syntax, even if they occur 
+</tt><tt>during the same macro expansion step, creates a new colour, so
+</tt><pre style="margin: 0em;">
+
+  (bound-identifier=? (syntax x) (syntax x))  ;==&gt; #f
+
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Another point that crossed my mind was the difference between
+
+(lambda (form) (quasisyntax (,(cadr form) 'foo 'bar)))
+and
+(lambda (form) (quasisyntax ,((cadr form) 'foo 'bar)))
+
+when (cadr form) is a macro; that is, does it make any difference
+whether the macro is left for the expander for further expansion or
+called directly, reentrantly?
+</pre></blockquote><pre style="margin: 0em;">
+
+
+</pre><tt>Only the first example will work.  In the second example, you are attempting to 
+</tt><tt>apply (cadr form) to arguments 'foo and 'bar.  Since (cadr form) evaluates to a 
+</tt><tt>piece of syntax, not a procedure, this will fail.
+</tt><pre style="margin: 0em;">
+
+Cheers
+Andre
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00017" href="msg00017.html">Re: hygiene when using multiple instances of a macro..?</a></strong>
+<ul><li><em>From:</em> Panu</li></ul></li>
+<li><strong><a name="00018" href="msg00018.html">Re: hygiene when using multiple instances of a macro..?</a></strong>
+<ul><li><em>From:</em> Andre van Tonder</li></ul></li>
+<li><strong><a name="00022" href="msg00022.html">Re: hygiene when using multiple instances of a macro..?</a></strong>
+<ul><li><em>From:</em> Panu A. Kalliokoski</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00024.html">Re: How many arguments to a macro transformer?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00026.html">Opaque syntax objects</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00022.html">Re: hygiene when using multiple instances of a macro..?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00015.html">Update available</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00025"><strong>Date</strong></a></li>
+<li><a href="threads.html#00025"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

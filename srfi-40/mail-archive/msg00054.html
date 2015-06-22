@@ -1,0 +1,360 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Much simpler leak&#45;free implementation possible? -->
+<!--X-From-R13: Oaqer ina Fbaqre <naqerNurg.oebja.rqh> -->
+<!--X-Date: Fri, 15 Aug 2003 00:38:08 +0200 (DFT) -->
+<!--X-Message-Id: Pine.sola.4.10.10308141818190.6253&#45;100000@now.het.brown.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Much simpler leak-free implementation possible?</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00053.html">Date Prev</a>][<a href="msg00055.html">Date Next</a>][<a href="msg00051.html">Thread Prev</a>][<a href="msg00055.html">Thread Next</a>][<a href="maillist.html#00054">Date Index</a>][<a href="threads.html#00054">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Much simpler leak-free implementation possible?</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-40@DOMAIN.HIDDEN">srfi-40@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Much simpler leak-free implementation possible?</li>
+<li><em>From</em>: Andre van Tonder &lt;<a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 14 Aug 2003 18:38:02 -0400 (EDT)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-40@DOMAIN.HIDDEN">srfi-40@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>  Although late in the process and a newcomer to this group, the 
+  following may be of some interest:
+  
+  After being bewildered by the complexity of the reference 
+  unfold and stream-filter examples, especially in the context of 
+  generalizing the patterns to arbitrary lazy data structures, I came
+  up with the following &quot;proof of concept&quot;, which uses a CPS-style delay
+  and force and 
+
+      * is free of leaks (caveat - only tested in MzScheme)
+      * correctly implements even streams
+      * vastly simplifies the correct implementation of
+        functions such as filter or unfold.
+      * makes it almost as easy to add new stream primitives
+        as it is to define new list functions.
+      * may be generalized quite easily to other lazy data 
+        structures.
+      * seems quite efficient
+
+  The idea is adapted from a usenet message
+  by Stephen McCracken.  The ease of programming in this style
+  almost seems to suggest that a CPS-like transformation is
+  the (?) natural way to express lazy structures in a strict
+  language.
+
+  For example, the definition of filter can be trivially adapted
+  from the corresponding definition for lists according to a regular
+  pattern (see below for full definitions):
+
+ (define (stream-filter p? s)
+   (codelay (lambda (k)
+              (stream-filter* p? s k))))
+
+ (define (stream-filter* p? s k)
+   (coforce s (lambda (s*)
+                (match s*
+                  [()      (k '())]
+                  [(h . t) (if (p? h)
+                               (k (cons h (stream-filter p? t)))
+                               (stream-filter* p? t k))]))))
+
+ Here stream-filter takes an even stream and gives back an
+ even stream.  It relies on stream-filter* that takes an even stream
+ and gives back an odd stream.  The important point is that
+ stream-filter* may be regarded as effectively *tail-recursive*
+ (the second argument of coforce is a continuation) and this is what
+ prevents the space leak.
+
+ In addition, we don't have to wrap the constructors in the second
+ function in delays.  It is, however, equivalent to the definitions
+ for even streams in the reference implementation via reductions of
+ the form (force (delay x)) -&gt; x.
+
+ Unfold follows exactly the same pattern, and is trivial compared to 
+ the reference implementation (the following is a somewhat less general
+ form):
+
+ ;; unfold : (b -&gt; (#f | (cons (a | 'drop) b)) b -&gt; stream a
+
+ (define (unfold f seed)
+   (codelay (lambda (k)
+              (unfold* f seed k))))
+
+ (define (unfold* f seed k)
+   (cond [(f seed) =&gt; (lambda (res)
+                        (match res
+                          [()      (k 'error)]
+                          [(h . t) (if (eq? h 'drop)
+                                       (unfold* f t k)
+                                       (k (cons h (unfold f t))))]))]
+         [else (k '())]))
+
+ Once again, we are save froma space leak because unfold* may be regarded
+ as &quot;effectively tail-recursive&quot;.
+
+ Just to fix the pattern, here is another example:
+
+ (define (drop-until p? s)
+   (codelay (lambda (k)
+              (drop-until* p? s k))))
+
+ (define (drop-until* p? s k)
+   (coforce s (lambda (s*)
+                (match s*
+                  [()      #f]
+                  [(h . t) (if (p? h)
+                               (k s*)
+                               (drop-until* p? t k))]))))
+
+ Another example: Filter may be alternatively defined using unfold:
+
+ (define (stream-filter1 p? s)
+   (unfold (lambda (s)
+             (coforce s (lambda (s*)
+                          (match s*
+                            [()      #f]
+                            [(h . t) (if (p? h)
+                                         (cons h t)
+                                         (cons 'drop t))]))))
+           s))
+
+Code and tests are below.
+
+Best regards
+Andre van Tonder
+
+
+
+;=====================================================================
+; Even CPS-style streams:
+
+; 2003 - Andre van Tonder:
+;
+
+; ====================================================================
+; CPS-style co-delay and co-force primitives:
+
+(define-syntax codelay
+  (syntax-rules ()
+    [(codelay thunk-cps)
+     (let ([memo-pair (cons #f #f)])
+       (lambda (k*)
+         (if (car memo-pair)
+             (k* (cdr memo-pair))
+             (thunk-cps (make-memoizer memo-pair k*)))))]))
+
+(define (make-memoizer memo-pair k)
+  (lambda (x)
+    (set-car! memo-pair #t)
+    (set-cdr! memo-pair x)
+    (k x)))
+
+(define (coforce promise k) (promise k))
+
+;=====================================================================
+; Convenience macro for deconstructing  lists:
+
+(define-syntax match
+  (syntax-rules ()
+    [(match lst
+       [()      exp1]
+       [(h . t) exp2])
+     (cond [(null? lst) exp1]
+           [(pair? lst) (let ([h (car lst)]
+                              [t (cdr lst)])
+                          exp2)]
+           [else 'match-error])]))
+
+;=====================================================================
+; stream-filter for even streams.  Broken into two functions to take
+; advantage of effective tail recursion.
+
+(define (stream-filter p? s)
+  (codelay (lambda (k)
+             (stream-filter* p? s k))))
+
+(define (stream-filter* p? s k)
+  (coforce s (lambda (s*)
+               (match s*
+                 [()      (k '())]
+                 [(h . t) (if (p? h)
+                              (k (cons h (stream-filter p? t)))
+                              (stream-filter* p? t k))]))))
+;=======================================================================
+; Unfold follows the same pattern:
+
+;; unfold : (b -&gt; (#f | (cons (a | 'drop) b)) b -&gt; stream a
+
+(define (unfold f seed)
+  (codelay (lambda (k)
+             (unfold* f seed k))))
+
+(define (unfold* f seed k)
+  (cond [(f seed) =&gt; (lambda (res)
+                       (match res
+                         [()      (k 'error)]
+                         [(h . t) (if (eq? h 'drop)
+                                      (unfold* f t k)
+                                      (k (cons h (unfold f t))))]))]
+        [else (k '())]))
+
+;=======================================================================
+; Alternative definition of filter using unfold:
+
+(define (stream-filter1 p? s)
+  (unfold (lambda (s)
+            (coforce s (lambda (s*)
+                         (match s*
+                           [()      #f]
+                           [(h . t) (if (p? h)
+                                        (cons h t)
+                                        (cons 'drop t))]))))
+          s))
+
+;=========================================================================
+; Additional useful functions:
+
+(define (integers-from n)
+  (codelay (lambda (k)
+             (k (cons n (integers-from (+ n 1)))))))
+
+(define (stream-ref index s)
+  (coforce s (lambda (s*)
+               (match s*
+                 [()      (error 'stream-ref)]
+                 [(h . t) (if (zero? index)
+                              h
+                              (stream-ref (- index 1) t))]))))
+
+(define (drop-until p? s)
+  (codelay (lambda (k)
+             (drop-until* p? s k))))
+
+(define (drop-until* p? s k)
+  (coforce s (lambda (s*)
+               (match s*
+                 [()      #f]
+                 [(h . t) (if (p? h)
+                              (k s*)
+                              (drop-until* p? t k))]))))
+
+;==========================================================================
+
+
+;=========================================================================
+; TESTS:
+
+;---------------------------------------------------------------------------
+----
+; Test that even streams correctly implemented.  If an off-by-one error
+; exited, this would not terminate:
+
+(stream-ref 0 (stream-filter
+               zero?
+               (integers-from 0)))
+
+  ;==&gt; 0
+
+;-------------------------------------------------------------------------
+; Test drop-until for space leak:
+; This should give an infinite loop in constant space -
+; MzScheme passes this:
+
+;(stream-ref 0 (drop-until zero? (integers-from 1)))
+
+;-------------------------------------------------------------------------
+; Test filter for space leak:
+; Use times3 with large enough number.
+
+(define (times3 n)
+  (stream-ref 3 (stream-filter
+                 (lambda (x) (zero? (modulo x n)))
+                 (integers-from 0))))
+
+(times3 7)    ; ==&gt; 21
+
+;(times3 100000000)    ; ==&gt; should run in constant space
+
+;--------------------------------------------------------------------------
+; Test unfold for space leak (filter1 is defined i.t.o. unfold)
+
+(define (times3* n)
+  (stream-ref 3 (stream-filter1
+                 (lambda (x) (zero? (modulo x n)))
+                 (integers-from 0))))
+
+(times3* 7)   ; ==&gt; 21
+
+(times3* 100000000)    ; ==&gt; should run in constant space
+
+;---------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00055" href="msg00055.html">Re: Much simpler leak-free implementation possible?</a></strong>
+<ul><li><em>From:</em> Andre van Tonder</li></ul></li>
+<li><strong><a name="00056" href="msg00056.html">Re: Much simpler leak-free implementation possible?</a></strong>
+<ul><li><em>From:</em> Phil Bewig</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00053.html">Re: specification of STREAM-UNFOLDN generators</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00055.html">Re: Much simpler leak-free implementation possible?</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00051.html">specification of STREAM-UNFOLDN generators</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00055.html">Re: Much simpler leak-free implementation possible?</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00054"><strong>Date</strong></a></li>
+<li><a href="threads.html#00054"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

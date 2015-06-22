@@ -1,0 +1,225 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Testing the reference implementation -->
+<!--X-From-R13: Penqyrl Zhpvre <yhpvreNzngu.cheqhr.rqh> -->
+<!--X-Date: Sun, 23 Oct 2005 05:59:11 +0200 (MST) -->
+<!--X-Message-Id: 65F0ACB8&#45;5A26&#45;46A1&#45;96F5&#45;B98A22C783E2@math.purdue.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Testing the reference implementation</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00127.html">Date Prev</a>][<a href="msg00129.html">Date Next</a>][<a href="msg00094.html">Thread Prev</a>][<a href="msg00316.html">Thread Next</a>][<a href="maillist.html#00128">Date Index</a>][<a href="threads.html#00128">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Testing the reference implementation</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Testing the reference implementation</li>
+<li><em>From</em>: Bradley Lucier &lt;<a href="mailto:lucier@DOMAIN.HIDDEN">lucier@xxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 22 Oct 2005 22:59:07 -0500</li>
+<li><em>Cc</em>: Bradley Lucier &lt;<a href="mailto:lucier@DOMAIN.HIDDEN">lucier@xxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<tt>I'd like to run some tests with the reference implementation, which  
+</tt><tt>is written for Scheme 48, and unfortunately I don't have any  
+</tt><tt>experience with this system.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>I've looked in the Scheme 48 docs and the web page for SRFI-34 and  
+</tt><tt>tried to get the following program to work.  Unfortunately, in the  
+</tt><tt>&quot;will&quot; implementation it gives me only the following:
+</tt><pre style="margin: 0em;">
+
+r6rs/will&gt; (load &quot;complex-test.scm&quot;)
+complex-test.scm
+
+Error: I'm bored.
+       #{Inf}
+       (&amp;error)
+
+Might someone help me with modifying this code so it will work?
+
+Brad
+
+</pre><tt>;;; This program was written for Gambit-C.  If you can find or write  
+</tt><tt>&quot;with-exception-handler&quot;
+</tt><pre style="margin: 0em;">
+;;; for your scheme, it may work there, too.
+
+</pre><tt>;;; It was modified to work with the SRFI-77 reference implementation  
+</tt><tt>on Scheme 48, but I haven't
+</tt><pre style="margin: 0em;">
+;;; had much luck getting it to run yet.
+
+</pre><tt>;;; This program tests +, -, *, and / with all combinations of  
+</tt><tt>&quot;arguments&quot; as the real part
+</tt><tt>;;; and the imaginary parts of the two arguments of the operators.   
+</tt><tt>It writes ths results
+</tt><tt>;;; to a file name &quot;results&quot; in a way that should be independent of  
+</tt><tt>how NaNs and infinities
+</tt><pre style="margin: 0em;">
+;;; are represented on your scheme system.
+
+</pre><tt>;;; If you think the results should be significantly different for  
+</tt><tt>any of these operations,
+</tt><pre style="margin: 0em;">
+;;; I'd like to hear about it: lucier at math dot purdue dot edu
+
+(define plus-infinity (let loop ((x (r5rs-&gt;number 2.0)))
+            (let ((two-x (* (r5rs-&gt;number 2.0) x)))
+              (if (= x two-x)
+                  x
+                  (loop two-x)))))
+
+(define minus-infinity (- plus-infinity))
+
+(define plus-zero (/ (r5rs-&gt;number 1.0) plus-infinity))
+
+(define minus-zero (/ (r5rs-&gt;number 1.0) minus-infinity))
+
+(define not-a-number (/ plus-zero plus-zero))
+
+(define arguments (list (r5rs-&gt;number 0)
+            (r5rs-&gt;number 1)
+            (r5rs-&gt;number -1)
+            plus-zero
+            minus-zero
+            (r5rs-&gt;number 1.)
+            (r5rs-&gt;number -1.)
+            plus-infinity
+            minus-infinity
+            not-a-number))
+
+(define operations+names (list (list + '+)
+                   (list - '-)
+                   (list * '*)
+                   (list / '/)))
+
+(define error-object (list &quot;ERROR&quot;))
+
+(define (print-result name first-arg second-arg result)
+
+  (define (print-arg arg)
+
+    (define (print-number x)
+      (cond ((exact? x)
+         (if (&gt;= x (r5rs-&gt;number 0))
+         (display &quot;+&quot;))
+         (display x))
+        ((not (= x x)) (display &quot;+NAN.&quot;))
+        ((zero? x)
+         (if (&gt; (/ (r5rs-&gt;number 1.0) x) (r5rs-&gt;number 0.))
+         (display &quot;+0.&quot;)
+         (display &quot;-0.&quot;)))
+        ((= (+ x x) x)
+         (if (&gt; x (r5rs-&gt;number 0.))
+         (display &quot;+INF.&quot;)
+         (display &quot;-INF.&quot;)))
+        (else
+         (if (&gt;= x (r5rs-&gt;number 0.))
+         (display &quot;+&quot;))
+         (display x))))
+
+    (if (eq? arg error-object)
+    (display &quot;ERROR&quot;)
+    (begin
+      (print-number (real-part arg))
+      (print-number (imag-part arg))
+      (display &quot;i&quot;))))
+
+  (display &quot;(&quot;)
+  (display name)
+  (display &quot; &quot;)
+  (print-arg first-arg)
+  (display &quot; &quot;)
+  (print-arg second-arg)
+  (display &quot;)        =&gt;         &quot;)
+  (print-arg result)
+  (newline))
+
+(with-output-to-file &quot;results&quot;
+  (lambda ()
+    (for-each (lambda (arg1)
+        (for-each (lambda (arg2)
+                (for-each (lambda (arg3)
+                    (for-each (lambda (arg4)
+                            (for-each (lambda (operation+name)
+                                (let ((operation (car  operation+name))
+                                      (name      (cadr operation+name))
+</pre><tt>                                      (first-arg  (make-rectangular  
+</tt><tt>arg1 arg2))
+</tt><tt>                                      (second-arg (make-rectangular  
+</tt><tt>arg3 arg4)))
+</tt><pre style="margin: 0em;">
+                                  (let ((result (with-exception-handler
+                                         (lambda (args) error-object)
+                                         (lambda ()
+</pre><tt>                                           (operation first-arg  
+</tt><tt>second-arg)))))
+</tt><tt>                                    (print-result name first-arg  
+</tt><tt>second-arg result))))
+</tt><pre style="margin: 0em;">
+                                  operations+names))
+                          arguments))
+                      arguments))
+              arguments))
+          arguments)))
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00316" href="msg00316.html">Re: Testing the reference implementation</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00127.html">Re: arithmetic issues</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00129.html">Re: +nan.0 problems</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00094.html">Re: Exactness</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00316.html">Re: Testing the reference implementation</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00128"><strong>Date</strong></a></li>
+<li><a href="threads.html#00128"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

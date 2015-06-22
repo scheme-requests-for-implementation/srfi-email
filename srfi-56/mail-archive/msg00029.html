@@ -1,0 +1,166 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: binary vs non&#45;binary ports -->
+<!--X-From-R13: Oyrk Euvaa <sbbsNflagupbqr.pbz> -->
+<!--X-Date: Fri, 17 Sep 2004 05:43:52 +0200 (DFT) -->
+<!--X-Message-Id: 86isady2z5.wl@lain.inunome.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 41491BE0.50006@bothner.com -->
+<!--X-Reference: 20040915.223004.159263589.shiro@lava.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: binary vs non-binary ports</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00028.html">Date Prev</a>][<a href="msg00030.html">Date Next</a>][<a href="msg00028.html">Thread Prev</a>][<a href="msg00030.html">Thread Next</a>][<a href="maillist.html#00029">Date Index</a>][<a href="threads.html#00029">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: binary vs non-binary ports</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Shiro Kawai &lt;<a href="mailto:shiro@DOMAIN.HIDDEN">shiro@xxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: binary vs non-binary ports</li>
+<li><em>From</em>: Alex Shinn &lt;<a href="mailto:foof@DOMAIN.HIDDEN">foof@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 16 Sep 2004 22:43:42 -0500</li>
+<li><em>Cc</em>: <a href="mailto:srfi-56@DOMAIN.HIDDEN">srfi-56@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-56@DOMAIN.HIDDEN">srfi-56@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20040915.223004.159263589.shiro@DOMAIN.HIDDEN">20040915.223004.159263589.shiro@xxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:41491BE0.50006@DOMAIN.HIDDEN">41491BE0.50006@xxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:20040915.223004.159263589.shiro@DOMAIN.HIDDEN">20040915.223004.159263589.shiro@xxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Wanderlust/2.10.1 (Watching The Wheels) SEMI/1.14.6 (Maruoka) FLIM/1.14.6 (Marutamachi) APEL/10.6 Emacs/21.3 (i386-pc-linux-gnu) MULE/5.0 (SAKAKI)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>At Wed, 15 Sep 2004 22:30:04 -1000 (HST), Shiro Kawai wrote:
+&gt; 
+&gt; Certainly there are implementations that inherently needs to
+&gt; distinguish character and binary ports, so I see Per's point.
+
+I went through the java.io documentation last night to get an idea of
+how difficult it would be to implement SRFI-56.  One interesting thing
+I discovered was that java.io.RandomAccessFile allows you to intermix
+reading characters and binary data on the same stream.  Using this a
+Java implementation could easily implement read-byte and read-char,
+though this would only be for file ports.  Also you are limited to
+internal utf-16 and utf-8 encodings, so if the implementation further
+wanted to allow arbitrary character encodings you'd have problems.
+But this means that Java itself does not intend to prevent you from
+intermixing binary and character data, just that its means of doing so
+are currently limited.  And with the closed nature of the Java core
+you can't efficiently extend this yourself.  If we were to let this
+influence our design and require specifying whether a port is meant
+for binary or character data on opening, then Scheme would be in the
+same weakened position as Java where it cannot efficiently implement
+other styles of languages.  That sort of reasoning would lead Scheme
+to become the lowest common denominator of implementation techniques.
+
+On the other hand, Java is a fairly popular implementation language
+so it is worth looking at compromises.
+
+&gt; I can think of two resolutions.
+&gt; 
+&gt; (1) changing the phrase in the draft to mention that:
+&gt; - Some implementations inherently need to distinguish character
+&gt;   and binary ports.
+&gt; - If the port doesn't support the requested operation, an exception
+&gt;   is raised (already mentioned in the draft).
+&gt; - The API to distinguish character/binary ports is beyond this srfi
+
+This is a little vague, but the first draft did have something similar
+in reference to string ports saying they may not support binary I/O.
+
+&gt; (2) including primitive predicates, something like port-binary-io-capable?,
+&gt;     into this srfi, so that a portable program can be written.
+
+Presumably ports could support binary and/or character operations so
+we'd need separate predicates like binary-port? and character-port?.
+But without an API for specifying which ports are which you make
+things less portable, because Schemes which allow intermixing
+operations will ignore the predicates and Schemes which don't will
+have to provide their own API's for designating a port type (probably
+on opening), and these procedures will not be available on other
+Schemes.
+
+A possible way to get more portability is to go ahead and provide the
+API for specifying port types, such as
+
+  (open-input-port &lt;path&gt;)     ; character port
+  (open-input-port &lt;path&gt; #t)  ; binary port
+
+or even
+
+  (open-input-port &lt;path&gt; &lt;encoding&gt;)
+
+where &lt;encoding&gt; may be a specific character encoding or something
+like the Java &quot;binary&quot;.
+
+Then Schemes who allow freely intermixing binary and character data
+can ignore the extra arguments, and code written for the other Schemes
+will work just fine.  People writing for more flexible Schemes may be
+lazy and not specify when they want binary data, but this is easily
+added when you want to port to other Schemes.  The only thing that
+would be truly non-portable is when you really do need to mix
+operations on the same port.
+
+-- 
+Alex
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00030" href="msg00030.html">Re: binary vs non-binary ports</a></strong>
+<ul><li><em>From:</em> Alex Shinn</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00024" href="msg00024.html">binary vs non-binary ports</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+<li><strong><a name="00028" href="msg00028.html">Re: binary vs non-binary ports</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00028.html">Re: binary vs non-binary ports</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00030.html">Re: binary vs non-binary ports</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00028.html">Re: binary vs non-binary ports</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00030.html">Re: binary vs non-binary ports</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00029"><strong>Date</strong></a></li>
+<li><a href="threads.html#00029"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

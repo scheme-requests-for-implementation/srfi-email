@@ -1,0 +1,185 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: simpler srfi 45 implementation -->
+<!--X-From-R13: "Xbf Ybbg" <wbf.xbbgNgryrsbavpn.arg> -->
+<!--X-Date: Wed, 14 Nov 2007 08:28:29 +0100 (MET) -->
+<!--X-Message-Id: y9l4pfp9tgm.fsf@deinprogramm.de -->
+<!--X-Content-Type: multipart/alternative -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>simpler srfi 45 implementation</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00018.html">Date Prev</a>][<a href="msg00020.html">Date Next</a>][<a href="msg00023.html">Thread Prev</a>][<a href="msg00024.html">Thread Next</a>][<a href="maillist.html#00019">Date Index</a>][<a href="threads.html#00019">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>simpler srfi 45 implementation</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &lt;<a href="mailto:srfi-45@DOMAIN.HIDDEN">srfi-45@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: simpler srfi 45 implementation</li>
+<li><em>From</em>: &quot;Jos Koot&quot; &lt;<a href="mailto:jos.koot@DOMAIN.HIDDEN">jos.koot@xxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 14 Nov 2007 08:28:25 +0100</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-45@DOMAIN.HIDDEN">srfi-45@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Old-date</em>: Tue, 13 Nov 2007 11:15:08 +0100</li>
+<li><em>Reply-to</em>: &quot;Jos Koot&quot; &lt;<a href="mailto:jos.koot@DOMAIN.HIDDEN">jos.koot@xxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Gnus/5.110006 (No Gnus v0.6) XEmacs/21.5-b28 (darwin)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+
+
+
+<DIV><FONT face="Courier New" size=2>Eli wrote the following 
+version:</FONT></DIV>
+<DIV><BR><FONT face="Courier New" size=2>(module lazy1 
+mzscheme-no-promises<BR><BR>&nbsp; (provide lazy delay force 
+promise?)<BR><BR>&nbsp; (define-struct promise (p))<BR><BR>&nbsp; (define-syntax 
+lazy<BR>&nbsp;&nbsp;&nbsp; (syntax-rules ()<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+[(lazy exp) (make-promise (lambda () exp))]))<BR><BR>&nbsp; (define-syntax 
+delay<BR>&nbsp;&nbsp;&nbsp; (syntax-rules ()<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+[(delay exp) (lazy (make-promise (list exp)))]))<BR><BR>&nbsp; (define (force 
+promise)<BR>&nbsp;&nbsp;&nbsp; (let ([p (promise-p 
+promise)])<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (cond [(procedure? 
+p)<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+(let ([promise* 
+(p)])<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+(unless (pair? (promise-p 
+promise))<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+(if (promise? 
+promise*)<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+(begin (set-promise-p! promise (promise-p 
+promise*))<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+(set-promise-p! promise* 
+promise))<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+(set-promise-p! promise (list 
+promise*))))<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+(force 
+promise))]<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+[(pair? p)&nbsp;&nbsp;&nbsp; (car 
+p)]<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+[(promise? p) (force p)] 
+&lt;----<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+[else&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (error "Invalid promise, 
+contains" p)]))))<BR></FONT></DIV>
+<DIV><FONT face="Courier New" size=2>When Phil Bewig tried this for his SRFI-41, 
+a substantial slow down (factor 100) was found for:</FONT></DIV>
+<DIV><FONT face="Courier New" size=2></FONT>&nbsp;</DIV>
+<DIV class=MsoNormal 
+style="MARGIN: 0cm 0cm 0pt; TEXT-ALIGN: justify; tab-stops: right 234.0pt"><SPAN 
+lang=EN-US style="FONT-SIZE: 8pt; FONT-FAMILY: 'Courier New'"><FONT 
+size=2>(stream-ref<?xml:namespace prefix = o ns = 
+"urn:schemas-microsoft-com:office:office" /><o:p></o:p></FONT></SPAN></DIV>
+<DIV class=MsoNormal 
+style="MARGIN: 0cm 0cm 0pt; TEXT-ALIGN: justify; tab-stops: right 234.0pt"><SPAN 
+lang=EN-US style="FONT-SIZE: 8pt; FONT-FAMILY: 'Courier New'"><FONT size=2><SPAN 
+style="mso-spacerun: yes">&nbsp; </SPAN>(stream-of (list a b 
+c)<o:p></o:p></FONT></SPAN></DIV>
+<DIV class=MsoNormal 
+style="MARGIN: 0cm 0cm 0pt; TEXT-ALIGN: justify; tab-stops: right 234.0pt"><SPAN 
+lang=EN-US style="FONT-SIZE: 8pt; FONT-FAMILY: 'Courier New'"><FONT size=2><SPAN 
+style="mso-spacerun: yes">&nbsp;&nbsp;&nbsp; </SPAN>(n in (stream-from 
+1))<o:p></o:p></FONT></SPAN></DIV>
+<DIV class=MsoNormal 
+style="MARGIN: 0cm 0cm 0pt; TEXT-ALIGN: justify; tab-stops: right 234.0pt"><SPAN 
+lang=EN-US style="FONT-SIZE: 8pt; FONT-FAMILY: 'Courier New'"><FONT size=2><SPAN 
+style="mso-spacerun: yes">&nbsp;&nbsp;&nbsp; </SPAN>(a in (stream-range 1 
+n))<o:p></o:p></FONT></SPAN></DIV>
+<DIV class=MsoNormal 
+style="MARGIN: 0cm 0cm 0pt; TEXT-ALIGN: justify; tab-stops: right 234.0pt"><SPAN 
+lang=EN-US style="FONT-SIZE: 8pt; FONT-FAMILY: 'Courier New'"><FONT size=2><SPAN 
+style="mso-spacerun: yes">&nbsp;&nbsp;&nbsp; </SPAN>(b in (stream-range a 
+n))<o:p></o:p></FONT></SPAN></DIV>
+<DIV class=MsoNormal 
+style="MARGIN: 0cm 0cm 0pt; TEXT-ALIGN: justify; tab-stops: right 234.0pt"><SPAN 
+lang=EN-US style="FONT-SIZE: 8pt; FONT-FAMILY: 'Courier New'"><FONT size=2><SPAN 
+style="mso-spacerun: yes">&nbsp;&nbsp;&nbsp; </SPAN>(c is (- n a 
+b))<o:p></o:p></FONT></SPAN></DIV>
+<DIV class=MsoNormal 
+style="MARGIN: 0cm 0cm 0pt; TEXT-ALIGN: justify; tab-stops: right 234.0pt"><SPAN 
+lang=EN-US style="FONT-SIZE: 8pt; FONT-FAMILY: 'Courier New'"><FONT size=2><SPAN 
+style="mso-spacerun: yes">&nbsp;&nbsp;&nbsp; </SPAN>(= (+ (* a a) (* b b)) (* c 
+c)))<o:p></o:p></FONT></SPAN></DIV>
+<DIV><SPAN lang=EN-US 
+style="FONT-SIZE: 8pt; FONT-FAMILY: 'Courier New'; mso-fareast-font-family: 'Times New Roman'; mso-ansi-language: EN-US; mso-fareast-language: EN-US; mso-bidi-language: AR-SA"><FONT 
+size=2><SPAN style="mso-spacerun: yes">&nbsp; </SPAN>50)</FONT></SPAN></DIV>
+<DIV><FONT face="Courier New"><FONT size=2><SPAN lang=EN-US 
+style="FONT-SIZE: 8pt; FONT-FAMILY: 'Courier New'; mso-fareast-font-family: 'Times New Roman'; mso-ansi-language: EN-US; mso-fareast-language: EN-US; mso-bidi-language: AR-SA"><FONT 
+size=2></FONT></SPAN></FONT></FONT>&nbsp;</DIV>
+<DIV><SPAN lang=EN-US 
+style="FONT-SIZE: 8pt; FONT-FAMILY: 'Courier New'; mso-fareast-font-family: 'Times New Roman'; mso-ansi-language: EN-US; mso-fareast-language: EN-US; mso-bidi-language: AR-SA"><FONT 
+size=2>Phil asked me what was wrong. The problem is in the cond-clause marked 
+with &lt;---- in the above code. The promise is not lifted. </FONT></SPAN><SPAN 
+lang=EN-US 
+style="FONT-SIZE: 8pt; FONT-FAMILY: 'Courier New'; mso-fareast-font-family: 'Times New Roman'; mso-ansi-language: EN-US; mso-fareast-language: EN-US; mso-bidi-language: AR-SA"><FONT 
+size=2>After replacing the marked cond-clause as follows, things ran as fast as 
+before:</FONT></SPAN></DIV>
+<DIV><FONT face="Courier New"><FONT size=2><SPAN lang=EN-US 
+style="FONT-SIZE: 8pt; FONT-FAMILY: 'Courier New'; mso-fareast-font-family: 'Times New Roman'; mso-ansi-language: EN-US; mso-fareast-language: EN-US; mso-bidi-language: AR-SA"><FONT 
+size=2></FONT></SPAN></FONT></FONT>&nbsp;</DIV>
+<DIV><SPAN lang=EN-US 
+style="FONT-SIZE: 8pt; FONT-FAMILY: 'Courier New'; mso-fareast-font-family: 'Times New Roman'; mso-ansi-language: EN-US; mso-fareast-language: EN-US; mso-bidi-language: AR-SA"><FONT 
+size=2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+[(promise? 
+p)<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+(let* ((v (force 
+p)))<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+(if (not (pair? (promise-p 
+prom)))<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+(set-promise-p! prom (list 
+v)))<BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+(car (promise-p prom)))]<BR></FONT></SPAN></DIV>
+<DIV><FONT face="Courier New"><FONT size=2><SPAN lang=EN-US 
+style="FONT-SIZE: 8pt; FONT-FAMILY: 'Courier New'; mso-fareast-font-family: 'Times New Roman'; mso-ansi-language: EN-US; mso-fareast-language: EN-US; mso-bidi-language: AR-SA"><FONT 
+size=2>Jos Koot</FONT></SPAN></FONT></FONT></DIV>
+<DIV><BR><FONT face="Courier New" size=2>((((lambda(x)((((((x 
+x)x)x)x)x)x))<BR>&nbsp;&nbsp; (lambda(x)(lambda(y)(x(x y)))))<BR>&nbsp; 
+(lambda(x)(write x)x))<BR>&nbsp;'greeting)</FONT></DIV>
+
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00018.html">Re: simpler srfi 45 implementation</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00020.html">Re: simpler srfi 45 implementation</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00023.html">Re: simpler srfi 45 implementation</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00024.html">Simpler implementations incorrect!</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00019"><strong>Date</strong></a></li>
+<li><a href="threads.html#00019"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

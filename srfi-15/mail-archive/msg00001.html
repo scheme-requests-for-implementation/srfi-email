@@ -1,0 +1,117 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: let&#45;fluid problem -->
+<!--X-From-R13: fuvirefNnv.zvg.rqh -->
+<!--X-Date: Sat, 13 Nov 1999 22:07:39 &#45;0600 (CST) -->
+<!--X-Message-Id: 199911140404.XAA09971@mongkok.ai.mit.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>let-fluid problem</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00000.html">Date Prev</a>][<a href="msg00002.html">Date Next</a>][<a href="msg00000.html">Thread Prev</a>][<a href="msg00003.html">Thread Next</a>][<a href="maillist.html#00001">Date Index</a>][<a href="threads.html#00001">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>let-fluid problem</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-15@DOMAIN.HIDDEN">srfi-15@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: let-fluid problem</li>
+<li><em>From</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxx</a></li>
+<li><em>Date</em>: Sat, 13 Nov 1999 23:04:38 -0500</li>
+<li><em>Reply-to</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>I would like to argue against any DYNAMIC-WIND + SET! sort of
+&quot;fluid variable&quot; system. The problem is threads. If you have a
+thread model, then any thread switch involves unwinding up the
+stack to the common ancestor continuation, then winding down into
+the activated continuation. This seems unacceptably expensive; thread
+switch should be a low-overhead operation.
+
+Because of this issue, I strongly prefer making fluid variables
+a primitive construct. Scheme48's system is a pretty canonical example
+of this genre. &quot;Fluid variables&quot; are data structures. So you have the
+following primitive procedures:
+   (MAKE-FLUID value) -&gt; fluid
+   (LET-FLUID fluid value thunk)
+   (LET-FLUIDS fluid1 value1 ... fluidn valuen thunk)
+   (FLUID fluid) -&gt; value
+   (SET-FLUID! fluid value)
+There are no primitive syntax forms. This design is not unique to S48;
+I believe it was proposed by someone other than Kelsey &amp; Rees, and
+is used elsewhere (but I can't recall who or where).
+
+Fluid values are cells that have dynamic scope, as provided by LET-FLUID.
+You typically bind them to global vars, e.g.
+    (define $cwd (make-fluid #f))
+    (define (with-cwd dir thunk) (let-fluid $cwd dir thunk))
+Throwing in or out of LET-FLUID scope does the right thing, as you'd want.
+
+Single-threaded implementations can provide fluids using DYNAMIC-WIND,
+*but* multithreaded implementatins can implement fluids using deep
+binding techniques, providing fast thread switch. This is not possible
+with a system that actually effects variables.
+
+If we're going to propose a dynamic-binding system, we should be careful
+to do one that will work in both multi-threaded as well as single-threaded
+systems -- that's planning ahead.
+    -Olin
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00003" href="msg00003.html">Re: let-fluid problem</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+<li><strong><a name="00004" href="msg00004.html">Re: let-fluid problem</a></strong>
+<ul><li><em>From:</em> Lars Thomas Hansen</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00000.html">lexical scoping--Please help</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00002.html">Re: let-fluid problem</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00000.html">lexical scoping--Please help</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00003.html">Re: let-fluid problem</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00001"><strong>Date</strong></a></li>
+<li><a href="threads.html#00001"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

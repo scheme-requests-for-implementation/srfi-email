@@ -1,0 +1,221 @@
+<!-- MHonArc v2.6.16 -->
+<!--X-Subject: Re: how useful are collecting lists? -->
+<!--X-From-R13: "Rnivq O. Iurryre" <qjurryreNqjurryre.pbz> -->
+<!--X-Date: Wed, 13 Mar 2013 02:51:17 +0000 (UTC) -->
+<!--X-Message-Id: E1UFbme&#45;0002nk&#45;2g@taishi.runbox.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 513EAE55.80204@gmail.com -->
+<!--X-Reference: E1UFYz2&#45;0001Am&#45;U6@taishi.runbox.com -->
+<!--X-Reference: 513FD6A2.50307@gmail.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: how useful are collecting lists?</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00011.html">Date Prev</a>][<a href="msg00013.html">Date Next</a>][<a href="msg00011.html">Thread Prev</a>][<a href="msg00013.html">Thread Next</a>][<a href="maillist.html#00012">Date Index</a>][<a href="threads.html#00012">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: how useful are collecting lists?</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &quot;srfi-110&quot; &lt;<a href="mailto:srfi-110@DOMAIN.HIDDEN">srfi-110@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: how useful are collecting lists?</li>
+<li><em>From</em>: &quot;David A. Wheeler&quot; &lt;<a href="mailto:dwheeler@DOMAIN.HIDDEN">dwheeler@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 12 Mar 2013 21:51:16 -0500 (EST)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-110@DOMAIN.HIDDEN">srfi-110@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:513FD6A2.50307@DOMAIN.HIDDEN">513FD6A2.50307@xxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:513EAE55.80204@DOMAIN.HIDDEN">513EAE55.80204@xxxxxxxxx</a>&gt; &lt;<a href="mailto:E1UFYz2-0001Am-U6@DOMAIN.HIDDEN">E1UFYz2-0001Am-U6@xxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:513FD6A2.50307@DOMAIN.HIDDEN">513FD6A2.50307@xxxxxxxxx</a>&gt;</li>
+<li><em>Reply-to</em>: <a href="mailto:dwheeler@DOMAIN.HIDDEN">dwheeler@xxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>David Vanderson:
+&gt; That makes sense - AmkG also noted how recently they were added.  It 
+&gt; would be great to have a few more examples in the SRFI.
+
+Sure!  That's a very helpful comment, thanks.  We can certainly do that.
+
+&gt; &gt; The rationale for collecting lists is here:
+&gt; &gt; <a  rel="nofollow" href="http://srfi.schemers.org/srfi-110/srfi-110.html#collecting-lists">http://srfi.schemers.org/srfi-110/srfi-110.html#collecting-lists</a>
+&gt; &gt;
+&gt; &gt; The rationale notes two use cases:
+&gt; &gt; 1. A long sequence of definitions contained within an initial statement. This situation occurs in many library definition structures such as Scheme R7RS define-library and in some larger data structures.
+&gt; &gt; 2. A let-style statement with one or two variables with short initial values.
+&gt; &gt;
+&gt; 
+&gt; I think #1 is a decent rationale, and with some experimenting I'm 
+&gt; starting to see how collecting lists are useful there.  To make sure I 
+&gt; understand, it seems like the primary motivation here is the 
+&gt; &quot;unintentional blank line&quot; problem:
+&gt; 
+&gt; define foo(x)
+&gt;    define bar(y)
+&gt;      y
+&gt; 
+&gt;    define baz(z)
+&gt;      z
+&gt; 
+&gt; This works in a Python script, but not at the REPL.  To avoid that 
+&gt; behavior, when using sweet expressions you either have to remove blank 
+&gt; lines:
+&gt; 
+&gt; define foo(x)
+&gt;    define bar(y)
+&gt;      y
+&gt;    define baz(z)
+&gt;      z
+&gt; 
+&gt; Or you must manually insert \\:
+&gt; 
+&gt; define foo(x)
+&gt;    define bar(y)
+&gt;      y
+&gt;    \\
+&gt;    define baz(z)
+&gt;      z
+&gt; 
+&gt; Are those the only options without collecting lists?  If so, I can 
+&gt; understand the motivation.
+
+Yes, that's right.  Without collecting lists,
+those are the only options... and that's the motivation.
+
+We could change the notation, but the changes look ugly.
+The obvious alternatives for the notation are:
+1. Make the REPL and file syntax different, like Python.
+I think this would be a mistake; people often copy-and-paste
+from files to the REPL.
+2. Don't stop on blank lines, but that change would make
+interactive use much less pleasant.
+
+It's really not a problem when the whole sequence fits on a screen.
+But when things get long, it starts to get ugly.
+
+&gt; In my examples, define has an implicit begin.  In this situation, I'm 
+&gt; unsure how to use &lt;*, because it introduces an extra parenthesis.  Have 
+&gt; you run into this problem?
+
+I've intentionally defined &lt;* to ALWAYS create another open paren.
+I think that's easier to understand, and it also makes it really helpful
+in short lists.
+
+I haven't worried about the define-in-define case above, because the
+long-and-annoying constructs that we've seen so far (as use cases)
+always had some sort of list that &lt;*...*&gt; easily mapped to.
+Of course, maybe that's a limitation of the use cases we've discussed!
+
+Hmm. If that's a *problem*, one solution without significantly changing
+the existing semantics might be to allow &lt;*...*&gt; after &quot;.&quot;.  I suspect
+such cases would basically just continue a list.  Here's what I have in mind:
+define foo(x) . &lt;*
+define bar(y)
+! y
+define baz(z)
+! z
+! *&gt;
+; ==&gt; (define (foo x) (define bar(y) y) (define baz(z) z))
+
+So... does anyone have thoughts about this?  Is this an important case?
+If it is, then is this a solution?  Are people running to the exits?
+Other thoughts?
+
+&gt; The second rationale for collecting lists (short multi-value let 
+&gt; expressions) seems much less obvious to me, especially since the 
+&gt; alternates given in the SRFI don't look particularly annoying.
+
+Okay.  One challenge with rationale #1, which I agree is the more compelling case,
+is that it's not obvious there's an issue until the expressions get long.
+Short expressions (say, less than 30 lines) aren't compelling;
+300-line expressions are compelling.  But reading 300 lines for one example is... tedious.
+
+Just in general, I want to be very parsimonious about adding new constructs.
+We should add a relatively few constructs, they should be simple,
+and they should solve as many use cases as plausible.  I doubt there will
+be perfect agreement on the right number for &quot;few&quot;, but if one construct
+can do the work of many use cases, making common constructs easy, then
+I take that as a good sign.
+
+&gt; I would 
+&gt; suggest reducing the emphasis on it in favor of #1, but am unsure how 
+&gt; the SRFI process works.  Would you be open to a suggested rewriting of 
+&gt; that section?
+
+Absolutely!  Heck, I think proposals are basically the whole point
+of the SRFI process, it lets us discuss them.  Please post publicly, so others
+can comment.
+
+If you could point out the *problems* you're trying to solve with the rewrite,
+that'd be especially helpful.
+
+&gt; Thank you for the readable project!
+
+Sure!! And thanks very much for being willing to give feedback.
+As I said earlier, I think that's the whole point of the SRFI process.
+
+--- David A. Wheeler
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00013" href="msg00013.html">Re: how useful are collecting lists?</a></strong>
+<ul><li><em>From:</em> Alan Manuel Gloria</li></ul></li>
+<li><strong><a name="00017" href="msg00017.html">Re: how useful are collecting lists?</a></strong>
+<ul><li><em>From:</em> David Vanderson</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00008" href="msg00008.html">how useful are collecting lists?</a></strong>
+<ul><li><em>From:</em> David Vanderson</li></ul></li>
+<li><strong><a name="00010" href="msg00010.html">Re: how useful are collecting lists?</a></strong>
+<ul><li><em>From:</em> David A. Wheeler</li></ul></li>
+<li><strong><a name="00011" href="msg00011.html">Re: how useful are collecting lists?</a></strong>
+<ul><li><em>From:</em> David Vanderson</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00011.html">Re: how useful are collecting lists?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00013.html">Re: how useful are collecting lists?</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00011.html">Re: how useful are collecting lists?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00013.html">Re: how useful are collecting lists?</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00012"><strong>Date</strong></a></li>
+<li><a href="threads.html#00012"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

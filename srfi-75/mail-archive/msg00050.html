@@ -1,0 +1,205 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: constant&#45;time access to variable&#45;width encodings -->
+<!--X-From-R13: Bre Pbguare <creNobguare.pbz> -->
+<!--X-Date: Wed, 13 Jul 2005 20:13:01 +0200 (DFT) -->
+<!--X-Message-Id: 42D559A9.1080000@bothner.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>constant-time access to variable-width encodings</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00049.html">Date Prev</a>][<a href="msg00051.html">Date Next</a>][<a href="msg00048.html">Thread Prev</a>][<a href="msg00051.html">Thread Next</a>][<a href="maillist.html#00050">Date Index</a>][<a href="threads.html#00050">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>constant-time access to variable-width encodings</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-75@DOMAIN.HIDDEN">srfi-75@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: constant-time access to variable-width encodings</li>
+<li><em>From</em>: Per Bothner &lt;<a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 13 Jul 2005 11:12:57 -0700</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-75@DOMAIN.HIDDEN">srfi-75@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Mozilla Thunderbird 1.0.2-6 (X11/20050513)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<tt>Here is an idea for an implementation strategy for using UTF-8 or UTF-16 
+</tt><tt>encoding of strings without breaking constant-time string-ref. 
+</tt><tt>Obviously R6RS should not require or assume this implementation, but it 
+</tt><tt>would be nice if it could be written to *allow* it.
+</tt><pre style="margin: 0em;">
+
+Assume a special character:
+#\partial - an incomplete character.
+</pre><tt>We can define it as U+D800 (start of the high surrogates area), since 
+</tt><tt>that is never a valid Unicode character.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>The goal is to allow implementations to use plain 8-bit UTF-8 or 16-bit 
+</tt><tt>UTF-16 string encodings, while still allowing constant-time string-ref. 
+</tt><tt> Both of these encoding have the nice property that it is trivial to 
+</tt><tt>detect whether a stored (8-bit or 16-bit) character is a complete 
+</tt><tt>character or whether it is part of a multibyte encoding or surrogate pair.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>The proposal is to allow string-ref to return #\partial for some indexes 
+</tt><tt>representing non-initial bytes or low-surrogate values.  Assume a string 
+</tt><tt>using UTF-8:
+</tt><pre style="margin: 0em;">
+&quot;R&#xF8;d&quot; (Norwegian for &quot;red&quot;) - i.e. {#\R, #\xF8, #\d}.
+The UTF-8 representation is: {#x52, #xc3, #xb8, #x64 }.
+(string-ref &quot;R&#xF8;d&quot; 0) =&gt; #\R
+(string-ref &quot;R&#xF8;d&quot; 1) =&gt; #\&#xF8;
+(string-ref &quot;R&#xF8;d&quot; 2) =&gt; #\partial
+(string-ref &quot;R&#xF8;d&quot; 3) =&gt; #\d
+(string-length &quot;R&#xF8;d&quot;) =&gt; 4 ;; Not 3!
+
+</pre><tt>I.e. the complete character value is returned for the index of its first 
+</tt><tt>byte/half, and #\partial is returned for subsequence indexes.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>The character #\partial is generally ignored.  Specifically, it is 
+</tt><tt>ignored when printing or by string-set! or the (string char ...) 
+</tt><tt>function.  The character routines also generally &quot;ignore&quot; it:
+</tt><pre style="margin: 0em;">
+(char-upcase #\partial) =&gt; #\partial
+...
+(char-alphabetic? #\partial) =&gt; #f
+...
+
+</pre><tt>The string-length function returns the &quot;allocated&quot; length, which is the 
+</tt><tt>same as the number of character *including* any #\partial characters.
+</tt><tt>Thus existing code generally needs no change.  There is seldom a need to 
+</tt><tt>test explicitly for #\partial - it is treated like a zero-width 
+</tt><tt>&quot;filler&quot;, and user code can treat it as such.  That only difference from 
+</tt><tt>a normal (zero-width) character is that it is never explicitly stored in 
+</tt><tt>a string.  But that's an application detail.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>This brings us to string-set! and other side-effecting string 
+</tt><tt>procedures.  The obvious problem is: what happens if you replace a 
+</tt><tt>1-byte character with a multibyte character or vice versa?  In that case 
+</tt><tt>you may have to widen or narrow the string.  That may seem expensive, 
+</tt><tt>but in practice is unlikely to be an issue.  Random access of strings is 
+</tt><tt>not something people generally do.  Most of the time people copy a 
+</tt><tt>string or fill it in left-to-right, which means that &quot;replacing&quot; an 
+</tt><tt>existing character isn't a issue.  However, it does mean that a string 
+</tt><tt>may need a variable-size buffer.  But that is needed anyway.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>Note that mutable fixed-width strings really make no sense: most strings 
+</tt><tt>are immutable, once constructed.  If you do need to mutate a string, a 
+</tt><tt>fixed-length string is useless.  A fixed-size mutable buffer only makes 
+</tt><tt>sense because it is easy to implement, not because it is useful.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>So let's make (mutable) strings variable-length.  The implementation is 
+</tt><tt>trivial:  Each string object contains a pointer to a u8 or u16 buffer,
+</tt><tt>plus a current length, plus a buffer size (which might be stored with 
+</tt><tt>the buffer).
+</tt><pre style="margin: 0em;">
+
+</pre><tt>(Shared substrings are a possibility in this model, but I won't discuss 
+</tt><tt>them further.)
+</tt><pre style="margin: 0em;">
+
+The preferred way to construct a string is now this function:
+(string-append! string char-or-string ...)
+  Append (in place) each char-or-string to the end of the string.
+  If an argument is the #\partial character it is ignored.
+
+</pre><tt>This is a cheap constant-time (on average) operation.  But note that 
+</tt><tt>appending a character may change (string-length string) by an 
+</tt><tt>implementation-defined amount:   If the character requires multiple 
+</tt><tt>buffer (u8 or u16) positions, it may increase the string-length by more 
+</tt><tt>than 1, and if it is #\partial it doesn't change the length.  However, 
+</tt><tt>appending a string always causes string-length to increase by the 
+</tt><tt>string-length of the added strings.
+</tt><pre style="margin: 0em;">
+
+It is also reasonable to provide:
+(string-replace! string start end replacement-string)
+  Replace (in place) (substring start end) by replacement-string.
+
+Now we can implement string-set! in terms of string-replace!:
+(define (string-set! string k char)
+  (let ((end (start-of-next-char string k)))
+     (string-replace! string k end (make-string 1 char))))
+</pre><tt>where (start-of-next-char string k) is the index of the next real 
+</tt><tt>(non-#\partial) character whose index is &gt; k, or (string-length string) 
+</tt><tt>if there is no such character.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>Note that (substring string start end) is undefined if (string-ref 
+</tt><tt>string start) *or* (string-ref string end) is #\partial.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>Note that (make-string k char) creates k copies of char, so the 
+</tt><tt>resulting string-length may be different from k.  If char if #\partial 
+</tt><tt>then the resulting string-length is 0.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>This may seem a radical proposal, but it actually doesn't change/break 
+</tt><tt>many R5RS idioms/code.
+</tt><pre style="margin: 0em;">
+--
+	--Per Bothner
+per@xxxxxxxxxxx   <a  rel="nofollow" href="http://per.bothner.com/">http://per.bothner.com/</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00051" href="msg00051.html">Re: constant-time access to variable-width encodings</a></strong>
+<ul><li><em>From:</em> Ray Blaak</li></ul></li>
+<li><strong><a name="00056" href="msg00056.html">Re: constant-time access to variable-width encodings</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00049.html">Re: case mappings</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00051.html">Re: constant-time access to variable-width encodings</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00048.html">Re: encoding strings in memory</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00051.html">Re: constant-time access to variable-width encodings</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00050"><strong>Date</strong></a></li>
+<li><a href="threads.html#00050"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

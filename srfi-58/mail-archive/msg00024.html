@@ -1,0 +1,178 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: #\a octothorpe syntax vs SRFI 10 -->
+<!--X-From-R13: Bre Pbguare <creNobguare.pbz> -->
+<!--X-Date: Sat,  1 Jan 2005 10:20:27 +0100 (NFT) -->
+<!--X-Message-Id: 41D66B50.2090200@bothner.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: Pine.LNX.4.44.0412311032200.20579&#45;100000@autodrip.bloodandcoffee.net -->
+<!--X-Reference: 41D5A36E.30205@bothner.com -->
+<!--X-Reference: 20050101041747.E9BA01B7711@voluntocracy.org -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: #\a octothorpe syntax vs SRFI 10</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00023.html">Date Prev</a>][<a href="msg00025.html">Date Next</a>][<a href="msg00026.html">Thread Prev</a>][<a href="msg00030.html">Thread Next</a>][<a href="maillist.html#00024">Date Index</a>][<a href="threads.html#00024">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: #\a octothorpe syntax vs SRFI 10</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Aubrey Jaffer &lt;<a href="mailto:agj@DOMAIN.HIDDEN">agj@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: #\a octothorpe syntax vs SRFI 10</li>
+<li><em>From</em>: Per Bothner &lt;<a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 01 Jan 2005 01:20:16 -0800</li>
+<li><em>Cc</em>: <a href="mailto:srfi-58@DOMAIN.HIDDEN">srfi-58@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-58@DOMAIN.HIDDEN">srfi-58@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20050101041747.E9BA01B7711@DOMAIN.HIDDEN">20050101041747.E9BA01B7711@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:Pine.LNX.4.44.0412311032200.20579-100000@DOMAIN.HIDDEN">Pine.LNX.4.44.0412311032200.20579-100000@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:41D5A36E.30205@DOMAIN.HIDDEN">41D5A36E.30205@xxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20050101041747.E9BA01B7711@DOMAIN.HIDDEN">20050101041747.E9BA01B7711@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mozilla/5.0 (Macintosh; U; PPC Mac OS X Mach-O; en-US; rv:1.7.2) Gecko/20040803</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+Aubrey Jaffer wrote:
+
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Are there type specifiers in common between Scheme implementations?
+</pre></blockquote><pre style="margin: 0em;">
+
+Not to my knowledge.  But it might be worthwhile looking at Schemes
+that focus on compilation, including Stalin, Bigloo, and Kawa.
+
+Common Lisp is of course has a little mini-language.  The Emacs
+cl package emulates a subset of the Common Lisp specifiers.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Here is a plan which, using the delimiter you suggested, indicates
+signed vs. unsigned with - versus +:
+</pre></blockquote><pre style="margin: 0em;">
+
+I think that's a little too cute.  I think just a single 'u' prefix
+is enough - and I don't think the hyphen is needed:
+#nA:integer16 / #na:uinteger16.  Or just use the short &quot;int&quot;
+instead of &quot;integer&quot; as in #nA:int16 / #nA:uint16.  That
+abbrevation is consistent with C/C++'s stdint.h.  Using a
+&quot;u&quot; prefix is also used in C#: ushort/ubyte etc.  (Note
+I'd use the unabbreviated &quot;integer&quot; for unbounded integers.)
+
+You could also use an &quot;unsigned-&quot; prefix as in #nA:unsigned-integer16
+but that seems excessively verbose.
+
+&gt; inexact         64.bit real                     #nA:real-64
+&gt; inexact         32.bit real                     #nA:real-32
+
+These aren't general real numbers, but &quot;inexact real numbers
+using a floating-point representation.&quot;  So use &quot;float&quot; rather
+than &quot;real&quot;.  So (assuming you drop the hyphen): #nA:float32
+and #nA:float64.  Using &quot;float&quot; is also consistent with
+Common Lisp type specifiers. (Common Lisp also has short-float,
+single-float, double-float and long-float, though that level of
+generality is less interesting these days.)
+
+&gt; inexact         64.bit + 64.bit complex         #nA:complex-64
+&gt; inexact         32.bit + 32.bit complex         #nA:complex-32
+
+More specifically, they're complex numbers using a cartesian
+representation of 2 floating-point parts.  I can certaily imagine
+applications using complex arithmethc using integers coordinates.
+So really &quot;complex32&quot; should be viewed as a short-hand for
+&quot;complex:float32&quot;.  Some systems might allow &quot;complex:int16&quot;,
+though I don't think we need to be this general for srfi-58.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+                any (vector)                    #nA
+</pre></blockquote><pre style="margin: 0em;">
+
+I.e. #nA is short for #nA:object (or #nA:value).
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+                char (string)                   #nA:char
+</pre></blockquote><pre style="margin: 0em;">
+
+Is that 8-bit chars or implemention-defined chars?
+One could have #nA:char8, #nA:char16 (Unicode), #nA:char32.
+#nA:char would match an #nA:charW for some implementation-defined
+W (which I guess might be 7 on a PDP-10 ...).
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+                boolean (bit-vector)            #nA:boolean
+</pre></blockquote><pre style="margin: 0em;">
+
+A boolean has values #f and #t.  A bit has values 0 or 1, and
+is the same as a uint1.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Another possibility is to use the word &quot;natural&quot; for nonnegative
+integers:
+</pre></blockquote><pre style="margin: 0em;">
+
+I don't think that's a good idea.
+--
+	--Per Bothner
+per@xxxxxxxxxxx   <a  rel="nofollow" href="http://per.bothner.com/">http://per.bothner.com/</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00030" href="msg00030.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+<ul><li><em>From:</em> Aubrey Jaffer</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00013" href="msg00013.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+<ul><li><em>From:</em> campbell</li></ul></li>
+<li><strong><a name="00015" href="msg00015.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+<li><strong><a name="00021" href="msg00021.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+<ul><li><em>From:</em> Aubrey Jaffer</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00023.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00025.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00026.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00030.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00024"><strong>Date</strong></a></li>
+<li><a href="threads.html#00024"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

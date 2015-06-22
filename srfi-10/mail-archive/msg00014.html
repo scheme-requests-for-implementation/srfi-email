@@ -1,0 +1,208 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: SRFI&#45;10 intent: new notation and _some_ guidelines of its interpretation -->
+<!--X-From-R13: byrtNcbobk.pbz -->
+<!--X-Date: Fri, 8 Oct 1999 14:17:55 &#45;0500 (CDT) -->
+<!--X-Message-Id: 199910081916.TAA07388@fnmoc.navy.mil -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>SRFI-10 intent: new notation and _some_ guidelines of its interpretation</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00013.html">Date Prev</a>][<a href="msg00015.html">Date Next</a>][<a href="msg00013.html">Thread Prev</a>][<a href="msg00015.html">Thread Next</a>][<a href="maillist.html#00014">Date Index</a>][<a href="threads.html#00014">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>SRFI-10 intent: new notation and _some_ guidelines of its interpretation</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:kelsey@DOMAIN.HIDDEN">kelsey@xxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: SRFI-10 intent: new notation and _some_ guidelines of its interpretation</li>
+<li><em>From</em>: <a href="mailto:oleg@DOMAIN.HIDDEN">oleg@xxxxxxxxx</a></li>
+<li><em>Date</em>: Fri, 8 Oct 1999 19:16:03 GMT</li>
+<li><em>Cc</em>: <a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>, <a href="mailto:srfi-10@DOMAIN.HIDDEN">srfi-10@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Reply-to</em>: <a href="mailto:oleg@DOMAIN.HIDDEN">oleg@xxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+&gt; I am no longer at all sure that the intent of SRFI-10 is to provide
+&gt; a mechanism for read-time evaluation.
+&gt; One reading of SRFI-10 and the ensuing discussion is that SRFI-10
+&gt; is not proposing an extension of Scheme but rather a convention for
+&gt; future SRFIs (footnote 1).  What is being proposed is that the
+&gt; following rule be added to the grammar for external representations
+&gt; (see section 7.1.2 in R5RS):
+&gt;  &lt;compound datum&gt;  --&gt;  #,(&lt;symbol&gt; &lt;datum&gt;*)
+&gt; and that future SRFIs that contain new read syntax for values use
+&gt; this syntax with an appropriate symbol.
+
+You said it very well. SRFI-10'th intent is indeed to extend the
+grammar for external representations; SRFI-10 indeed does not aim to
+specify all the details (where tag-symbols are stored, how they come
+into being, etc). SRFI-10 however resolves to provide #,()
+interpretation guidelines -- an interface so to speak.
+
+It appears that comparison with the Reader Algorithm of CL illustrates
+very well what the latter phrase means:
+
+&lt;blockquote cite=&quot;<a  rel="nofollow" href="http://www.harlequin.com/education/books/HyperSpec/Body/sec_2-2.html&quot">http://www.harlequin.com/education/books/HyperSpec/Body/sec_2-2.html&quot</a>;&gt;
+4. If x is a terminating or non-terminating macro character then its
+associated reader macro function is called with two arguments, the
+input stream and x.
+
+      The reader macro function may read characters from the input
+stream; if it does, it will see those characters following the macro
+character. The Lisp reader may be invoked recursively from the reader
+macro function.
+
+      The reader macro function must not have any side effects other
+than on the input stream; because of backtracking and restarting of
+the read operation, front ends to the Lisp reader (e.g., ``editors''
+and ``rubout handlers'') may cause the reader macro function to be
+called repeatedly during the reading of a single expression in which x
+only appears once.
+
+      The reader macro function may return zero values or one
+value. If one value is returned, then that value is returned as the
+result of the read operation; the algorithm is done. If zero values
+are returned, then step 1 is re-entered.
+&lt;/blockquote&gt;
+
+	The quote above defines the interface of a reader macro function,
+and specifies what it can or cannot do. SRFI-10 aims to do the same
+with regards to reader-constructors. The latter differ from CL macro
+functions in many respects. For example, Lisp reader relies on a macro
+dispatch function to read and parse its arguments if necessary. The
+stream following a macro-character does not even have to follow basic
+Lisp syntax. For example, one can easily write a CL reader macro
+function that reads through a few lines of Python or Haskell code and
+converts them to an appropriate Lisp object; Python code relies
+extensively on the use of indentation, which is ignored in Lisp code.
+
+	In contrast, when a SRFI-10 reader-constructor is called, the
+corresponding #,() form (and all its arguments if any) has already
+been read. Therefore, all arguments of a reader constructor must
+follow the Scheme syntax. Informally, a #,() form should &quot;look&quot; like
+Scheme code, even if we have no idea what a constructor-symbol
+means. Since the #,() form is already read, it makes no sense for the
+reader constructor to advance or backup in reader's stream. The
+constructor generally does not have any idea what the current position
+in the stream is. A particular Scheme reader may choose to call reader
+constructors after it has read the stream entirely. As a #,() form is
+completely read when the constructor is called, we can relax the CL
+prohibition on side-effects in the constructor. Unlike CL reader macro
+function, a reader-constructor cannot be called repeatedly during
+reading of a single, non-nested #,() form. Besides, prohibition on
+side effects is very difficult to reinforce. Lifting this prohibition
+does not constitute encouragement of side-effecting
+reader-constructors however.
+
+	SRFI-10 mentions a few other differences between CL reader
+macros and the proposed #,() form. BTW, one of my posts on
+comp.lang.scheme indicated that these reader functions implement
+different evaluation order rules -- normal vs. applicative.
+
+
+It appears that read-time-ctor causes most of the controversy. This is
+unfortunate as read-time-ctor is actually an implementation detail. It
+appears that it make sense to clarify the following statement even
+further:
+
+&gt;  An implementation of SRFI-10 must provide some method for
+&gt;  associating symbolic tags with constructor procedures.  For
+&gt;  example, it might provide a `define-reader-ctor' function for
+&gt;  that purpose.
+
+
+For example,
+
+The exact nature of association between symbolic tags and
+constructor procedures is unspecified. For example, an implementation
+of SRFI-10 may:
+
+	- offer a _fixed_ set of specific symbolic tags and
+associated constructor procedures;
+	- provide a set of symbolic tags and associated constructor
+procedures. A user however may enable or disable some of them at
+application's start-up time, via configurational files,
+command-line options, environment variables and other similar means;
+	- allow a user to add new constructor procedures and
+associated tags at application's start-up time, by specifying
+extension modules;
+	- permit a user to add new constructor procedures at run-time.
+For example, an implementation may provide a procedure
+	define-reader-ctor SYMBOL PROC
+for that purpose. 
+	- an implementation may allow creation of new associations of
+symbolic tags and existing constructor procedures at read-time, via a
+dedicated reader-constructor, e.g.,
+	'#,(define-reader-ctor 'f32 f32vector)
+
+A user should be aware that define-reader-ctor function if provided
+adds new associations at application's run-time. This function
+therefore cannot affect reading of the source code containing that
+define-reader-ctor. The last option is free from that
+limitation. However, it essentially modifies the very reader while it
+is processing the code. A special care must be taken to consider
+the proper sequencing of side effects.
+
+	A SRFI-10 reference implementation provides define-reader-ctor
+function. The examples below assume that particular implementation
+choice.
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00015" href="msg00015.html">Re: SRFI-10 intent: new notation and _some_ guidelines of its interpretation</a></strong>
+<ul><li><em>From:</em> Richard Kelsey</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00013.html">Re: What #,(foo) does tell... include vs. load</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00015.html">Re: SRFI-10 intent: new notation and _some_ guidelines of its interpretation</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00013.html">Re: What #,(foo) does tell... include vs. load</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00015.html">Re: SRFI-10 intent: new notation and _some_ guidelines of its interpretation</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00014"><strong>Date</strong></a></li>
+<li><a href="threads.html#00014"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

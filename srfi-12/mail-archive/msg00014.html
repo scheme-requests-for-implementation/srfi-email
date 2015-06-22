@@ -1,0 +1,316 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: conditions -->
+<!--X-From-R13: [nggurj Tyngg <zsynggNpf.hgnu.rqh> -->
+<!--X-Date: Sun, 17 Oct 1999 10:02:14 &#45;0500 (CDT) -->
+<!--X-Message-Id: 19991017150213.JSAO11261.mail.rdc1.sfba.home.com@localhost -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>conditions</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00013.html">Date Prev</a>][<a href="msg00015.html">Date Next</a>][<a href="msg00004.html">Thread Prev</a>][<a href="msg00015.html">Thread Next</a>][<a href="maillist.html#00014">Date Index</a>][<a href="threads.html#00014">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>conditions</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-12@DOMAIN.HIDDEN">srfi-12@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: conditions</li>
+<li><em>From</em>: Matthew Flatt &lt;<a href="mailto:mflatt@DOMAIN.HIDDEN">mflatt@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 17 Oct 1999 08:02:13 -0700</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>I haven't been able to participate in the discussion on conditions over
+the last week. Meanwhile, Richard did a great job of explaining the
+rationale for conditions (thanks Richard!). Still, from the discussion
+it's not clear that everyone buys the rationale, so here's my take.
+
+  Disclaimer: My views do not necessarily represent the views of the
+  other three authors.
+
+  Note: Section 3 addresses specific questions on conditions in the
+  current SRFI, so skip down to there when the rest gets too tedious.
+
+1. Why Have Them?
+-----------------
+
+Perhaps the best way to explain the motivation behind conditions in the
+SRFI draft is to imagine an example.
+
+Suppose Per provides a fancy image-manipulation library, &quot;bothner.scm&quot;.
+Suppose also that Dave provides an elegant networking protocol library,
+&quot;mason.scm&quot;. Suppose, finally, that I want to implement the
+image-viewing part of a web browser using &quot;bothner.scm&quot; and
+&quot;mason.scm&quot;.
+
+Although &quot;bothner.scm&quot; and &quot;mason.scm&quot; were implemented by different
+authors, in the post-SRFI utopia they both signal errors via
+exceptions. This makes my job much easier in writing the web browser. I
+can freely interleave calls to the libraries to download and display a
+particular image, all the while assuming that nothing goes wrong. If
+something goes wrong, I can catch the exception at the point where I
+started trying to download the file, give up on the download, and
+report a helpful error message to the user.
+
+But how can I report a helpful error? In other words, how do I get a
+useful error message from the value that &quot;bother.scm&quot; or &quot;mason.scm&quot;
+provides to my exception handler?
+
+Well - duh! - I read the documentation. Here's what the documentation
+for &quot;bothner.scm&quot; says:
+
+ If something goes wrong processing an image file, an exception is
+ raised, represented by a value of the form
+   (list &lt;bad-file-name-string&gt; &lt;error-message-string&gt;)
+
+The documentation for &quot;mason.scm&quot; is equally helpful:
+
+  If something goes wrong in network communication, an exception is
+  raised, represented by a value of the form
+   (list &lt;error-message-string&gt; &lt;server-name-string&gt;)
+
+Uh-oh. The error string is not in the same place, and I can't
+distinguish the formats.
+
+Quoting Jimmy Kneecricket, freshman at Whatsamatta U.:
+&gt; Surely your example is contrived. The Scheme community would never
+&gt; foster such gratuitously incompatible interfaces, would it?
+
+Serious questions only, please.
+
+Quoting Paige Turner, litrary critic at the Bookings Institute of Werms:
+&gt; Both &quot;bothner.scm&quot; and &quot;mason.scm&quot; are pure ficton. Everyone knows
+&gt; that Schemers don't share code.
+
+You've got me there, but I think that's what we're trying to solve with
+SRFIs.
+
+Quoting Lisa Commons, denominator at the Division Foundation
+&gt; Ok, so SRFIs are supposed to fix this problem, but not *this* SRFI.
+&gt; Can't it wait until the next one? Let's agree on a core mechanism,
+&gt; first.
+
+At a minimum, I think the initial SRFI needs to provide programmers
+with a mechanism for dealing with implementation-supplied information
+(when a Scheme implementation raises an exception). I'd hope this SRFI
+provides, at the very least, access to a user-friendly error message.
+
+In that case, we have to deal with the issue of conditions right from
+the start. We should spend a some effort, in this SRFI, to design a
+flexible and extensible system, ensuring that implementation- and
+library-raised exceptions can be handled the same way.
+
+Quoting Cantwee Moovan, numerator at Runtimes International:
+&gt; I have to disagree with Lisa. Individual Scheme programmers can
+&gt; already build exception systems for their own code using
+&gt; continuations. But we want to share code, hence the SRFI.
+&gt; Unfortunately, an exceptions SRFI is useless for that purpose
+&gt; without a common means of expressing information about exceptions.
+&gt; Indeed, Richard already said as much:
+&gt;
+&gt; Quoting Richard Kelsey:
+&gt; &gt; The quick answer is that exception systems are used to communicate
+&gt; &gt; between programs. Within a single a program you can use whatever
+&gt; &gt; method you want for catching exceptions and whatever values you
+&gt; &gt; want as conditions. If two or more programs are involved they need
+&gt; &gt; to agree on both the exception-raising mechanism and on the kind of
+&gt; &gt; values that are passed to the handler.
+&gt;
+&gt; And besides, &quot;denominator&quot; is not a real occupation, is it?
+
+No, I don't think it is.
+
+2. Why Like That?
+-----------------
+
+Quoting Per Bothner:
+&gt; * Why do we need a new condition type, disjoint from other Scheme values,
+
+For the same reason that `procedure?' is disjoint from `pair?'.
+
+Seriously!
+
+We all know that a procedure is a pair, combining a code pointer with a
+set of free-variable bindings. But the advantage of distinguishing
+pairs and procedures is that we can write code such as
+
+  (cond
+   [(procedure? x) ...]
+   [(pair? x) ...])
+
+and it won't break in SuperScheme (the latest, greatest Scheme
+implemetation) when I happen to create a list that looks like
+SuperScheme's representation of procedures.
+
+Quoting Icy a'Paturn, penguin at the Antarctic Linux Research Center:
+&gt; You're still harping on portability and sharing code, aren't you?
+
+Yes, still echoing Richard. But out of respect for real individuals, no
+more questions from fictional characters, please.
+
+Quoting Per Bothner:
+&gt; But I don't see any need to support signaling anything *else*, and
+&gt; thus we don't need a disjoint datatype.
+
+Since conditions are first-class values, they'll surely flow to more
+places than the argument position of an exception handler. For example,
+a program might keep a log of exceptions using conditions in a list.
+The log might contain non-exception entries as well as exception
+entries.
+
+Quoting Per Bothner:
+&gt; * What is the purpose of composite conditions?
+
+It's a simple mechanism to get the flexibility and extensibility we
+want.
+
+Again, Richard has already explained this, but I'll repeat for
+completeness. The usual example goes something like this:
+
+ * Filesystem errors are supposed to raise the exception BadFile.
+
+ * Network errors are supposed to raise the exception BadConnect.
+
+ * What exception do you raise when something goes wrong in a
+   network-backed filesystem?
+
+The ideal answer is &quot;both&quot;. That's what composite conditions are for.
+
+Quoting Dave Mason:
+&gt; It seems to be unnecessarily complicated to see if an exception is
+&gt; the one you were expecting. It's so much more convenient if you
+&gt; simply use a normal scheme value (most likely a symbol).
+&gt; Interestingly, the examples for HANDLE-EXCEPTIONS (quite rightly) use
+&gt; simple scheme values rather than making condition values. If this was
+&gt; done for pedagogical reasons (because it was simpler to explain),
+&gt; doesn't that make a compelling reason for using them in programs too?
+
+In prototype code, I sometimes use simple values, such as symbols, to
+represent exceptions. But for sharable code, I don't see a system
+simpler than the proposed one that provides the flexibility and
+extensibility we need. Of course, the SRFI authors may have overlooked
+a better alternative. Specific suggestions, such as Dave's more recent
+post, are welcome.
+
+Quoting Richard Kelsey:
+&gt; CONDITION? is needed unless either 1. only conditions can be
+&gt; passed to handlers or 2. there are no operations specific to
+&gt; conditions.  I can see doing 1 but not 2.  Hopefully the authors
+&gt; of SRFI-12 will enlighten as to why they allow values other than
+&gt; conditions to be raised.
+
+I don't think there were stong reasons. Simplicity of specification and
+ease of prototyping (see previous paragraph) are possible reasons to
+keep the current convention.
+
+Quoting Matthew Flatt, second assistant chief monkey at Hogle Zoo, SLC:
+&gt; Why do you keep making up questions from fictional characters?
+
+It was a feeble attempt to break up a lengthy and otherwise dry post.
+But I said no more questions from fictional characters!
+
+3. Details, Details
+--------------------
+
+Quoting Richard Kelsey:
+&gt; Question 1: What predicate is used to compare prop-keys?
+&gt; 
+&gt; The implementation uses `eq?' (via `assq' and `memq') for both
+&gt; kind-keys and prop-keys. The specification says that kind-keys are
+&gt; compared using `eqv?' and says nothing about how prop-keys are
+&gt; compared.
+
+I believe they should all be `eqv?'. We'll have to correct the SRFI.
+
+Quoting Richard Kelsey:
+&gt; The rest of the questions relate to the following condition:
+&gt; 
+&gt;   (define condition
+&gt;     (make-composite-condition (make-property-condition #f 0 'a 1 'b)
+&gt;                               (make-property-condition #f 0 'c 1 'd 2 'e)))
+
+Although the SRFI doesn't disallow it, the intent is that the above
+condition is not well-formed. Each key should appear in only one
+subcondition.
+
+&gt; Question 2: What happens if I ask for a property that the condition
+&gt; doesn't have?
+
+The SRFI should say that the implementation &quot;signals an error&quot;. (A
+later SRFI should specify the details of the ensuing exception.)
+
+&gt; Question 3: What if I ask for a property that only one of the two
+&gt; subconditions has?
+[in the case that a composite condition contains the key in two
+subconditions]
+
+Good question. I don't know offhand.
+
+&gt; Question 4: Will the accessor always use the same subcondition?
+[in the case that a composite condition contains the key in two
+subconditions]
+
+Another good question. Any suggestions?
+
+Quoting Per Bothner:
+&gt; I also think the word &quot;condition&quot; is a bit of a mis-nomer. I see
+&gt; nothing conditional about them.
+
+I'm not a fan of the term &quot;condition&quot;, either. I'd prefer to confuse
+the exception and the value representing the exception, and just call
+them both &quot;exception&quot;. Someone else will have to speak up and remind me
+why we should go with &quot;condition&quot;.
+
+Matthew
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00013.html">Re: more srfi-12 rationale?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00015.html">Re: conditions</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00004.html">system exceptions</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00015.html">Re: conditions</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00014"><strong>Date</strong></a></li>
+<li><a href="threads.html#00014"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

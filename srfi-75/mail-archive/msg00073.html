@@ -1,0 +1,192 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: case mappings -->
+<!--X-From-R13: Fubznf Phfuaryy PEU <goNorpxrg.arg> -->
+<!--X-Date: Thu, 14 Jul 2005 10:07:56 +0200 (DFT) -->
+<!--X-Message-Id: 87fyuhajza.fsf@becket.becket.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 5fb7e08705071220576a45b119@mail.gmail.com -->
+<!--X-Reference: y9lslyjqkbp.fsf@sams.informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: 5fb7e087050713004059574e17@mail.gmail.com -->
+<!--X-Reference: 87y88ah51q.fsf@becket.becket.net -->
+<!--X-Reference: 5fb7e087050713193935628abe@mail.gmail.com -->
+<!--X-Reference: 874qaxc0z7.fsf@becket.becket.net -->
+<!--X-Reference: 5fb7e0870507140041537b369@mail.gmail.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: case mappings</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00072.html">Date Prev</a>][<a href="msg00074.html">Date Next</a>][<a href="msg00072.html">Thread Prev</a>][<a href="msg00074.html">Thread Next</a>][<a href="maillist.html#00073">Date Index</a>][<a href="threads.html#00073">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: case mappings</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Alex Shinn &lt;<a href="mailto:alexshinn@DOMAIN.HIDDEN">alexshinn@xxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: case mappings</li>
+<li><em>From</em>: Thomas Bushnell BSG &lt;<a href="mailto:tb@DOMAIN.HIDDEN">tb@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 14 Jul 2005 01:07:53 -0700</li>
+<li><em>Cc</em>: <a href="mailto:srfi-75@DOMAIN.HIDDEN">srfi-75@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-75@DOMAIN.HIDDEN">srfi-75@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:5fb7e0870507140041537b369@DOMAIN.HIDDEN">5fb7e0870507140041537b369@xxxxxxxxxxxxxx</a>&gt; (Alex Shinn's message of &quot;Thu, 14 Jul 2005 16:41:42 +0900&quot;)</li>
+<li><em>References</em>: &lt;<a href="mailto:5fb7e08705071220576a45b119@DOMAIN.HIDDEN">5fb7e08705071220576a45b119@xxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:y9lslyjqkbp.fsf@DOMAIN.HIDDEN">y9lslyjqkbp.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:5fb7e087050713004059574e17@DOMAIN.HIDDEN">5fb7e087050713004059574e17@xxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:87y88ah51q.fsf@DOMAIN.HIDDEN">87y88ah51q.fsf@xxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:5fb7e087050713193935628abe@DOMAIN.HIDDEN">5fb7e087050713193935628abe@xxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:874qaxc0z7.fsf@DOMAIN.HIDDEN">874qaxc0z7.fsf@xxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:5fb7e0870507140041537b369@DOMAIN.HIDDEN">5fb7e0870507140041537b369@xxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Gnus/5.1007 (Gnus v5.10.7) Emacs/21.4 (gnu/linux)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Alex Shinn &lt;alexshinn@xxxxxxxxx&gt; writes:
+
+&gt; It would be nice to provide at least a place-holder for locales, but
+&gt; this does open another can of worms.  What is a locale?  In the
+&gt; implementation I provide for Chicken and Gauche it's just a string,
+&gt; but some schemes might want locale objects.  Furthermore, there's
+&gt; probably a (current-locale).  
+
+I don't think this has any worms at all.
+
+(current-locale) or current-locale is fine; I'm not sure which is
+right.
+
+But we don't need to standardize it.  So don't!  Just provide some
+guaranteed standard locale values if you want them.
+
+&gt; Given that, does
+&gt;
+&gt;   (string-ci=? s1 s2)
+&gt;
+&gt; mean the same thing as
+&gt;
+&gt;   (string-ci=? s1 s2 (current-locale))
+&gt;
+&gt; or the same as
+&gt;
+&gt;   (string-ci=? s1 s2 (independent-locale))
+
+It should be current-locale by default, without any doubt whatsoever.
+I said this earlier in the thread, but I think it got lost.
+
+I do not envision simultaneously using different encodings inside one
+character set.  My vision of a fancy-ass Unicode compliant Scheme
+system would have it that &quot;character&quot; is a unicode character.
+
+ASCII characters are not unicode characters; they would be probably
+just integers or octets or what-have-you.  
+
+The problem here is *precisely* that people are thinking &quot;operating on
+a series of octets&quot; is the same basic thing as &quot;operating on text&quot;.
+That C Programmer thinking. :)
+
+An incoming email message is not a series of characters.  An ISO
+Latin-1 encoded file is not a series of characters.  Both of these are
+series of *octets*, strings of *bytes*.  And there is a mapping
+necessary to turn them into a series of characters.  In the case of
+the email message, the headers are supposed to be in ASCII, with some
+embedded mappings allowed, and the body is in a mapping specified by
+an tag in the headers.  
+
+Reading such a message is *not* a matter of taking the octets, turning
+them into characters with integer-&gt;char, and then operating on the
+resulting &quot;string&quot;.  No.  It's a matter of taking the octets, and
+*interpreting* them, indeed, *translating* them into strings.  And the
+strings you get at the end of that operation are *unicode* strings.
+
+That's the kind of system I think I want.  I certainly don't expect it
+to be mandated, but I don't want it prohibited either.  It gets
+prohibited the instant you start requiring operations on *characters*
+which only make sense for this or that *encoding*.
+
+I imagine a function (ascii-&gt;string ....) which takes an array of
+octets and returns a string.  A string of *characters*, each of which
+is a Unicode character.  There can be (latin-1-&gt;string ...) and
+(latin-2-&gt;string ...) and so forth too.  
+
+If you want special functions to operate on ascii, that's fine.  But
+ASCII is an encoding, so ASCII-operating functions should operate only
+on encodings.  If you want (ascii-upcase ...) which takes an *integer*
+and returns another *integer* I don't object, though I will request
+language to make clear this is for specialized uses, and doing things
+like (integer-&gt;char (ascii-upcase (char-&gt;integer FOO))) is almost
+certainly wrong, telling people to use string-upcase instead.
+
+This I think makes the most sense.  It's the Right Thing for Unicode
+if you really want to go whole hog and do it all.  And Scheme
+standards should not be written in such a way that it's essentially
+impossible.  The chief obstacle is the tedious writing of functions
+that &quot;everyone wants&quot; but which preclude the use of the character type
+to represent Unicode characters.
+
+Thomas
+
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00074" href="msg00074.html">Re: case mappings</a></strong>
+<ul><li><em>From:</em> Alex Shinn</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00026" href="msg00026.html">case mappings</a></strong>
+<ul><li><em>From:</em> Alex Shinn</li></ul></li>
+<li><strong><a name="00028" href="msg00028.html">Re: case mappings</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+<li><strong><a name="00034" href="msg00034.html">Re: case mappings</a></strong>
+<ul><li><em>From:</em> Alex Shinn</li></ul></li>
+<li><strong><a name="00052" href="msg00052.html">Re: case mappings</a></strong>
+<ul><li><em>From:</em> Thomas Bushnell BSG</li></ul></li>
+<li><strong><a name="00064" href="msg00064.html">Re: case mappings</a></strong>
+<ul><li><em>From:</em> Alex Shinn</li></ul></li>
+<li><strong><a name="00068" href="msg00068.html">Re: case mappings</a></strong>
+<ul><li><em>From:</em> Thomas Bushnell BSG</li></ul></li>
+<li><strong><a name="00072" href="msg00072.html">Re: case mappings</a></strong>
+<ul><li><em>From:</em> Alex Shinn</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00072.html">Re: case mappings</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00074.html">Re: case mappings</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00072.html">Re: case mappings</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00074.html">Re: case mappings</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00073"><strong>Date</strong></a></li>
+<li><a href="threads.html#00073"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

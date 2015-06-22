@@ -1,0 +1,263 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Discussion about your comments -->
+<!--X-From-R13: Eronfgvna Stare <fronfgvna_rtareNlnubb.pbz> -->
+<!--X-Date: Sat, 21 May 2005 18:20:59 +0200 (DFT) -->
+<!--X-Message-Id: y9lk6ls7dp2.fsf@sams.informatik.uni&#45;tuebingen.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Discussion about your comments</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00028.html">Date Prev</a>][<a href="msg00030.html">Date Next</a>][<a href="msg00021.html">Thread Prev</a>][<a href="msg00025.html">Thread Next</a>][<a href="maillist.html#00029">Date Index</a>][<a href="threads.html#00029">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Discussion about your comments</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-69@DOMAIN.HIDDEN">srfi-69@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Discussion about your comments</li>
+<li><em>From</em>: Sebastian Egner &lt;<a href="mailto:sebastian_egner@DOMAIN.HIDDEN">sebastian_egner@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 21 May 2005 18:20:57 +0200</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-69@DOMAIN.HIDDEN">srfi-69@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Old-date</em>: Sat, 21 May 2005 08:01:03 -0700 (PDT)</li>
+<li><em>Reply-to</em>: <a href="mailto:sebastian_egner@DOMAIN.HIDDEN">sebastian_egner@xxxxxxxxx</a></li>
+<li><em>User-agent</em>: Gnus/5.110003 (No Gnus v0.3) XEmacs/21.5-b20 (berkeley-unix)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Panu wrote:
+&gt; ... bounds or no bounds to hash functions?
+&gt;
+&gt; I don't get this argument.  For the modular
+polynomial method to work,
+&gt; it suffices for the mantissa and modulus to be
+relatively prime. This
+&gt; can achieved easily by picking a prime modulus, but
+also by picking
+&gt; a prime mantissa.
+
+No. The modular polynomial method works if and only if
+the mantissa 
+has sufficient multiplicative order modulo m. Example:
+I choose 
+modulus m = 120 and you are to combine five hash
+functions 
+h_0, .., h_4 using the polynomial method into 
+
+  h = x -&gt; h_0(x) + r h_1(x) + r^2 h_2(x) + .. + r^4
+h_4(x) mod m.
+
+How do you choose r to get a decent hash function? 
+
+The sad answer: You don't. Reason: Units(Z/120*Z) =
+Z2^3 x Z4.
+There are no elements of order 5 or more modulo 120,
+which means
+h effectively just *adds* at least two of the
+component functions
+no matter how you choose r.
+
+If you want another example: Load your own reference
+implementation,
+construct a hash table using (make-string-hash-table
+37) and insert
+a couple of strings that end in the same character.
+You will find
+that they all end up in the same bin. Why? Because I
+have chosen a
+bad modulus m (by giving size hint 37) and string-hash
+uses the
+modular polynomial method with r = 37, which is 0 mod
+m.
+
+&gt; I would have thought it to be more general if the
+hash
+&gt; function gets to know the modulus on beforehand, not
+more restrictive.
+
+In the end, both approaches are equivalent. In your
+current setup
+the target range is communicated to the hash function
+with every
+call. The hash function needs to produce a value in
+that range,
+but it can call helper hash functions with other
+ranges (i.e. a
+large prime). In the other approach, there is a single
+large 
+range (probably a prime close to but not exceeding the
+maximal
+immediate integer) known to every hash function
+beforehand---and
+it is the task of the hash table to reduce it to the
+range it needs.
+
+&gt; That said, I don't have much reason for requiring
+the bound parameter.
+&gt; The most important reasons for it were (1) the
+observation that the hash
+&gt; seems to almost always be converted to some range
+anyway, so (hash obj
+&gt; bound) seems cleaner than (modulo (hash obj) bound),
+and (2) the bonus
+&gt; of getting arbitrarily big hash ranges on request
+(with a fixed range,
+&gt; it is easy to reduce it but not extend it).
+
+Correct, there is also not so much reason to have no
+bound parameter.
+In the end it is about efficiency, and easily defining
+good hash
+functions is probably the key for that. (Not sure, (2)
+is a bonus;
+bignums can hurt performance quite a bit here.)
+
+&gt; As any non-bounded hash function h1 can be made into
+bound-aware hash
+&gt; function h2 by
+&gt; 
+&gt; (define (h2 obj bound) (modulo (h1 obj) bound))
+&gt; 
+&gt; one can't say that it makes it much more difficult
+to define bound-aware
+&gt; hash functions than boundless ones.  Am I missing
+something?
+
+&quot;Unbounded hash functions&quot; sounds like a bad idea to
+me,
+I am proposing a global statically-known default range
+that
+is implementation-dependent but prime and sufficiently
+large.
+
+(Aside: Is it on purpose that *default-bound* in the
+reference 
+implementation is not a prime? m = 2^29 - 3 would be
+prime and
+r = 256592988 is a primitive element mod m with some
+interesting
+bit-pattern; r = 2 and r = 2^16 + 1 are others. Your
+choice is
+m = 2^29 - 2 and r = 37, which only has order 1008 mod
+m.)
+
+(Another aside: It might be worth it using SRFI-16
+[case-lambda]
+in the reference implementation.)
+
+---
+
+&gt; hash-table-get, -put!, -remove!:
+&gt;        These are provided as compatibility
+procedures to ease porting
+&gt;        of non-SRFI-69 code onto SRFI-69?  If you
+think this is not a
+&gt;        worthwhile goal, I can purge them from the
+SRFI.  -ref, -set!,
+&gt;        -delete! are IMO clearly better but less
+used.  I added a &quot;don't
+&gt;        use this&quot; note to the compatibility versions.
+
+If you want to get rid of these procedures in legacy
+code you can 
+better do it in this SRFI. It might be the only chance
+there is in
+a long time.
+
+---
+
+&gt; order independence of -keys and -values:
+&gt;         This is not because of prospective
+performance merits, but to
+&gt;         discourage bad programming style.  If one
+wants to process the
+&gt;         association pairs of a hash table, one
+should not be using -keys
+&gt;         and -values.
+
+I am afraid that the pragmatics is exactly the other
+way around:
+By not specifying -keys and -values to be in sync, you
+do not
+discourage anybody from anything. It is more an
+invitation to
+the user to hurt himself with some unexpected
+unportable feature.
+
+It is also not obvious to me that using -keys and
+-values in sync,
+provided they are specified to be, is &quot;bad programming
+style.&quot;
+What is the harm?
+
+&quot;Unspecified&quot; in a standard usually means &quot;I would
+like to give
+choice to the implementors.&quot; If you really want to
+discourage people 
+from assuming that -keys and -values are (map car
+(hash-table-&gt;alist h))
+and (map cdr (hash-table-&gt;alist h)) then you can
+better *specify*
+-keys and -values to disagree: Then programs assuming
+-keys and
+-values being in sync fail right away, and not at the
+time they are
+ported to some other implementation of this SRFI.
+
+  Sebastian.
+
+__________________________________________________
+Do You Yahoo!?
+Tired of spam?  Yahoo! Mail has the best spam protection around 
+<a  rel="nofollow" href="http://mail.yahoo.com">http://mail.yahoo.com</a> 
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00028.html">Re: Optional arguments</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00030.html">Modifications that will probably (not) go into next revision</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00021.html">Discussion about your comments</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00025.html">Revised draft available</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00029"><strong>Date</strong></a></li>
+<li><a href="threads.html#00029"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

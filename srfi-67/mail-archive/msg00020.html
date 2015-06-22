@@ -1,0 +1,159 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Circular structures [was Re: IEEE 754 floating&#45;point arithmetic is not completely ordered] -->
+<!--X-From-R13: =?WEA&#45;8859&#45;1?C?Xraf_Okry_E=T8tnneq?= <wrafnkryNfbrtnneq.arg> -->
+<!--X-Date: Fri, 22 Apr 2005 18:49:38 +0200 (MST) -->
+<!--X-Message-Id: 42692B0F.3080502@soegaard.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: y9ld5sux2j1.fsf@sams.informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: 426134F8.3070307@soegaard.net -->
+<!--X-Reference: y9lsm1lsh94.fsf@sams.informatik.uni&#45;tuebingen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Circular structures [was Re: IEEE 754 floating-point arithmetic is not completely ordered]</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00019.html">Date Prev</a>][<a href="msg00021.html">Date Next</a>][<a href="msg00019.html">Thread Prev</a>][<a href="msg00012.html">Thread Next</a>][<a href="maillist.html#00020">Date Index</a>][<a href="threads.html#00020">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Circular structures [was Re: IEEE 754 floating-point arithmetic is not completely ordered]</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>Subject</em>: Re: Circular structures [was Re: IEEE 754 floating-point arithmetic is not completely ordered]</li>
+<li><em>From</em>: Jens Axel S&#xF8;gaard &lt;<a href="mailto:jensaxel@DOMAIN.HIDDEN">jensaxel@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 22 Apr 2005 18:49:19 +0200</li>
+<li><em>Cc</em>: <a href="mailto:srfi-67@DOMAIN.HIDDEN">srfi-67@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-67@DOMAIN.HIDDEN">srfi-67@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:y9lsm1lsh94.fsf@DOMAIN.HIDDEN">y9lsm1lsh94.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:y9ld5sux2j1.fsf@DOMAIN.HIDDEN">y9ld5sux2j1.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:426134F8.3070307@DOMAIN.HIDDEN">426134F8.3070307@xxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:y9lsm1lsh94.fsf@DOMAIN.HIDDEN">y9lsm1lsh94.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mozilla Thunderbird 0.7.3 (Windows/20040803)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+Bradley Lucier wrote:
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+On Apr 16, 2005, at 10:53 AM, Jens Axel S&#xF8;gaard wrote:
+</pre></blockquote><pre style="margin: 0em;">
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Well, it depends on what your goal is. ...
+</pre></blockquote><pre style="margin: 0em;">
+
+Here are some potential goals:
+...
+</pre><tt>3) default-compare should define a total order on almost all Scheme 
+</tt><tt>values
+</tt></blockquote><pre style="margin: 0em;">
+
+What is &quot;almost all&quot;?  How do a and b compare in the following?
+
+[descartes:~/programs/folding/2] lucier% gsc
+loading /usr/local/Gambit-C/gambcext.scm
+Gambit Version 4.0 beta 12
+
+ &gt; (define a (cons #f #f))
+ &gt; (set-car! a a)
+ &gt; (set-cdr! a a)
+ &gt; (define b (cons #f #f))
+ &gt; (set-car! b b)
+ &gt; (set-cdr! b b)
+ &gt; (equal? a b)   ;;; doesn't terminate
+</pre></blockquote><pre style="margin: 0em;">
+
+In the proposal default-compare is not defined on circular structures.
+Theoretically I think (I am not sure though) it is possible to
+define an order on graphs.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Is default-compare compatible with equal?
+</pre></blockquote><pre style="margin: 0em;">
+
+The current proposal for default-compare is:
+
+ (define (default-compare x y)
+     (select-compare x y
+       (null?    0)
+       (pair?    (default-compare (car x) (car y))
+                 (default-compare (cdr x) (cdr y)))
+       (boolean? (compare-boolean x y))
+       (char?    (compare-char    x y))
+       (string?  (compare-string  x y))
+       (symbol?  (compare-symbol  x y))
+       (number?  (compare-number  x y))
+       (vector?  (compare-vector default-compare x y))
+       (else (error &quot;unrecognized types&quot; x y))))
+
+Which means they are almost compatible :-)
+
+The return value of equal? of two non-eq? symbols with the
+same spelling is left unspecified by R5RS where as
+default-compare is required to return #t.
+
+Similary the return value of equal? of an exact number
+and an inexact number that are numerically equal unspecified.
+
+Apart from that, the domain of default-compare doesn't include
+e.g. procedures as equal? does.
+
+
+--
+Jens Axel S&#xF8;gaard
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00016" href="msg00016.html">Re: IEEE 754 floating-point arithmetic is not completely ordered</a></strong>
+<ul><li><em>From:</em> Bradley Lucier</li></ul></li>
+<li><strong><a name="00017" href="msg00017.html">Re: IEEE 754 floating-point arithmetic is not completely ordered</a></strong>
+<ul><li><em>From:</em> Jens Axel S&#xF8;gaard</li></ul></li>
+<li><strong><a name="00019" href="msg00019.html">Circular structures [was Re: IEEE 754 floating-point arithmetic is not completely ordered]</a></strong>
+<ul><li><em>From:</em> Bradley Lucier</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00019.html">Circular structures [was Re: IEEE 754 floating-point arithmetic is not completely ordered]</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00021.html">Naming, compare function return values</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00019.html">Circular structures [was Re: IEEE 754 floating-point arithmetic is not completely ordered]</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00012.html">Two maybe-bugs and two proposals</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00020"><strong>Date</strong></a></li>
+<li><a href="threads.html#00020"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

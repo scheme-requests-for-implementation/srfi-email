@@ -1,0 +1,177 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: DrScheme version with source location tracking -->
+<!--X-From-R13: Oaqer ina Fbaqre <naqerNabj.urg.oebja.rqh> -->
+<!--X-Date: Thu,  8 Sep 2005 03:24:15 +0200 (MST) -->
+<!--X-Message-Id: Pine.GSO.4.60.0509072050170.20912@now.het.brown.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>DrScheme version with source location tracking</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00133.html">Date Prev</a>][<a href="msg00135.html">Date Next</a>][<a href="msg00133.html">Thread Prev</a>][<a href="msg00135.html">Thread Next</a>][<a href="maillist.html#00134">Date Index</a>][<a href="threads.html#00134">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>DrScheme version with source location tracking</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-72@DOMAIN.HIDDEN">srfi-72@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: DrScheme version with source location tracking</li>
+<li><em>From</em>: Andre van Tonder &lt;<a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 7 Sep 2005 21:23:53 -0400 (EDT)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-72@DOMAIN.HIDDEN">srfi-72@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+
+As proof of concept, I have integrated the macro system
+of this SRFI with the MzScheme source location tracking mechanism.
+
+Examples can now be run in DrScheme 299.100 and both runtime and syntax
+errors will be correctly highlighted.  The implementation is at:
+
+  <a  rel="nofollow" href="http://www.het.brown.edu/people/andre/macros/implementation/">http://www.het.brown.edu/people/andre/macros/implementation/</a>
+
+</pre><tt>The integration works by replacing current-eval and the native expansion 
+</tt><tt>mechanism with that of the current SRFI, which harvests the native source 
+</tt><tt>locations from the input and keeps track of these in a weak hashtable.
+</tt><tt>This is done for compound syntax objects only.  Errors in atoms are referred to 
+</tt><tt>the nearest enclosing expression.  In most examples, errors are pinpointed with 
+</tt><tt>great accuracy.  The implementation of the source tracking mechanism was really 
+</tt><tt>simple.
+</tt><pre style="margin: 0em;">
+
+A couple of examples from the file simple-location-tests.scm
+at the above link:
+
+In the following, the subexpression (2 3) will be highlighted:
+
+(cons 1 (
+         2
+            3))
+
+In the following, a runtime error will cause (set ,y t) to be
+highlighted:
+
+(let-syntax ((main (lambda (form)
+
+                     (define (make-swap x y)
+                       (quasisyntax
+                        (let ((t ,x))
+                          (set! ,x ,y)
+                          (set ,y t))))
+
+                     (quasisyntax
+                      (let ((s 1)
+                            (t 2))
+                        ,(make-swap (syntax s) (syntax t))
+                        (list s t))))))
+  (main))
+
+In the following, a syntax error will highlight the inner let-expression:
+
+(let ((a 1))
+  (let ((b 3))
+    (define a 1)
+    (let ((temp 1)
+          (temp 2))
+      temp)))
+
+Finally, given the following definition for case:
+
+(define-syntax case
+  (lambda (x)
+    (syntax-case x ()
+      ((_ e c1 c2 ...)
+       (quasisyntax
+        (let ((t e))
+          ,(let f ((c1 (syntax c1)) (cmore (syntax (c2 ...))))
+             (if (null? cmore)
+                 (syntax-case c1 (else)
+                   ((else e1 e2 ...)    (syntax (beginn e1 e2 ...)))
+                   (((k ...) e1 e2 ...) (syntax (if (memv t '(k ...))
+                                                    (begin e1 e2 ...)))))
+                 (syntax-case c1 ()
+                   (((k ...) e1 e2 ...)
+                    (quasisyntax
+                     (if (memv t '(k ...))
+                         (begin e1 e2 ...)
+                         ,(f (car cmore) (cdr cmore))))))))))))))
+
+
+the syntax error in the following will highlight the case expression:
+
+(let ((x 1))
+  (let ((y 2))
+    (case 'a
+      ((x y) 'no)
+      (z u 'yes))))
+
+
+While a runtime error in the following will highlight the error
+(beginn e1 e2 ...) in the macro above:
+
+(case 'a
+  ((b c) 'd)
+  (else e))
+
+
+
+Regards
+Andre
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00135" href="msg00135.html">Re: DrScheme version with source location tracking</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00133.html">Re: Update to SRFI 72 (Sorry I'm lost)</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00135.html">Re: DrScheme version with source location tracking</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00133.html">Re: Update to SRFI 72 (Sorry I'm lost)</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00135.html">Re: DrScheme version with source location tracking</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00134"><strong>Date</strong></a></li>
+<li><a href="threads.html#00134"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

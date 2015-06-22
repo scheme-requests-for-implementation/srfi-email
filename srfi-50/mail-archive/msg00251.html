@@ -1,0 +1,160 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: when GC is permitted -->
+<!--X-From-R13: Tryvk Ivaxryznaa <sryvkNcebkvzn&#45;zg.qr> -->
+<!--X-Date: Fri,  9 Jan 2004 07:43:03 +0100 (NFT) -->
+<!--X-Message-Id: opr1hwxmzm1ushe7@post.strato.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: E1AeMEw&#45;0005uG&#45;00@mail.mumble.net -->
+<!--X-Reference: 200401072314.PAA05456@morrowfield.regexps.com -->
+<!--X-Reference: vt2vfnnrz9y.fsf@zenia.home -->
+<!--X-Reference: opr1f4lapl1ushe7@post.strato.de -->
+<!--X-Reference: vt2r7yahm8p.fsf@zenia.home -->
+<!--X-Reference: opr1f8iyou1ushe7@post.strato.de -->
+<!--X-Reference: vt2hdz6gt1k.fsf@zenia.home -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: when GC is permitted</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00250.html">Date Prev</a>][<a href="msg00252.html">Date Next</a>][<a href="msg00245.html">Thread Prev</a>][<a href="msg00252.html">Thread Next</a>][<a href="maillist.html#00251">Date Index</a>][<a href="threads.html#00251">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: when GC is permitted</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Jim Blandy &lt;<a href="mailto:jimb@DOMAIN.HIDDEN">jimb@xxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: when GC is permitted</li>
+<li><em>From</em>: Felix Winkelmann &lt;<a href="mailto:felix@DOMAIN.HIDDEN">felix@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 09 Jan 2004 07:42:48 +0100</li>
+<li><em>Cc</em>: Tom Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>&gt;, <a href="mailto:kelsey@DOMAIN.HIDDEN">kelsey@xxxxxxx</a>,	<a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:vt2hdz6gt1k.fsf@DOMAIN.HIDDEN">vt2hdz6gt1k.fsf@xxxxxxxxxx</a>&gt;</li>
+<li><em>Organization</em>: Proxima</li>
+<li><em>References</em>: &lt;<a href="mailto:E1AeMEw-0005uG-00@DOMAIN.HIDDEN">E1AeMEw-0005uG-00@xxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:200401072314.PAA05456@DOMAIN.HIDDEN">200401072314.PAA05456@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:vt2vfnnrz9y.fsf@DOMAIN.HIDDEN">vt2vfnnrz9y.fsf@xxxxxxxxxx</a>&gt; &lt;<a href="mailto:opr1f4lapl1ushe7@DOMAIN.HIDDEN">opr1f4lapl1ushe7@xxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:vt2r7yahm8p.fsf@DOMAIN.HIDDEN">vt2r7yahm8p.fsf@xxxxxxxxxx</a>&gt; &lt;<a href="mailto:opr1f8iyou1ushe7@DOMAIN.HIDDEN">opr1f8iyou1ushe7@xxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:vt2hdz6gt1k.fsf@DOMAIN.HIDDEN">vt2hdz6gt1k.fsf@xxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Opera7.21/Win32 M2 build 3218</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+Am 08 Jan 2004 14:05:27 -0500 hat Jim Blandy &lt;jimb@xxxxxxxxxx&gt; geschrieben:
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+But here's the alternative.  Under a SRFI-50 style interface, here's
+the implementation of car:
+
+    scheme_value
+    SCHEME_CAR (scheme_value pair)
+    {
+      return untag_pair (pair)-&gt;car;
+    }
+
+Under most reasonable tagging systems, untag_pair can be a
+subtraction; the '-&gt;car' is a subsequent addition, which can be folded
+in with the untagging; and then the whole thing can be easily inlined,
+and possibly turned into an offset in the addressing mode of a load
+instruction.  So the whole thing turns into a single instruction.
+
+There's no comparison.  I think JNI entails at least one order of
+magnitude more instructions to implement 'car'.
+
+This is why Richard doesn't like JNI-style.
+
+</pre></blockquote><pre style="margin: 0em;">
+
+Now, I'm all for maximum performance, if possible. But that's not
+(IMHO) the proper goal for this SRFI. The performance side of this
+should come *after* it has been ensured that it is reasonable easy
+to write *correct* code. Since we are using C here, correctness
+can not be ensured completely - yet, we should try very hard to
+simplify the semantics of FFI code, from the user's perspective.
+
+Personally, all the syntactic issues, and how exactly gc-protection
+is set up, naming, etc. is rather unimportant to me. Using Scheme
+mainly for interfacing to foreign code is what I do most, including
+packaging code written by others that interfaces to external libs.
+I happly debug Scheme code, wether implementation-specific or portable,
+I grudgingly debug Scheme/FFI code specialized to one implementation.
+But something I'm not going to do is debugging Scheme/FFI code that
+conforms superficially to a (allegedly) portable API, works
+on some implementations and then fails on others.
+
+Unless performance-considerations on the instruction-level are
+important (and I doubt this is very often the case, and even if
+it is: just push more logic over into the C side), let's forget
+about this and fix the more obvious problems.
+
+
+cheers,
+felix
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00252" href="msg00252.html">Re: when GC is permitted</a></strong>
+<ul><li><em>From:</em> Richard Kelsey</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00219" href="msg00219.html">Re: when GC is permitted</a></strong>
+<ul><li><em>From:</em> Richard Kelsey</li></ul></li>
+<li><strong><a name="00220" href="msg00220.html">Re: when GC is permitted</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00222" href="msg00222.html">Re: when GC is permitted</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+<li><strong><a name="00224" href="msg00224.html">Re: when GC is permitted</a></strong>
+<ul><li><em>From:</em> Felix Winkelmann</li></ul></li>
+<li><strong><a name="00227" href="msg00227.html">Re: when GC is permitted</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+<li><strong><a name="00228" href="msg00228.html">Re: when GC is permitted</a></strong>
+<ul><li><em>From:</em> Felix Winkelmann</li></ul></li>
+<li><strong><a name="00232" href="msg00232.html">Re: when GC is permitted</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00250.html">Re: Couple things...</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00252.html">Re: when GC is permitted</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00245.html">Re: when GC is permitted</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00252.html">Re: when GC is permitted</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00251"><strong>Date</strong></a></li>
+<li><a href="threads.html#00251"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

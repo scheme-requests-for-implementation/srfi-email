@@ -1,0 +1,166 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: [srfi&#45;70] Limit -->
+<!--X-From-R13: Ohoerl Xnssre <ntwNnyhz.zvg.rqh> -->
+<!--X-Date: Tue, 31 May 2005 06:27:04 +0200 (DFT) -->
+<!--X-Message-Id: 20050531042710.3BA2A1B77B4@voluntocracy.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: OF16409C85.5A9ED3F9&#45;ONC125700C.0024BD7D&#45;C125700C.0029C3E4@philips.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: [srfi-70] Limit</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00042.html">Date Prev</a>][<a href="msg00044.html">Date Next</a>][<a href="msg00036.html">Thread Prev</a>][<a href="msg00065.html">Thread Next</a>][<a href="maillist.html#00043">Date Index</a>][<a href="threads.html#00043">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: [srfi-70] Limit</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:sebastian.egner@DOMAIN.HIDDEN">sebastian.egner@xxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: [srfi-70] Limit</li>
+<li><em>From</em>: Aubrey Jaffer &lt;<a href="mailto:agj@DOMAIN.HIDDEN">agj@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 31 May 2005 00:27:10 -0400 (EDT)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-70@DOMAIN.HIDDEN">srfi-70@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-70@DOMAIN.HIDDEN">srfi-70@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: 	&lt;<a href="mailto:OF16409C85.5A9ED3F9-ONC125700C.0024BD7D-C125700C.0029C3E4@DOMAIN.HIDDEN">OF16409C85.5A9ED3F9-ONC125700C.0024BD7D-C125700C.0029C3E4@xxxxxxxxxxx</a>&gt;	(message from Sebastian Egner on Wed, 25 May 2005 09:35:25 +0200)</li>
+<li><em>References</em>: &lt;<a href="mailto:OF16409C85.5A9ED3F9-ONC125700C.0024BD7D-C125700C.0029C3E4@DOMAIN.HIDDEN">OF16409C85.5A9ED3F9-ONC125700C.0024BD7D-C125700C.0029C3E4@xxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre> | From: Sebastian Egner &lt;sebastian.egner@xxxxxxxxxxx&gt;
+ | Date: Wed, 25 May 2005 09:35:25 +0200
+ | 
+ | &gt; LIMIT was created so that static choices for limit cases like:
+ | &gt; 
+ | &gt;   (expt 0 0)                                    ==&gt; 1
+ | &gt; or
+ | &gt;   (expt 0 0)                                    ==&gt; 0/0
+ | &gt; 
+ | &gt; don't necessitate workarounds when computing with functions like
+ | &gt; (lambda (x) (expt x x)):
+ | &gt;
+ | &gt;   (limit (lambda (x) (expt x x)) 0 1e-9)        ==&gt; 1/0
+ | 
+ | Unfortunately, my experience is that this approach is highly
+ | unreliable.  In the end, I spent more time doing analytical sanity
+ | checks myself than it took to write the proper numerical code
+ | directly after understanding the limits properly.
+ | 
+ | Example: An important function from information theory is
+ | 
+ |         f(x) =  -x log(x).
+ | 
+ | This function is in principle well behaved (smooth, analytic, etc.) on
+ | (0,1], but its derivative does not exist at x = 0. Moreover, f(0)
+ | cannot directly be computed numerically because the underflow from
+ | log(x) is not cancelled by the multiplication with zero.  Practical
+ | numerical code: IF x &lt; xmin THEN 0 ELSE x log(x), where xmin is chosen
+ | minimal such that log(xmin) is an ordinary number and not -infinity.
+ | 
+ | Using LIMIT in this case is not a good idea for two reasons:
+ | a) It is expensive and unnecessary, except for very small x.
+
+Its cost is a small multiple (currently 7) of the function call cost
+plus constant overhead.  The multiple can be reduced; the effect will
+be reduced detection of bad limits.
+
+It would be straightforward to wrap a function so that LIMIT is called
+only when the argument is within some given range (say 1e-50) of the
+limit point; and otherwise the function is called directly.
+
+ | b) At least the reference implementation of LIMIT doesn't get it right:
+ | 
+ |         (limit (lambda (x) (* -1 x (log x))) 0 1e-9) =&gt; -inf.0
+ | 
+ | This may be a bug in the reference implementation, but it is
+ | certainly a violation of the new specification as f(x) is monotonic
+ | on [0,1/e].
+
+I have fixed the bug using the method described in
+&lt;<a  rel="nofollow" href="http://swiss.csail.mit.edu/~jaffer/III/Limit.html">http://swiss.csail.mit.edu/~jaffer/III/Limit.html</a>&gt;.
+
+(limit (lambda (x) (* x (log x))) 0 1.0e-9)  ==&gt;  -173.28679513998937e-12
+
+I am working on improving the interpolation; and infinite limits must
+be addressed separately.  I will update srfi-70 when it is complete.
+
+ | When you try to fix the reference implementation, you will find
+ | that it cannot be fixed because it comes from the &quot;black box&quot;
+ | procedure: At a certain moment f(x) becomes -inf.0, so that must be
+ | the limit.
+
+The width is passed to the LIMIT procedure so that the overflow point
+can be avoided.
+
+ | I can relate another experience: The Mathematica system has an
+ | operation Limit[], which finds limits symbolically, and a function
+ | NLimit[] which finds limits numerically.  Limits[] turns out to be
+ | useful sometimes, but it took many years and many releases until it
+ | became something I nearly trust.  NLimits[] on the other hand is
+ | tricky, even though it makes an effort to report when it fails,
+ | e.g. NLimit[x Log[x], x -&gt; 0.] =&gt; &quot;cannot recognize limit&quot;.
+
+(limit (lambda (x) (* x (log x))) 0 1e-200)  ==&gt;  -1.7328679513992641e-201
+
+ | Bottom line: In the end, LIMIT might do more harm than it is worth.
+ | You might want to reconsider if it is a feature that is essential
+ | for the Scheme programming language itself.
+
+Rationalize, string-&gt;number, and number-&gt;string are precedents for
+Scheme specifying very clean mathematical semantics at the possible
+expense of efficiency.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00034" href="msg00034.html">Re: [srfi-70] Limit</a></strong>
+<ul><li><em>From:</em> Sebastian Egner</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00042.html">Re: infinities reformulated</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00044.html">Re: infinities reformulated</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00036.html">Re: [srfi-70] Limit</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00065.html">Re: [srfi-70] Limit</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00043"><strong>Date</strong></a></li>
+<li><a href="threads.html#00043"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

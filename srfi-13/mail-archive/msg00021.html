@@ -1,0 +1,189 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: An argument for string&#45;split -->
+<!--X-From-R13: byrtNcbobk.pbz -->
+<!--X-Date: Thu, 18 Nov 1999 14:39:01 &#45;0600 (CST) -->
+<!--X-Message-Id: 199911182037.UAA17908@fnmoc.navy.mil -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>An argument for string-split</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00020.html">Date Prev</a>][<a href="msg00022.html">Date Next</a>][<a href="msg00020.html">Thread Prev</a>][<a href="msg00023.html">Thread Next</a>][<a href="maillist.html#00021">Date Index</a>][<a href="threads.html#00021">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>An argument for string-split</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxx</a>, <a href="mailto:srfi-13@DOMAIN.HIDDEN">srfi-13@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: An argument for string-split</li>
+<li><em>From</em>: <a href="mailto:oleg@DOMAIN.HIDDEN">oleg@xxxxxxxxx</a></li>
+<li><em>Date</em>: Thu, 18 Nov 1999 20:37:03 GMT</li>
+<li><em>Reply-to</em>: <a href="mailto:oleg@DOMAIN.HIDDEN">oleg@xxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+Olin,
+
+	I'm sorry to keep on beating a dead horse. After this message
+I won't say a word about string-split, I promise.
+
+	Suppose we have a string 'str' consisting of tokens separated
+by a #\: character. We can extract the tokens using either
+
+	(string-tokenize str 
+		(char-set-difference char-set:full (char-set #\:)))
+or
+	(string-split str (char-set #\:))
+
+the two procedure calls above are indeed roughly equivalent;
+therefore, a String library should define only one of them. Let's
+assume however that the string 'str' in question is in Unicode. It's
+not that far-fetched; Gambit and Kawa for example support Unicode. It
+appears that the two above procedures would not be equivalent as far
+as computing resources and efficiency are concerned. Gambit, for
+example, implements char-sets internally to parse input. Low-ascii
+characters are marked in a vector, while other characters are in a
+list. In this implementation, char-set:full, or char-set:full without
+one character are quite large (given the full Unicode). It may take
+quite a while to do a membership test in such a set. In contrast,
+(char-set #\:) is far smaller and more efficient. It indeed appears
+that some problems lend themselves to delimiter-based parsing while
+the others do to the inclusion semantics.
+
+	I agree with you that a general string-split is just too
+complex. There are many things we may want to do, including splitting
+by regular expressions. However, I'd like to define string-split
+_only_ like:
+
+	string-split STRING CHARSET [MAXSPLIT]
+	string-split-ws STRING [MAXSPLIT]
+
+The generic string-split does not disregard leading, trailing and
+repeating delimiters. Unless MAXSPLIT is specified, the resulting
+list always contains as many elements as there are delimiters in the
+STRING, plus one. For example, 
+	(string-split &quot;:+&quot; (char-set #\: #\+)) ==&gt; (&quot;&quot; &quot;&quot; &quot;&quot;)
+string-split-ws splits by whitespaces. It trims leading, trailing and
+repeating whitespaces:
+	(string-split-ws &quot; abc\n\r\n\rd e f\t  &quot;) ==&gt; 
+		(&quot;abc&quot; &quot;d&quot; &quot;e&quot; &quot;f&quot;)  
+
+Note that the MAXSPLIT argument serves the same purpose as the END
+range delimiter. For example, string-tokenize accepts 'start' and
+'end' optional arguments; in which case it operates on a substring of
+the original string. The MAXSPLIT argument of string-split likewise
+constraints parsing only to a part of the original string. It
+appears to me however that MAXSPLIT is slightly more convenient in the
+context string-split is commonly used; you don't need to scan the
+string to find the location where you want the parsing
+stop. Furthermore, the MAXSPLIT argument can easily solve some of the
+problems you posed:
+
+&gt;    - Number of fields to parse. You might want
+&gt;             - as many as exist,
+	==&gt; omit MAXSPLIT
+&gt;             - exactly N, or error,
+&gt;             - at least N, or error.
+	==&gt; set MAXSPLIT to N+1 and then count the elements in the
+	resulting list. It's up to you to report an error.
+
+BTW, string-split-ws can easily be overloaded with a generic
+string-split. I agree &quot;Scheme makes it difficult to have different,
+independent sets of optional args, since you have to order
+them&quot;. However, we can use types of arguments to disambiguate a
+call. For example, MAXSPLIT must be an integer.
+
+	If someone finds string-split useful for his particular
+problem, I'm happy. If he finds that his requirements are more complex
+-- then he probably ought to use string-tokenize, or a more general
+parsing engine. Isn't that the approach of string-tokenize?
+
+
+	BTW, the same approach -- define the most generic and a few
+most common procedures -- applies equally to string-&gt;integer.
+
+&gt; This is a can of worms. string-&gt;integer is undoubtedly useful. But so
+&gt; is string-&gt;floating-point. What about base? Return #f or raise an
+&gt; error on bad syntax?
+
+Well, if someone wants to get a floating-point number, or deal with
+base, bitstrings etc., he should use string-&gt;number. string-&gt;integer
+is only to parse a string of digits. Period. It's a one-trick
+pony. string-&gt;integer never raises any error: if it does not like
+something it returns #f.
+Speaking of string-&gt;number, do you want to make it accept (start, end)
+arguments? This could be quite convenient...
+
+	Why is string-&gt;integer singled out, of all the possible
+string-&gt;xxx-number? 
+	- Because, IMHO, dealing with a sequence of digits
+is quite common; 
+	- Because this conversion can be made rather efficient
+(base 10 can be hardwired; multiplication by 10 can be done with two
+shifts and an addition).
+	- Because it keeps one from surprises. For example, I had to deal
+with forms made of groups of digits. Occasionally some other characters
+may crop up; in which case I had to report an error intelligently.
+I wrote
+	(let ((val (string-&gt;number token)))
+	  (and (integer? val) (do-deal-with val)))
+Imagine my surprise when the token happened to be &quot;1S2&quot; yet the val passed
+the integer? test. Eventually the faulty token triggered another check
+and the error got reported, but recovery became more complex. Also,
+imagine what happens given the token &quot;1/0&quot;. You're either at the mercy
+of your implementation's exception system, or you have to prescan the
+token to make sure it is indeed made of digits.
+
+	Sorry for ranting.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00020.html">Just a Few Comments</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00022.html">Re: SRFI-13: late laundry list</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00020.html">Just a Few Comments</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00023.html">String library</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00021"><strong>Date</strong></a></li>
+<li><a href="threads.html#00021"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

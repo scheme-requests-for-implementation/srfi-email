@@ -1,0 +1,164 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Names and primitives in SRFI 56 -->
+<!--X-From-R13: Oyrk Euvaa <sbbsNflagupbqr.pbz> -->
+<!--X-Date: Tue, 28 Sep 2004 07:41:50 +0200 (DFT) -->
+<!--X-Message-Id: 86mzzbhrvu.wl@lain.inunome.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 4158F0B4.3010506@alum.mit.edu -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Names and primitives in SRFI 56</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00057.html">Date Prev</a>][<a href="msg00059.html">Date Next</a>][<a href="msg00057.html">Thread Prev</a>][<a href="msg00060.html">Thread Next</a>][<a href="maillist.html#00058">Date Index</a>][<a href="threads.html#00058">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Names and primitives in SRFI 56</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Dale Jordan &lt;<a href="mailto:dalej@DOMAIN.HIDDEN">dalej@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Names and primitives in SRFI 56</li>
+<li><em>From</em>: Alex Shinn &lt;<a href="mailto:foof@DOMAIN.HIDDEN">foof@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 28 Sep 2004 00:41:41 -0500</li>
+<li><em>Cc</em>: <a href="mailto:srfi-56@DOMAIN.HIDDEN">srfi-56@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-56@DOMAIN.HIDDEN">srfi-56@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:4158F0B4.3010506@DOMAIN.HIDDEN">4158F0B4.3010506@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:4158F0B4.3010506@DOMAIN.HIDDEN">4158F0B4.3010506@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Wanderlust/2.10.1 (Watching The Wheels) SEMI/1.14.6 (Maruoka) FLIM/1.14.6 (Marutamachi) APEL/10.6 Emacs/21.3 (i386-pc-linux-gnu) MULE/5.0 (SAKAKI)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>At Mon, 27 Sep 2004 22:03:48 -0700, Dale Jordan wrote:
+&gt; 
+&gt; A number of Schemes (Scheme48 and Chicken, at least) support
+&gt; byte-vectors for doing aggregate binary io.  This seems to satisfy most
+&gt; needs for doing something beyond simple scalar io, while still allowing
+&gt; the application to perform whatever interpretation is necessary.
+&gt; 
+&gt; I suppose some might consider it onerous to require implementing such a
+&gt; data type for this SRFI, but I consider byte-vectors extraordinarily useful.
+
+Would these be equivalent to SRFI-4 u8vectors and SRFI-47 au8 arrays
+(which have the comment &quot;Byte arrays can be implemented independently
+and distinctly from strings&quot;)?
+
+I did consider utilities to read/write directly to/from these data
+types, but came across a few stumbling blocks.  First, there are two
+competing SRFIs.  Second there is the question of interface - do you
+provide separate procedures on each type:
+
+  (read-u8block! u8vec port)    ; fill u8vec from port, SRFI-4 style
+  (read-u16-block! u16vec port)
+  ...
+
+or do generic dispatch on type:
+
+  (read-array! u8vec port)      ; fill u8vec from port, SRFI-47 style
+
+With generic dispatch the reference implementation becomes slow and
+non-extensible.  This would still be my preference, but it's enough
+added complexity that I would rather it go in a separate SRFI.
+Basically all I wanted for SRFI-56 was to make binary I/O *possible*
+via 4 primitives and throw in some useful library procedures that
+wouldn't really be controversial.
+
+Regardless, this feature is orthogonal to the current debate which is
+that *if* you allow binary operations (including potentially
+operations on byte arrays), can you perform said operations on all
+ports and if not how do you designate for a given port if it supports
+binary vs character operations?  I'm sorry for the delay, I really
+haven't come up with any better ideas, so when I release an updated
+version (RSN) the API will become (with hopefully better wording):
+
+  ;; new port predicates, not necessarily disjoint
+
+  (binary-port? port)
+  (character-port? port)
+
+  ;; new procedures such that the port generated is guaranteed to
+  ;; return #t for BINARY-PORT?, whereas the R5RS equivalents always
+  ;; return #t for CHARACTER-PORT?.
+
+  (open-binary-input-file file)
+  (open-binary-output-file file)
+  (call-with-input-binary-file file proc)
+  (call-with-output-binary-file file proc)
+  (with-input-from-binary-file file thunk)
+  (with-output-to-binary-file file thunk)
+
+READ-CHAR, WRITE-CHAR, READ, WRITE, DISPLAY and all other R5RS I/O
+procedures are guaranteed to be allowed on any port for which
+CHARACTER-PORT? returns #t, assuming all other qualifications are met
+(i.e. you're not trying to read from an OUTPUT-PORT?).
+
+READ-BYTE, WRITE-BYTE, PEEK-BYTE and BYTE-READY? plus the library
+procedures provided in SRFI-56 are guaranteed to be allowed on any
+port for which BINARY-PORT? returns #t, assuming other qualifications
+are met.
+
+String ports are guaranteed to return #t for at least CHARACTER-PORT?.
+
+Implementations are free and encouraged to make no distinction between
+the port types, while program authors are encouraged to use the
+*-binary-* equivalents for port creation when they don't intend to
+perform any character-level operations, both for portability and as a
+reminder of the purpose of the port.  When both binary and character
+operations are to be used, the R5RS procedures are preferred.
+
+-- 
+Alex
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00057" href="msg00057.html">Re: Names and primitives in SRFI 56</a></strong>
+<ul><li><em>From:</em> Dale Jordan</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00057.html">Re: Names and primitives in SRFI 56</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00059.html">Re: Names and primitives in SRFI 56</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00057.html">Re: Names and primitives in SRFI 56</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00060.html">vectors of numbers</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00058"><strong>Date</strong></a></li>
+<li><a href="threads.html#00058"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

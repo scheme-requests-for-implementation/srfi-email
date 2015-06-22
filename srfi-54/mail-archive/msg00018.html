@@ -1,0 +1,253 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: a preface (feedback) -->
+<!--X-From-R13: Bnhy Epuyvr <fpuyvrNpbzpnfg.arg> -->
+<!--X-Date: Thu, 25 Mar 2004 20:14:43 +0100 (NFT) -->
+<!--X-Message-Id: BC8899CA.ADE4%schlie@comcast.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 4061E32B.1060408@cs.uvm.edu -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: a preface (feedback)</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00017.html">Date Prev</a>][<a href="msg00019.html">Date Next</a>][<a href="msg00020.html">Thread Prev</a>][<a href="msg00021.html">Thread Next</a>][<a href="maillist.html#00018">Date Index</a>][<a href="threads.html#00018">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: a preface (feedback)</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &lt;<a href="mailto:srfi-54@DOMAIN.HIDDEN">srfi-54@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: a preface (feedback)</li>
+<li><em>From</em>: Paul Schlie &lt;<a href="mailto:schlie@DOMAIN.HIDDEN">schlie@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 25 Mar 2004 14:14:34 -0500</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-54@DOMAIN.HIDDEN">srfi-54@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:4061E32B.1060408@DOMAIN.HIDDEN">4061E32B.1060408@xxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Microsoft-Entourage/10.1.4.030702.0</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Personally I think the intent of the SRFI is reasonably clear, although not
+explicitly stated; and attempts to formalize the definition of a flexible
+scheme object format (fmt ...) procedure to enable the specification of text
+strings which are composed of correspondingly formatted scheme objects in a
+more functional style than alternative enable.
+
+However:
+- do agree that the srfi's objectives should likely be more clearly stated.
+- do believe that it's likely be beneficial to name it's arguments somehow;
+  but certainly not by using records, as it would destroy it's simplicity.
+- but do like the short name fmt as it would need to be short to enable it's
+  repeated use in the composition of more complex string composition, and
+  seems more than clear enough for that purpose:
+  (sting-append (fmt ...) &quot; whatever &quot; (fmt ...) ...)
+
+Making the observations that all numbers are basic variations of:
+
+   [[pad][sign][whole][fract/numerator][expt/demominator][pad]]
+
+It may be feasible to corresponding model a format spec around this scheme:
+
+(fmt &lt;obj-inst&gt; &lt;obj-fmt&gt;)
+
+&lt;obj-inst&gt; :: [&lt;exact-num&gt; | &lt;inexact-num&gt; | ...] ; object instance.
+
+&lt;obj-fmt&gt;  :: [&lt;exact-fmt&gt;]* ; corresponding object format options.
+
+&lt;exact-fmt&gt; ::
+  
+  (field &lt;width:0&gt; [&lt;pad:#\space&gt;]) ; specify basic field.
+        
+         &lt;width&gt; 0 = defalut = chars of width as required by spec.
+                 pos = sized, right justified, left padded to &lt;width&gt; size.
+                 neg = sized, left justified, right padded to &lt;width&gt; size.
+
+          &lt;pad&gt; #\space = default = padding character as required.
+
+  (spec &lt;sign:#f&gt; &lt;whole:0&gt; &lt;fract/num:0&gt;  &lt;expt/den:0&gt; &lt;radix:10&gt; &lt;sep:#f&gt;)
+        
+        &lt;sign&gt; #f = default, sign not forced, #t = + sign forced if pos.
+
+        &lt;whole&gt; 0 = default, digits of precision as required.
+                pos = &lt;whole&gt; max digits, right justified, no fill.
+                neg = left filled by most significant digit to &lt;whole&gt; size.
+
+    &lt;fract/num&gt; 0 = default, digits of precision as required.
+                pos = &lt;whole&gt; max digits, right justified, no fill.
+                neg = left filled by most significant digit to &lt;whole&gt; size.
+
+     &lt;expt/den&gt; 0 = default, digits of precision as required.
+                pos = &lt;whole&gt; max digits, right justified, no fill.
+                neg = left filled by most significant digit to &lt;whole&gt; size.
+
+        &lt;radix&gt; 10 = default, specifies numeric format radix base.
+
+          &lt;sep&gt; #f = default, or otherwise separator character between every
+                     n digits, as function of radix, 3 for radix of 10, or 4
+
+Which should allow stuff like:
+
+ (fmt 1/3)                  -&gt; &quot;1/3&quot;
+ (fmt 1/3 '(field 6))        -&gt; &quot;   1/3&quot;
+ (fmt 1/3 '(field -6))       -&gt; &quot;1/3   &quot;
+ (fmt (exact-&gt;inexact 1/3)) -&gt; &quot;0.3333333333333333&quot; ; to internal precision.
+ (fmt (exact-&gt;inexact 1/3) '(spec #f 1 3))
+                            -&gt; &quot;1.333&quot;
+ (fmt (exact-&gt;inexact 1/3) '(field 6) '(spec #f 1 3))
+                            -&gt; &quot; 1.333&quot;
+
+ (fmt 10.5 '(spec #t 1 8 -4 2 #\,))
+                            -&gt; &quot;+1.0101,000e-0001&quot; ; binary formatted.
+
+Or something like that, possibly with the more named fields to enable more
+legible optional specification granularity, and possibly by enabling them to
+Be composed in arbitrarily deep lists to enable their being composed as
+desired?
+
+(let ((radix '(radix 2)))
+  (let ((field '(width 12)) (spec '((sign #t) radix))
+     (fmt something field spec)))
+
+-paul-
+
+&gt; From: David Van Horn &lt;dvanhorn@xxxxxxxxxx&gt;
+&gt; Date: Wed, 24 Mar 2004 14:36:11 -0500
+&gt; To: soo &lt;tilde@xxxxxxxxxxx&gt;
+&gt; Cc: srfi-54@xxxxxxxxxxxxxxxxx
+&gt; Subject: Re: a preface
+&gt; Resent-From: srfi-54@xxxxxxxxxxxxxxxxx
+&gt; Resent-Date: Wed, 24 Mar 2004 20:38:22 +0100 (NFT)
+&gt; 
+&gt; soo wrote:
+&gt;&gt;  * From: David Van Horn &lt;dvanhorn@xxxxxxxxxx&gt;
+&gt;&gt;  * Date: Wed, 24 Mar 2004 02:38:01 -0500
+&gt;&gt;  * Subj: Re: a preface
+&gt;&gt; 
+&gt;&gt;&gt;&gt; Title
+&gt;&gt;&gt;&gt; Formatting
+&gt;&gt;  | Although succinct, this is completely nondescript, as is the identifier
+&gt;&gt; fmt.
+&gt;&gt;&gt;&gt; Abstract
+&gt;&gt;&gt;&gt; This SRFI introduces the FMT procedure that converts any object to a
+&gt;&gt;&gt;&gt; string.
+&gt;&gt;&gt;&gt; Unlike the procedure called FORMAT, this FMT procedure takes one object as
+&gt;&gt;&gt;&gt; the
+&gt;&gt;&gt;&gt; first argument and accepts several optional arguments.
+&gt;&gt;  | This abstract doesn't outline the need for, and design of, the proposal as
+&gt;&gt;  | required by the SRFI Process Document.
+&gt;&gt;&gt;&gt; Rationale
+&gt;&gt;&gt;&gt; The FMT procedure provides a handy optional and functional interface.
+&gt;&gt;  | This rationale is less than detailed.
+&gt;&gt; 
+&gt;&gt; I don't think so.
+&gt; 
+&gt; Great, we're getting nowhere fast.
+&gt; 
+&gt; Seriously, the word &quot;formatting&quot; conveys no information to me.  What are you
+&gt; formatting?  How?  Why?  -- Answers to these questions should appear somewhere
+&gt; in the SRFI document.
+&gt; 
+&gt;&gt;  | The SRFI document must contain a detailed specification.  This should be
+&gt;&gt;  | detailed enough that a conforming implementation could be completely
+&gt;&gt; created
+&gt;&gt;  | from this description.  I don't think that is true of the current
+&gt;&gt; specification.
+&gt;&gt; 
+&gt;&gt; I have never seen any example of spec of this sort of parameters.
+&gt;&gt; Let me know the way to describe this spec.
+&gt; 
+&gt; Rather than assuming there is a problem with the specification, have you
+&gt; considered this is perhaps a poor way of designing parameters to a function?
+&gt; I would rather see a keyword syntax, or pass in a record to fmt, or fix the
+&gt; order of arguments.  The current approach 1) has no precedent as far as I'm
+&gt; aware 2) is not extensible 3) makes it very difficult to read the uses of this
+&gt; procedure and predict what the result will be.
+&gt; 
+&gt;&gt;  | Regardless, allowing arbitrary order and arbitrary omission of arguments
+&gt;&gt; seems
+&gt;&gt;  | an especially fragile way to specify a procedure.  This is why you have to
+&gt;&gt;  | stipulate things like: &quot;&lt;depth&gt; or &lt;count&gt; can be defined only after
+&gt;&gt; &lt;width&gt; is
+&gt;&gt;  | defined.&quot;  If we add more parameters to fmt this problem will blow up,
+&gt;&gt; quick.
+&gt;&gt; 
+&gt;&gt;  | Why does fmt have two very distinct behaviors?  Why not have two distinct
+&gt;&gt;  | procedures?
+&gt;&gt; 
+&gt;&gt;  | Why have a &lt;show&gt; parameter when you can just apply that function to fmt's
+&gt;&gt;  | result?  And further, why are you allowed to pass in only display or
+&gt;&gt; write?
+&gt;&gt; 
+&gt;&gt;  | Why have &lt;string&gt; parameters when you have string-append?
+&gt;&gt; 
+&gt;&gt; I think they are FMT's forte.
+&gt; 
+&gt; I don't understand this response.  Could you elaborate on what fmt's &quot;forte&quot;
+&gt; is specifically or respond directly to my questions.
+&gt; 
+&gt; I agree with Jens that a SRFI for the easy formatting of numbers as strings is
+&gt; a good idea.  However, I would expect such a SRFI to be titled something along
+&gt; the lines of &quot;Easy Formatting of Numbers as Strings&quot;, to include a rationale
+&gt; detailing why such a SRFI is a good idea, and to include a rationale as to why
+&gt; the given proposal is a good realization of that idea.
+&gt; 
+&gt; I'm finding it very difficult to provide constructive feedback because I can't
+&gt; discern from the document what your intentions are at all.  What problem does
+&gt; this SRFI address?
+&gt; 
+&gt; David
+&gt; 
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00007" href="msg00007.html">Re: a preface</a></strong>
+<ul><li><em>From:</em> David Van Horn</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00017.html">Re: Comments and some bugs</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00019.html">Re: a preface</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00020.html">Re: a preface</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00021.html">Re: a preface</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00018"><strong>Date</strong></a></li>
+<li><a href="threads.html#00018"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

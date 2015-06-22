@@ -1,0 +1,131 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: output streams vs output ports -->
+<!--X-From-R13: Euveb Ynjnv <fuvebNynin.arg> -->
+<!--X-Date: Tue, 21 Jun 2005 10:08:02 +0200 (DFT) -->
+<!--X-Message-Id: 20050620.220754.577729877.shiro@lava.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: y9lll55twji.fsf@sams.informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: 20050619.231619.927382702.shiro@lava.net -->
+<!--X-Reference: y9lzmtkrw7d.fsf@sams.informatik.uni&#45;tuebingen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: output streams vs output ports</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00049.html">Date Prev</a>][<a href="msg00051.html">Date Next</a>][<a href="msg00049.html">Thread Prev</a>][<a href="msg00057.html">Thread Next</a>][<a href="maillist.html#00050">Date Index</a>][<a href="threads.html#00050">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: output streams vs output ports</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: output streams vs output ports</li>
+<li><em>From</em>: Shiro Kawai &lt;<a href="mailto:shiro@DOMAIN.HIDDEN">shiro@xxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 20 Jun 2005 22:07:54 -1000 (HST)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-68@DOMAIN.HIDDEN">srfi-68@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-68@DOMAIN.HIDDEN">srfi-68@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:y9lzmtkrw7d.fsf@DOMAIN.HIDDEN">y9lzmtkrw7d.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:y9lll55twji.fsf@DOMAIN.HIDDEN">y9lll55twji.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:20050619.231619.927382702.shiro@DOMAIN.HIDDEN">20050619.231619.927382702.shiro@xxxxxxxx</a>&gt;	&lt;<a href="mailto:y9lzmtkrw7d.fsf@DOMAIN.HIDDEN">y9lzmtkrw7d.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>From: Michael Sperber &lt;sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx&gt;
+Subject: Re: output streams vs output ports
+Date: Tue, 21 Jun 2005 09:43:50 +0200
+
+&gt; Shiro Kawai &lt;shiro@xxxxxxxx&gt; writes:
+&gt; 
+&gt; &gt; The simple-minded copy program:
+[snip]
+&gt; &gt; It runs 3.5x faster if I bypass locking of 'in' and 'out' ports
+&gt; &gt; in Gauche.
+&gt; 
+&gt; Could you selectively bypass the locking of only the input port so we
+&gt; get a better idea what the specific issue with the output port is?
+
+Yes.  These are elapsed time for various conditions,
+repeating the program 10 times.  System time was less than 10ms.
+
+lock both         : 3.64s
+lock output only  : 2.42s
+lock input only   : 2.26s
+no locking        : 1.04s
+
+In the current implementation, a port has a recursive lock and
+the pthread_mutex_lock is called when a builtin I/O procedure
+is called and the calling thread hasn't acquired the lock.  So
+the locking doesn't affect the large-granularity operation
+such as read or write much, while it is expensive for fine-grained
+operation such as read-char/write-char expensive.  Gauche
+provides a procedure &quot;with-port-locking&quot; to lock the port in
+larger granularity, which is what I used to &quot;bypass&quot; the
+locking.
+
+(Maybe I'm doing something stupid; if there's a clever way to
+avoid this much of locking overhead, I'd like to be enlightened.)
+
+--shiro
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00057" href="msg00057.html">Re: output streams vs output ports</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00046" href="msg00046.html">Re: output streams vs output ports</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+<li><strong><a name="00047" href="msg00047.html">Re: output streams vs output ports</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+<li><strong><a name="00049" href="msg00049.html">Re: output streams vs output ports</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00049.html">Re: output streams vs output ports</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00051.html">Re: finishing output translating stream</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00049.html">Re: output streams vs output ports</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00057.html">Re: output streams vs output ports</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00050"><strong>Date</strong></a></li>
+<li><a href="threads.html#00050"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

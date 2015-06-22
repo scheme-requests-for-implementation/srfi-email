@@ -1,0 +1,145 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: GC safety and return values -->
+<!--X-From-R13: Xvz Pynaql <wvzoNerqung.pbz> -->
+<!--X-Date: Wed, 24 Dec 2003 17:47:23 +0100 (NFT) -->
+<!--X-Message-Id: vt2vfo688v3.fsf@zenia.home -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200312222122.NAA06270@morrowfield.regexps.com -->
+<!--X-Reference: vt2d6agcztq.fsf@zenia.home -->
+<!--X-Reference: 200312222210.OAA06590@morrowfield.regexps.com -->
+<!--X-Reference: vt2smjcbidh.fsf@zenia.home -->
+<!--X-Reference: 200312232304.PAA18640@morrowfield.regexps.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: GC safety and return values</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00054.html">Date Prev</a>][<a href="msg00056.html">Date Next</a>][<a href="msg00088.html">Thread Prev</a>][<a href="msg00057.html">Thread Next</a>][<a href="maillist.html#00055">Date Index</a>][<a href="threads.html#00055">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: GC safety and return values</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Tom Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: GC safety and return values</li>
+<li><em>From</em>: Jim Blandy &lt;<a href="mailto:jimb@DOMAIN.HIDDEN">jimb@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: 24 Dec 2003 11:43:12 -0500</li>
+<li><em>Cc</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:200312232304.PAA18640@DOMAIN.HIDDEN">200312232304.PAA18640@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:200312222122.NAA06270@DOMAIN.HIDDEN">200312222122.NAA06270@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:vt2d6agcztq.fsf@DOMAIN.HIDDEN">vt2d6agcztq.fsf@xxxxxxxxxx</a>&gt;	&lt;<a href="mailto:200312222210.OAA06590@DOMAIN.HIDDEN">200312222210.OAA06590@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:vt2smjcbidh.fsf@DOMAIN.HIDDEN">vt2smjcbidh.fsf@xxxxxxxxxx</a>&gt;	&lt;<a href="mailto:200312232304.PAA18640@DOMAIN.HIDDEN">200312232304.PAA18640@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Sender</em>: <a href="mailto:jimb@DOMAIN.HIDDEN">jimb@xxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Gnus/5.09 (Gnus v5.9.0) Emacs/21.3</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+My initial post, as written, does say that explicitly freed references
+solve the thread-related problems with SCHEME_EXTRACT_VALUE_POINTER
+and SCHEME_EXTRACT_STRING.  But that's not right; as described,
+references don't have anything to do with that problem.
+
+I inserted the paragraph about SCHEME_EXTRACT_* after I'd written
+everything else, and didn't notice that I'd changed the antecedent of
+&quot;this problem&quot; in the next paragraph.
+
+
+Here is how that section should read:
+
+  The proposal states that &quot;the garbage collector may run whenever an
+  object is allocated in the heap.&quot;  In context, I think that really
+  means, &quot;the garbage collector may *only* run...&quot;  In a multi-threaded
+  context, I think this must mean that the collector may only run when
+  any thread allocates an object on the heap, which isn't much of a
+  restriction at all; the collector can run at any time.
+
+  If that is so, then the way the proposal suggests C code should refer
+  to Scheme values makes it impossible for the collector to find and
+  relocate heap references.  The C compiler may have stashed them
+  anywhere, in disguised forms, and it is probably unwilling to tell you
+  much about where they are at any given time.
+
+  The Java Native Interface handles this problem by essentially
+  forbidding C code from ever referring directly to a GC'd object.
+  Instead, C code may only handle &quot;references&quot; to GC'd objects.  This
+  restriction is enforced by the type system.  References are explicitly
+  freed objects, which is way people are accustomed to working in C.
+  And because the explicit-free model is a complete pain in the neck,
+  the JNI tries to ease that pain by segregating references into &quot;local&quot;
+  and &quot;global&quot;, where &quot;local&quot; references are freed for you at a
+  convenient time.
+
+  Another issue is that, if a collection could occur at any time, the
+  values returned by macros like SCHEME_EXTRACT_VALUE_POINTER and
+  EXTRACT_STRING can't be trusted long enough to be useful.  This can
+  be solved in various ways; one idea is sketched in:
+
+    <a  rel="nofollow" href="http://sources.redhat.com/ml/guile/1999-01/msg00093.html">http://sources.redhat.com/ml/guile/1999-01/msg00093.html</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00057" href="msg00057.html">Re: GC safety and return values</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00006" href="msg00006.html">GC safety and return values</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00007" href="msg00007.html">Re: GC safety and return values</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+<li><strong><a name="00008" href="msg00008.html">Re: GC safety and return values</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00014" href="msg00014.html">Re: GC safety and return values</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+<li><strong><a name="00037" href="msg00037.html">Re: GC safety and return values</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00054.html">Re: Couple things...</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00056.html">Re: GC safety and return values</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00088.html">Re: GC safety and return values</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00057.html">Re: GC safety and return values</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00055"><strong>Date</strong></a></li>
+<li><a href="threads.html#00055"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

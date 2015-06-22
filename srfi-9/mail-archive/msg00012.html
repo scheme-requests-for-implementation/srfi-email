@@ -1,0 +1,184 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Internal defines/reference implementations -->
+<!--X-From-R13: revx uvyfqnyr <uvyfqnyrNcnep.krebk.pbz> -->
+<!--X-Date: Tue, 13 Jul 1999 08:49:48 &#45;0500 (CDT) -->
+<!--X-Message-Id: 199907131349.GAA02702@localhost.localdomain -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Internal defines/reference implementations</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00011.html">Date Prev</a>][<a href="msg00013.html">Date Next</a>][<a href="msg00005.html">Thread Prev</a>][<a href="msg00014.html">Thread Next</a>][<a href="maillist.html#00012">Date Index</a>][<a href="threads.html#00012">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Internal defines/reference implementations</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-9@DOMAIN.HIDDEN">srfi-9@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Internal defines/reference implementations</li>
+<li><em>From</em>: erik hilsdale &lt;<a href="mailto:hilsdale@DOMAIN.HIDDEN">hilsdale@xxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 13 Jul 1999 06:49:14 PDT</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+I want to bring up the internal definition issue.  The current
+proposal disallows internal record-type definitions because such
+definitions `would require a more complex implementation'.  I'm not
+sure this is true in an interesting sense.
+
+In any Scheme where letrec happens to bind left to right (allowed by
+the `is an error' language of r5rs 4.2.2, perhaps discouraged by the
+syntax-rules definition of r5rs 7.3), the implementation required for
+internal record-type definition does not, in fact, require a more
+complex implementation.  That's as maybe.
+
+Certainly, a portable _reference implementation_ would, indeed,
+require a more complex implementation... the various record-?
+procedure constructors would have to be macros if we wanted to get the
+same efficiency that the current reference implementation has (though
+I would argue that this doesn't make the code much more difficult to
+read; see below for the obvious lifting of these procedures to
+macros).
+
+I guess the real question is whether SRFI's primarily exist to define
+features or libraries.  I've got to believe it's the former, otherwise
+we would be talking about slib.  And if it's the former, the
+restriction to top-level seems pretty arbitrary.
+
+-erik
+
+P.S. Just to toss in my two cents, I'd also like Olin's extra two
+parentheses to group the field specs (though I didn't put them in the
+following code).
+
+(define-syntax define-record-type
+  (syntax-rules ()
+    ((define-record-type type
+       (constructor constructor-tag ...)
+       predicate
+       (field-tag accessor . more) ...)
+     (begin
+       (define type
+	 (make-record-type 'type '(field-tag ...)))
+       (define constructor
+	 (record-constructor type '(field-tag ...) '(constructor-tag ...)))
+       (define predicate
+	 (record-predicate type))
+       (define-record-field type 'field-tag '(field-tag ...) accessor . more)
+       ...
+       ))))
+
+(define-syntax define-record-field
+  (syntax-rules ()
+    ((define-record-field type all-tags field-tag accessor)
+     (define accessor (record-accessor type all-tags field-tag)))
+    ((define-record-field type all-tags field-tag accessor modifier)
+     (begin
+       (define accessor (record-accessor type all-tags field-tag))
+       (define modifier (record-modifier type all-tags field-tag))))))
+
+(define-syntax record-constructor
+  (syntax-rules ()
+    ((record-constructor type all-tags constructor-tags)
+     (let ((size (length all-tags))
+	   (arg-count (length constructor-tags))
+	   (indexes (map (lambda (tag)
+			   (list-index tag all-tags))
+			 constructor-tags)))
+       (lambda args
+	 (if (= (length args) arg-count)
+	     (let ((new (make-record (+ size 1))))
+	       (record-set! new 0 type)
+	       (for-each (lambda (arg i)
+			   (record-set! new i arg))
+			 args
+			 indexes)
+	       new)
+	     (error &quot;wrong number of arguments to constructor&quot; type args)))))))
+
+(define-syntax record-predicate
+  (syntax-rules ()
+    ((record-predicate type)
+     (lambda (thing)
+       (and (record? thing)
+	    (eq? (record-type thing)
+		 type))))))
+
+(define-syntax record-accessor
+  (syntax-rules ()
+    ((record-accessor type all-tags tag)
+     (let ((index (list-index tag all-tags)))
+       (lambda (thing)
+	 (if (and (record? thing)
+		  (eq? (record-type thing)
+		       type))
+	     (record-ref thing index)
+	     (error &quot;accessor applied to bad value&quot; type tag thing)))))))
+
+(define-syntax record-modifier
+  (syntax-rules ()
+    ((record-modifier type all-tags tag)
+     (let ((index (list-index tag all-tags)))
+       (lambda (thing value)
+	 (if (and (record? thing)
+		  (eq? (record-type thing)
+		       type))
+	     (record-set! thing index value)
+	     (error &quot;modifier applied to bad value&quot; type tag thing)))))))
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00014" href="msg00014.html">Re: Internal defines/reference implementations</a></strong>
+<ul><li><em>From:</em> Sergei Egorov</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00011.html">Re: Small modification</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00013.html">Re: Small modification</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00005.html">soft typed records</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00014.html">Re: Internal defines/reference implementations</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00012"><strong>Date</strong></a></li>
+<li><a href="threads.html#00012"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

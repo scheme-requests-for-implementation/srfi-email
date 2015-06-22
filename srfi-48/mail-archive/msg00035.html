@@ -1,0 +1,167 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Format strings are wrong -->
+<!--X-From-R13: Oyrk Euvaa <sbbsNflagupbqr.pbz> -->
+<!--X-Date: Sun, 28 Dec 2003 05:40:04 +0100 (NFT) -->
+<!--X-Message-Id: 20031228043744.GA30222@synthcode.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: y9lekur77gi.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Format strings are wrong</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00034.html">Date Prev</a>][<a href="msg00036.html">Date Next</a>][<a href="msg00031.html">Thread Prev</a>][<a href="msg00036.html">Thread Next</a>][<a href="maillist.html#00035">Date Index</a>][<a href="threads.html#00035">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Format strings are wrong</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-48@DOMAIN.HIDDEN">srfi-48@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Format strings are wrong</li>
+<li><em>From</em>: Alex Shinn &lt;<a href="mailto:foof@DOMAIN.HIDDEN">foof@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 27 Dec 2003 22:37:44 -0600</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-48@DOMAIN.HIDDEN">srfi-48@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:y9lekur77gi.fsf@DOMAIN.HIDDEN">y9lekur77gi.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:y9lekur77gi.fsf@DOMAIN.HIDDEN">y9lekur77gi.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Reply-to</em>: <a href="mailto:srfi-48@DOMAIN.HIDDEN">srfi-48@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Sender</em>: Alex Shinn &lt;<a href="mailto:foof@DOMAIN.HIDDEN">foof@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mutt/1.5.4i</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>On Fri, Dec 26, 2003 at 07:35:41PM +0100, Paul Schlie wrote:
+
+&gt; Gentlemen, with all due respect, and understanding that the following
+&gt; thoughts may be best expressed in an alternative SRFI; but Upon reviewing
+&gt; the discussion archive, I feel compelled to voice support of Marc's
+&gt; opinions; as I don't believe  C'ish embedded numerical format string hacks
+&gt; actually materially help porting code, or are particularly favored by folks
+&gt; who are familiar with C; but actually reduce the potential simplicity and
+&gt; efficiency of mixed text/numerical string formatting which the language
+&gt; could and arguably should otherwise encourage.
+
+The SRFI process isn't just about porting, but also standardizing
+libraries.  One of the primary motivations of SRFI-1 was that all
+Schemes provided varying levels of add-on list utilities with
+incompatible API's.  In this case almost all Schemes at least support
+SRFI-28, and many support some or all of the full Common-Lisp format,
+so it is definitely something people find useful and should be
+standardized.  Many people feel SRFI-48 doesn't go far enough, so
+there will likely be at least one more format SRFI.  Perhaps that will
+explicitly make the individual formatting procedures accessible as
+they are in Dirk Lutzebaeck's implementation, which would give you the
+option of using both styles.
+
+&gt; Possibly something along the lines of simply adopting the notion that:
+&gt; (str-fmt ....) [or (string ...) be extended] to accept mixed string, symbol,
+&gt; character and numerical arguments, and produces a string resulting from the
+&gt; concatenation of its argument's string equivalences
+
+Probably best not to overload string, especially in light of recent
+discussions as to just what a character is.  Also, the procedure
+should definitely output to a port, not a string.  But even using a
+port this becomes inefficient if you inline write's:
+
+  (define (write-to-string x) (with-output-to-string (cut write x)))
+  (fmt #t &quot;list: &quot; (write-to-string ls) #\newline)
+
+and likewise for performing different number-&gt;string conversions in
+the middle of a format.  You really have to break it apart as:
+
+  (display &quot;list: &quot;)
+  (write ls)
+  (newline)
+
+which when compared with
+
+  (format #t &quot;list: ~S\n&quot; ls)
+
+looks clumsy and verbose, especially when you have many of these
+throughout a program almost tripling the number of lines, and
+especially when you have to wrap them in begins.  Format is very
+concise and not only lets you re-use the format string in parts of
+your program, it lets you easily change it at runtime (even in an
+eval-less Scheme) and lets you load it from things like config files.
+Consider the log files of a server that need to produce customizable
+output, like this from my httpd.conf:
+
+LogFormat &quot;%h %l %u %t \&quot;%r\&quot; %&gt;s %b \&quot;%{Referer}i\&quot; \&quot;%{User-Agent}i\&quot; %T %v&quot; full
+
+Or consider the Emacs mode-line-format string which lets you customize
+(again at runtime) what appears in your mode-line.  Of course, Emacs
+allows nested lists as the format, which may be a consideration for
+future format SRFIs rather than consider introducing artificial
+nesting with ~&lt;...~&gt; etc.
+
+By keeping the logic in one place format is also much better suited to
+things like i18n, and can provide more efficient control over
+columnating and padding.
+
+All around, format is more consice, more efficient, and more flexible
+than the alternatives.  That doesn't mean we couldn't use some more
+functional interfaces, but they will likely not replace format.
+
+-- 
+Alex
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00036" href="msg00036.html">LAMBDA: The Ultimate Formatter (was Re: Format strings are wrong)</a></strong>
+<ul><li><em>From:</em> Taylor Campbell</li></ul></li>
+<li><strong><a name="00038" href="msg00038.html">Re: Format strings are wrong</a></strong>
+<ul><li><em>From:</em> Taylor Campbell</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00031" href="msg00031.html">Re: Format strings are wrong</a></strong>
+<ul><li><em>From:</em> Paul Schlie</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00034.html">Re: Format strings are wrong</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00036.html">LAMBDA: The Ultimate Formatter (was Re: Format strings are wrong)</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00031.html">Re: Format strings are wrong</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00036.html">LAMBDA: The Ultimate Formatter (was Re: Format strings are wrong)</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00035"><strong>Date</strong></a></li>
+<li><a href="threads.html#00035"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,179 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Comments on SRFI&#45;1. -->
+<!--X-From-R13: "Vneirl X. Egrva" <uwfgrvaNose.pb.vy> -->
+<!--X-Date: Mon, 4 Jan 1999 04:35:37 &#45;0600 (CST) -->
+<!--X-Message-Id: 199901041035.MAA25478@blinky.bfr.co.il -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Comments on SRFI-1.</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00000.html">Date Prev</a>][<a href="msg00002.html">Date Next</a>][<a href="msg00000.html">Thread Prev</a>][<a href="msg00002.html">Thread Next</a>][<a href="maillist.html#00001">Date Index</a>][<a href="threads.html#00001">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Comments on SRFI-1.</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-1@DOMAIN.HIDDEN">srfi-1@xxxxxxxxxxxxxxxxx</a>, <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Comments on SRFI-1.</li>
+<li><em>From</em>: &quot;Harvey J. Stein&quot; &lt;<a href="mailto:hjstein@DOMAIN.HIDDEN">hjstein@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 4 Jan 1999 12:35:21 +0200</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+I'd like to make a few comments on SRFI-1.
+
+I'm not subscribed to SRFI-1, so please Cc me on any discussion on
+these points, but judging from the volume of traffic in the mailing
+list repository there won't be so much (which is why I'm also mailing
+my comments to the author).  In any case, I'll check the mail archive
+every now and then to see if anything's happening.
+
+I. Function addition - list-length&gt;=?
+
+First of all, I'd like to suggest adding a function.  I often find
+myself having to write code like:
+
+   (if (&gt;= (length l) 3)
+       (do something with (list-ref l 2)))
+
+I guess this sometimes comes from processing the rest variable in
+funtions defined like (lambda (x y . rest) ...), but it also arises in
+other contexts.
+
+This has the ugly performance of hit that it takes O((length l))
+instead of O(position being tested).
+
+So, may I suggest adding:
+
+   list-length&gt;=? l n -&gt; #t/#f
+
+   Returns #t iff (&gt;= (length l) n)
+
+This has the obvious implementation:
+
+   (define (list-length&gt;=? l n)
+      (if (&lt;= n 0)
+          0
+          (list-length&gt;=? (cdr l) (- n 1))))
+
+
+II. .iota &amp; iota..
+
+I also felt the same way as Sergei Egorov &lt;esl@xxxxxxxxxxxxxxx&gt; when I
+first read about .iota &amp; iota., namely that the names are less than
+ideal in that they're problematic identifiers, unclear which side is
+open &amp; funny looking.  I also agree that optional argument handling is
+strange, although I think that it does make sense for this particular
+function &amp; it is under common usage (I assume the apl usage is
+similar, &amp; xlispstat has iseq which has the same behavior).
+
+I also don't see why half open intervals are so important - I'd think
+that if you're going to include functions for generating left open &amp;
+right open intervals that you should also include closed &amp; open
+intervals.
+
+III. take &amp; drop.
+
+Again, I agree with Sergei that it is strange to count from the end
+when the index argument is negative.  Does anyone have any examples
+where this would be much more convenient than having 2 sets of fcns -
+one for counting from the beginning &amp; one for counting from the end?
+I don't see any continuity reasons for thinking that (take l -1)
+should be a list containing the last element of l.
+
+It also gives a funny overlap between take &amp; drop - (take l n) = (drop
+l (- n (length l))), or some such thing.  
+
+IV. unfold &amp; unfold/tail
+
+This is just a documentation issue.  I think it'd be easier to
+understand the spec if the names of the arguments to unfold were more
+descriptive.  For example, maybe change:
+
+   unfold p f g seed -&gt; list
+
+to something like:
+
+   unfold stop-seed? seed-map next-seed first-seed -&gt; list
+
+   Keeps applying next-seed recursively until it returns a seed for
+   which stop-seed? returns #t.  Returns the list of values returned
+   by seed-map called on the seeds produced.
+
+V. General comment.
+
+I'd like to see more uniformity in calling conventions.  I realize
+that it's hard to balance convenience, efficiency, and generality
+while trying to keep the number of fcns small, but I think for a
+library it's better to err on the side of more fcns to get the
+necessary generality (with similar enough names to make remembering
+them easier) and efficiency than for convenience (as in the use of
+optional arguments or using numerical sign to denote things).  I agree
+it's difficult &amp; I'm not so sure I'd be able to improve the list
+library a lot, but things which seem to stick out in my mind are
+things like .iota &amp; iota. vs unfold &amp; unfold/tail.  I agree that each
+one is natural, but it seems to me that the two together lack
+uniformity.
+
+-- 
+Harvey J. Stein
+BFM Financial Research
+hjstein@xxxxxxxxx
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00002" href="msg00002.html">Comments on SRFI-1.</a></strong>
+<ul><li><em>From:</em> Shriram Krishnamurthi</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00000.html">SRFI1: 90 days to discuss 89 procedures?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00002.html">Comments on SRFI-1.</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00000.html">SRFI1: 90 days to discuss 89 procedures?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00002.html">Comments on SRFI-1.</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00001"><strong>Date</strong></a></li>
+<li><a href="threads.html#00001"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

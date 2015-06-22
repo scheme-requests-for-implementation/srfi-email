@@ -1,0 +1,158 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Substring indices everywhere? and the XS>< form -->
+<!--X-From-R13: byrtNcbobk.pbz -->
+<!--X-Date: Mon, 3 Jan 2000 13:43:45 &#45;0600 (CST) -->
+<!--X-Message-Id: 200001031941.TAA28429@fnmoc.navy.mil -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Substring indices everywhere? and the XS&gt;&lt; form</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00042.html">Date Prev</a>][<a href="msg00044.html">Date Next</a>][<a href="msg00041.html">Thread Prev</a>][<a href="msg00044.html">Thread Next</a>][<a href="maillist.html#00043">Date Index</a>][<a href="threads.html#00043">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Substring indices everywhere? and the XS&gt;&lt; form</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-13@DOMAIN.HIDDEN">srfi-13@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Substring indices everywhere? and the XS&gt;&lt; form</li>
+<li><em>From</em>: <a href="mailto:oleg@DOMAIN.HIDDEN">oleg@xxxxxxxxx</a></li>
+<li><em>Date</em>: Mon, 3 Jan 2000 19:41:41 GMT</li>
+<li><em>Cc</em>: <a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a>, <a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a></li>
+<li><em>Reply-to</em>: <a href="mailto:oleg@DOMAIN.HIDDEN">oleg@xxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+There are two major differences between 'substring' and the proposed
+XS&gt;&lt; _notation_. For one thing, 'substring' function's interface is
+written in stone: (substring str i j). All three arguments are
+required, furthermore, (&lt;= 0 i j (string-length str)) must be #t. XS&gt;&lt;
+is not bound by this interface; it can accept fewer arguments and
+negative indices.
+
+For another thing, substring is codified to be a procedure whose
+result is a first-class value. No such promises have been made about
+the XS&gt;&lt; notation.
+
+One can envision the following three implementations:
+
+System A:
+	(define (XS&gt;&lt; str i . j-opt)
+	  (cond
+	    ((null? j-opt)
+	      (substring str 
+		(if (negative? i) (+ i (string-length str)) i)
+		(string-length str)))
+	 ...
+	)
+
+with substring and string-&gt;number as defined in R5RS.
+
+System B:
+	the same as system A but with substring/shared
+
+System C:
+	(define-syntax string-&gt;number
+	   (syntax-rules (XS&gt;&lt;)
+	     ((string-&gt;number (XS&gt;&lt; arg ...))
+		(substring-&gt;number arg ...))
+	     ((string-&gt;number arg ...) (r5rs-string-&gt;number arg ...))))
+
+(this is just the outline. A Scheme compiler may notice the XS&gt;&lt;
+notation and perform the above conversion without actually requiring
+string-&gt;number be a syntax. string-&gt;number may remain a normal
+procedure).
+
+
+Any of these three systems permit an expression
+	(string-&gt;number (XS&gt;&lt; &quot;$12345.99&quot; 1))
+
+which would return exactly the same result. The user thus does not
+care what XS&gt;&lt; really is. A particular Scheme system is therefore free
+to implement XS&gt;&lt; in any way it thinks fit -- with inlining, shared
+substrings, lazy substrings, etc. User's code however remains
+portable across the three implementations.
+
+
+Again, the code with XS&gt;&lt; notation can be easily moved to a system
+that implements XS&gt;&lt; via shared substrings. This IMHO addresses the
+following Tom Lord's concern:
+&gt; This makes it awkward to incorporate the code such programmers write
+&gt; into systems which support shared substrings.
+
+The XS&gt;&lt; notation also effectively removes substring indices from all
+string library procedures. Again this addresses Tom Lord's and other
+people's concern.
+
+Furthermore, as XS&gt;&lt; notation is not guaranteed to be useful outside
+string functions, implementing it through shared substrings appears
+safer (for example, an implementation does not have to add code to do
+a copy-on-write when a parent string is modified). Hence XS&gt;&lt; may be
+implemented via a lighter version of substring/shared.
+
+The purpose of the XS&gt;&lt; notation is to raise the level of abstraction,
+by introducing a _notational_ indirection. The hope is to guarantee
+portability of user code and to impose as few restraints on
+implementations as possible. The decision as to whether a SRFI-13-
+compliant system should support shared substrings is IMHO best left to
+implementors. BTW, I too consider the 'XS&gt;&lt;' name to be ugly, but I
+couldn't think up anything cuter.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00044" href="msg00044.html">Re: Substring indices everywhere? and the XS&gt;&lt; form</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+<li><strong><a name="00045" href="msg00045.html">Re: Substring indices everywhere? and the XS&gt;&lt; form</a></strong>
+<ul><li><em>From:</em> Mikael Ståldal</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00042.html">Re: Substring indices everywhere? Eating a cake without destroying it</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00044.html">Re: Substring indices everywhere? and the XS&gt;&lt; form</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00041.html">Re: Substring indices everywhere?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00044.html">Re: Substring indices everywhere? and the XS&gt;&lt; form</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00043"><strong>Date</strong></a></li>
+<li><a href="threads.html#00043"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

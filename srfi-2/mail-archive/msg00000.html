@@ -1,0 +1,169 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: How should one specify syntax and semantics? -->
+<!--X-From-R13: Xvz Pynaql <wvzoNerq&#45;orna.pbz> -->
+<!--X-Date: Sat, 9 Jan 1999 18:09:07 &#45;0600 (CST) -->
+<!--X-Message-Id: 199901100009.TAA23589@totoro.red&#45;bean.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>How should one specify syntax and semantics?</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[Date Prev][<a href="msg00001.html">Date Next</a>][Thread Prev][<a href="msg00001.html">Thread Next</a>][<a href="maillist.html#00000">Date Index</a>][<a href="threads.html#00000">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>How should one specify syntax and semantics?</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-2@DOMAIN.HIDDEN">srfi-2@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: How should one specify syntax and semantics?</li>
+<li><em>From</em>: Jim Blandy &lt;<a href="mailto:jimb@DOMAIN.HIDDEN">jimb@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 9 Jan 1999 19:09:02 -0500</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+I like the idea of LAND*; I think I'd use a form like this often.
+The syntax proposed is clean and clear.  Thank you, Oleg!
+
+However, the specification of LAND* in the draft SRFI is perhaps not
+as clear as it could be.  I think it's important that the initial
+SRFI's set a high standard for future authors to follow, so I hope
+Oleg will not be offended if I explain how I think draft SRFI 2 might
+be improved.
+
+The notation used to describe the LAND* syntax is unfamiliar; it
+resembles BNF, but uses `cons' in a way I've never seen in any other
+BNF spec.  Whenever possible, I think SRFI's should use existing,
+well-defined, and widely recognized notations for describing syntax;
+when that is not possible, the SRFI itself should explain the notation
+used.
+
+The notation used to describe LAND*'s semantics is also unfamiliar.
+
+I would suggest that SRFI's should imitate R5RS as closely as
+possible, when R5RS provides appropriate examples.  In the present
+case, R5RS provides excellent precedents to follow.
+
+Thus, looking at how R5RS handles `cond', I would suggest a definition
+consisting of:
+- syntax, specified informally, using templates with English restrictions,
+- semantics, specified informally, in English, and
+- for derived expression types, a macro definition using R5RS's
+  define-syntax.  (Note that using R5RS macros does *not* constrain an
+  implementation to provide LAND* using R5RS macros, or macros of any
+  sort; R5RS macros are simply a well-defined, widely recognized
+  notation for describing the syntax and semantics of expressions.)
+
+
+For example:
+
+    Syntax: (land* (&lt;clause&gt; ...) &lt;body&gt; ...)
+    Each &lt;clause&gt; should have one of the following forms:
+      (&lt;variable&gt; &lt;expression&gt;)
+      (&lt;expression&gt;)
+      &lt;bound-variable&gt;
+    Each &lt;variable&gt; or &lt;bound-variable&gt; should be an identifier.  Each
+    &lt;expression&gt; should be a valid expression.  The &lt;body&gt; should be a
+    possibly empty sequence of expressions, like the &lt;body&gt; of a
+    lambda form.
+
+    Semantics: A LAND* expression is evaluated by evaluating the
+    &lt;expression&gt; or &lt;bound-variable&gt; of each of the &lt;clause&gt;s from
+    left to right.  The value of the first &lt;expression&gt; or
+    &lt;bound-variable&gt; that evaluates to a false value is returned; the
+    remaining &lt;expression&gt;s and &lt;bound-variable&gt;s are not evaluated.
+    The &lt;body&gt; forms are evaluated iff all the &lt;expression&gt;s and
+    &lt;bound-variable&gt;s evaluate to true values.
+
+    The &lt;expression&gt;s and the &lt;body&gt; are evaluated in an environment
+    binding each &lt;variable&gt; of the preceding (&lt;variable&gt; &lt;expression&gt;)
+    clauses to the value of the &lt;expression&gt;.  Later bindings
+    shadow earlier bindings.
+
+    (define-syntax land*
+      (syntax-rules ()
+        ((land* () body ...)
+         (begin body ...))
+
+        ((land* ((var expr) clauses ...) body ...)
+         (let ((var expr))
+           (if var (land* (clauses ...) body ...) #f)))
+
+        ((land* ((expr) clauses ...) body ...)
+         (if expr (land* (clauses ...) body ...) #f))
+
+        ((land* (var clauses ...) body ...)
+         (if var (land* (clauses ...) body ...) #f))))
+
+(Note that the define-syntax definition above is untested.)
+
+Some further comments:
+
+I find the name `land*' a bit obscure; is it `logical and'?  Or
+perhaps `dry land'?  Something like `and-let*' might be nicer.  I
+think we should follow the example of `set-car!', not `rplaca'.
+
+
+Isn't a &lt;clause&gt; of the form &lt;bound-variable&gt; equivalent to one of the
+form (&lt;bound-variable&gt;)?  The fact that the list contains only one
+element shows that no binding should be created.  Thus,
+&lt;bound-variable&gt; clauses seem unnecessary.  I wouldn't mind writing
+
+   (lambda (x y)
+     (land* ((first (car x))
+	     (y))
+       (do-something first)))
+
+instead of 
+
+   (lambda (x y)
+     (land* ((first (car x))
+	     y)
+       (do-something first)))
+
+But this is not a big deal.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Next by Date:
+<strong><a href="msg00001.html">LAND* specifications in RnRS-style</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00001.html">LAND* specifications in RnRS-style</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00000"><strong>Date</strong></a></li>
+<li><a href="threads.html#00000"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

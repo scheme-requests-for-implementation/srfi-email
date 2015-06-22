@@ -1,0 +1,146 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: #\a octothorpe syntax vs SRFI 10 -->
+<!--X-From-R13: "Penqq I. Embalr" <oenqq+fesvNfmbalr.pbz> -->
+<!--X-Date: Wed,  5 Jan 2005 13:44:26 +0100 (NFT) -->
+<!--X-Message-Id: 20050105124419.GD9007@ogre.szonye.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: Pine.LNX.4.44.0412262207080.10074&#45;100000@autodrip.bloodandcoffee.net -->
+<!--X-Reference: Pine.LNX.4.58.0412270956290.31229@bolt.sonic.net -->
+<!--X-Reference: 20041229044152.397161B7710@voluntocracy.org -->
+<!--X-Reference: 20041229221404.GB6850@ogre.szonye.com -->
+<!--X-Reference: 20041231013816.D56251B7711@voluntocracy.org -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: #\a octothorpe syntax vs SRFI 10</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00088.html">Date Prev</a>][<a href="msg00090.html">Date Next</a>][<a href="msg00008.html">Thread Prev</a>][<a href="msg00006.html">Thread Next</a>][<a href="maillist.html#00089">Date Index</a>][<a href="threads.html#00089">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: #\a octothorpe syntax vs SRFI 10</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-58@DOMAIN.HIDDEN">srfi-58@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: #\a octothorpe syntax vs SRFI 10</li>
+<li><em>From</em>: &quot;Bradd W. Szonye&quot; &lt;<a href="mailto:bradd%2Bsrfi@DOMAIN.HIDDEN">bradd+srfi@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 5 Jan 2005 04:44:19 -0800</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-58@DOMAIN.HIDDEN">srfi-58@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20041231013816.D56251B7711@DOMAIN.HIDDEN">20041231013816.D56251B7711@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Mail-followup-to</em>: <a href="mailto:srfi-58@DOMAIN.HIDDEN">srfi-58@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>References</em>: &lt;<a href="mailto:Pine.LNX.4.44.0412262207080.10074-100000@DOMAIN.HIDDEN">Pine.LNX.4.44.0412262207080.10074-100000@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:Pine.LNX.4.58.0412270956290.31229@DOMAIN.HIDDEN">Pine.LNX.4.58.0412270956290.31229@xxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20041229044152.397161B7710@DOMAIN.HIDDEN">20041229044152.397161B7710@xxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20041229221404.GB6850@DOMAIN.HIDDEN">20041229221404.GB6850@xxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20041231013816.D56251B7711@DOMAIN.HIDDEN">20041231013816.D56251B7711@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mutt/1.4.1i</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Aubrey Jaffer wrote:
+&gt;&gt;&gt; Modern CPUs are almost always (I/O-bound or) limited by their memory
+&gt;&gt;&gt; bandwidth through the cache.  If you double or quadruple the data
+&gt;&gt;&gt; movement necessary, you will execute at half or quarter the speed.
+
+Bradd wrote:
+&gt;&gt; That depends on your data access patterns and cache sizes.  If your
+&gt;&gt; working set still fits in L1 cache after aligning the data, you get
+&gt;&gt; better performance, and some of the big servers on the market now
+&gt;&gt; have huge amounts of L1 cache.
+
+&gt; The largest I found was 32.kiB inst + 64.kiB data on Suns
+&gt; &lt;<a  rel="nofollow" href="http://www.sun.com/servers/family-comp.html">http://www.sun.com/servers/family-comp.html</a>&gt;.
+&gt; A stripped down SCM interpreter is 40.kB, but even if the interpreter
+&gt; fit, it would be getting swapped out to bring in SUBRs.  64.kiB would
+&gt; be a much better fit.
+
+I misremembered slightly; I was actually thinking of the 256KB L2 cache
+on the Itanium 2, which Intel describes as similar in performance to
+most L1 caches. Here are the stats for its 3 cache levels:
+
+    Cache   Size      Load latency
+    L1      32KB      1 cycle direct, 2 cycles indirect
+    L2      256KB     ~6 cycles
+    L3      1.5-9MB   12+ cycles
+
+While I wouldn't say that ~6 cycles is comparable to most L1 caches,
+it's still very fast. Put that cache in a system where byte access
+requires a word load, mask, and shift (about 3-5 cycles), and you might
+just break even. You'd trade about 2-3 cycles per load for a greater
+number of 6-cycle L2 loads, just enough where it starts looking viable.
+Almost forgot -- eliminating the mask &amp; shift operations also reduces
+pressure on the instruction cache, for more savings.
+
+&gt;&gt; In some architectures, byte-aligned access may even be more
+&gt;&gt; expensive than L2 cache.
+
+&gt; That sounds like a poorly designed CPU.
+
+Or a big, fast L2 cache like the Itanium's.
+
+&gt; Disk-based b-trees, used extensively for database indexes, are an
+&gt; important example of byte-intensive algorithms not tied to text
+&gt; strings.  Other examples are cryptography and data-compression.
+
+Thanks; I didn't know that.
+-- 
+Bradd W. Szonye
+<a  rel="nofollow" href="http://www.szonye.com/bradd">http://www.szonye.com/bradd</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00002" href="msg00002.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+<ul><li><em>From:</em> campbell</li></ul></li>
+<li><strong><a name="00003" href="msg00003.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+<li><strong><a name="00004" href="msg00004.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+<ul><li><em>From:</em> Aubrey Jaffer</li></ul></li>
+<li><strong><a name="00005" href="msg00005.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+<li><strong><a name="00008" href="msg00008.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+<ul><li><em>From:</em> Aubrey Jaffer</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00088.html">Re: Floating-point formats and standards</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00090.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00008.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00006.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00089"><strong>Date</strong></a></li>
+<li><a href="threads.html#00089"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,161 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: extending the discussion -->
+<!--X-From-R13: Rna Pbeafgrva <qnashmmNzvyx.pbz> -->
+<!--X-Date: Mon, 20 Dec 1999 21:40:55 &#45;0600 (CST) -->
+<!--X-Message-Id: 14430.63168.980226.870124@shell5.ba.best.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: extending the discussion</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00037.html">Date Prev</a>][<a href="msg00039.html">Date Next</a>][<a href="msg00035.html">Thread Prev</a>][<a href="msg00039.html">Thread Next</a>][<a href="maillist.html#00038">Date Index</a>][<a href="threads.html#00038">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: extending the discussion</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-13@DOMAIN.HIDDEN">srfi-13@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: extending the discussion</li>
+<li><em>From</em>: Dan Bornstein &lt;<a href="mailto:danfuzz@DOMAIN.HIDDEN">danfuzz@xxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 20 Dec 1999 19:40:48 -0800 (PST)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>I agree with most of what Tom wrote, and don't disagree enough with most of
+the rest to feel it worth commenting on. However, I do have a strong
+opinion about one part, which I mostly disagree with:
+
+Tom Lord:
+&gt;        * In a SRFI which defines &quot;substring/shared&quot;, it should be
+&gt;          mandatory that the string returned from that procedure share
+&gt;          state with the primary string argument.
+
+This part, I agree with. It seems silly to me to explicitly expose this
+sort of mechanism and expect people *not* to start relying on it.
+
+&gt;          Two additional procedures are desirable:
+&gt;
+&gt;                shared-substring? obj =&gt; boolean
+&gt;
+&gt;          which tells whether a particular string is a shared
+&gt;          substring
+
+I'm don't understand why this procedure is important or useful. I also
+imagine it would be hard to implement in a meaningful way. For example, if
+I call (substring/shared &lt;string&gt; 0 (string-length &lt;string&gt;))--or something
+less obvious with the same result--does the result have to return #t for
+shared-substring? If so, that seems to mean that either you can't return
+&lt;string&gt; itself for that case (seems like a bad idea to me) or that all
+strings need to have a marker to indicate that substring/shared was called
+on the string with the entire string as the result (also seems like a bad
+idea to me); if not, then how do you know that the &quot;parent&quot; string is, at
+the programmer's level of abstraction, shared (which is presumably what
+this call is about)? Also, if I call substring/shared on a string and then
+that string later becomes garbage, does the result of shared-substring?
+change for the substring that is now no longer shared? If not, what does it
+*really* mean to be a shared substring? How about the case where two
+non-overlapping shared substrings get created from a common parent and then
+the parent gets reclaimed?
+
+Another issue is how this might be extended, meaningfully, to the other
+cases where sharing is defined, such as in string-append/shared, which is,
+in a sense a complementary function to substring/shared. That is, you can
+end up with what would seem to be two functionally identical pairs of
+objects through either of these sets of calls:
+
+    (define foobarbaz (string-copy &quot;foobarbaz&quot;))
+    (define bar (substring/shared foobarbaz 3 6))
+
+    (define bar &quot;bar&quot;)
+    (define foobarbaz (string-append/shared (string-copy &quot;foo&quot;)
+                                            bar
+                                            (string-copy &quot;baz&quot;)))
+
+In the second situation, should (shared-substring? bar) return #t? If so,
+it seems to imply a lot of extra mechanism to figure out that fact (seems
+like a bad idea to me). If not, it seems like shared-substring? has to lie
+some of the time since, at that point, bar really is a shared substring of
+foobarbaz (also seems like a bad idea to me).
+
+&gt;                containing-string string =&gt; string start end
+&gt;
+&gt;          which converts a shared substring to its parent string and
+&gt;          indexes, and an ordinary string to itself, 0, and its
+&gt;          length.
+
+I have a big problem with this, from a security standpoint. Having this
+functionality makes it easy to make the mistake of passing around more than
+you intended, which is especially a problem in situations where you don't
+necessarily trust the code that you're running (either because it might be
+malicious or because it was coded incompetently). Basically, it makes it
+too easy to inadvertently and non-obviously share data. The canonical
+example:
+
+     assume s = &quot;Userid: danfuzz\nPassword: fuzzball187\n&quot;
+     (define userid (substring/shared s 8 15))
+     ... lots of random code ...
+     (malicious-procedure-masquerading-as-something-innocent userid)
+
+...and then malicious-procedure goes on to call containing-string on userid
+and extract the password.
+
+Also, just from the efficiency perspective, making a backlink from a shared
+substring to its parent visible to the programmer means that you can't
+reclaim the storage for a (possibly much larger) parent until all of its
+shared-substring children become garbage. This sort of pattern is common,
+e.g., parsing out and keeping references to only the &quot;interesting&quot; bits of
+a long string (e.g., read in from a file). In that situation, with
+containing-string, the parent string will be unreclaimable deadweight.
+
+-dan
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00037.html">Re: extending the discussion</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00039.html">Substring indices everywhere? Eating a cake without destroying it</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00035.html">extending the discussion</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00039.html">Substring indices everywhere? Eating a cake without destroying it</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00038"><strong>Date</strong></a></li>
+<li><a href="threads.html#00038"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,148 @@
+<!-- MHonArc v2.6.16 -->
+<!--X-Subject: Re: syntax changes (srfi&#45;107/108/109) -->
+<!--X-From-R13: Bre Pbguare <creNobguare.pbz> -->
+<!--X-Date: Sun, 30 Dec 2012 04:45:35 +0000 (UTC) -->
+<!--X-Message-Id: 50DFC6D6.6070906@bothner.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 50DF6402.4060006@bothner.com -->
+<!--X-Reference: 20121230032200.GF26800@mercury.ccil.org -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: syntax changes (srfi-107/108/109)</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00030.html">Date Prev</a>][<a href="msg00032.html">Date Next</a>][<a href="msg00030.html">Thread Prev</a>][<a href="msg00032.html">Thread Next</a>][<a href="maillist.html#00031">Date Index</a>][<a href="threads.html#00031">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: syntax changes (srfi-107/108/109)</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-108@DOMAIN.HIDDEN">srfi-108@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: syntax changes (srfi-107/108/109)</li>
+<li><em>From</em>: Per Bothner &lt;<a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 29 Dec 2012 20:45:10 -0800</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-108@DOMAIN.HIDDEN">srfi-108@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20121230032200.GF26800@DOMAIN.HIDDEN">20121230032200.GF26800@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:50DF6402.4060006@DOMAIN.HIDDEN">50DF6402.4060006@xxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20121230032200.GF26800@DOMAIN.HIDDEN">20121230032200.GF26800@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mozilla/5.0 (X11; Linux x86_64; rv:17.0) Gecko/17.0 Thunderbird/17.0</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+On 12/29/2012 07:22 PM, John Cowan wrote:
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Per Bothner scripsit:
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+There is a seeming ambiguity, since in Scheme the character '&amp;'
+is a valid symbol character.  However, a symbol followed
+immediately by either '{' or '[' is not defined by standard
+Scheme, so this is a conflict-free extension.
+</pre></blockquote><pre style="margin: 0em;">
+
+Unfortunately, &amp;condition[car '(a b c)] is perfectly well-defined
+R6RS lexical syntax, where [] means the same as () and symbols
+beginning with ampersands are actually standard for names of
+condition types.  I don't say it should be that way, but it is.
+</pre></blockquote><pre style="margin: 0em;">
+
+Technically, it's well-defined R6RS lexical syntax, but it would be
+horrible style.  First, people would normally put a space before
+the '['.  Secondly, I don't see '[...]' used much except for &quot;clauses&quot;
+(rather than expressions), and if '[...]' is used only for such clauses
+(as I see in the Racket documentation) that doesn't seem like it would
+conflict.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+&amp;section{News as of &amp;(current-date)}
+</pre></blockquote><pre style="margin: 0em;">
+
+This being, I presume, shorthand for &amp;section{News as of &amp;[(current-date)]}.
+</pre></blockquote><pre style="margin: 0em;">
+
+Correct.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
++ Kawa has this syntax for a vector constructor:
+   [e1 e2 ... en]
+This is the same as `#(,e1 ,e2 ... ,en), which is the same as
+(vector e1 e2 .. en) except producing an immutable vector.
+</pre></blockquote><pre style="margin: 0em;">
+
+More to the point, the last is code, whereas the first two are
+lexical syntax and therefore work in data.  I think it's important
+to always keep the data applications firmly in mind.
+[LATER]
+Hmm, it seems I was wrong.  [a b c] complains of undefined variables,
+so it really is (vector a b c), whereas #(a b c) is indeed lexical syntax.
+</pre></blockquote><pre style="margin: 0em;">
+
+Right - the e1 ... en are (in Kawa) expressions that are evaluated.
+And `#(,e1 ,e2 ... ,en) is *not* lexical syntax that works in data.
+At least not in any meaningful sense.  (The reader does return a
+form, just like it does for [e1 e2 ... en], but it doesn't seem useful
+except in expression context.)
+--
+	--Per Bothner
+per@xxxxxxxxxxx   <a  rel="nofollow" href="http://per.bothner.com/">http://per.bothner.com/</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00032" href="msg00032.html">Re: syntax changes (srfi-107/108/109)</a></strong>
+<ul><li><em>From:</em> John Cowan</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00028" href="msg00028.html">syntax changes (srfi-107/108/109)</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+<li><strong><a name="00029" href="msg00029.html">Re: syntax changes (srfi-107/108/109)</a></strong>
+<ul><li><em>From:</em> John Cowan</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00030.html">Re: syntax changes (srfi-107/108/109)</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00032.html">Re: syntax changes (srfi-107/108/109)</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00030.html">Re: syntax changes (srfi-107/108/109)</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00032.html">Re: syntax changes (srfi-107/108/109)</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00031"><strong>Date</strong></a></li>
+<li><a href="threads.html#00031"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

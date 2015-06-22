@@ -1,0 +1,162 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Format strings are wrong -->
+<!--X-From-R13: Bnhy Epuyvr <fpuyvrNpbzpnfg.arg> -->
+<!--X-Date: Fri, 26 Dec 2003 19:35:44 +0100 (NFT) -->
+<!--X-Message-Id: y9lekur77gi.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Format strings are wrong</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00030.html">Date Prev</a>][<a href="msg00032.html">Date Next</a>][<a href="msg00010.html">Thread Prev</a>][<a href="msg00035.html">Thread Next</a>][<a href="maillist.html#00031">Date Index</a>][<a href="threads.html#00031">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Format strings are wrong</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &lt;<a href="mailto:srfi-48@DOMAIN.HIDDEN">srfi-48@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Format strings are wrong</li>
+<li><em>From</em>: Paul Schlie &lt;<a href="mailto:schlie@DOMAIN.HIDDEN">schlie@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 26 Dec 2003 19:35:41 +0100</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-48@DOMAIN.HIDDEN">srfi-48@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Old-date</em>: Thu, 25 Dec 2003 15:36:42 -0500</li>
+<li><em>User-agent</em>: Microsoft-Entourage/10.1.4.030702.0</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Gentlemen, with all due respect, and understanding that the following
+thoughts may be best expressed in an alternative SRFI; but Upon reviewing
+the discussion archive, I feel compelled to voice support of Marc's
+opinions; as I don't believe  C'ish embedded numerical format string hacks
+actually materially help porting code, or are particularly favored by folks
+who are familiar with C; but actually reduce the potential simplicity and
+efficiency of mixed text/numerical string formatting which the language
+could and arguably should otherwise encourage.
+
+Possibly something along the lines of simply adopting the notion that:
+(str-fmt ....) [or (string ...) be extended] to accept mixed string, symbol,
+character and numerical arguments, and produces a string resulting from the
+concatenation of its argument's string equivalences, by simply converting
+its arguments into strings if they're not already strings, using
+(number-&gt;string ...) or (symbol-&gt;string ...) etc.
+
+(define how-many 3)
+(define of-what 'apple)
+
+(str-fmt &quot;I ate &quot; 1/2 &quot; of an &quot; of-what &quot;.&quot;) -&gt; &quot;I ate 1/2 of an apple.&quot;
+
+(str-fmt &quot;I have &quot; how-many &quot; &quot; of-what (if (not (= how-many 1)) &quot;s&quot;) &quot;.&quot;)
+
+-&gt; &quot;I have 3 apples.&quot;
+
+etc..
+
+Which is likely sufficient for many things and fairly simple and intuitive.
+When more numerical format control is desired, it would seem most straight
+forward to simply define a more explicit generic (num-&gt;str ....) format
+function, which could support parameters such as how to treat signs, digit
+separation, field justification, leading/trailing zeros, significant digits,
+etc. Possibly:
+
+(num-fmt num-value '(['+|'p] ['s|'z] ['c N] ['m M] ['r R] ['e E]))
+
+[+|p] specifies sign formatting:
+    + : signed values:      +1 0 -1
+    p : paren'ed negatives:  1 0 (1)
+      : default signed neg:  1 0 -1
+
+[s|z] : leading/trailing fill
+    s : space leading/trailing fill _1012 12.0__ (_ = space)
+    z : zero leading/trailing fill  01012 12.000
+      : default none specified (reals always have at least one
+        digit leading and trailing the decimal point)
+
+[c N] : N digit comma separator from radix point:  12,423,233.032,343,
+      : default none specified
+
+[m M] specifies integer/mantissa digits of significance:
+    m 0 : default representation significance, left justified, no fill
+    m M : uses M max digits of significant right justified, no fill
+
+[r R] specified the integer/mantissa radix
+    r 0: defaults to decimal
+    r R: specifies maximum radix digit value (radix - 1)
+    (where exponent values print showing xRADIX^decimal-exponent
+     i.e. 1.23x10^+32, or 1.0110x2^32, etc)
+
+[e E] specifies minimum number of decimal exponent digits
+      which are sign-prefixed etc....
+
+Or something like that so that when more sophisticated numerical formatting
+is required, one could define pre-cooked format definition and use it:
+
+(define my-fmt (list '+ 'z 'c 3 'm 6 'r 10 'e 2))
+(define my-num 1/4)
+
+(str-fmt &quot;unformated: &quot; my-num &quot;, formatted: &quot; (num-fmt my-num my-fmt))
+
+-&gt; &quot;unformatted: 1/4, formatted: +0.25000x10^+00&quot;
+
+Or something like that, thanks for your time and consideration.
+
+-paul-
+
+
+
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00035" href="msg00035.html">Re: Format strings are wrong</a></strong>
+<ul><li><em>From:</em> Alex Shinn</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00030.html">Re: floating point and other comments</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00032.html">Re: Format strings are wrong</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00010.html">Re: Format strings are wrong</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00035.html">Re: Format strings are wrong</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00031"><strong>Date</strong></a></li>
+<li><a href="threads.html#00031"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,277 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: comparison operators and *typos -->
+<!--X-From-R13: Bnhy Epuyvr <fpuyvrNpbzpnfg.arg> -->
+<!--X-Date: Sat,  2 Jul 2005 08:05:23 +0200 (DFT) -->
+<!--X-Message-Id: BEEBA6D8.AB3B%schlie@comcast.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20050702010616.DA9A41B77B4@voluntocracy.org -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: comparison operators and *typos</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00096.html">Date Prev</a>][<a href="msg00098.html">Date Next</a>][<a href="msg00096.html">Thread Prev</a>][<a href="msg00098.html">Thread Next</a>][<a href="maillist.html#00097">Date Index</a>][<a href="threads.html#00097">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: comparison operators and *typos</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Aubrey Jaffer &lt;<a href="mailto:agj@DOMAIN.HIDDEN">agj@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: comparison operators and *typos</li>
+<li><em>From</em>: Paul Schlie &lt;<a href="mailto:schlie@DOMAIN.HIDDEN">schlie@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 02 Jul 2005 02:05:12 -0400</li>
+<li><em>Cc</em>: &lt;<a href="mailto:srfi-70@DOMAIN.HIDDEN">srfi-70@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-70@DOMAIN.HIDDEN">srfi-70@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20050702010616.DA9A41B77B4@DOMAIN.HIDDEN">20050702010616.DA9A41B77B4@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Microsoft-Entourage/11.1.0.040913</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; In SRFI-70, both +0 and -0 would be within the neighborhood around 0.0
+&gt; represented by 0.0.
+
+- I've just been assuming that it may be preferable to preserve the
+  convention non-signed values are positive 0.0 == +0.0, 1.0 == +1.0, etc.
+  and negative values require a minus -0.0, -1.0, etc.
+  and inexact values contain a radix point 0.0, 1.0, etc.
+  and exact values don't 0, 1, 2, etc.
+
+  where the relative ordering and reciprocal and negative projection
+  of inexact values about ~0.0 and ~inf.0 would therefore look like:
+
+          / ~inf.0 \         or equivalently:         / #i~/0 \
+         /    |     \                                /    |    \
+       -inf.0 | inf.0                               #i-/0 |  #i/0
+        ------+------- (reciprocal projection axis) ------+------
+        -0.0  |   0.0                               #i-0  |   #i0
+         \    |    /                                 \    |    /
+          \ ~0.0  /                                   \ #i~0  /
+              |                                           |
+              0                                          #e0
+  (negative projection axis)                  (negative projection axis)
+
+&gt; Several difficulties with -0.0 not equal to 0.0 were shown in
+&gt; &lt;<a  rel="nofollow" href="http://srfi.schemers.org/srfi-73/mail-archive/msg00002.html">http://srfi.schemers.org/srfi-73/mail-archive/msg00002.html</a>&gt;
+&gt; #i~0 adds further complications with comparisons:
+&gt; 
+&gt; Is #i~0 less than, equal to, or greater than 0.0?
+
+- Yes, therefore it seems both reasonable and useful to define:
+
+  (= -0.0 ~0.0 0 0.0) =&gt; #t
+  
+  thereby zero's are considered to compare equal, enabling (= 0 any-zero)
+
+  (&lt; -0.0 0.0) =&gt; #t
+  (&gt; 0.0 -0.0) =&gt; #t
+
+  thereby only regions which do not overlap compare &lt; or &gt;
+
+  (&lt;= -0.0 0 0.0) =&gt; #t
+  (&gt;= 0.0 0 -0.0) =&gt; #t
+
+  thereby only 0 is (and (&lt;= x 0.0) (&gt;= x -0.0))
+  and only ~0 is (and (= x 0) (not (&lt;= x 0.0)) (not (&gt;= x -0.0)))
+
+&gt; Is #i~0 an integer?
+
+- not if integers are considered exact.
+
+&gt; | &gt;   (tan 1.5707963267948965) ==&gt; 16.331778728383844e15
+&gt; | &gt;   (tan 1.5707963267948967) ==&gt; -6.218352966023783e15
+&gt; TAN not reaching #i+/0 is a simple matter of the mantissa not having
+&gt; enough resolution around 1.5708.  With a 12.bit exponent, over
+&gt; 1024.bit precision would be needed for a floating point number to have
+&gt; an infinite TANgent.
+
+- are you saying that since pi/2 can't be represented with sufficient
+  precision to yield:
+
+  (tan (+ pi/2 0.0)) -&gt; inf.0, or (tan (- pi/2 0.0)) =&gt; -inf.0
+
+  that they shouldn't be formally defined to be so?
+
+  which I'd disagree with, as although I accept that a particular
+  implementation may not have sufficient precision to exceed the
+  dynamic range of the representation, therefore may only yield
+  smaller values; I don't believe it's correct to define (tan pi/2)
+  as being anything other than &lt;+|-&gt;inf.0 (aka ~inf.0, or e~/0).
+
+  [as after all, its a consequence of an inexact value representation,
+  just as (* #e1/3 3) may not produce a value of an exact 1, it
+  doesn't mean that it shouldn't be defined to be so, although the
+  result will be constrained by the precision of the representation.]
+
+&gt;  | and as noted #i~1/0 may be though of as NAN, which is what IEEE-754
+&gt;  | considers both it and 1/0 to be, so it's actually more consistent
+&gt;  | than it may first appear.
+&gt; 
+&gt; In IEEE-754 the result of 1.0/0.0 is positive infinity, +inf, not NAN.
+
+- yes agreed, 0.0 == +0.0, therefore (/ 0.0) =&gt; inf.0, and (/ inf.0) =&gt; 0.0
+
+  but the statement was about #i~1/0 == (/ ~0.0) == ~inf.0 being like NAN.
+
+&gt;  | &gt; Note that the one-sided LIMIT gets it right without needing any new
+&gt;  | &gt; numbers:
+&gt;  | &gt; 
+&gt;  | &gt;   (limit tan 1.5707963267948965 -1.0e-15)       ==&gt; +1/0
+&gt;  | &gt;   (limit tan 1.5707963267948965 1.0e-15)        ==&gt; -1/0
+&gt;  | 
+&gt;  | - yes, which is why the simultaneous two sided limit == +-1/0 == ~1/0
+&gt; 
+&gt; By the definition, the two-sided limit of tan at pi/2 does not exist
+&gt; because the one-sided limits are not equal.
+
+- really, I was under the impression that they were?
+
+  (although may not be as may be computed and/or represented within
+  a particular floating point implementation. as it should not be
+  the basis upon which to define the value of a function, as it's
+  the responsibility of an inexact implementation to as closely
+  approximate the correct value as best it reasonably can. which
+  doesn't change the fact that (tan pi/2) == ~inf.0, as should
+  result in an implementation capable of representing pi/2 with
+  sufficient precision to yield correspondingly precise results.)
+
+&gt;  |   and correspondingly (/ (tan pi/2)) =&gt; ~0 thereby all functions
+&gt;  |   may be thought of as being evaluated about simultaneously
+&gt;  |   converging points about their specified values
+&gt;  |   (f x y) == (f (+ x ~0.0) (+ y ~0.0)).
+&gt;  |   including (tan (+ pi/2 ~0.0))
+&gt; 
+&gt; ~0.0 will be much smaller in magnitude than the LSB of the
+&gt; floating-point neighborhood containing pi/2.  So the ~0.0 will just
+&gt; disappear when added to pi/2.
+
+- again, this is a function of the precision of a particular
+  implementation's precision. (where the example was meant as an
+  abstraction, as the values -0.0 and 0.0 should not be accumulating
+  values, therefore yes in all cases (+ x 0.0) == x, but this has
+  nothing to do with what a particular inexact implementation is
+  capable of sufficiency representing or computing to reproduce
+  itself mechanically.
+
+  for example if I defined an inexact number system based on binary
+  fractions of pi, then it would only require a few bits of precision
+  to represent pi/2 exactly, and produce fully symmetric results for
+  (tan x) which would be equal to &lt;+|-&gt;inf.0 at pi/2.
+
+&gt;  |   and (/ 1 #e0) == (/ 1 (+ #e0 ~0.0)) == #i~1/0 == ~inf.0
+&gt; 
+&gt; Knowing that the value of an expression could be positive infinity or
+&gt; negative infinity is much less useful than knowing which infinity it
+&gt; is.
+
+- agreed, but without being able to determine the sign of a zero, which
+  I agree is often not important, you can't determine the sign of it's
+  reciprocal which is an infinity, (so the problem is fully symmetric,
+  if signs of infinities are likely important, then so are the signs of
+  zeros it would seem.)
+
+&gt;  | &gt;  |   (abs ~inf.0) =&gt; +inf.0
+&gt;  | &gt;  |   (- (abs ~inf.0) =&gt; -inf.0
+&gt;  | &gt;  |   (abs ~0.0) =&gt; +0.0
+&gt;  | &gt;  |   (- (abs ~0.0)) -0.0
+&gt;  | &gt;  | 
+&gt;  | &gt;  |   (+ +0.0 -0.0) =&gt; ~0.0
+&gt;  | &gt;  | 
+&gt;  | &gt;  |   Where I believe it's reasonable to redefine the use of IEEE's NAN
+&gt;  | &gt;  |   values to encode these values, as arguably ~inf.0 may be thought
+&gt;  | &gt;  |   of as being NAN, and ~0.0 as being 1/NAN (leaving 0.0 == +0.0)
+&gt;  | &gt; 
+&gt;  | &gt; For some expressions returning #i0/0, no number has any more claim to
+&gt;  | &gt; correctness than any other.  For example any number x satisfies:
+&gt;  | &gt; 
+&gt;  | &gt;   0*x=0.
+&gt;  | &gt; 
+&gt;  | &gt; So #i0/0 could be any number (if we forget that division by zero is
+&gt;  | &gt; undefined).  The reciprocal of this #i0/0 potentially maps to any
+&gt;  | &gt; number; which is represented by #i0/0.
+&gt;  | 
+&gt;  | - As I presently believe it's important to adopt a uniform convention
+&gt;  |   which dictates how multi-variable values are evaluated, using the
+&gt;  |   the convention above, which I believe to be most generally useful:
+&gt;  |   then #i0/0 == 1, if one considers the signs of the converging difference
+&gt;  |   in magnitude of a multi-variable function to uniform albeit ambiguous,
+&gt;  |   thereby, the ratio of: 0/0 == 1 == 100%, thereby 100% of 0/0 == 0, not
+&gt;  |   some useless error.
+&gt; 
+&gt; It can be useful to have an inexact number which stands in for a
+&gt; numerical result about which there is no information.  #i0/0 is that
+&gt; number in SRFI-70.  As SRFI-70 states: &quot;0/0 can be considered an error
+&gt; waiting to happen.&quot;
+
+- I don't strongly disagree.
+
+&gt; The 0/0 you are writing about is quite different.
+
+- again my apologies, I was being sloppy writing 0/0, when I meant 0.0/0.0.
+
+&gt;  |   or 0/0 == ~1, if the their signs are not necessarily considered
+&gt;  |   uniform.  which is likely most technically correct, and yields:
+&gt;  |   ~100% of 0/0 == ~0, but I know you're not too enthusiastic about
+&gt;  |   ~1 which I avoided earlier, by only introducing ~0 which happens
+&gt;  |   to represent a pair of ordered values with no intervening
+&gt;  |   potential ordering ambiguity to speak of.
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00098" href="msg00098.html">Re: comparison operators and *typos</a></strong>
+<ul><li><em>From:</em> Aubrey Jaffer</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00096" href="msg00096.html">Re: comparison operators and *typos</a></strong>
+<ul><li><em>From:</em> Aubrey Jaffer</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00096.html">Re: comparison operators and *typos</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00098.html">Re: comparison operators and *typos</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00096.html">Re: comparison operators and *typos</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00098.html">Re: comparison operators and *typos</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00097"><strong>Date</strong></a></li>
+<li><a href="threads.html#00097"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

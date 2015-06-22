@@ -1,0 +1,158 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: NaN's -->
+<!--X-From-R13: Bnhy Epuyvr <fpuyvrNpbzpnfg.arg> -->
+<!--X-Date: Sun, 30 Oct 2005 00:49:57 +0200 (MST) -->
+<!--X-Message-Id: BF8974CD.BF2B%schlie@comcast.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 87br18w2yq.fsf@qrnik.zagroda -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: NaN's</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00296.html">Date Prev</a>][<a href="msg00298.html">Date Next</a>][<a href="msg00291.html">Thread Prev</a>][<a href="msg00292.html">Thread Next</a>][<a href="maillist.html#00297">Date Index</a>][<a href="threads.html#00297">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: NaN's</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &lt;<a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: NaN's</li>
+<li><em>From</em>: Paul Schlie &lt;<a href="mailto:schlie@DOMAIN.HIDDEN">schlie@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 29 Oct 2005 18:49:49 -0400</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:87br18w2yq.fsf@DOMAIN.HIDDEN">87br18w2yq.fsf@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Thread-index</em>: AcXc2xDvT68kH0jOEdqryQADk1ictA==</li>
+<li><em>Thread-topic</em>: NaN's</li>
+<li><em>User-agent</em>: Microsoft-Entourage/11.2.1.051004</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Although of likely little consequence for traditional pc/servers,
+the inexact model I prefer is that typically adopted/approximated
+by floating-point DSP's, which by their nature have no use for NaN's;
+and instead tend to literally treat all encoded values as literal
+values, thereby +-Inf and +-0.0 values merely represent maximum and
+minimum represented magnitudes; thereby all calculations map inclusively
+(regardless of the imprecision which may be silently introduced by
+saturated intermediate calculations, without attempting generate and
+propagate sticky NaN's or Inf's values through calculations, as doing
+so only tends to result in catastrophic failure of an algorithm, as
+opposed to the arguably a more graceful failure resulting from precision
+being lost more incrementally due to intermediate saturated over/underflows.
+
+Where if an exact non-signed 0 were also present and distinct from
++-0.0, I'd tend to prefer that only 0 multiplied by any value other than
+it's reciprocal is 0, where 0 multiplied by it's reciprocal (an exact
+non-signed infinity) is 1. Thereby:
+
+ (* +0.0 [-Inf -&gt; -1.0 -&gt;  0  -&gt; +0.0 -&gt; +Inf])
+
+      =&gt; [-1.0 -&gt; -0.0 -&gt;  0  -&gt; +0.0 -&gt; +1.0]
+
+ (/ +0.0 [-1.0 -&gt; -0.0 -&gt;  0  -&gt; +0.0 -&gt; +1.0])
+
+      =&gt; [-0.0 -&gt; -1.0 -&gt; 1/0 -&gt; +1.0 -&gt; +0.0]
+
+
+ (* +Inf [-1.0 -&gt; -0.0 -&gt;  0  -&gt; +0.0 -&gt; +1.0])
+
+      =&gt; [-Inf -&gt; -1.0 -&gt;  0  -&gt; +1.0 -&gt; +Inf]
+
+ (/ +Inf [-Inf -&gt; -1.0 -&gt;  0  -&gt; +1.0 -&gt; +Inf])
+
+      =&gt; [-1.0 -&gt; -0.0 -&gt; 1/0 -&gt; +0.0 -&gt; +1.0]
+
+And finally:
+
+ (* 0 1/0) :: (/ 0 0) =&gt; 1
+
+(but unfortunately neither 0 nor 1/0 representations are supported by
+IEEE-754, but may be relatively easily within a scheme implementation)
+
+
+&gt; From: Marcin 'Qrczak' Kowalczyk &lt;qrczak@xxxxxxxxxx&gt;
+&gt;&gt; Paul Schlie &lt;schlie@xxxxxxxxxxx&gt; writes:
+&gt;&gt; - as the propagation of a NaN beyond the source of the ambiguity only
+&gt;&gt;   tends to further obfuscates the context of the problem, it typically
+&gt;&gt;   inhibits a problem's diagnosis, and/or alternative most-likely-useful
+&gt;&gt;   value/behavior substitution (as NaN's themselves are not useful within
+&gt;&gt;   a context which requires/expects a definitive value, which is typically
+&gt;&gt;   the case/expectation).
+&gt; 
+&gt; When the programmer wants to be alerted as soon as an invalid
+&gt; operation is performed, he will turn on this exception. Let him
+&gt; decide. Please don't take away the useful choice of allowing NaNs
+&gt; to propagate and examine later which elements could be computed.
+&gt; 
+&gt; &lt;<a  rel="nofollow" href="http://www.cs.berkeley.edu/~wkahan/ieee754status/IEEE754.PDF">http://www.cs.berkeley.edu/~wkahan/ieee754status/IEEE754.PDF</a>&gt;:
+&gt; 
+&gt; | NaNs were not invented out of whole cloth. Konrad Zuse tried similar
+&gt; | ideas in the late 1930s; Seymour Cray built &quot;Indefinites&quot; into the
+&gt; | CDC 6600 in 1963; then DEC put &quot;Reserved Operands&quot; into their PDP-11
+&gt; | and VAX. But nobody used them because they trap when touched. NaNs
+&gt; | do not trap (unless they are &quot;Signaling&quot; SNaNs, which exist mainly
+&gt; | for political reasons and are rarely used); NaNs propagate through
+&gt; | most computations. Consequently they do get used.
+&gt; 
+&gt; -- 
+&gt;    __(&quot;&lt;         Marcin Kowalczyk
+&gt;    \__/       qrczak@xxxxxxxxxx
+&gt;     ^^     <a  rel="nofollow" href="http://qrnik.knm.org.pl/~qrczak/">http://qrnik.knm.org.pl/~qrczak/</a>
+&gt; 
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00291" href="msg00291.html">Re: NaN's</a></strong>
+<ul><li><em>From:</em> Marcin 'Qrczak' Kowalczyk</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00296.html">Re: arithmetic issues</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00298.html">Re: reading NaNs</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00291.html">Re: NaN's</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00292.html">Error objects in general</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00297"><strong>Date</strong></a></li>
+<li><a href="threads.html#00297"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

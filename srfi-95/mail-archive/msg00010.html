@@ -1,0 +1,205 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Wording of the rationale -->
+<!--X-From-R13: Ohoerl Xnssre <ntwNnyhz.zvg.rqh> -->
+<!--X-Date: Mon, 13 Nov 2006 00:41:02 +0100 (MET) -->
+<!--X-Message-Id: 20061112234042.E84F051D732@home.voluntocracy.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 455080C2.2090103@soegaard.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Wording of the rationale</title>
+<link rev="made" href="mailto:agj@alum.mit.edu">
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00009.html">Date Prev</a>][<a href="msg00011.html">Date Next</a>][<a href="msg00009.html">Thread Prev</a>][<a href="msg00012.html">Thread Next</a>][<a href="maillist.html#00010">Date Index</a>][<a href="threads.html#00010">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Wording of the rationale</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:jensaxel%40soegaard.net">jensaxel@soegaard.net</a></li>
+<li><em>Subject</em>: Re: Wording of the rationale</li>
+<li><em>From</em>: Aubrey Jaffer &lt;<a href="mailto:agj%40alum.mit.edu">agj@alum.mit.edu</a>&gt;</li>
+<li><em>Date</em>: Sun, 12 Nov 2006 18:40:42 -0500 (EST)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-95%40srfi.schemers.org">srfi-95@srfi.schemers.org</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-95%40srfi.schemers.org">srfi-95@srfi.schemers.org</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:455080C2.2090103%40soegaard.net"><a href="msg00006.html">455080C2.2090103@soegaard.net</a></a>&gt; (message from	Jens Axel S&#xF8;gaard on Tue, 07 Nov 2006 13:49:06	+0100)</li>
+<li><em>References</em>: &lt;<a href="mailto:455080C2.2090103%40soegaard.net"><a href="msg00006.html">455080C2.2090103@soegaard.net</a></a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre> | Date: Tue, 07 Nov 2006 13:49:06 +0100
+ | From: =?ISO-8859-1?Q?Jens_Axel_S=F8gaard?= &lt;jensaxel@soegaard.net&gt;
+ | 
+ | I am little unhappy about the wording of the rationale:
+ | 
+ |      RATIONALE
+ | 
+ |      When SRFI 32 Sort Libraries was withdrawn, it had 28
+ |      procedures for what should have been a clean, simple
+ |      interface.
+ | 
+ | In my view SRFI-32 *is* clean and simple.  Comparing the number 28
+ | to the number of procedures defined in SRFI-95 is unfair, since
+ | SRFI-95 covers the &quot;What&quot;-part but not the &quot;How to&quot;-part of
+ | SRFI-32.
+ | 
+ |      These 28 arose for several reasons:
+ | 
+ |         * List and Vector versions were separated, even though
+ |         Scheme has manifest types which eliminate ambiguity as to
+ |         the caller's intentions.
+ | 
+ | Separating list and vector functions are tradition.  In R5RS we
+ | have, for example list-ref, vector-ref and string-ref instead of
+ | general ref.  One benefit of this choice is that compilers get a
+ | fair chance to generate efficient code.
+
+LIST-REF and VECTOR-REF are primitive operations which compilers can
+inline.  It is conceivable that some really advanced compiler could
+inline merge, but merge is alread restricted to lists!
+
+Sort is a more complicated operation than merge.  The cost of the
+single type predicate conditional to detect array versus list is going
+to be significant only when sort is called with a trivially short
+argument.  It is reasonable to expect that library routines will be
+slower than inline code on these degenerate cases.
+
+ |         * Four varieties of algorithms were provided (quick, heap,
+ |         insert, merge) even though quick, heap, and insert sorts
+ |         have no significant advantage over merge-sort.
+ | 
+ | First: The choice between these algorithms were in the &quot;How
+ | to&quot;-part of SRFI-32.  If a user doesn't care, which algorithm is
+ | used, he can use list-sort!, vector-sort!.
+ | 
+ | Second: What does &quot;no significant advantage&quot; mean?
+
+It means that the asymptotics or functional properties are no better.
+
+ | I were of the impression, that the &quot;hidden constants&quot; of O(n log
+ | (n)) of vector-quick-sort were smaller than that of
+ | vector-merge-sort.
+
+Is that from reading SRFI-32?
+
+SRFI-95 does not mandate merge-sort.  It mandates that the sort
+algorithm be stable and that asymptotic time for SORT be bounded by
+O(n log(n)).
+
+ | Third: The different algorithms have different memory requirements.
+ | If very large vectors are sorted, it makes sense to choose a slower
+ | algorithm that allocates very little extra memory.  Some versions
+ | of vector-merge-sort! allocate a helper array the size of the
+ | original.
+
+<a  rel="nofollow" href="http://en.wikipedia.org/wiki/Sorting_algorithm">http://en.wikipedia.org/wiki/Sorting_algorithm</a> has a table of
+properties for sort algorithms.  &quot;In-place merge sort&quot; is shown as
+stable, O(n log(n)) time, and using no additional memory.
+
+SRFI-95's requirement that the KEY argument be called at most once per
+element necessitates allocation of O(n) storage for SORT when a KEY
+argument is supplied.  The current reference implementation always
+does; I will clone its routine to handle the no-KEY case efficiently.
+
+ | Also: Is merge-sort the fastest algorithm, if the elements are
+ | &quot;almost sorted&quot;?
+ | 
+ |        * Sort and stable-sort varieties were included, even though
+ |        an unstable sort has no performance advantage.
+ | 
+ | As I see it, the reason they are in SRFI-32 is not efficiency but
+ | completeness.  Nevertheless, if vector-quick-sort! (which is
+ | unstable) is faster than vector-merge-sort! (which is stable) then
+
+&quot;Faster&quot; _is_ about efficiency, isn't it?
+
+ | it makes sense to let vector-sort! default to vector-quick-sort!
+ | and let vector-stable-sort! default to vector-merge-sort! in the
+ | name of efficiency.
+
+General purpose software libraries are about simplicity and ease of
+use, not theoretical perfection in algorithm design.
+
+A library should be specified so that its routines will perform
+moderately well for moderately sized inputs in the vast majority of
+applications.  Having many variants has disadvantages:
+
+ * When there are only a few paths through the code, the code gets
+   thoroughly tested and its behavior well understood.  When there are
+   many paths, most of the code is not well tested and not well
+   understood.
+
+ * To optimally choose algorithms requires nearly as much
+   understanding as to write them.  Most users don't.
+
+ * A module with too many functions and voluminous documentation
+   scares off the typical user looking to just sort a 50-element list;
+   who then goes searching for any old sort algorithm to reinvent the
+   wheel.
+
+ * If some of the default sorts are unstable, then users will be
+   surprised that sorting their data twice results in different
+   orders; or that vector and list sorts return different orders.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00012" href="msg00012.html">Re: Wording of the rationale</a></strong>
+<ul><li><em>From:</em> Per Bothner &lt;per@bothner.com&gt;</li></ul></li>
+<li><strong><a name="00015" href="msg00015.html">Re: Wording of the rationale</a></strong>
+<ul><li><em>From:</em> Jens Axel S&#xF8;gaard &lt;jensaxel@soegaard.net&gt;</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00006" href="msg00006.html">Wording of the rationale</a></strong>
+<ul><li><em>From:</em> Jens Axel S&#xF8;gaard &lt;jensaxel@soegaard.net&gt;</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00009.html">Re: Wording of the rationale</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00011.html">Re: Memory use of sort!</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00009.html">Re: Wording of the rationale</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00012.html">Re: Wording of the rationale</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00010"><strong>Date</strong></a></li>
+<li><a href="threads.html#00010"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

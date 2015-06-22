@@ -1,0 +1,166 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Round 3 discussion &#38; open issues -->
+<!--X-From-R13: q96&#45;zfgNq.xgu.fr ([vxnry Egåyqny) -->
+<!--X-Date: Wed, 24 Nov 1999 12:53:04 &#45;0600 (CST) -->
+<!--X-Message-Id: eSwO4EpfheBO092yn@d.kth.se -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 199911220210.VAA04597@mongkok.ai.mit.edu -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Round 3 discussion &amp; open issues</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00027.html">Date Prev</a>][<a href="msg00029.html">Date Next</a>][<a href="msg00024.html">Thread Prev</a>][<a href="msg00025.html">Thread Next</a>][<a href="maillist.html#00028">Date Index</a>][<a href="threads.html#00028">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Round 3 discussion &amp; open issues</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-13@DOMAIN.HIDDEN">srfi-13@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Round 3 discussion &amp; open issues</li>
+<li><em>From</em>: <a href="mailto:d96-mst@DOMAIN.HIDDEN">d96-mst@xxxxxxxx</a> (Mikael Ståldal)</li>
+<li><em>Date</em>: Tue, 23 Nov 1999 22:18:22 +0100</li>
+<li><em>Newsgroups</em>: <a href="news:list.srfi-13">list.srfi-13</a></li>
+<li><em>Organization</em>: Royal Institute of Technology</li>
+<li><em>References</em>: &lt;<a href="mailto:199911220210.VAA04597@DOMAIN.HIDDEN">199911220210.VAA04597@xxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>In article &lt;199911220210.VAA04597@xxxxxxxxxxxxxxxxxx&gt;,
+shivers@xxxxxxxxxx wrote:
+
+&gt;On reflection, I can't think of cases where people are really going to
+&gt;be dying to use CAPITALIZE-STRING[!]. Should I bag it? Eric says yes.
+&gt;I am leaning that way. Further opinions?
+
+I think that you should remove it.
+
+&gt;OK, backwards compatibility takes this round. STRING-FOR-EACH is
+&gt;left-to-right.  How about STRING-DO-EACH for the variant that doesn't specify
+&gt;order?
+
+Do we really need such procedure?
+
+&gt;I could go with STRING-EMPTY? or STRING-NULL?. I'll stay with STRING-NULL?
+&gt;for the tiny tie-breaker reason that it's one column shorter. If I get more
+&gt;support for STRING-EMPTY?, I'll make the change. For now, I'll leave things
+&gt;as-is.
+
+I think STRING-EMPTY? is better.
+
+&gt;-------------------------------------------------------------------------------
+&gt;    From: d96-mst@xxxxxxxx (Mikael St&#xE5;ldal)
+&gt;    I think that the KMP searching procedures should be generalized to
+&gt;    allow for other algorithms than KMP. But only to algorithms that have
+&gt;    the same properties as KMP, i.e. scanning a stream without
+&gt;    backtracking. This excludes Boyer-Moore, but allows for some recent
+&gt;    algorithms that are said to be faster than KMP[1].
+&gt;
+&gt;Here's the price of admission. Someone has to
+&gt;       - Send me working B-M Scheme code, under public domain, GPL,
+&gt;         Berkeley-style license, something along these lines.
+&gt;       - Explain in the comments or the email how B-M works, so I
+&gt;         can understand the code.
+&gt;Then I'll do it. I'll humbly admit: I originally considered what you propose,
+&gt;but really don't know beans about string-search algorithms, besides KMP. So I
+&gt;didn't do it.
+
+I don't think it's nessesary to include anything else than KMP in the
+reference implementation. But the interface should allow other
+implementations to use other algorithms. BTW, Boyer-Moore cannot be use
+here since it doesn't process the search text strictly sequencially.
+
+&gt;There are some problems with this spec. The search-step function is an
+&gt;inner-loop kind of utility. That's why I made people pass in the string
+&gt;explicitly with KMP-STEP -- you don't have to unpack it from some record
+&gt;structure,
+
+But as I said, some algorithms doesn't need the pattern.
+
+&gt;and you can win better if you integrate/beta-substitute KMP-STEP.
+
+What is beta-substitution?
+
+&gt;In spite of these tactical issues, your larger point is an excellent one.  So
+&gt;I'll tackle this generalisation, if I can -- but not until I see Boyer-Moore.
+
+I really don't see how this issue is related to Boyer-Moore.
+
+What about this:
+
+make-search-object c= s [start end] -&gt; opaque &quot;search object&quot;
+    Returns an opaque &quot;search object&quot; that can be used to search
+    for S in a stream/string. The search object includes S itself
+	if nessesary (nessesary for KMP, but not for some other algorithms).
+
+search-string search-object c= s [start end] -&gt; bool or integer
+	Search the string S using the search object, returning the index where
+    the pattern is found or #f if it's not found.
+
+search-stream search-object c= char-getter eos? -&gt; bool
+	Search a stream of characters using the search object,
+    returning #t if the pattern could be found, #f otherwise.
+    char-getter is a procedure that returns the next char from the stream,
+    eos? is a predicate that indicate that the end of stream has been
+    reached. If the pattern is found, no more character after the pattern
+    is read.
+
+Then all looping is encapsulated and can be properly optimized.
+
+The Boyer-Moore algorithm is NOT suited for this, but can be used in
+the STRING-CONTAINS procedure.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00024" href="msg00024.html">Round 3 discussion &amp; open issues</a></strong>
+<ul><li><em>From:</em> shivers</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00027.html">Boyer-Moore code &amp; Common Lisp</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00029.html">is string-contains example wrong?</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00024.html">Round 3 discussion &amp; open issues</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00025.html">string-escaper</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00028"><strong>Date</strong></a></li>
+<li><a href="threads.html#00028"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

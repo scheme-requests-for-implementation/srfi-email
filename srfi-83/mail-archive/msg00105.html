@@ -1,0 +1,207 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Overuse of strings -->
+<!--X-From-R13: Bre Pbguare <creNobguare.pbz> -->
+<!--X-Date: Wed, 25 Jan 2006 02:57:47 +0100 (MET) -->
+<!--X-Message-Id: 43D6DB1C.7020400@bothner.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: y9lirs9mrqk.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: 43D68546.4020307@bothner.com -->
+<!--X-Reference: 20060124235450.GA10547@la.iki.fi -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Overuse of strings</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00104.html">Date Prev</a>][<a href="msg00106.html">Date Next</a>][<a href="msg00107.html">Thread Prev</a>][<a href="msg00108.html">Thread Next</a>][<a href="maillist.html#00105">Date Index</a>][<a href="threads.html#00105">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Overuse of strings</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Lauri Alanko &lt;<a href="mailto:la@DOMAIN.HIDDEN">la@xxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Overuse of strings</li>
+<li><em>From</em>: Per Bothner &lt;<a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 24 Jan 2006 17:57:48 -0800</li>
+<li><em>Cc</em>: <a href="mailto:srfi-83@DOMAIN.HIDDEN">srfi-83@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-83@DOMAIN.HIDDEN">srfi-83@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20060124235450.GA10547@DOMAIN.HIDDEN">20060124235450.GA10547@xxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:y9lirs9mrqk.fsf@DOMAIN.HIDDEN">y9lirs9mrqk.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:43D68546.4020307@DOMAIN.HIDDEN">43D68546.4020307@xxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20060124235450.GA10547@DOMAIN.HIDDEN">20060124235450.GA10547@xxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mozilla Thunderbird 1.0.7-1.1.fc4 (X11/20050929)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+[I apologize - this message is somewhat off topic.]
+
+Lauri Alanko wrote:
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+On Tue, Jan 24, 2006 at 11:51:34AM -0800, Per Bothner wrote:
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+What would using symbols and s-exp gain?  What kind of
+operations would it make easier?
+</pre></blockquote><pre style="margin: 0em;">
+
+
+There are two different issues here: how should paths or URIs be
+represented at run-time, and what kind of notation should be used for
+giving literal values for them in code. As you are speaking about
+&quot;operations&quot;, I assume you mean the former here.
+
+To me it is obvious: _all_ common operations on URIs are easier if you
+have a structured representation instead of a flat string. Maybe the
+most common operation is resolving a relative URI against a base URI. A
+purely string-based implementation is a huge mess that involves
+searching for slashes from right to left (but remembering that
+consequent slashes count as a single one),
+</pre></blockquote><pre style="margin: 0em;">
+
+Actually, two slashes define the &quot;authority&quot; part.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+detecting &quot;..&quot; and &quot;.&quot;
+-segments and whatnot... it's the sort of thing you expect to see only
+in C code.
+</pre></blockquote><pre style="margin: 0em;">
+
+It's not *that* complicated.  And note that the specification is in
+terms of string operations, so making sure that a &quot;structued&quot;
+implementation gives the correct results may actually be more
+difficult.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Any sane implementation will first parse the URI into its constituents
+and form a list of path segments, and then operate on that list. It
+would be just silly to constantly parse and unparse the URIs at every
+operation, so it's better to have a distinct internal representation for
+them. And indeed, this is why many languages do have special types or
+classes for representing URIs.
+</pre></blockquote><pre style="margin: 0em;">
+
+I don't disagree.  Though &quot;parsing and unparsing for every operation&quot;
+is unlikely to be performance critical. More, it may actually be faster
+on modern computers, because it is more compact, and locality is great.
+(Remember that to a first approximation on modern computers
+instructions take no time - it is cache misses that are expensive.)
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+What about &quot;path names&quot; (as used in file operations): Should they be
+structured objects or strings?
+</pre></blockquote><pre style="margin: 0em;">
+
+
+Definitely objects. Nowadays PLT Scheme has built-in support for path
+objects, but before that I used to use a simple library:
+...
+Here relative-path calculates the relative path from &quot;from&quot; to &quot;to&quot;.
+Would you like to do this kind of stuff using _strings_?
+</pre></blockquote><pre style="margin: 0em;">
+
+No - I want this to be hidden in my implementation, using appropriate
+library procedures.
+
+My actual preference is an abstract opaque &quot;path&quot; type with operations
+that can map to and from URI strings.  So whether the internal
+representations uses URI strings or lists should be an implementation
+issue.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+I just find it sad that underneath all these high-level conveniences,
+the operating system still uses strings for paths in the system call
+interface. As a result, '/' is an utterly magical character that cannot
+appear in any file's name.
+</pre></blockquote><pre style="margin: 0em;">
+
+I agree.  Though I'm not sure how one would fix that, given that one
+does want a displayable and printable external representation.  The
+RFC solution allows you to escape special characters, which means
+you've changed reserved '/' for reserved '%'.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+There are good reasons to prefer strings (standard, universal, and
+familiar, as listed above). At least it makes sense to read and print
+pathnames using URI syntax.
+</pre></blockquote><pre style="margin: 0em;">
+
+Certainly it should be possible, but hardly the default.
+</pre></blockquote><pre style="margin: 0em;">
+
+Ignoring path-name literals (which I think are less frequent), you
+still have to get pathnames from the user or the system.  S-expressions
+as external syntax would still have to be validated, plus I don't
+think it would be the choice for user interfaces.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+XML's surface
+syntax is also standard, universal and familiar. Would you suggest that
+XML data in Scheme code be therefore expressed with strings:
+&quot;&lt;foo&gt;bar&lt;baz/&gt;&lt;/foo&gt;&quot; instead of, say, Xexprs: (foo &quot;bar&quot; (baz))?
+</pre></blockquote><pre style="margin: 0em;">
+
+The latter, with one caveat: In Kawa, XML data are represented with
+special types, and I think this is needed to best match the XML data
+model.  (Namespaces are one factor.)  What happens in Kawa is that:
+  (foo &quot;bar&quot; (baz))
+*evaluates* to XML data, but it isn't XML data in itself.
+(It depends what you're trying to do whether this distinction is
+worthwhile, of course.)
+--
+	--Per Bothner
+per@xxxxxxxxxxx   <a  rel="nofollow" href="http://per.bothner.com/">http://per.bothner.com/</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00101" href="msg00101.html">Re: Overuse of strings</a></strong>
+<ul><li><em>From:</em> Lauri Alanko</li></ul></li>
+<li><strong><a name="00102" href="msg00102.html">Re: Overuse of strings</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00104.html">Re: Overuse of strings</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00106.html">Re: Overuse of strings</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00107.html">Re: Overuse of strings</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00108.html">Re: Overuse of strings</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00105"><strong>Date</strong></a></li>
+<li><a href="threads.html#00105"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

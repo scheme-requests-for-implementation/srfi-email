@@ -1,0 +1,167 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: more srfi&#45;12 rationale? -->
+<!--X-From-R13: Dvpuneq Yryfrl <xryfrlNerfrnepu.aw.arp.pbz> -->
+<!--X-Date: Sun, 17 Oct 1999 07:27:30 &#45;0500 (CDT) -->
+<!--X-Message-Id: 199910171226.IAA19500@kima.nj.nec.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 199910170422.AAA20473@sarg.Ryerson.CA -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: more srfi-12 rationale?</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00011.html">Date Prev</a>][<a href="msg00013.html">Date Next</a>][<a href="msg00011.html">Thread Prev</a>][<a href="msg00013.html">Thread Next</a>][<a href="maillist.html#00012">Date Index</a>][<a href="threads.html#00012">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: more srfi-12 rationale?</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:dmason@DOMAIN.HIDDEN">dmason@xxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: more srfi-12 rationale?</li>
+<li><em>From</em>: Richard Kelsey &lt;<a href="mailto:kelsey@DOMAIN.HIDDEN">kelsey@xxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 17 Oct 1999 08:26:24 -0400</li>
+<li><em>Cc</em>: <a href="mailto:srfi-12@DOMAIN.HIDDEN">srfi-12@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:199910170422.AAA20473@DOMAIN.HIDDEN">199910170422.AAA20473@xxxxxxxxxxxxxxx</a>&gt; (message from Dave Mason	on Sun, 17 Oct 1999 00:22:18 -0400)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>   References: &lt;199910160912.FAA15873@xxxxxxxxxxxxxxx&gt; 
+   Date: Sun, 17 Oct 1999 00:22:18 -0400
+   From: Dave Mason &lt;dmason@xxxxxxxxxxxxxxx&gt;
+
+   Dave Mason wrote:
+   &gt;But there's still a problem with the implementation.  Try:
+   &gt;   (handle-exceptions
+   &gt;      foo
+   &gt;      (abort 'barf)
+   &gt;      (abort 'blat))
+   &gt;but have your hand near your ^C key.
+
+Works fine for me.  The barf exception gets passed to the
+outer exception handler.
+
+ (handle-exceptions bar
+                    `(got ,bar)
+   (handle-exceptions foo
+		      (abort 'barf)
+     (abort 'blat)))
+
+ -&gt; (got barf)
+
+   &gt;It's pretty clear to me that the exception handler should have the
+   &gt;exception context of the HANDLE-EXCEPTIONS, rather than itself!
+
+The SRFI-12 folk agree with you: the specification requires this
+and the implementation does it.
+
+   &gt;In reading the RnRS archive, I became quite convinced (primarily based
+   &gt;on the compelling arguments of one of the authors of SRFI-12) that
+   &gt;setting up an exception handler and taking an exception should be
+   &gt;*very* cheap.
+
+He may have convinced you, but he hasn't convinced me.  As Per
+Bothner said, exception systems are normally used to separate
+normal from abnormal results.  Why should sending abnormal results
+need to be *very* cheap?  Or even particularly cheap at all?  It's
+the normal results that have to be delivered quickly.
+
+   &gt;The SRFI-12 exception mechanism *is* cheap, but the *condition*
+   &gt;mechanism isn't cheap at all.  It requires (in general) creating
+   &gt;an object for every raised exception.
+
+You don't have to use conditions if you don't want to.
+(Perhaps this is the reason for allowing non-conditions to
+be signalled?)
+
+And if you do use conditions, there is nothing that requires
+that a fresh condition be signalled each time.  You can make
+one and use it over and over again.  The values in it can be
+changed via a side effect, if you want.
+
+   &gt;I don't like the fact that it needs to do a dynamic-wind and a call/cc
+   &gt;to set up an exception and the continuation is actually called whether
+   &gt;or not an exception is raised (because it appears that dynamic-wind
+   &gt;isn't values-aware).
+
+I don't understand.  `With-exception-handler' does a
+dynamic-wind but not a call/cc.  Given the handler's
+dynamic extent there is no way to avoid the dynamic-wind
+(unless you go outside R5RS; some implementations have
+shortcuts for dynamic variables).
+
+The call/cc is needed in `handle-exceptions' to allow the
+handler to return from from `handle-exceptions'.  The call
+to the continuation for the non-exception case isn't
+required, that is just the way they wrote the code.
+
+R5RS says that `dynamic-wind' should handle multiple values.
+
+   &gt;This seems a lot heavier-weight than I would
+   &gt;like.  It appears that this is because exception handlers can return
+   &gt;as well as abort (exceptions in ML are only of the latter type).
+   &gt;Personally, I'd be perfectly happy with exceptions that only could
+   &gt;abort.
+
+I agree with you, although for different reasons.  Restarts
+should be left to another SRFI.
+                                      -Richard Kelsey
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00013" href="msg00013.html">Re: more srfi-12 rationale?</a></strong>
+<ul><li><em>From:</em> Dave Mason</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00011" href="msg00011.html">Re: more srfi-12 rationale?</a></strong>
+<ul><li><em>From:</em> Dave Mason</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00011.html">Re: more srfi-12 rationale?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00013.html">Re: more srfi-12 rationale?</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00011.html">Re: more srfi-12 rationale?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00013.html">Re: more srfi-12 rationale?</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00012"><strong>Date</strong></a></li>
+<li><a href="threads.html#00012"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

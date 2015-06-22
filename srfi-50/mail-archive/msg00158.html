@@ -1,0 +1,167 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: no constants please -->
+<!--X-From-R13: Fbz Zbeq <ybeqNrzs.arg> -->
+<!--X-Date: Mon,  5 Jan 2004 17:26:04 +0100 (NFT) -->
+<!--X-Message-Id: 200401051651.IAA23986@morrowfield.regexps.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: E1AdT6G&#45;0000C0&#45;00@mail.mumble.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: no constants please</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00157.html">Date Prev</a>][<a href="msg00159.html">Date Next</a>][<a href="msg00153.html">Thread Prev</a>][<a href="msg00161.html">Thread Next</a>][<a href="maillist.html#00158">Date Index</a>][<a href="threads.html#00158">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: no constants please</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:kelsey@DOMAIN.HIDDEN">kelsey@xxxxxxx</a></li>
+<li><em>Subject</em>: Re: no constants please</li>
+<li><em>From</em>: Tom Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 5 Jan 2004 08:51:41 -0800 (PST)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:E1AdT6G-0000C0-00@DOMAIN.HIDDEN">E1AdT6G-0000C0-00@xxxxxxxxxxxxxxx</a>&gt; (message from Richard Kelsey	on Mon, 05 Jan 2004 06:40:48 -0500)</li>
+<li><em>References</em>: &lt;<a href="mailto:E1AdT6G-0000C0-00@DOMAIN.HIDDEN">E1AdT6G-0000C0-00@xxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+    &gt; From: Richard Kelsey &lt;kelsey@xxxxxxx&gt;
+
+    &gt;&gt; [....]
+    &gt; [....] All that is required is that the incremental GC scan the 
+    &gt; entire root set in a single increment before deciding that it
+    &gt; has reached the end of a [trace] cycle.  This is standard practice
+    &gt; for incremental GCs.
+
+That's true only if the root set is small enough that it doesn't
+exceed the amount work the tracer will want to do in one step.
+What may be a common practice is to write implementations in such a
+way that the root set is guaranteed to be small -- but that's not the
+same thing as what you've said and the difference matters.
+
+If the root set is large, certainly it should be traced in several
+steps, using barriers to preserve its invariants.
+
+Absent any further guidance from the FFI spec, I would expect some
+programs to register a very large number of locations -- and worse,
+locations scattered widely in memory -- using
+SCHEME_GC_PROTECT_GLOBAL.  (Why wouldn't I, in a printed circuit board
+CAD program, GCPROtect a field of every C structure representing an
+edge in a netlist graph?)
+
+And while the C stack (and hence the number of locations protected by
+SCHEME_GC_PROTECT) will _usually_ be small and localized, there is
+nothing to preclude it being rather large.
+
+In short, the FFI requires a root set of unbounded size and
+unrestricted locality:  the common practice of tracing roots in a
+single step does not apply here.
+
+The problem goes away if the FFI imposes barriers over GCPROtected
+values.
+
+Alternatively, perhaps SCHEME_GC_PROTECT_GLOBAL should simply be
+removed from the FFI.  Programs can instead use integer indexes into
+some data structure allocated in the Scheme heap, conceptually
+allocating and freeing integer addresses to make them coextensive with
+the C heap locations they would otherwise pass to
+SCHEME_GC_PROTECT_GLOBAL.  The stack would remain an annoyance but, I
+admit, a less fatal one.
+
+
+
+    &gt; SCHEME_CAR() and SCHEME_SET_CAR() and so forth need to preserve
+    &gt; any read or write barriers, of course.
+
+Sure, and that's good.
+
+
+    &gt;    (You also talk about threads and interruption points related to them
+    &gt;    but, of course, that doesn't address truly concurrent threads.)
+
+    &gt; I am not sure what 'truly concurrent' means (parallel execution?).
+    &gt; But yes, we chose efficient C execution over allowing the C code
+    &gt; to be interrupted at arbitrary points.
+
+Yes that's what I mean.   But in a later message you remark that you
+prefer the current FFI over Pika _not_ for efficiency reasons but for
+aesthetic reasons.  I'll take that issue up in reply to the later
+message but let's here note that you want to make the FFI incompatible
+with some kinds of threading (for which hw support is increasingly
+popular and cheap) for reasons of syntax, not efficiency.
+
+And, threads aside, there's the issue of asyncronous execution from
+signal handlers.   While it's just fine to postpone to a later SRFI
+giving FFI-using code hooks into async mechanisms, what you have in
+this FFI is an interface that rather severely restricts
+implementations that use async execution internally.   And again, the
+justification we're down to for that restriction is, apparently,
+concern over syntax.
+
+-t
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00161" href="msg00161.html">Re: no constants please</a></strong>
+<ul><li><em>From:</em> Richard Kelsey</li></ul></li>
+<li><strong><a name="00165" href="msg00165.html">Re: no constants please</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00153" href="msg00153.html">Re: no constants please</a></strong>
+<ul><li><em>From:</em> Richard Kelsey</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00157.html">Re: I don't believe in &quot;(may GC)&quot;</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00159.html">Re: I don't believe in &quot;(may GC)&quot;</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00153.html">Re: no constants please</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00161.html">Re: no constants please</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00158"><strong>Date</strong></a></li>
+<li><a href="threads.html#00158"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

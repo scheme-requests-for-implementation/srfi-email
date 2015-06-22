@@ -1,0 +1,132 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Specifying character sets with numeric ranges in SRFI&#45;14 -->
+<!--X-From-R13: fuvirefNnv.zvg.rqh -->
+<!--X-Date: Wed, 26 Apr 2000 20:22:16 &#45;0500 (CDT) -->
+<!--X-Message-Id: 200004261604.MAA15982@mongkok.ai.mit.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Specifying character sets with numeric ranges in SRFI-14</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00000.html">Date Prev</a>][<a href="msg00002.html">Date Next</a>][<a href="msg00000.html">Thread Prev</a>][<a href="msg00002.html">Thread Next</a>][<a href="maillist.html#00001">Date Index</a>][<a href="threads.html#00001">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Specifying character sets with numeric ranges in SRFI-14</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-14@DOMAIN.HIDDEN">srfi-14@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Specifying character sets with numeric ranges in SRFI-14</li>
+<li><em>From</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxx</a></li>
+<li><em>Date</em>: Wed, 26 Apr 2000 12:04:56 -0400</li>
+<li><em>Reply-to</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>I have been reviewing the character-set SRFI in light of my recent study
+of Unicode and internationalisation. The main difference is that I have
+killed ASCII-RANGE-&gt;CHAR-SET and replaced it with UNICODE-RANGE-&gt;CHAR-SET.
+
+The general design principles are:
+
+  - I don't want to *require* conformant Schemes to use Unicode.
+    I specifically want to allow &quot;small character&quot; implementations
+    such as ASCII or Latin-1.
+
+  - However, I do want code to be portable across conformant implementations.
+    So, the one routine in SRFI-14 that exposes encodings commits to a 
+    Unicode interface as the uber-spec for character encodings. This is
+    *independent* of how chars are stored/represented &quot;under the hood,&quot;
+    and the API allows the user to request different behaviours if a program
+    requests a character via Unicode that is not provided by the
+    implementation.
+
+More elaborate hackery would need a *character* SRFI, with routines for
+encoding and decoding characters; that's beyond the scope of SRFI-14.
+
+I append the spec for UNICODE-RANGE-&gt;CHAR-SET below. Comments?
+    -Olin
+
+unicode-range-&gt;char-set  lower upper [error? base-cs] -&gt; char-set
+unicode-range-&gt;char-set! lower upper  error? base-cs  -&gt; char-set
+    Returns a character set containing every character whose Unicode
+    code lies in the half-open range [LOWER,UPPER).
+
+    The [LOWER,UPPER) range must lay completely within the general Unicode
+    space: 0 &lt;= LOWER &lt;= UPPER &lt;= 2^32 - 1. If the requested range includes
+    unassigned Unicode values, these are silently ignored (the current Unicode
+    specification has &quot;holes&quot; in the space of assigned codes). If the
+    requested range includes &quot;private&quot; or &quot;user space&quot; codes, these are
+    handled in an implementation-specific manner; however, a Unicode-based
+    Scheme implementation should pass them through transparently.
+
+    If any code from the requested range specifies a valid, assigned Unicode
+    character but has no corresponding representative in the implementation's
+    character type, then (1) an error is raised if ERROR? is true, and (2) the
+    code is ignored if ERROR? is false (the default). This might happen, for
+    example, if the implementation uses ASCII characters, and the requested
+    range includes non-ASCII characters.
+
+    If character set BASE-CS is provided, the characters specified by the
+    range are added to it. UNICODE-RANGE-&gt;CHAR-SET! is allowed, but not
+    required, to side-effect and reuse the storage in BASE-CS;
+    UNICODE-RANGE-&gt;CHAR-SET produces a fresh character set.
+
+    Note that ASCII codes are a subset of the Latin-1 codes, which are in turn
+    a subset of the 16-bit Unicode codes, which are themselves a subset of the
+    32-bit Unicode codes. We commit to a specific encoding in this routine,
+    regardless of the underlying representation of characters, so that client
+    code using this library will be portable. I.e., a conformant Scheme
+    implementation may use EBCDIC or SHIFT-JIS or even 6BIT to encode
+    characters; it must simply map the Unicode characters from the given range
+    into the native representation (when possible).
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00000.html">An issue about ASCII-RANGE-&gt;CHAR-SET</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00002.html">(Hopefully) final changes to SRFI-14 (character sets)</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00000.html">An issue about ASCII-RANGE-&gt;CHAR-SET</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00002.html">(Hopefully) final changes to SRFI-14 (character sets)</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00001"><strong>Date</strong></a></li>
+<li><a href="threads.html#00001"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

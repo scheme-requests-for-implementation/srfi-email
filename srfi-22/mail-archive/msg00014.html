@@ -1,0 +1,163 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Several comments -->
+<!--X-From-R13: fuvirefNpp.tngrpu.rqh -->
+<!--X-Date: Fri, 9 Mar 2001 20:57:23 &#45;0600 (CST) -->
+<!--X-Message-Id: 200103100257.VAA24520@mongkok.cc.gt.atl.ga.us -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Several comments</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00013.html">Date Prev</a>][<a href="msg00015.html">Date Next</a>][<a href="msg00045.html">Thread Prev</a>][<a href="msg00015.html">Thread Next</a>][<a href="maillist.html#00014">Date Index</a>][<a href="threads.html#00014">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Several comments</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-22@DOMAIN.HIDDEN">srfi-22@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Several comments</li>
+<li><em>From</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxxxxx</a></li>
+<li><em>Date</em>: Fri, 9 Mar 2001 21:57:21 -0500</li>
+<li><em>Reply-to</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>1. The command-line syntax is a bit verbose, e.g. the &quot;-call&quot;
+   switch serves no purpose. The command line could simply
+   be 
+       scheme-script -r5rs &lt;file&gt; &lt;entry-point&gt; &lt;arg1&gt; ...
+
+   On the other hand, this redundancy may allow extensions,
+   so perhaps it's for the best.
+
+2. It is a general Unix convention that interpreters read from their
+   stdin, but alternately take a
+       -c &lt;exp&gt;
+   switch. You might consider adding this as an alternate to the
+       -call &lt;entry-point&gt;
+   option.
+
+3. Your design essentially *requires* a /bin/sh trampoline. Which I find
+   annoying. Perl used to require this kind of trampoline, but as it
+   became a standard, that became unnecessary. Why not design a standard
+   with more &quot;legs&quot; for the future-- something that would also work well 
+   in a world where one can rely on scheme-script occuring in a particular
+   directory?
+
+   All that is required is the introduction of the
+     \ &lt;filename&gt;
+   &quot;meta switch&quot; as described in scsh. Note that doing so still allows
+   for /bin/sh trampolines, so you can go either way -- it doesn't close
+   doors. But *not* specifying a meta-switch *does* close doors, since
+   the true Unix #! command line only allows *one* switch after the
+   interpreter name, and both interpreter &amp; switch must usually fit within
+   32 chars. Your design absolutely won't work with the true Unix kernel
+   #! mechanism; you *have* to trampoline through /bin/sh. Again, this is 
+   all handled by the meta-switch design, which is *much* cheaper than
+   a /bin/sh trampoline.
+
+   I'm not saying &quot;don't do /bin/sh trampolines.&quot; I am saying, &quot;Allow
+   the direct alternative, too.&quot; This is enabled by the meta switch.
+
+   I have implemented the scsh spec for the meta switch in both Scheme
+   and bulletproof C; I will make this source available to this SRFI
+   under the SRFI's copyright, if desired.
+
+   I have written a lot of my notebook's /etc/scripts in Scheme. Part of
+   the point was to get /bin/sh out of my life. Ideologically speaking,
+   I resent *having* to be dependent on it to run a Scheme script.
+
+4. This is a bogus spec:
+     &lt;script prelude&gt; --&gt; #! &lt;any character including newline&gt; !#
+   One problem is the singular &quot;character&quot;, when you mean multiple
+   characters, of course. And the &quot;anything including newline&quot; spec
+   isn't right, either, since !# isn't allowed. Here's my version:
+     &lt;script prelude&gt; --&gt; 
+	 #! &lt;any sequence of chars not containing bang-sharp&gt; !#
+   Is that better?
+
+   Also, I'd suggest making the terminator be newline-bang-sharp, not
+   simply bang-sharp. Makes the possibility of a false positive even
+   less likely.
+
+5. The draft says
+     In the case of -srfi7 all specifications of filenames (marked by
+     &lt;filename&gt; in the syntax of SRFI 7) are strings containing Unix-style
+     filenames relative to the directory the script resides in.
+
+   Err... are you *sure* you want to do that? Invariably, a relative
+   pathname in Unix means relative to the process' cwd. You are changing that
+   rule, *only* in the case of code appearing in a Scheme script. That
+   could cause weird surprises...
+
+   This is problematic for other reasons, as well. What if I want to load
+   stuff in from some standard library directory, regardless of where you
+   might locate my script? Are you disallowing absolute pathnames?
+
+   If you really want to do this relative-to-the-script pathname resolution,
+   you might be better off saying that *relative* pathnames are interpreted
+   this way, and absolute pathnames are simply absolute filenames.
+
+   Also, you are dangling a preposition.
+
+    -Olin
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00015" href="msg00015.html">Re: Several comments</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+<li><strong><a name="00017" href="msg00017.html">Re: Several comments</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr. Preprocessor]</li></ul></li>
+<li><strong><a name="00041" href="msg00041.html">Re: Several comments</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00013.html">Re: semantics and portability</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00015.html">Re: Several comments</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00045.html">Re: semantics and portability</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00015.html">Re: Several comments</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00014"><strong>Date</strong></a></li>
+<li><a href="threads.html#00014"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

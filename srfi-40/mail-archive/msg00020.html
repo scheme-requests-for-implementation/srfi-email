@@ -1,0 +1,190 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Stream&#45;filter and space leaks -->
+<!--X-From-R13: Buvy Prjvt <corjvtNfjoryy.arg> -->
+<!--X-Date: Fri, 21 Feb 2003 10:57:25 +0100 (NFT) -->
+<!--X-Message-Id: y9lbs167y7x.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: E18lvbV&#45;0006fU&#45;00@rosebud -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Stream-filter and space leaks</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00019.html">Date Prev</a>][<a href="msg00021.html">Date Next</a>][<a href="msg00019.html">Thread Prev</a>][<a href="msg00023.html">Thread Next</a>][<a href="maillist.html#00020">Date Index</a>][<a href="threads.html#00020">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Stream-filter and space leaks</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Richard Kelsey &lt;<a href="mailto:kelsey@DOMAIN.HIDDEN">kelsey@xxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Stream-filter and space leaks</li>
+<li><em>From</em>: Phil Bewig &lt;<a href="mailto:pbewig@DOMAIN.HIDDEN">pbewig@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 21 Feb 2003 10:57:22 +0100</li>
+<li><em>Cc</em>: <a href="mailto:pbewig@DOMAIN.HIDDEN">pbewig@xxxxxxxxxx</a>, <a href="mailto:srfi-40@DOMAIN.HIDDEN">srfi-40@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-40@DOMAIN.HIDDEN">srfi-40@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:E18lvbV-0006fU-00@DOMAIN.HIDDEN"><a href="msg00019.html">E18lvbV-0006fU-00@rosebud</a></a>&gt; (Richard Kelsey's message of &quot;Thu, 20 Feb 2003 13:39:29 -0500&quot;)</li>
+<li><em>References</em>: &lt;<a href="mailto:E18lvbV-0006fU-00@DOMAIN.HIDDEN"><a href="msg00019.html">E18lvbV-0006fU-00@rosebud</a></a>&gt;</li>
+<li><em>User-agent</em>: Gnus/5.090015 (Oort Gnus v0.15) XEmacs/21.5 (cabbage)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+On Thursday, February 20, 2003 12:39 PM, Richard Kelsey [SMTP:kelsey@xxxxxxx] wrote:
+&gt;    From: Phil Bewig &lt;pbewig@xxxxxxxxxx&gt;
+&gt;    Date: Thu, 20 Feb 2003 15:08:05 +0100
+&gt; 
+&gt;    Stream-filter and
+&gt;    the various stream-drop functions leak space if they are not implemented
+&gt;    properly, something that is hard to do.  In fact, in a private e-mail
+&gt;    yesterday someone pointed out another space leak involving stream-filter
+&gt;    (they were also kind enough to show how to fix it).
+&gt; 
+&gt; Comparing the new version of STREAM-FILTER with the one in the proposed SRFI,
+&gt; it appears that this latest space leak could be fixed by including your own
+&gt; versions of DELAY and FORCE in the sample implementation, using one where forcing
+&gt; a stream caused it to stop retaining the generating thunk.  You could merge this
+&gt; delay into the STREAM record:
+&gt; 
+&gt;   (define-record-type stream-type
+&gt;     (really-make-stream thunk-then-result already-run?)
+&gt;     stream?
+&gt;     (thunk-then-result stream-thunk-then-result set-stream-thunk-then-result!)
+&gt;     (already-run?      stream-already-run?      set-stream-already-run?!))
+&gt; 
+&gt;   (define (make-stream thunk)
+&gt;     (really-make-stream thunk #f))
+&gt; 
+&gt;   ; This is the sample code for FORCE from R5RS except that it:
+&gt;   ;   - uses a stream record instead of a closure
+&gt;   ;   - uses the same location for the thunk and its value to avoid retaining
+&gt;   ;     the thunk
+&gt;   (define (stream-value stream)
+&gt;     (if (stream-already-run? stream)
+&gt;         (stream-thunk-then-result stream)
+&gt;         (let ((result ((stream-thunk-then-result stream)))
+&gt;               (cond ((not (stream-already-run? stream))
+&gt;                      (set-stream-already-run?! stream #t)
+&gt;                      (set-stream-thunk-then-result! stream result)))
+&gt;               (stream-thunk-then-result stream)))))
+&gt; 
+&gt;    And it is not possible to confine the effects of this space leak to just a few
+&gt;    functions implemented in the core srfi.  There are doubtless circumstances where
+&gt;    users will need to write functions that skip stream elements and are thus subject
+&gt;    to the space leak.
+&gt; 
+&gt; I would think that a few general functions would be sufficient for almost
+&gt; everyone, modulo (minor?) efficiency considerations.  You might want a
+&gt; STREAM-UNFOLD that produced multiple streams, for example:
+&gt; 
+&gt;    (stream-unfoldn generator seed n) -&gt; n streams
+&gt;    
+&gt;    STREAM-UNFOLDN returns N streams whose contents are produced by successive calls
+&gt;    to GENERATOR, which takes the current seed as an arguments and returns two values:
+&gt;      (proc seed) -&gt; seed results 
+&gt;    where results contains N values that indicate how each result streams proceeds:
+&gt;       (value)  -&gt; value is the next CAR of this result stream
+&gt;       #f       -&gt; no new information for this result stream
+&gt;       ()       -&gt; the end of this result stream has been reached
+&gt;    Note that getting the next element in any particular result stream may require
+&gt;    multiple calls to GENERATOR.
+&gt; 
+&gt; The implementation is left as an exercise for the reader, as is the related
+&gt; STREAM-FILTERN function.
+&gt; 
+&gt;    Thus, I propose it would be useful for the srfi to provide syntax that would
+&gt;    allow this to be a valid, non-leaking implementation of stream-filter:
+&gt; 
+&gt;        (stream-define-leaky (stream-filter pred? strm)
+&gt; 	 (cond ((stream-null? strm) stream-null)
+&gt; 	       ((pred? (stream-car strm))
+&gt; 		 (stream-cons (stream-car strm)
+&gt; 			      (stream-filter pred? (stream-cdr strm))))
+&gt; 	       (else (stream-filter pred? (stream-cdr strm)))))
+&gt; 
+&gt; I doubt that this is feasible.  It would be much simpler, but still not simple,
+&gt; if the user indicated which variables were needed where.  Something like
+&gt; 
+&gt;    (lift-lambdas my-lambda ... (my-lambda spec (free-vars ...) body ...) ...)
+&gt; 
+&gt; where each of the LIFT-LAMBDA's were lifted out the level of the LIFT-LAMBDAS
+&gt; expression, along with the given free variables.  This would have to be the subject
+&gt; of a separte SRFI, and even then you have the problem that the LAMBDAs created
+&gt; by DELAY are implicit.
+&gt;                                                   -Richard
+&gt; 
+
+Thanks for the suggestion about changing the underlying stream-type.  I'll
+take a look at that.
+
+The only functions that come to mind after thinking about this for a day are
+STREAM-EVERY-NTH, where you want to take every nth item from a
+stream and throw out the rest, and STREAM-RANDOM-NTH, which is
+similar but chooses the items randomly.  Something like the SIEVE used
+to calculate prime numbers would also be similar, if you select the items
+by counting instead of using modulo.  Your STREAM-UNFOLDN and
+STREAM-FILTERN look interesting, though I'd be interested to know how
+often they would actually be useful.
+
+I didn't think my stream-define-leaky was possible.
+
+Phil
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00023" href="msg00023.html">Re: Stream-filter and space leaks</a></strong>
+<ul><li><em>From:</em> Richard Kelsey</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00019" href="msg00019.html">Re: Stream-filter and space leaks</a></strong>
+<ul><li><em>From:</em> Richard Kelsey</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00019.html">Re: Stream-filter and space leaks</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00021.html">Re: Stream-filter and space leaks</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00019.html">Re: Stream-filter and space leaks</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00023.html">Re: Stream-filter and space leaks</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00020"><strong>Date</strong></a></li>
+<li><a href="threads.html#00020"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

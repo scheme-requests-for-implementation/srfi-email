@@ -1,0 +1,230 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Backward compatibility, pattern matching and some small things -->
+<!--X-From-R13: Oaqer ina Fbaqre <naqerNabj.urg.oebja.rqh> -->
+<!--X-Date: Mon, 13 Sep 2004 06:20:20 +0200 (DFT) -->
+<!--X-Message-Id: Pine.GSO.4.60.0409121441110.11346@now.het.brown.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 87656juzbk.fsf@forcix.kollektiv&#45;hamburg.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Backward compatibility, pattern matching and some small things</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00008.html">Date Prev</a>][<a href="msg00010.html">Date Next</a>][<a href="msg00006.html">Thread Prev</a>][<a href="msg00007.html">Thread Next</a>][<a href="maillist.html#00009">Date Index</a>][<a href="threads.html#00009">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Backward compatibility, pattern matching and some small things</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Jorgen Schaefer &lt;<a href="mailto:forcer@DOMAIN.HIDDEN">forcer@xxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Backward compatibility, pattern matching and some small things</li>
+<li><em>From</em>: Andre van Tonder &lt;<a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 12 Sep 2004 16:49:25 -0400 (EDT)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-57@DOMAIN.HIDDEN">srfi-57@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-57@DOMAIN.HIDDEN">srfi-57@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:87656juzbk.fsf@DOMAIN.HIDDEN">87656juzbk.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:87656juzbk.fsf@DOMAIN.HIDDEN">87656juzbk.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+Hi Jorgen, thanks for your comments
+
+On Sun, 12 Sep 2004, Jorgen Schaefer wrote:
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+My main problem is the relationship between SRFI-57 and SRFI-9. As
+far as features are concerned, this SRFI looks like a perfect
+extension to SRFI-9, yet it doesn't try to stay compatible with
+SRFI-9. Is there a good reason for changing the argument order and
+makeup of the DEFINE-RECORD macro from that specified in SRFI-9?
+I.e. that the predicate comes last, and that the fields are
+specified as a list of field specifiers instead of specifiers as
+separate arguments?
+</pre></blockquote><pre style="margin: 0em;">
+
+So as to permit omissions without running into ambiguities (if you agree
+that the possibility of ommissions is a good thing).  For
+example, with the SRFI-9 order, in
+
+  (define-record foo bar)
+
+</pre><tt>are we omitting the constructor or the predicate, or both (note that 
+</tt><tt>SRFI-57 allows the constructor clause and field clauses to be 
+</tt><tt>identifiers)?  With SRFI-57, we can write
+</tt><pre style="margin: 0em;">
+
+  (define-record foo bar ()) - bar is constructor, no fields or predicate
+  (define-record foo () bar) - bar is predicate, no fields or constructor
+
+Also, fields are in a list because a field clause may be an indentifier,
+e.g. we can unambiguously write
+
+  (define-record node (left right))
+
+whereas
+
+  (define-record node left right)
+
+would be ambiguous (e.g. is left the constructor or the first field?)
+
+</pre><tt>The syntax specified here is the most concise I could come up with 
+</tt><tt>that allows one to leave out all possible combinations of non-essential 
+</tt><tt>elements without ambiguity.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>Please also refer to the SRFI-9 list for the philosophy of the author 
+</tt><tt>with repect to extensibility, which generated quite a bit of discussion.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>Notice that the current SRFI specifies DEFINE-RECORD instead of the 
+</tt><tt>SRFI-9 DEFINE-RECORD-TYPE, so legacy code using SRFI-9 can be adapted by 
+</tt><tt>adding a simple macro defining the latter in terms of the former.
+</tt><pre style="margin: 0em;">
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+The subtyping part of the SRFI is wonderful, but I'm missing a
+specification on what happens if someone subtypes two records with
+the same field name, but different accessors,
+</pre></blockquote><pre style="margin: 0em;">
+
+Okay, it would make sense to add some clarification in the document.
+
+If you mean
+  (define-record foo ((bar foo-bar)))
+  (define-record baz ((bar baz-bar)))
+  (define-record (foo-baz foo baz) ((bar foo-baz-bar)))
+then of course any instance fb of foo-baz is an instance of both
+</pre><tt>foo and baz, so that foo-bar and baz-bar will both work on fb, returning 
+</tt><tt>the bar field.  The accessor foo-baz-bar will return the bar field 
+</tt><tt>of any instances of foo-baz or subtypes of foo-baz.
+</tt><pre style="margin: 0em;">
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+or two records with
+the same accessors, but different field names.
+</pre></blockquote><pre style="margin: 0em;">
+
+If here you mean
+  (define-record foo ((bar foo-bar)))
+  (define-record baz ((baz foo-bar)))
+  ...
+</pre><tt>then, as in any define-... forms, since later bindings replace earlier 
+</tt><tt>bindings, foo-bar will now work on instances of baz and not any longer on 
+</tt><tt>instances of foo.  It would make sense to add a warning to this effect to 
+</tt><tt>the document.
+</tt><pre style="margin: 0em;">
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Also, would it be possible to renamed UPDATE and EXTEND to
+UPDATE-RECORD and EXTEND-RECORD? I think those names are clearer.
+</pre></blockquote><pre style="margin: 0em;">
+
+</pre><tt>That would make sense.  Perhaps, for uniformity with convention, 
+</tt><tt>RECORD-UPDATE and RECORD-EXTEND instead.
+</tt><pre style="margin: 0em;">
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Now on to the last part, the only part of the SRFI I absolutely
+don't like: The pattern matching facility. As you correctly say,
+it is outside the scope of SRFI-57 to specify a full-featured
+pattern matching facility - please don't try to specify a
+half-featured one, then. The pattern matching is not an inherent
+part of the record facilities,
+</pre></blockquote><pre style="margin: 0em;">
+
+</pre><tt>Although I don't quite agree with this (e.g. consider the 
+</tt><tt>symmetry constructing/matching, representing algebraic datatypes with 
+</tt><tt>records, or look at Andrew Wright's et al's work on soft typing for 
+</tt><tt>Scheme)...
+</tt><pre style="margin: 0em;">
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+especially since it enforces one
+type of pattern matching. It would be much more useful to specify
+a full-fledged matcher in a separate SRFI.
+</pre></blockquote><pre style="margin: 0em;">
+
+</pre><tt>...you have a point.  While I specified matching on records (and 
+</tt><tt>only on records - the rest is not required) because without it, records 
+</tt><tt>are much less useful to me, there certainly is a strong argument for 
+</tt><tt>splitting matching off into a separate SRFI, and I *might* do that if I 
+</tt><tt>can summon up the required mixture of masochism and ruthlessness for it.
+</tt><pre style="margin: 0em;">
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+To conclude this email, I'd greatly appreciate this to be changed
+to a pure extension of SRFI-9, so that it's backward-compatible in
+all respects, and intended as such.
+</pre></blockquote><pre style="margin: 0em;">
+
+</pre><tt>As I noted above, legacy code can be adapted with a simple macro 
+</tt><tt>defining DEFINE-RECORD-TYPE in terms of define-record.  The only way to
+</tt><tt>fulfill your request otherwise would be to drop support for omissions, 
+</tt><tt>which I would be reluctant to do.
+</tt><pre style="margin: 0em;">
+
+Regards
+Andre
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00007" href="msg00007.html">Re: Backward compatibility, pattern matching and some small things</a></strong>
+<ul><li><em>From:</em> Jorgen Schaefer</li></ul></li>
+<li><strong><a name="00010" href="msg00010.html">Re: Backward compatibility, pattern matching and some small things</a></strong>
+<ul><li><em>From:</em> Alex Shinn</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00006" href="msg00006.html">Backward compatibility, pattern matching and some small things</a></strong>
+<ul><li><em>From:</em> Jorgen Schaefer</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00008.html">propositions, oppositions, and some minor details</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00010.html">Re: Backward compatibility, pattern matching and some small things</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00006.html">Backward compatibility, pattern matching and some small things</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00007.html">Re: Backward compatibility, pattern matching and some small things</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00009"><strong>Date</strong></a></li>
+<li><a href="threads.html#00009"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,148 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: continuations and threads -->
+<!--X-From-R13: xhzbNoryyfbhgu.arg -->
+<!--X-Date: Sun, 19 Mar 2000 16:17:26 &#45;0600 (CST) -->
+<!--X-Message-Id: g0tma9na.fsf@kumo.freeserve.co.uk -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200002252134.QAA16036@savonarola.red&#45;bean.com -->
+<!--X-Reference: y9lzosovte1.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: m3k8j013yh.fsf@savonarola.red&#45;bean.com -->
+<!--X-Reference: 200003181930.NAA19722@africa.cs.rice.edu -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: continuations and threads</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00019.html">Date Prev</a>][<a href="msg00021.html">Date Next</a>][<a href="msg00017.html">Thread Prev</a>][<a href="msg00021.html">Thread Next</a>][<a href="maillist.html#00020">Date Index</a>][<a href="threads.html#00020">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: continuations and threads</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:matthias@DOMAIN.HIDDEN">matthias@xxxxxxxx</a></li>
+<li><em>Subject</em>: Re: continuations and threads</li>
+<li><em>From</em>: <a href="mailto:kumo@DOMAIN.HIDDEN">kumo@xxxxxxxxxxxxx</a></li>
+<li><em>Date</em>: 19 Mar 2000 22:16:09 +0000</li>
+<li><em>Cc</em>: <a href="mailto:srfi-18@DOMAIN.HIDDEN">srfi-18@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: Matthias Felleisen's message of &quot;Sat, 18 Mar 2000 13:30:55 -0600 (CST)&quot;</li>
+<li><em>References</em>: &lt;<a href="mailto:200002252134.QAA16036@DOMAIN.HIDDEN">200002252134.QAA16036@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:y9lzosovte1.fsf@DOMAIN.HIDDEN">y9lzosovte1.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:m3k8j013yh.fsf@DOMAIN.HIDDEN">m3k8j013yh.fsf@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:200003181930.NAA19722@DOMAIN.HIDDEN">200003181930.NAA19722@xxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Reply-to</em>: <a href="mailto:kumo@DOMAIN.HIDDEN">kumo@xxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Matthias Felleisen &lt;matthias@xxxxxxxxxxx&gt; writes:
+&gt; May I ask a heretical question (especially from me): 
+&gt; 
+&gt;  How many of you use call/cc and continuation objects 
+&gt;  (rather than mimicing continuations with lambda's)
+&gt;  in large programs? Do &quot;we&quot; really use it to implement 
+&gt;  coroutines and backtracking and threads and whatever? 
+
+Well, my current project (which was intended to be a quick-and dirty
+hack and is taking over my life :) is a Scheme-&gt;Scheme compiler
+(motivated by the desire to have a nice source code partitioning
+system and SRFI support in Stalin). It is now pushing 3000+ lines of
+original code, with an Essence (thanks Mr. Preprocessor) parser and
+bits of SLIB tacked on for good measure.
+
+I'm using call/cc for four times internally. Once is to create a
+global exception handling environment. Another is to decompose the
+loop that grovels over source forms checking for all the different
+source partitioning systems out there (I've got Bigloo, Guile, and
+SLIB (w/variants) covered). One is to short-circuit the name collision 
+detection loop (NB: this code doesn't work right). And one is to tame
+the parser (essentially co-routining it).
+
+Of these four uses, only the first is *necessary*, as there is no
+standard way to cause a Scheme program to terminate without returning
+from the main function [equiv. C exit()]. The second one allows me to
+modularize a big ugly loop, yet retain the (theoretical) efficiency of 
+implementing it with local tail calls. I could easily code around the
+lack of call/cc, and it might even *really* be the right thing
+(TM). I'm pretty sure that the third one was just being too clever,
+and that there's a better way to do it. I'd have to do a major rewrite 
+to get around the fourth (Co-routining the Essence parser). Call/cc
+was a major win for me there, as it let me continue to have my code
+structured like I was using Scheme's READ while using my own parser
+with all of the advantages that brings (for error location, case
+sensitivity etc...)
+
+&gt;  Is call/cc necessary for Scheme? 
+
+I would miss it, yes. OTOH, it seems like it could be implemented
+entirely as a source transformation. In this opinion I may very well
+be displaying my ignorance of some of the deeper issues. On an
+informal level, it feels very 'global' in its effects. I do find it
+interesting that you introduced expression contexts (which were my
+first introduction to call/cc in _Scheme_and_the_Art_of_Programming_)
+as part of your explanation of the compatible closure for lambda
+expressions in your CS 411 monograph. I'd never thought of it as quite 
+so fundamental operation before...
+
+david rush
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00021" href="msg00021.html">Re: continuations and threads</a></strong>
+<ul><li><em>From:</em> Matthias Felleisen</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00007" href="msg00007.html">Re: continuations and threads</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+<li><strong><a name="00010" href="msg00010.html">Re: continuations and threads</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr. Preprocessor]</li></ul></li>
+<li><strong><a name="00011" href="msg00011.html">Re: continuations and threads</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+<li><strong><a name="00013" href="msg00013.html">Re: continuations and threads</a></strong>
+<ul><li><em>From:</em> Matthias Felleisen</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00019.html">Re: continuations and threads</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00021.html">Re: continuations and threads</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00017.html">Re: continuations and threads</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00021.html">Re: continuations and threads</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00020"><strong>Date</strong></a></li>
+<li><a href="threads.html#00020"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,160 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Allowing ASCII only, string escapes, and normalization -->
+<!--X-From-R13: Xbetra Epunrsre <sbepreNsbepvk.pk> -->
+<!--X-Date: Thu, 28 Jul 2005 20:47:55 +0200 (DFT) -->
+<!--X-Message-Id: 87y87q3gyv.fsf@forcix.kollektiv&#45;hamburg.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Allowing ASCII only, string escapes, and normalization</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00261.html">Date Prev</a>][<a href="msg00263.html">Date Next</a>][<a href="msg00280.html">Thread Prev</a>][<a href="msg00263.html">Thread Next</a>][<a href="maillist.html#00262">Date Index</a>][<a href="threads.html#00262">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Allowing ASCII only, string escapes, and normalization</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-75@DOMAIN.HIDDEN">srfi-75@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Allowing ASCII only, string escapes, and normalization</li>
+<li><em>From</em>: Jorgen Schaefer &lt;<a href="mailto:forcer@DOMAIN.HIDDEN">forcer@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 28 Jul 2005 20:47:52 +0200</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-75@DOMAIN.HIDDEN">srfi-75@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Gnus/5.11 (Gnus v5.11) Emacs/22.0.50 (gnu/linux)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Hi there!
+Some more comments from my side.
+
+Allowing ASCII only
+===================
+The current draft summarizes two problems of the SRFI as mentioned
+on this list as both mandating too much for systems targeted to
+small devices, and as mandating not enough for more sophisticated
+implementations. I think the SRFI is a good middle ground and
+allows a transition from the old string processing to newer and
+more sophisticated designs. So the latter problem can only be
+addressed by SRFIs which specify the better interfaces.
+
+To mitigate the former problem, I just went over the draft again
+with an eye for where it precludes an implementation to just use
+ASCII. There's not much. If an implementation were allowed to
+signal an error on unsupported code points, it would be trivial
+for an implementation to just support ASCII (or Latin-1), as the
+code points 0-127 (0-255) are equivalent in Unicode and ASCII
+(Latin-1). This would open the specification for small devices.
+(And even for other character sets, you only need a simple
+translation table and signal errors on other code points)
+
+This would mean that an implementation can support Unicode
+code points fully or partially, just as implementations can support
+the numeric tower fully or partially.
+
+
+String Escapes
+==============
+My biggest problem with current draft is still xuU. More and more,
+I come to think that delimited escapes are the way to go.
+Specifically, parented escapes. I.e. &quot;Foo\x(0A)Bar&quot;
+
+This has a number of advantages. We don't need u and U anymore, as
+there's no ambiguity on what is part of the escape and what is
+not. It is easy to read. And it is even friendly to users from
+other languages: If a \x escape is not followed by a parenthesis,
+an appropriate syntax error can be signalled, even explaining the
+correct syntax.
+
+If the latter is deemed less important than being able to write
+\x0A itself, the parenthesises might be only required for hex
+strings of a different length than two.
+
+That problem does not exist for character constants, as those are
+delimited otherwise anyways, so #\xA20 is always unambiguous.
+Hence we can drop u and U from character constants as well.
+
+This (type of) syntax even has precedence, in Perl 6 of all
+languages. Apparently, they use \x{263A} in strings, and allow
+\x[263A] and \x&lt;263A&gt; as well in regular expressions. All types of
+bracketing are optional and only used for disambiguation. Cf.
+<a  rel="nofollow" href="http://www.perl.com/pub/a/2002/06/04/apo5.html?page=7">http://www.perl.com/pub/a/2002/06/04/apo5.html?page=7</a> and
+<a  rel="nofollow" href="http://www.mail-archive.com/perl6-documentation@xxxxxxxx/msg00140.html">http://www.mail-archive.com/perl6-documentation@xxxxxxxx/msg00140.html</a>
+
+(I don't think we should adopt such a DWIM attitude - requiring
+the parenthesis, and using only a single kind, looks like the best
+way to me.)
+
+
+Normalization
+=============
+String comparison on code point vectors without normalization is
+useless. Hence, normalization will often be implemented right
+away. Therefore, it might be useful to provide
+STRING-NORMALIZE-NF{C,D} (maybe even NFKC/NFKD).
+Cf. <a  rel="nofollow" href="http://www.unicode.org/faq/normalization.html#1">http://www.unicode.org/faq/normalization.html#1</a>
+
+If this is not included, a rationale should be added to the
+document. At least it should mention normalization somewhere.
+
+
+Greetings,
+        -- Jorgen
+
+-- 
+((email . &quot;forcer@xxxxxxxxx&quot;) (www . &quot;<a  rel="nofollow" href="http://www.forcix.cx/&quot">http://www.forcix.cx/&quot</a>;)
+ (gpg   . &quot;1024D/028AF63C&quot;)   (irc . &quot;nick forcer on IRCnet&quot;))
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00263" href="msg00263.html">Re: Allowing ASCII only, string escapes, and normalization</a></strong>
+<ul><li><em>From:</em> John.Cowan</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00261.html">Re: Surrogates and character representation</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00263.html">Re: Allowing ASCII only, string escapes, and normalization</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00280.html">Re: Surrogates and character representation</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00263.html">Re: Allowing ASCII only, string escapes, and normalization</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00262"><strong>Date</strong></a></li>
+<li><a href="threads.html#00262"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

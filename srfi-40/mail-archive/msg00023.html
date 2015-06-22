@@ -1,0 +1,156 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Stream&#45;filter and space leaks -->
+<!--X-From-R13: Dvpuneq Yryfrl <xryfrlNf48.bet> -->
+<!--X-Date: Sat, 22 Feb 2003 00:18:02 +0100 (NFT) -->
+<!--X-Message-Id: E18mMP3&#45;0001il&#45;00@rosebud -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: y9lbs167y7x.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Stream-filter and space leaks</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00022.html">Date Prev</a>][<a href="msg00024.html">Date Next</a>][<a href="msg00020.html">Thread Prev</a>][<a href="msg00021.html">Thread Next</a>][<a href="maillist.html#00023">Date Index</a>][<a href="threads.html#00023">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Stream-filter and space leaks</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:pbewig@DOMAIN.HIDDEN">pbewig@xxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Stream-filter and space leaks</li>
+<li><em>From</em>: Richard Kelsey &lt;<a href="mailto:kelsey@DOMAIN.HIDDEN">kelsey@xxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 21 Feb 2003 18:16:25 -0500</li>
+<li><em>Cc</em>: <a href="mailto:srfi-40@DOMAIN.HIDDEN">srfi-40@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-40@DOMAIN.HIDDEN">srfi-40@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:y9lbs167y7x.fsf@DOMAIN.HIDDEN">y9lbs167y7x.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt; (message from Phil	Bewig on Fri, 21 Feb 2003 10:57:22 +0100)</li>
+<li><em>Sender</em>: &lt;<a href="mailto:kelsey@DOMAIN.HIDDEN">kelsey@xxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>   From: Phil Bewig &lt;pbewig@xxxxxxxxxx&gt;
+   Date: Fri, 21 Feb 2003 10:57:22 +0100
+
+   Your STREAM-UNFOLDN and STREAM-FILTERN look interesting, though I'd
+   be interested to know how often they would actually be useful.
+
+They are useful any time you want to produce new streams from
+existing ones without getting a space leak.  You'll never be
+able to add every possible stream function to the SRFI.  You
+can instead try to make it easy for people to write new ones
+on their own.  Having STREAM-UNFOLDN (which could use a better
+name) is one way of doing so.  I would much rather have one good
+general-purpose function than ZIP, UNZIP, ALTERNATE, INTERLEAVE,
+MERGE, and so on.  
+
+For example, suppose I want to use a stream of integers to index
+into a list of other streams.  The following is a bit ugly, but
+it shouldn't have any space leaks if STREAM-UNFOLDN doesn't.
+(This code hasn't been tested because I haven't written
+STREAM-UNFOLDN.)
+
+; Returns a stream created by using INDEX-STREAM to pick which of
+; INDEXED-STREAM provides the next element.
+
+(define (stream-index index-stream indexed-streams)
+  (stream-unfoldn
+   (lambda (streams)
+     (let ((index-stream (car streams))
+	   (indexed-streams (cdr streams)))
+       (if (stream-null? index-stream)
+	   (values (list index-stream)		; no longer need the rest
+		   '())				; output stream is done
+	   (call-with-values
+	    (lambda ()
+	      (indexed-force (stream-car index-stream) indexed-streams))
+	    (lambda (next indexed-streams)
+	      (values (cons index-stream indexed-streams)	; next seed
+		      (list next))))				; next result
+   (cons index-stream indexed-streams)	         ; initial seed
+   1))						 ; one resulting stream
+
+; Returns two values: the STREAM-CAR of the I'th stream and a copy of STREAMS
+; with the I'th element replaced by its own STREAM-CDR.     
+
+(define (indexed-force i streams)
+  (do ((i i (- i 1))
+       (unseed streams (cdr unseen))
+       (seen '() (cons (car unseen) seen)))
+      ((= i 0)
+       (values (stream-car (car unseen))
+	       (append (reverse seen)
+		       (cons (stream-cdr (car unseen))
+			     (cdr unseen)))))))
+
+This uses a slightly different version of STREAM-UNFOLDN.  Now that
+I have actually tried to use it this seems cleaner.
+
+   (stream-unfoldn generator seed n) -&gt; n streams
+   
+STREAM-UNFOLDN returns N streams whose contents are produced by
+successive calls to GENERATOR, which takes the current seed as
+an arguments and returns N + 1 values:
+    (proc seed) -&gt; seed result0 ... resultN
+where resultI contains indicates how to produce the next element
+of the Ith result stream:  
+     (value)  -&gt; value is the next CAR of this result stream
+     #f       -&gt; no new information for this result stream
+     ()       -&gt; the end of this result stream has been reached
+Note that getting the next element in any particular result stream
+may require multiple calls to GENERATOR.
+
+                                        -Richard
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00020" href="msg00020.html">Re: Stream-filter and space leaks</a></strong>
+<ul><li><em>From:</em> Phil Bewig</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00022.html">Re: Stream-filter and space leaks</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00024.html">Re: Stream-filter and space leaks</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00020.html">Re: Stream-filter and space leaks</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00021.html">Re: Stream-filter and space leaks</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00023"><strong>Date</strong></a></li>
+<li><a href="threads.html#00023"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,261 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: srfi&#45;pms: Poor Man's Streams -->
+<!--X-From-R13: Oagubal Qneevpb <npneevpbNzrzrornz.bet> -->
+<!--X-Date: Wed, 26 Feb 2003 22:41:48 +0100 (NFT) -->
+<!--X-Message-Id: Pine.LNX.4.44.0302261638430.16372&#45;100000@sub&#45;d.memebeam.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>srfi-pms: Poor Man's Streams</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00029.html">Date Prev</a>][<a href="msg00031.html">Date Next</a>][<a href="msg00046.html">Thread Prev</a>][<a href="msg00032.html">Thread Next</a>][<a href="maillist.html#00030">Date Index</a>][<a href="threads.html#00030">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>srfi-pms: Poor Man's Streams</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-40@DOMAIN.HIDDEN">srfi-40@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: srfi-pms: Poor Man's Streams</li>
+<li><em>From</em>: Anthony Carrico &lt;<a href="mailto:acarrico@DOMAIN.HIDDEN">acarrico@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 26 Feb 2003 16:41:53 -0500 (EST)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-40@DOMAIN.HIDDEN">srfi-40@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Sender</em>: Anthony Carrico &lt;<a href="mailto:acarrico@DOMAIN.HIDDEN">acarrico@xxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>;; TITLE
+;;
+;; srfi-pms: Poor Man's Streams
+
+;; AUTHOR
+;;
+;; Anthony Carrico
+
+;; STATUS
+;;
+;; Half serious.
+
+;; ABSTRACT
+;;
+;; Srfi-pms: Poor Man's Streams proposes poor man's streams (pms). It
+;; depends on:
+;;    srfi-34: Exception Handling for Programs
+;;    srfi-35: Conditions
+;; and recommends
+;;    srfi-11: Syntax for receiving multiple values
+
+;; RATIONALE
+;;
+;; Lazy streams can be challenging to understand, implement and use,
+;; and difficult to reason about in terms of time and space complexity
+;; (see srfi-40: A Library of Streams, and related discussions).
+;;
+;; Lazy evaluation may be a hallmark of functional programming, but
+;; the cached value in a promise smells imperative. Scheme is
+;; primarily a strict language. By embracing Scheme's &quot;values&quot;
+;; procedure, srfi-pms presents a simple method for generating a
+;; sequence of values without using delay, force, or macros. With
+;; srfi-pms, poor Scheme programmers can do stream like things without
+;; feeling like they are in a foreign land.
+
+;; SPECIFICATION
+;;
+;; Srfi-pms defines three values:
+;;
+;; &amp;pms-end -- a condition type
+;; pms-end? -- &amp;pms-end predicate
+;; pms-end -- instance of &amp;pms-end
+;;
+;; and the convention that a pms is a procedure that returns another
+;; pms and one or more additional values, or raises &quot;pms-end&quot;.
+
+;; IMPLEMENTATION
+
+(define-condition-type &amp;pms-end &amp;condition pms-end?)
+(define pms-end (make-condition &amp;pms-end))
+
+;; If a non-error base condition is made standard, it would make sense
+;; for &quot;&amp;end&quot; to derive from that, rather than &quot;&amp;condition&quot;.
+
+;; EXAMPLES
+
+(define pms-from
+  (lambda (start)
+    (lambda ()
+      (let loop ((x start))
+        (values (lambda () (loop (+ x 1))) x)))))
+
+(define pms-from-to
+  (lambda (start stop)
+    (lambda ()
+      (let loop ((x start))
+        (if (&lt; x stop)
+            (values (lambda () (loop (+ x 1))) x)
+            (raise pms-end))))))
+
+(define pms-repeat
+  (lambda objs
+    (lambda ()
+      (let loop ((current objs))
+        (if (pair? current)
+            (values (lambda () (loop (cdr current))) (car current))
+            (loop objs))))))
+
+(define pms-iterate
+  (lambda (func obj)
+    (lambda ()
+      (let loop ((obj obj))
+        (values (lambda () (loop (func obj))) obj)))))
+
+;; Pms-for-each covers the case in which each iteration of the pms
+;; produces a single extra value.
+
+(define pms-for-each
+  (lambda (proc . pmses)
+    (guard (condition
+            ((pms-end? condition)
+             ;; Return the same way as a native for-each
+             (for-each (lambda (x) x) '())))
+           (let loop ((pmses pmses))
+             (let-values
+                 (((pmses args)
+                   (let recurse ((pmses pmses))
+                     (if (pair? pmses)
+                         (let*-values (((pms arg) ((car pmses)))
+                                       ((pmses args) (recurse (cdr pmses))))
+                           (values (cons pms pmses) (cons arg args)))
+                         (values '() '())))))
+               (apply proc args)
+               (loop pmses))))))
+
+(pms-for-each (lambda (x) (display x) (newline)) (pms-from-to 0 10))
+;; 0
+;; 1
+;; 2
+;; 3
+;; 4
+;; 5
+;; 6
+;; 7
+;; 8
+;; 9
+
+(pms-for-each
+  (lambda (x y) (display y) (newline))
+  (pms-from-to 0 5)
+  (pms-iterate (lambda (x) (list x)) '()))
+;; ()
+;; (())
+;; ((()))
+;; (((())))
+;; ((((()))))
+
+;; Pms-map covers the case in which each iteration of the pms produces
+;; a single extra value.
+
+(define pms-map
+  (lambda (proc . pmses)
+    (lambda ()
+      (let loop ((pmses pmses))
+        (let*-values
+            (((pmses args)
+              (let recurse ((pmses pmses))
+                (if (pair? pmses)
+                    (let*-values (((pms arg) ((car pmses)))
+                                  ((pmses args) (recurse (cdr pmses))))
+                      (values (cons pms pmses) (cons arg args)))
+                    (values '() '()))))
+             (results (apply proc args)))
+          (apply values (lambda () (loop pmses)) results))))))
+
+(pms-for-each
+ (lambda (x) (display x) (newline))
+ (pms-map (lambda (x) (* x 10)) (pms-from-to 0 10)))
+;; 0
+;; 10
+;; 20
+;; 30
+;; 40
+;; 50
+;; 60
+;; 70
+;; 80
+;; 90
+
+;; Pms-for-each* covers the case in which each iteration of the pms
+;; produces more than one value.
+
+(define pms-for-each*
+  (lambda (proc pms)
+    (guard (condition
+            ((pms-end? condition)
+             ;; Return the same way as a native for-each
+             (for-each (lambda (x) x) '())))
+           (let loop ((pms pms))
+             (let-values (((pms . x) (pms)))
+               (apply proc x)
+               (loop pms))))))
+
+(define quotient+remainder
+  (lambda (n1 n2)
+    (values (quotient n1 n2) (remainder n1 n2))))
+
+(pms-for-each* (lambda (q r) (display q) (display &quot; &quot;) (display r) (newline))
+               (pms-map quotient+remainder
+                        (pms-repeat 20)
+                        (pms-from-to 1 5)))
+;; 20 0
+;; 10 0
+;; 6 2
+;; 5 0
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00029.html">Re: Stream-filter and space leaks</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00031.html">Re: Stream-filter and space leaks</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00046.html">Re: Stream-filter and space leaks</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00032.html">stream-partition is not incremental</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00030"><strong>Date</strong></a></li>
+<li><a href="threads.html#00030"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

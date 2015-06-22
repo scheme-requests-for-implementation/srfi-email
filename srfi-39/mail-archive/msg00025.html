@@ -1,0 +1,127 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Comments on SRFI&#45;39 -->
+<!--X-From-R13: Dvpuneq Yryfrl <xryfrlNf48.bet> -->
+<!--X-Date: Tue, 11 Feb 2003 16:58:44 +0100 (NFT) -->
+<!--X-Message-Id: E18icmR&#45;0004II&#45;00@rosebud -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200301260845.h0Q8joW4021279@mongkok.dyndns.org -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Comments on SRFI-39</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00024.html">Date Prev</a>][<a href="msg00026.html">Date Next</a>][<a href="msg00023.html">Thread Prev</a>][<a href="msg00026.html">Thread Next</a>][<a href="maillist.html#00025">Date Index</a>][<a href="threads.html#00025">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Comments on SRFI-39</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-39@DOMAIN.HIDDEN">srfi-39@xxxxxxxxxxxxxxxxx</a>, <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Comments on SRFI-39</li>
+<li><em>From</em>: Richard Kelsey &lt;<a href="mailto:kelsey@DOMAIN.HIDDEN">kelsey@xxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 11 Feb 2003 10:57:07 -0500</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-39@DOMAIN.HIDDEN">srfi-39@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:200301260845.h0Q8joW4021279@DOMAIN.HIDDEN">200301260845.h0Q8joW4021279@xxxxxxxxxxxxxxxxxx</a>&gt; (message from Olin Shivers on Sun,	26 Jan 2003 09:45:58 +0100)</li>
+<li><em>Sender</em>: &lt;<a href="mailto:kelsey@DOMAIN.HIDDEN">kelsey@xxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Olin wrote:
+
+  Spawning a thread, calling a function -- it's a dynamic nesting. 
+
+The whole point to spawning a thread is that it isn't a dynamic
+nesting.  If you wanted dynamic nesting you wouldn't spawn a thread,
+you would just call the thunk.  The new thread's execution may happen
+before the spawning call returns or it may happen after the spawning
+thread has finished or the two may be interleaved.  Where's the
+nesting?
+
+If threads inherit dynamic bindings but DYNAMIC-WIND thunks are not
+called when switching between threads (as they aren't in SRFI 18),
+you get two different notions of dynamic nesting.  Consider the
+following:
+  
+  (let ((param (make-parameter (lambda () 'initial)))
+        (x 'out))
+    (parameterize ((param (lambda () x)))
+      (dynamic-wind (lambda () (set! x 'in))
+                    (spawn (lambda ()
+                             (display ((param)))))
+                    (lambda () (set! x 'out)))))
+
+If you use SRFI 18 and SRFI 39 then spawning a thread is a dynamic
+nesting but running one is not and this prints IN or OUT.  This makes
+no sense to me.  Why does the new thread see the PARAMETERIZE but not
+the DYNAMIC-WIND?
+
+If you want spawning a thread to be a dynamic nesting then you should
+make running one also be dynamic.  This gives you parameter inheritance,
+you run the DYNAMIC-WIND thunks on thead switches , and the code above
+prints IN.  If threads do not have any dynamic nesting then you don't
+have parameter inheritance, don't run the thunks, and it prints INITIAL.
+Both of these make sense, but the second one seems more useful.
+
+                                          -Richard
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00026" href="msg00026.html">Re: Comments on SRFI-39</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+<li><strong><a name="00028" href="msg00028.html">Re: Comments on SRFI-39</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00021" href="msg00021.html">Comments on SRFI-39</a></strong>
+<ul><li><em>From:</em> shivers</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00024.html">$ave Money On Long Distance Conference Calls</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00026.html">Re: Comments on SRFI-39</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00023.html">Re: Comments on SRFI-39</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00026.html">Re: Comments on SRFI-39</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00025"><strong>Date</strong></a></li>
+<li><a href="threads.html#00025"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

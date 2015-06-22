@@ -1,0 +1,167 @@
+<!-- MHonArc v2.6.16 -->
+<!--X-Subject: syntax changes (srfi&#45;107/108/109) -->
+<!--X-From-R13: Bre Pbguare <creNobguare.pbz> -->
+<!--X-Date: Sat, 29 Dec 2012 21:43:51 +0000 (UTC) -->
+<!--X-Message-Id: 50DF6402.4060006@bothner.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>syntax changes (srfi-107/108/109)</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00002.html">Date Prev</a>][<a href="msg00004.html">Date Next</a>][<a href="msg00001.html">Thread Prev</a>][<a href="msg00004.html">Thread Next</a>][<a href="maillist.html#00003">Date Index</a>][<a href="threads.html#00003">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>syntax changes (srfi-107/108/109)</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-108@DOMAIN.HIDDEN">srfi-108@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: syntax changes (srfi-107/108/109)</li>
+<li><em>From</em>: Per Bothner &lt;<a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 29 Dec 2012 13:43:30 -0800</li>
+<li><em>Cc</em>: <a href="mailto:srfi-109@DOMAIN.HIDDEN">srfi-109@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-109@DOMAIN.HIDDEN">srfi-109@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Followup-to</em>: <a href="mailto:srfi-108@DOMAIN.HIDDEN">srfi-108@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Mozilla/5.0 (X11; Linux x86_64; rv:17.0) Gecko/17.0 Thunderbird/17.0</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+[Follow-ups to srfi-108@xxxxxxxxxxxxxxxxx to avoid duplication.]
+
+I apologize for the lack of progress on these SRFIs.  (I had a security
+bug I had to deal with in my day job, among other issues.)
+
+Now that there appears to be consensus on the XML-style syntax
+(rather than Scribble-style), I have started implementing SRFIs
+108 and 109 in Kawa, which I hope will provide some practical
+experience.
+
+My first conclusion is that too many special characters are needed
+for string literals:
+  #&amp;[Hello world!]
+Starting a literal with '#', '&amp;', and '[' seems rather cumbersome,
+ugly, and error prone.  I realized there is no need for the
+initial '#'.  Instead, I propose:
+  &amp;[Hello world!]           ;; string
+  &amp;URI[<a  rel="nofollow" href="http://example.com/">http://example.com/</a>] ;; named constructor
+This makes the top-level prefix and the nested prefix the same:
+  &amp;section[Read this &amp;emph[first]!]
+
+There is a seeming ambiguity, since in Scheme the character '&amp;'
+is a valid symbol character.  However, a symbol followed
+immediately by either '{' or '[' is not defined by standard
+Scheme, so this is a conflict-free extension.
+
+However, it may be worth switching the roles of '{...}' and
+'[...]'.  I'd value some feedback on these two options:
+
+** Option curly-quotes (braces quote, bracket unquote) **
+
+Examples:
+
+&amp;{Hello world!}
+&amp;{Hello &amp;[name]!}
+&amp;section{News as of &amp;(current-date)}
+&amp;itemlist[
+  &amp;item{First item}
+  &amp;item{Second item is &amp;emph{important}}]
+
++ This matches Scribble, so may be more familiar to some.
+Plus it would be easier to convert Scribble syntax to this syntax
+or vice versa, or write a reader macro that does the conversion.
+
++ More familiar from LaTeX and texinfo.
+
++ Kawa has the following syntax for general QNames:
+  prefix{namespace-uri}:local-name
+Using curly braces for the literal namespace-uri seems more in the
+same spirit as using curly braces for quoted text.
+
++ Kawa has this syntax for a vector constructor:
+  [e1 e2 ... en]
+This is the same as `#(,e1 ,e2 ... ,en), which is the same as
+(vector e1 e2 .. en) except producing an immutable vector.
+Using square brackets in the same-literal syntax to group
+evaluated (unquoted) expressions seems more in the same spirit.
+
+** Option square-quotes (brackets quote, braces unquote) **
+
+Examples:
+
+&amp;[Hello world!]
+&amp;[Hello &amp;{name}!]
+&amp;section[News as of &amp;(current-date)]
+&amp;itemlist{
+  &amp;item[First item]
+  &amp;item[Second item is &amp;emph[important]]}
+
++ Kawa's XML literals (the base for SRFI-107) uses curly
+braces for unquoting, so this would be an incompatibility.
+However, Kawa could allow either braces and brackets for
+unquoting in XML literals, while deprecating the older
+use of braces.
+
++ Aesthetically, I think this syntax looks slightly nicer,
+based on my general experience - but not by much.
+
+Input?  Other reasons to prefer one to the others?
+Preferences?
+--
+	--Per Bothner
+per@xxxxxxxxxxx   <a  rel="nofollow" href="http://per.bothner.com/">http://per.bothner.com/</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00004" href="msg00004.html">Re: syntax changes (srfi-107/108/109)</a></strong>
+<ul><li><em>From:</em> John Cowan</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00002.html">Re: SRFI-108/SRFI-109 special characters</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00004.html">Re: syntax changes (srfi-107/108/109)</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00001.html">Comments on SRFI 109</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00004.html">Re: syntax changes (srfi-107/108/109)</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00003"><strong>Date</strong></a></li>
+<li><a href="threads.html#00003"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

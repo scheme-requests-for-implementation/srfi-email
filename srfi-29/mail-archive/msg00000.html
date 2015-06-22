@@ -1,0 +1,184 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Comparison with Forth equivalent -->
+<!--X-From-R13: Rneera Pnar <qonarNtbserr.vaqvtb.vr> -->
+<!--X-Date: Tue,  9 Apr 2002 02:28:01 +0200 (DFT) -->
+<!--X-Message-Id: 3CB236CF.5050008@gofree.indigo.ie -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Comparison with Forth equivalent</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[Date Prev][<a href="msg00001.html">Date Next</a>][Thread Prev][<a href="msg00006.html">Thread Next</a>][<a href="maillist.html#00000">Date Index</a>][<a href="threads.html#00000">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Comparison with Forth equivalent</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-29@DOMAIN.HIDDEN">srfi-29@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Comparison with Forth equivalent</li>
+<li><em>From</em>: Darren Bane &lt;<a href="mailto:dbane@DOMAIN.HIDDEN">dbane@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 09 Apr 2002 01:33:19 +0100</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-29@DOMAIN.HIDDEN">srfi-29@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Mozilla/5.0 (Windows; U; Win98; en-US; rv:0.9.9) Gecko/20020311</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+It's quiet in here ...&lt;/LURK&gt;  Sorry, this is longer than I intended.
+
+</pre><tt>I thought it would be interesting to compare your SRFI with the Forth 
+</tt><tt>equivalent - both it and Scheme are fairly minimal languages, and just a 
+</tt><tt>little outside the mainstream.  The Forth standards proposal is at the 
+</tt><tt>end of <a  rel="nofollow" href="http://www.mpeltd.demon.co.uk/arena.htm#papers">http://www.mpeltd.demon.co.uk/arena.htm#papers</a>
+</tt><pre style="margin: 0em;">
+
+I'll try to limit this to the SRFI's scope (e.g. no wide characters).
+
+
+1.  current-locale:
+------------------
+</pre><tt>Instead of returning a list, Forth provides two words get-language and 
+</tt><tt>get-country.  These deal with the ISO codes (e.g. en, de, us, ie), 
+</tt><tt>apparently in the equivalent of symbol form (words).
+</tt><pre style="margin: 0em;">
+
+</pre><tt>Note that set-language and set-country are provided also.  Arguably, 
+</tt><tt>this is nice for symmetry, but I think it's better to leave locale 
+</tt><tt>selection up to the user (e.g. using environment variables).
+</tt><pre style="margin: 0em;">
+
+
+2.  declare-bundle and localized-template:
+-----------------------------------------
+</pre><tt>Instead of a high-level data structure, Forth just defines a method to 
+</tt><tt>store references to language-dependent strings in memory - L&quot;.  Thus its 
+</tt><tt>dictionaries have string keys like GNU gettext, rather than the (int, 
+</tt><tt>int) tuples of XPG4 or your own '(package msg-sym).  Presumably then 
+</tt><tt>there is an auxiliary file like an XPG4 message catalogue which holds 
+</tt><tt>the text for different languages - this is left up to the implementation.
+</tt><pre style="margin: 0em;">
+
+
+</pre><tt>Interestingly, they include a simple string macro expander as an 
+</tt><tt>integral part, similar to SRFI-28.
+</tt><pre style="margin: 0em;">
+
+----------
+
+</pre><tt>Overall, well done on actually bothering to write an SRFI.  I had been 
+</tt><tt>daydreaming about doing something similar for months.  But now, here's 
+</tt><tt>my feedback:
+</tt><pre style="margin: 0em;">
+
+
+</pre><tt>*  I'm worried about performance and/or fitting in with the host OS.  I 
+</tt><tt>know almost all software runs &quot;fast enough&quot;, but XPG4 implementations 
+</tt><tt>can go to some lengths (on-disk hashes mmapped into RAM) for speed.  I 
+</tt><tt>would guess that this isn't for nothing.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>Even if nobody does, I'd like to allow implementors the latitude to do 
+</tt><tt>something like this, or better, just interface to the system libraries 
+</tt><tt>with an FFI.  So I'd suggest defining declare-bundle as a sublanguage, 
+</tt><tt>somewhat like SRFI-7.  The sample implementation could remain the same 
+</tt><tt>and you could just load these files, but at least people would then be 
+</tt><tt>able to use a different scheme, say generating a message catalogue from 
+</tt><tt>the source.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>All this really needs is a statement saying that declare-bundle needn't 
+</tt><tt>necessarily be full Scheme and that you should put the declare-bundles 
+</tt><tt>for each language in a separate source file.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>I'd almost consider the ability to implement this SRFI in terms of the 
+</tt><tt>native OS facilities (which for me is XPG4) a requirement.
+</tt><pre style="margin: 0em;">
+
+
+</pre><tt>*  localized-template is a lot of typing.  For comparison, one Forth 
+</tt><tt>equivalent of
+</tt><pre style="margin: 0em;">
+
+   (display (format (localized-template 'package 'hello-msg))) is
+   L&quot; Hello World!&quot; LOCALE@ PAD 84 SUBSTITUTE TYPE CR
+
+Hmm.  Maybe you should just ignore that.
+
+
+</pre><tt>*  One advantage of using strings as keys into the dictionary instead of 
+</tt><tt>integers/symbols is that the string can be the default message if no 
+</tt><tt>local translation is found.  XPG4 doesn't do this, and has to have 
+</tt><tt>another parameter to catgets for the default (although you could always 
+</tt><tt>just pass NULL).
+</tt><pre style="margin: 0em;">
+
+However, having said that, I prefer things the way they are.
+
+
+Just thought I'd get the ball rolling ...
+
+
+----------
+
+  REFERENCES
+
+</pre><tt>ANS Forth Internationalisation proposal 
+</tt><tt>(<a  rel="nofollow" href="http://www.mpeltd.demon.co.uk/arena/i18n.propose.v7.PDF">http://www.mpeltd.demon.co.uk/arena/i18n.propose.v7.PDF</a>)
+</tt><tt>gencat(1) 
+</tt><tt>(<a  rel="nofollow" href="http://www.openbsd.org/cgi-bin/man.cgi?query=gencat&amp;apropos=0&amp;sektion=0&amp;manpath=OpenBSD+Current&amp;arch=i386&amp;format=html">http://www.openbsd.org/cgi-bin/man.cgi?query=gencat&amp;apropos=0&amp;sektion=0&amp;manpath=OpenBSD+Current&amp;arch=i386&amp;format=html</a>)
+</tt><tt>catopen(3) 
+</tt><tt>(<a  rel="nofollow" href="http://www.openbsd.org/cgi-bin/man.cgi?query=catopen&amp;sektion=3&amp;apropos=0&amp;manpath=OpenBSD+Current">http://www.openbsd.org/cgi-bin/man.cgi?query=catopen&amp;sektion=3&amp;apropos=0&amp;manpath=OpenBSD+Current</a>)
+</tt><tt>catgets(3) 
+</tt><tt>(<a  rel="nofollow" href="http://www.openbsd.org/cgi-bin/man.cgi?query=catgets&amp;sektion=3&amp;apropos=0&amp;manpath=OpenBSD+Current">http://www.openbsd.org/cgi-bin/man.cgi?query=catgets&amp;sektion=3&amp;apropos=0&amp;manpath=OpenBSD+Current</a>)
+</tt><tt>catclose(3) 
+</tt><tt>(<a  rel="nofollow" href="http://www.openbsd.org/cgi-bin/man.cgi?query=catclose&amp;sektion=3&amp;apropos=0&amp;manpath=OpenBSD+Current">http://www.openbsd.org/cgi-bin/man.cgi?query=catclose&amp;sektion=3&amp;apropos=0&amp;manpath=OpenBSD+Current</a>)
+</tt><pre style="margin: 0em;">
+gettext(3) (<a  rel="nofollow" href="http://www.gnu.org/manual/gettext/html_chapter/gettext_toc.html">http://www.gnu.org/manual/gettext/html_chapter/gettext_toc.html</a>)
+--
+Darren Bane
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Next by Date:
+<strong><a href="msg00001.html">gettext-based localization</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00006.html">Re: Comparison with Forth equivalent</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00000"><strong>Date</strong></a></li>
+<li><a href="threads.html#00000"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,179 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: flow of control issues -->
+<!--X-From-R13: Fbz Zbeq <ybeqNrzs.arg> -->
+<!--X-Date: Fri, 26 Dec 2003 19:53:30 +0100 (NFT) -->
+<!--X-Message-Id: 200312261917.LAA27931@morrowfield.regexps.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>flow of control issues</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00080.html">Date Prev</a>][<a href="msg00082.html">Date Next</a>][<a href="msg00069.html">Thread Prev</a>][<a href="msg00092.html">Thread Next</a>][<a href="maillist.html#00081">Date Index</a>][<a href="threads.html#00081">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>flow of control issues</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: flow of control issues</li>
+<li><em>From</em>: Tom Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 26 Dec 2003 11:17:50 -0800 (PST)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+The draft quite sanely protects C code from always having to cope with
+multiple returns (not to mention state-saving) as via upward
+continuations.  C code should not, however, be _prevented_ from
+constructing an upwards continuation.
+
+The draft is silent on tail call optimization which is an unfortuante
+omission that limits, for example, the kinds of higher-order
+procedures that can be implemented using the FFI.
+
+It's silent about asynchronous interrupts which, while not standard
+Scheme, are likely to be an important feature of most
+implementations.  In an interactive application especially, absense of
+support for asynchronous interruption in &quot;built-in&quot; procedures can
+spoil an application's usability.
+
+It uses non-local exits for errors which raises the unwind-protection
+issues I mentioned earlier.
+
+I would therefore like to suggest the draft be revised on four
+points:
+
+1) Don't use non-local exits for errors.   Instead, provide a 
+   mechanism for returning error codes.   If Scheme return values are
+   to be passed via output parameters, then there is a convenient 
+   interface for this:
+
+	error_code = SCHEME_CAR (&amp;return_value, instance, &amp;pair);
+        if (error_code)
+          {
+            /* clean up and return an error to our caller */
+            return error_code;
+          }
+        /* otherwise, continue normally.  The call to CAR 
+         * succeeded.
+         */
+
+   In addition to avoiding non-local exits in the FFI, this style of
+   error handling is closer to what is customary in C.
+
+
+2) Do provide polling for asynchronous interruption.
+
+   As in:
+
+	while (very_long_loop)
+          {
+            ...
+            if (SCHEME_INTERRUPT_POLL (instance))
+              {
+                /* cleanup and return early */
+                return SCHEME_ERR_INTERRUPT;
+              }
+            ...
+          }
+
+
+3) Do provide a &quot;trampoline-on-the-ceiling&quot; style of tail calls for C.
+
+   As in:
+
+	scheme_error_code
+        fn ( [...] )
+        {
+          [...];
+        
+          /* instead of returning a value, something vaguley like:
+           */
+
+          SCHEME_CONSTRUCT_APPLICATION (&amp;result, instance, &amp;proc, 
+                                        &amp;arg1, &amp;arg2, ...);
+
+          return SCHEME_ERR_MAKE_TAILCALL;
+        }
+
+   in which case my caller is responsible for performing the procedure
+   application I constructed.
+
+   While certainly not as fast as what an implementation can do
+   internally, such tail calls are at least safe-for-space and
+   portable.
+
+   The converse of that is that the FFI needs to specify how to 
+   call a function which might request the caller to complete a 
+   tail call.
+
+4) Do provide upward continuations from C.
+
+   I don't have an interface sketch but, briefly, while the 
+   current interfaces for call-outs are fine, it should also 
+   be possible to write a C primitive that accepts as input a 
+   first-class representation of its continuation and returns
+   the same.
+
+   Used in a manner similar to the mechanism shown above for
+   tail calls, this can permit FFI-using primitives whose 
+   state can be captured in an upward continuation.
+
+-t
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00092" href="msg00092.html">Re: flow of control issues</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00080.html">Re: no constants please</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00082.html">Re: maybe pika</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00069.html">general</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00092.html">Re: flow of control issues</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00081"><strong>Date</strong></a></li>
+<li><a href="threads.html#00081"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

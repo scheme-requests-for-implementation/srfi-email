@@ -1,0 +1,152 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Choose&#45;Your&#45;Own&#45;Ellipsis -->
+<!--X-From-R13: Fnlybe Qnzcoryy <pnzcoryyNriqri.ngu.pk> -->
+<!--X-Date: Tue, 14 Oct 2003 23:33:37 +0200 (DFT) -->
+<!--X-Message-Id: 0D08CB42&#45;FE8E&#45;11D7&#45;96A9&#45;000A95CCCEE4@evdev.ath.cx -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200310131443.HAA13228@radish.petrofsky.org -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Choose-Your-Own-Ellipsis</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00010.html">Date Prev</a>][<a href="msg00012.html">Date Next</a>][<a href="msg00010.html">Thread Prev</a>][<a href="msg00012.html">Thread Next</a>][<a href="maillist.html#00011">Date Index</a>][<a href="threads.html#00011">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Choose-Your-Own-Ellipsis</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-46@DOMAIN.HIDDEN">srfi-46@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Choose-Your-Own-Ellipsis</li>
+<li><em>From</em>: Taylor Campbell &lt;<a href="mailto:campbell@DOMAIN.HIDDEN">campbell@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 14 Oct 2003 17:33:28 -0400</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-46@DOMAIN.HIDDEN">srfi-46@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:200310131443.HAA13228@DOMAIN.HIDDEN">200310131443.HAA13228@xxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+
+On Monday, Oct 13, 2003, at 10:43 US/Eastern, Allophone Petrofsky wrote:
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+I don't know what the best exact syntax for this extension would be.
+Here are several possibilities (using the conventions foo* == any
+number of foo, and foo? == zero or one foo):
+
+  -- Ellipsis choice before the literals, as above:
+    (syntax-rules &lt;ellipsis&gt;? &lt;literals&gt; &lt;rule&gt;*)
+
+  -- After the literals:
+    (syntax-rules &lt;literals&gt; &lt;ellipsis&gt;? &lt;rule&gt;*)
+
+  -- On a per-rule basis:
+    (syntax-rules literals (&lt;ellipsis&gt;? &lt;pattern&gt; &lt;template&gt;) ...)
+
+  -- After the literals, with an extra &quot;noise word&quot; (like cond's =&gt;)
+     to distinguish this from other syntax-rules extensions:
+    (syntax-rules &lt;literals&gt; (ellipsis &lt;ellipsis&gt;)? &lt;rule&gt;*)
+</pre></blockquote><pre style="margin: 0em;">
+
+I like this idea most.  This lets me do some other macrology that
+would have been rather irritating, because you no longer need to pass
+the 'free pattern variables' in submacros to avoid accidental ellipsis
+conflict.  I'll modify the draft to define this, but we shall first
+to decide which of those four options to choose: opinions, anyone?  (I
+don't care either way.)
+
+This _would_ also eliminate the issue of matching ellipsis literally
+but for one problem: we have no guards or non-linear patterns, so we
+can't do something like:
+
+(define-syntax contrived-example
+  (syntax-rules ()
+    ((_ (syntax-rules ?ellipsis ?literals
+                   ;; ^^^^^^^^^
+          ((?ignored ?foo ?ellipsis) ?template)))
+                       ;; ^^^^^^^^^
+     (display &quot;You've got ellipsis!&quot;))
+    ((_ ?foo)
+     (display &quot;No ellipsis yet.&quot;))))
+
+and have
+
+(contrived-example (syntax-rules ::: () ((_ ?bar :::) baz)))
+
+expand to
+
+(display &quot;You've got ellipsis!&quot;)
+
+Having mentioned non-linear patterns, what are some opinions on adding
+them, and what their specific semantics should be?  If I do add non-
+linear patterns, should SYNTAX=? defined as
+
+(define-syntax syntax=?
+  (syntax-rules ()
+    ((_ ?sk ?fk ?x ?x) ?sk)
+    ((_ ?sk ?fk ?x ?y) ?fk)))
+
+compare identifiers boundly, freely, or symbolically?
+
+What are some thoughts on non-linear patterns and guards, or, if
+guards, how they might be best added to SYNTAX-RULES?
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00012" href="msg00012.html">Re: Choose-Your-Own-Ellipsis</a></strong>
+<ul><li><em>From:</em> Taylor Campbell</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00009" href="msg00009.html">Choose-Your-Own-Ellipsis</a></strong>
+<ul><li><em>From:</em> Allophone Petrofsky</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00010.html">Re: Choose-Your-Own-Ellipsis</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00012.html">Re: Choose-Your-Own-Ellipsis</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00010.html">Re: Choose-Your-Own-Ellipsis</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00012.html">Re: Choose-Your-Own-Ellipsis</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00011"><strong>Date</strong></a></li>
+<li><a href="threads.html#00011"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

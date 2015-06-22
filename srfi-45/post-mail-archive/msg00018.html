@@ -1,0 +1,132 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: simpler srfi 45 implementation -->
+<!--X-From-R13: OaqerinaFbaqre <naqerNurg.oebja.rqh> -->
+<!--X-Date: Tue, 13 Nov 2007 17:27:57 +0100 (MET) -->
+<!--X-Message-Id: Pine.SOC.4.64.0711131036160.13665@oow.het.brown.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 001001c825de$11b10380$2101a8c0@jos -->
+<!--X-Reference: 18233.39965.878836.78458@portuguese.ccs.neu.edu -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: simpler srfi 45 implementation</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00017.html">Date Prev</a>][<a href="msg00019.html">Date Next</a>][<a href="msg00017.html">Thread Prev</a>][<a href="msg00021.html">Thread Next</a>][<a href="maillist.html#00018">Date Index</a>][<a href="threads.html#00018">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: simpler srfi 45 implementation</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Eli Barzilay &lt;<a href="mailto:eli@DOMAIN.HIDDEN">eli@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: simpler srfi 45 implementation</li>
+<li><em>From</em>: AndrevanTonder &lt;<a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 13 Nov 2007 10:54:43 -0500 (EST)</li>
+<li><em>Cc</em>: Jos Koot &lt;<a href="mailto:jos.koot@DOMAIN.HIDDEN">jos.koot@xxxxxxxxxxxxxx</a>&gt;, Phil Bewig &lt;<a href="mailto:pbewig@DOMAIN.HIDDEN">pbewig@xxxxxxxxx</a>&gt;,     <a href="mailto:srfi-45@DOMAIN.HIDDEN">srfi-45@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-45@DOMAIN.HIDDEN">srfi-45@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:18233.39965.878836.78458@DOMAIN.HIDDEN">18233.39965.878836.78458@xxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:001001c825de%2411b10380%242101a8c0@DOMAIN.HIDDEN">001001c825de$11b10380$2101a8c0@jos</a>&gt; &lt;<a href="mailto:18233.39965.878836.78458@DOMAIN.HIDDEN">18233.39965.878836.78458@xxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+On Tue, 13 Nov 2007, Eli Barzilay wrote:
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+I was aware of the possible optimization at the time, but didn't find
+any example where it mattered.  However, if you do put it in:
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+            [(promise? p)
+             (let* ((v (force p)))
+              (if (not (pair? (promise-p prom)))
+                  (set-promise-p! prom (list v)))
+              (car (promise-p prom)))]
+</pre></blockquote><pre style="margin: 0em;">
+
+then you do the recursive forcing of `p' in a non-tail conext.  My
+(vague, not formal at all) feeling about these &quot;referral promises&quot; is
+that they do happen in places where the original code had a tail call,
+so it might be a bad idea to break it.
+</pre></blockquote><pre style="margin: 0em;">
+
+The suggested optimization looks very suspicious also to me.
+It seems that the non-tail-call could break space-safety.
+
+Two questions:
+
+ - Have you run the SRFI-45 tests on your suggested optimization?
+   Note that this involves uncommenting the mostly nonterminating
+   test cases, letting them run for some time, keeping track
+   of the memory consumption with some other tool, and verifying
+   that it stays bounded.  Of course, this is not a substitute
+   for a theoretical analysis, but it should show pretty quickly
+   if you are not on the right track.
+
+ - Did you find the same slowdown for the first implementation
+   given in the message
+   <a  rel="nofollow" href="http://srfi.schemers.org/srfi-45/post-mail-archive/msg00010.html">http://srfi.schemers.org/srfi-45/post-mail-archive/msg00010.html</a> ?
+   (That one is easier for me to understand and comment on - Eli's
+   I would have to study again).
+
+Cheers
+Andre
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00022" href="msg00022.html">Re: simpler srfi 45 implementation</a></strong>
+<ul><li><em>From:</em> Jos Koot</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00017" href="msg00017.html">Re: simpler srfi 45 implementation</a></strong>
+<ul><li><em>From:</em> Eli Barzilay</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00017.html">Re: simpler srfi 45 implementation</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00019.html">simpler srfi 45 implementation</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00017.html">Re: simpler srfi 45 implementation</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00021.html">Re: simpler srfi 45 implementation</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00018"><strong>Date</strong></a></li>
+<li><a href="threads.html#00018"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

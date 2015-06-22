@@ -1,0 +1,219 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Comments on LET and constructors -->
+<!--X-From-R13: Oaqer ina Fbaqre <naqerNyngre.urg.oebja.rqh> -->
+<!--X-Date: Thu, 20 Oct 2005 19:01:13 +0200 (MST) -->
+<!--X-Message-Id: 200510201700.j9KH0xjA021620@later.het.brown.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Comments on LET and constructors</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00073.html">Date Prev</a>][<a href="msg00075.html">Date Next</a>][<a href="msg00073.html">Thread Prev</a>][<a href="msg00076.html">Thread Next</a>][<a href="maillist.html#00074">Date Index</a>][<a href="threads.html#00074">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Comments on LET and constructors</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-76@DOMAIN.HIDDEN">srfi-76@xxxxxxxxxxxxxxxxx</a>, <a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Comments on LET and constructors</li>
+<li><em>From</em>: Andre van Tonder &lt;<a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 20 Oct 2005 13:00:59 -0400 (EDT)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-76@DOMAIN.HIDDEN">srfi-76@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Reply-to</em>: Andre van Tonder &lt;<a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre> 
+ Thank you for the update.  I have some comments and questions on LET below,
+ although even with LET, we can still only express a subset of possible 
+ constructors, without a good reason why this subset is special.   
+ 
+   For this reason, I would still rather do without the LET clause and would 
+   still advocate either:
+ 
+   - Having just simple SRFI-9 type constructors (my preference), or,
+ 
+   - Making the user write the constructor explicitly.  This remains a
+     more general solution.   
+   
+   
+ Comments:
+ =========
+ 
+ - Calling it LET can be confusing, since it is unlike the usual LET.  
+   How about FIELDS-WITH (see next).
+ 
+ - The scoping is a bit weird in that references can precede bindings
+   and bindings may not bind following references, e.g.
+ 
+     (define-type foo ()
+       (fields (x () x-value)         ; precedes binding
+               (y () y-value))
+       (let ((x-value 1)))
+       (init! (r) (display x-value))  ; refers to toplevel x-value  
+       (let ((y-value 2))))
+     
+   Also, in the above, presumably x-value refers to a toplevel
+   binding and not the let-binding??
+   
+   How about making the scoping follow a more readable block structure
+   such as (some variation of):
+     
+      (define-type foo ()
+        (fields-with ((x-value 1)
+                      (y-value 2))
+          (x () x-value)
+          (y () y-value)))
+        (init! (r) (display x-value)) 
+ 
+ - We can now indeed express the RATIONAL example: 
+ 
+   (define-type rational (x y)   
+     (let ((fields (if (= y 0)
+                     (cons 1 0)    ; representation of infinity
+                     (let ((common (gcd x y)))
+                        (cons (/ x common)
+                              (/ y common))))
+     (fields (num   immutable (car fields))
+             (denom immutable (cdr fields)))  
+             
+ - As you mention, LET-VALUES would be useful for efficiency 
+   in examples such as RATIONAL above.
+   
+ - Even LET-VALUES (unless optimized away) would allocate more 
+   intermediate values and presumably be slightly less efficient than an
+   explicit constructor (in pseudocode):    
+   
+   (define-type rational
+     (constructor (lambda (x y)
+                    (if (= y 0)
+                        (instantiate (parent)
+                                     (num   1) 
+                                     (denom 0))  ; representation of infinity
+                        (let ((common (gcd x y)))
+                          (instantiate (parent) 
+                                       (num   (/ x common))
+                                       (denom (/ y common)))))))	
+     (fields num denom))        
+ 
+ - We can do imperative things, but it is a hack:
+   
+    (define-type foo ()
+      (let ((dummy (display &quot;About to allocate a foo&quot;))))
+      (fields x y))
+      
+   This would be more natural to express in an explicit constructor.
+   
+ - We can express LETREC, but it is a hack, and inefficient
+   without optimization:
+ 
+    (define-type foo ()
+      (let ((fields (letrec (even? (lambda (n) ......))
+                            (odd?  (lambda (n) ......)))
+                      (cons even? odd?))))
+      (fields (method1 () (car fields))
+              (method2 () (cdr fields))))
+              
+   This would be more natural to express in an explicit constructor. 
+  
+ - The same goes for the following pseudocode for a constructor with
+   case-lambda.  It is expressible with LET, but a hack and inefficient:   
+    
+   (define-type rational
+     (constructor (case-lambda 
+                    ((n)   .....)
+                    ((n d) .....))))            
+ 
+ - What would be the &quot;upgrade path&quot; for adding possible extensions
+   to make things like the previous two points less hackish?  Should future
+   extensions have to piecemeal add LETREC, BEGIN, etc. clauses as extra syntax,
+   eventually reproducing some sublanguage of standard Scheme? :-) 
+  
+
+ - Some constructors that are still not expressible:
+   =================================================
+ 
+   ;; Conditionally instantiating the parent with different arguments:
+   ;; (actually this specific example can be expressed but would 
+   ;;  require the test for (= y 0) to be duplicated):
+                  
+   (define-type rational 
+     (parent finite-rational)
+     (constructor (lambda (x y)
+                    (if (= y 0)
+                        (instantiate (parent 1 0))   
+                        (instantiate (parent x y))))))    
+                        
+ 
+   ;; Local lexicals:
+    
+   (define-type generated-id
+      (fields symbol)
+      (constructor (let ((count 0))
+                     (lambda ()
+                       (set! count (+ count 1))
+                       (string-&gt;symbol ................))))) 
+                       
+                       
+   ;; Forwarding a variable number of arguments to parent 
+   ;; (here called PARENT-APPLY):
+   
+   (define-type rational-with-comment (num . maybe-denom)
+     (parent-apply rational num maybe-denom)
+     (fields comment))
+                     
+                     
+ Cheers
+ Andre
+                                        
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00073.html">Revision of SRFI 76 available</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00075.html">Re: Revision of SRFI 76 available - questions and comments</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00073.html">Revision of SRFI 76 available</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00076.html">Re: Comments on LET and constructors</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00074"><strong>Date</strong></a></li>
+<li><a href="threads.html#00074"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

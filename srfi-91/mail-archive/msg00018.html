@@ -1,0 +1,271 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Issues with Unicode -->
+<!--X-From-R13: "Xbanguna E. Euncveb" <funcNrebf&#45;bf.bet> -->
+<!--X-Date: Tue,  9 May 2006 17:08:25 +0200 (MST) -->
+<!--X-Message-Id: 1147187289.13545.134.camel@vmx.eros&#45;os.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: y9lbqushdsw.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: 803467D9&#45;D753&#45;4E8A&#45;AAEA&#45;2F03E97EDB42@iro.umontreal.ca -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Issues with Unicode</title>
+<link rev="made" href="mailto:shap@eros-os.org">
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00017.html">Date Prev</a>][<a href="msg00019.html">Date Next</a>][<a href="msg00028.html">Thread Prev</a>][<a href="msg00019.html">Thread Next</a>][<a href="maillist.html#00018">Date Index</a>][<a href="threads.html#00018">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Issues with Unicode</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-91%40srfi.schemers.org">srfi-91@srfi.schemers.org</a></li>
+<li><em>Subject</em>: Re: Issues with Unicode</li>
+<li><em>From</em>: &quot;Jonathan S. Shapiro&quot; &lt;<a href="mailto:shap%40eros-os.org">shap@eros-os.org</a>&gt;</li>
+<li><em>Date</em>: Tue, 09 May 2006 11:08:09 -0400</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-91%40srfi.schemers.org">srfi-91@srfi.schemers.org</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:803467D9-D753-4E8A-AAEA-2F03E97EDB42%40iro.umontreal.ca">803467D9-D753-4E8A-AAEA-2F03E97EDB42@iro.umontreal.ca</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:y9lbqushdsw.fsf%40informatik.uni-tuebingen.de">y9lbqushdsw.fsf@informatik.uni-tuebingen.de</a>&gt;	 &lt;<a href="mailto:803467D9-D753-4E8A-AAEA-2F03E97EDB42%40iro.umontreal.ca">803467D9-D753-4E8A-AAEA-2F03E97EDB42@iro.umontreal.ca</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>At Marc's request, I'm responding to the SRFI-91 list on the subject of
+binary ports.
+
+Overall, I think that this SRFI is quite good. That said, I think that
+the port hierarchy proposal is misconceived and needs to be abandoned.
+The design mistake lies in trying to unify binary ports and character
+ports (even partially). Since the typing issues have been addressed in
+prior discussion, I'm going to focus on semantic, implementation, and
+experience issues here.
+
+A note: I'm assuming in all of this that scheme will move to an
+international character set. The problems I am about to discuss do not
+manifest in a system implementing only a 7-bit or 8-bit character set.
+
+
+Historical Background:
+
+Historically, scheme has implicitly required that all ports be character
+ports. The requirement that port I/O is character based is implicit in
+the definitions of external representation and the relationship between
+external representation, READ, and WRITE. The assumption was reinforced
+with the introduction of string ports.
+
+So: whatever else is done, we are stuck with character ports as a
+fundamental abstraction provided by the language runtime.
+
+One consequence of this is that external encodings cannot be neutral.
+While it is possible to implement arbitrary external encodings on top of
+READ-BYTE and WRITE-BYTE, there must be at least one multibyte character
+encoding that is known to the runtime at primitive level in order to
+support the implementations of READ and WRITE: the encoding that is the
+one used for scheme program input.
+
+* Mixing Bytes and Characters: Semantic issues
+
+It is tempting to imagine that we might simply mix READ-BYTE and
+READ-CHAR calls on a port. This breaks down quickly in the fact of
+multibyte character sets. Consider the situation where the input stream
+is pointed at a well-formed multibyte character sequence:
+
+   U+4467 U+27
+
+Now given the sequence:
+
+  (READ-BYTE port)
+  (READ-CHAR port)
+
+what should READ-CHAR return? Note that the input cursor is not pointed
+at the start of a character. Either read-byte must resynchronize the
+stream (which is not possible in some character sets) or it must signal
+an error (which suggests that mixing READ-BYTE and READ-CHAR was an
+ill-conceived thing to permit). Resynchronizing is probably the right
+answer, for many reasons having to do with recovery from malformed
+input. Resynchronization behavior of READ-CHAR needs to be defined
+independent of whether it is conflated with READ-BYTE.
+
+If we conclude that resynchronizing is the right answer, then the SRFI
+should be augmented with something like:
+
+  (SYNC-TO-CHAR port)
+
+which advances past bytes that cannot be the start of a character.
+Having such a procedure is probably a good idea in any case.
+
+
+But how about:
+
+  (READ-BYTE port)
+  (PEEK-CHAR port)
+  (PEEK-BYTE port)
+
+Assume that we can resynchronize. The whole point of PEEK-CHAR is that
+it should not modify the input stream, but it is obliged to throw away
+the bad characters while resynchronizing. So what does READ-BYTE return?
+Should READ-CHAR do a non-destructive resynchronization? This is
+consistent, but *extremely* expensive for reasons I will discuss below
+under &quot;implementation issues.&quot;
+
+
+Finally, consider operations like:
+
+  (let ((port (open-input-string &quot;some-string&quot;)))
+    (read-byte port))
+
+does this imply the need to &quot;explode&quot; the string into bytes at the
+implementation level? As I have been re-implementing tinyscheme, I have
+been forced to conclude that it probably does.
+
+Aside: SRFI-6, and the scheme standard in general, are *extremely*
+sloppy about failing to specify interacting conditions. Things like:
+
+  (let* ((s &quot;abcdef&quot;)
+         (p (open-input-string s)))
+     (read-char p)
+     (string-set! s 1 #\d)
+     (read-char p) ; returns #\b or #\d??
+    )
+
+should be well defined, but are not. Is the port opened on a *copy* of
+the string, or does it share state? If it shares state, note that
+exploding the string into its constituent bytes in order to implement
+READ-BYTE is a nightmare!
+
+And of course, matters get *really* fun when we consider WRITE-BYTE:
+
+  (let ((s (open-output-string)))
+    (write-byte s 255)
+    ...
+    (get-output-string s))
+
+Unless the sequence of written bytes happens to lead to valid character
+encodings, it is unclear what get-output-string can safely return here.
+
+
+* Mixing Bytes and Character: Implementation Issues
+
+Assume, for the moment, a UTF-8 encoding for characters. Future scheme
+implementations might support other encodings, but this one is certainly
+one that should be able to work well.
+
+If we have a resynchronization mechanism, and the implementation chooses
+to provide legacy support for the ISO-10656 legacy character planes,
+then the implementation must provide up to 11 characters of &quot;push
+back&quot; (6 good ones and 5 bad ones). In the absence of legacy planes, I
+believe (but check me) that 7 characters of push-back is sufficient.
+
+The classic implementation of PEEK-CHAR in C has been
+
+	ungetc(getc(f))
+
+which is pleasant, because it avoids the need to re-implement STDIO from
+the ground up. This is also pleasant because it is possible to share the
+&quot;file&quot; abstraction with native code. If 7 or 11 characters of pushback
+are required, implementations are now forced to rebuild STDIO.
+
+The problem doesn't exist in the same way when bytes and characters are
+not mixed, because wide-character implementations of STDIO already
+exist, and have already extended the idea of push-back into wide
+character sets. Note, however, that these implementations *rely* on a
+modal separation between binary file descriptors and text file
+descriptors.
+
+
+* Implementation Experience
+
+One or two of you may have noticed that I've taken over tinyscheme. I've
+been working on various modernizations and fixes, among them the
+introduction of unicode character sets. Tinyscheme is primarily a
+scripting language, and so will deviate from scheme in some respects,
+but I'm trying to keep it as close as I can within the requirements of
+sensible and robust scripting practices.
+
+In the course of this, I decided to see if I could come up with a
+sensible implementation in which READ-BYTE and READ-CHAR could have
+sensible behavior when both can be applied to the same port. It is a
+complete mess.
+
+A clean implementation does not always imply a clean semantics, but a
+horrific implementation executed by a competent programmer (though
+perhaps I flatter myself) is usually a sign of a poor design choice.
+
+
+* A Caution
+
+Something I said earlier deserves stronger emphasis: not all character
+sets have the ability to resynchronize!
+
+Unicode, I promise you, will not be the last character set in the
+universe. It would be a great misfortune to tie the definition of the
+language to an attribute (re-synchronizability) that future character
+set designers are likely to get wrong.
+
+
+Summary:
+
+We need to add read-byte, write-byte, and friends, but we should firmly
+segregate character ports and byte ports. Byte ports should NOT support
+object I/O (in the form of READ/WRITE/DISPLAY, nor READ-CHAR). The
+atomic unit of transfer in a byte port should be the byte. The atomic
+unit of transfer in &quot;classic&quot; ports should be the character.
+
+
+
+shap
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00019" href="msg00019.html">Re: Issues with Unicode</a></strong>
+<ul><li><em>From:</em> John Cowan &lt;cowan@ccil.org&gt;</li></ul></li>
+<li><strong><a name="00022" href="msg00022.html">Re: Issues with Unicode</a></strong>
+<ul><li><em>From:</em> Shiro Kawai &lt;shiro@lava.net&gt;</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00017.html">Re: Why are byte ports &quot;ports&quot; as such?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00019.html">Re: Issues with Unicode</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00028.html">Re: Why are byte ports &quot;ports&quot; as such?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00019.html">Re: Issues with Unicode</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00018"><strong>Date</strong></a></li>
+<li><a href="threads.html#00018"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

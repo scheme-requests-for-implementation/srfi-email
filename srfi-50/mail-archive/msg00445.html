@@ -1,0 +1,198 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Unicode and Scheme (tweaked) -->
+<!--X-From-R13: Bnhy Epuyvr <fpuyvrNpbzpnfg.arg> -->
+<!--X-Date: Sun,  8 Feb 2004 22:27:29 +0100 (NFT) -->
+<!--X-Message-Id: BC4C1389.A3D4%schlie@comcast.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: BC4C0CDB.A3CD%schlie@comcast.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Unicode and Scheme (tweaked)</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00444.html">Date Prev</a>][<a href="msg00446.html">Date Next</a>][<a href="msg00444.html">Thread Prev</a>][<a href="msg00446.html">Thread Next</a>][<a href="maillist.html#00445">Date Index</a>][<a href="threads.html#00445">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Unicode and Scheme (tweaked)</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &lt;<a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Unicode and Scheme (tweaked)</li>
+<li><em>From</em>: Paul Schlie &lt;<a href="mailto:schlie@DOMAIN.HIDDEN">schlie@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 08 Feb 2004 16:25:45 -0500</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:BC4C0CDB.A3CD%25schlie@DOMAIN.HIDDEN">BC4C0CDB.A3CD%schlie@xxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Microsoft-Entourage/10.1.4.030702.0</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>To be slightly more rigorous, character/byte values not representing members
+of the standard scheme character set should be specified as &lt;other&gt;, giving:
+
+-- refined earlier post --
+
+Re: &quot;This SRFI is based in part on the presumption that one should be able
+to write a portable Scheme program which can accurately read and manipulate
+source texts in any implementation, even if those source texts contain
+characters specific to that implementation.&quot;
+
+Personally, I believe that it's a mistake to attempt to more abstractly
+extend the interpretation of scheme's standard character type and associated
+functions, which are presently specified in such a way to enable their
+implementation to be based on the host's platform's native 8-bit byte
+character encoding which may be synonymous the platform's raw octet data
+interfaces (thereby enabling various scheme implementation's historical
+ability to manipulate raw data byte streams as character sequences, which
+may actually encode what ever one needs to; which these proposals begin to
+indirectly break by prohibiting the ability to maintain that equivalence,
+without offering an alternative).
+
+However, it is likely true that scheme's character set and associated
+function specification should be tightened up a little bit even in this
+regard; so as feedback on this aspect of the proposals:
+
+- character-set and lexical ordering could be improved along these lines:
+
+  digit:        0 .. 9
+
+  letter:       A a .. Z z           ;; where A a .. F f also hexdigits
+
+  symbol:       ( ) # ' ` , @ . &quot;    ;; for consistency lexical ordering
+                ; $ % &amp; * / : + -    ;; could/should be defined/improved
+                ^ _ ~ \ &lt; = &gt; ?
+                { } [ ] | !          ;; which should also be included
+
+  space:        space tab newline    ;; as well as tab
+
+  other:        &lt;unmapped-values&gt;    ;; unspecified character/byte codes
+
+
+- lexical ordering should be refined as above to be more typically useful:
+
+  (char&lt;? #\A #\a ... #\Z #\z) -&gt; #t
+
+  (char&lt;? &lt;digit&gt; &lt;letter&gt; &lt;symbol&gt; &lt;space&gt; &lt;other&gt;) -&gt; #t
+
+- only &lt;letter&gt; characters have different upper/lower case representations;
+  all other character encodings, including those unspecified, are unaltered
+  by upper-case, lower-case, and read/write-port functions:
+  
+  (char-upper-case? &lt;digit&gt; #\A..#\Z &lt;symbol&gt; &lt;space&gt; &lt;other&gt;) -&gt; #t
+  (char-lower-case? &lt;digit&gt; #\a..#\z &lt;symbol&gt; &lt;space&gt; &lt;other&gt;) -&gt; #t
+
+  (char-upper-case? #\a..#\z) -&gt; #f
+  (char-lower-case? #\A..#\Z) -&gt; #f
+
+  (char=? (char-upper-case (char-lower-case x)) (char-upper-case x)) -&gt; #t
+  (char=? (char-lower-case (char-upper-case x)) (char-lower-case x)) -&gt; #t
+
+  for all x &lt;letter&gt; characters:
+  (char=? (char-upper-case x) (char-lower-case x)) -&gt; #f
+
+  for all x non &lt;letter&gt; characters:
+  (char=? x (char-upper-case x) (char-lower-case x)) -&gt; #t
+
+  for all x characters:
+  (char-ci=? x (char-upper-case x) (char-lower-case x)) -&gt; #t
+
+- all characters are assumed to be encoded as bytes using the host's
+  native encoding representation, thereby enabling equivalence between
+  the host's native raw byte data I/O and storage, and an implementation's
+  character-set encoding.
+
+- portability of the native platform's encoded text is the responsibility
+  of the host platform and/or other external utilities aware of the
+  transliterations requirements between the various encoding formats.
+
+- implementations which desire to support specific character set encoding
+  which may require I/O port transliteration between scheme's presumed
+  platform neutral character/byte encodings and that of it's native host,
+  may do so by defining a collection of functions which map an arbitrary
+  specific character set encoding into scheme's neutral character/byte
+  sequences as required; and/or may extend the definition of standard
+  function definitions as long as they do not alter the presumed neutrality
+  and binary equivalence between scheme's character/byte data sequence
+  representation and that of it's host.
+
+(lastly, the notion of enabling scheme symbols to be composed of arbitrary
+ extended character set characters which may not be portably displayed on
+ or easily manipulated on arbitrary platforms, is clearly antithetical to
+ achieving portability; so it's suggestion should just be dropped.)
+
+Although I know that these views may not be shared by many, I don't believe
+that scheme should be indirectly restricted to only being able to interface
+to a text only world (regardless of it's encoding); and hope that some
+recognize that these proposals begin to restrict the applicability of scheme
+in just that way, without providing an alternative mechanism to facilitate
+scheme's ability to access and manipulate raw binary, which is that all
+truly flexible programming languages with any legs must do; as the computing
+world is a tad larger than assuming all that needs to be processed and
+interfaced with is text encoded in some specific way.
+
+Thanks for your patience, and hopeful consideration,
+
+-paul-
+
+
+
+------ End of Forwarded Message
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00446" href="msg00446.html">Re: Unicode and Scheme (tweaked)</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00444" href="msg00444.html">Re: Unicode and Scheme</a></strong>
+<ul><li><em>From:</em> Paul Schlie</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00444.html">Re: Unicode and Scheme</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00446.html">Re: Unicode and Scheme (tweaked)</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00444.html">Re: Unicode and Scheme</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00446.html">Re: Unicode and Scheme (tweaked)</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00445"><strong>Date</strong></a></li>
+<li><a href="threads.html#00445"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

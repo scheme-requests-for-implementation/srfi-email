@@ -1,0 +1,300 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: comparison operators and *typos -->
+<!--X-From-R13: Ohoerl Xnssre <ntwNnyhz.zvg.rqh> -->
+<!--X-Date: Tue, 28 Jun 2005 05:40:05 +0200 (DFT) -->
+<!--X-Message-Id: 20050628034007.D80781B77B4@voluntocracy.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: BEE5F140.AA10%schlie@comcast.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: comparison operators and *typos</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00009.html">Date Prev</a>][<a href="msg00011.html">Date Next</a>][<a href="msg00009.html">Thread Prev</a>][<a href="msg00011.html">Thread Next</a>][<a href="maillist.html#00010">Date Index</a>][<a href="threads.html#00010">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: comparison operators and *typos</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:schlie@DOMAIN.HIDDEN">schlie@xxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: comparison operators and *typos</li>
+<li><em>From</em>: Aubrey Jaffer &lt;<a href="mailto:agj@DOMAIN.HIDDEN">agj@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 27 Jun 2005 23:40:07 -0400 (EDT)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-73@DOMAIN.HIDDEN">srfi-73@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-73@DOMAIN.HIDDEN">srfi-73@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:BEE5F140.AA10%25schlie@DOMAIN.HIDDEN">BEE5F140.AA10%schlie@xxxxxxxxxxx</a>&gt; (message from Paul Schlie on	Mon, 27 Jun 2005 18:09:04 -0400)</li>
+<li><em>References</em>: &lt;<a href="mailto:BEE5F140.AA10%25schlie@DOMAIN.HIDDEN">BEE5F140.AA10%schlie@xxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre> | Date: Mon, 27 Jun 2005 18:09:04 -0400
+ | From: Paul Schlie &lt;schlie@xxxxxxxxxxx&gt;
+ | 
+ | &gt; From: Aubrey Jaffer &lt;agj@xxxxxxxxxxxx&gt;
+ | &gt;  | Date: Mon, 27 Jun 2005 02:29:12 -0400
+ | &gt;  | From: Paul Schlie &lt;schlie@xxxxxxxxxxx&gt;
+ | &gt;  | ...
+ | &gt;  | Thereby one could define that an unsigned 0 compares = to signed 0's to
+ | &gt;  | preserve existing code practices which typically compare a value against
+ | &gt;  | a sign-less 0. i.e.:
+ | &gt;  | 
+ | &gt;  |  (= 0 0.0 -0 -0.0) =&gt; #t
+ | &gt;  |  (= 0 0.0 +0 +0.0) =&gt; #t
+ | &gt;  | 
+ | &gt;  |  (= -0 -0.0 +0 +0.0) =&gt; #f
+ | &gt; 
+ | &gt; The `=' you propose is not transitive, which is a requirement of R5RS.
+ | 
+ | - then alternatively one could define:
+ | 
+ |   (= -0 -0.0 0 0.0 +0 +0.0) =&gt; #t
+ | 
+ |   while retaining the remaining relationships, as it seems
+ |   that = and &lt; relationships need not be mutually exclusive?
+
+R5RS says:
+
+  -- procedure: = z1 z2 z3 ...
+  -- procedure: &lt; x1 x2 x3 ...
+  -- procedure: &gt; x1 x2 x3 ...
+  -- procedure: &lt;= x1 x2 x3 ...
+  -- procedure: &gt;= x1 x2 x3 ...
+      These procedures return #t if their arguments are (respectively):
+      equal, monotonically increasing, monotonically decreasing,
+      monotonically nondecreasing, or monotonically nonincreasing.
+
+      These predicates are required to be transitive.
+
+Equal cannot be monotonically increasing.
+
+ ...
+ | 
+ | &gt; Mathematical division by 0 is undefined; if you return 1, then code
+ | &gt; receiving that value can't detect that a boundary case occured.
+ | 
+ | - yes, as above; and corrected below for unsigned 0's and 0.0's:
+ | 
+ |   1/0 == inf :: 1/inf == 0 :: 0/0 == inf/inf == ~1
+ | 
+ |   where although inf equivalent in magnitude to +/-inf,
+ |   it's sign is is undefined, thereby similar to nan, with
+ |   the exception that if one were to introduce the convention
+ |   that '~' may designate an ambiguous sign then the result of
+ |   any division by inf or 0 may be considered to only yield
+ |   an ambiguous sign although not necessarily magnitude, in
+ |   in lieu of considering the value as undefined, i.e.
+ | 
+ |   inf =&gt; ~inf               ; either +inf or -inf
+ |   (* 3 (/ 0 0)) =&gt; ~3       ; either   -3 or   +3, thereby:
+ |   (abs (* 3 (/ 0 0))) =&gt; +3
+
+So ~ generates an algebraic field extension attaching the roots of
+x^2=1.  Note that ~ is not a real number because it doesn't fit in the
+total ordering.
+
+ |   (as this is how an implementation would behave if it considered
+ |    +-inf and +-0 it's greatest and smallest represent-able but
+ |    non-accumulating values; which effectively enables calculations
+ |    to loose precision more gracefully, than falling of the edge of
+ |    the value system potentially resulting in a run-time fault.)
+
+Section 6.2.2 Exactness says:
+
+  If two implementations produce exact results for a computation that
+  did not involve inexact intermediate results, the two ultimate
+  results will be mathematically equivalent.
+
+So loss of precision must not be platform dependent; thresholds of
+&quot;greatest and smallest represent-able&quot; values can not affect
+precision.  Losing precision in calculation is an attribute of inexact
+numbers.
+
+ | &gt; ...
+ | &gt; Nearly all of the SLIB occurences of EXPT have at least one
+ | &gt; literal constant argument.  In these cases, (expt 0 0) signaling
+ | &gt; an error would catch coding errors.  MODULAR:EXPT tests for a
+ | &gt; zero base (and returns 0) before calling EXPT.
+ | 
+ | - ??? The responsibility of an implementation's arithmetic
+ | implementation is to be generically as correct and consistent as
+ | reasonably possible.  If slib chooses to optionally signal a
+ | runtime error for any arbitrary set of argument values, that's it's
+ | prerogative; but should have nothing to do with what the arithmetic
+ | value of (expt 0 0) or any other function is most consistently
+ | defined as being.
+
+My point is that (expt 0 0) is unlikely to occur when EXPT is being
+used as a continuous function; its occurrences will be exponentiating
+integers.  In the integer context, arguments about limits of
+continuous functions are irrelevant.
+
+ |   (all arithmetic functions should always return values).
+
+6.2.3 Implementation restrictions:
+
+  If one of these procedures is unable to deliver an exact result when
+  given exact arguments, then it may either report a violation of an
+  implementation restriction or it may silently coerce its result to
+  an inexact number.
+
+Always returning a value is a stronger requirement than R5RS or
+SRFI-70, which gives the implementation a choice between returning 0/0
+and signaling an error for (/ 0.0 0.0).  Can you justify that mandate?
+Do you consider QUOTIENT, MODULO, and REMAINDER arithmetic?
+
+ | &gt; Grepping through a large body of Scheme code found no use of EXPT
+ | &gt; where the two arguments are related.
+ | 
+ | - which has nothing to do with anything, functions should be considered
+ |   to be evaluated about static points:
+ | 
+ |   i.e. (f x y) == (f (+ x ~1/inf) (+ y ~1/inf))
+
+The integer uses for EXPT should also be considered.
+
+ |   there's nothing special about 0, as any function may impose
+ |   relative trajectories for their arguments:
+ | 
+ |   (define (f x y) (/ x (* y y y (- y 1)))
+ | 
+ |   as such the only consistent thing that an implementation can
+ |   warrant is that all primitive arithmetic expressions are
+ |   evaluated equivalently about the static values passed to them,
+ |   independently of whether or not the values passed to them have
+ |   begun to loose precision due to the limited dynamic range of an
+ |   implementation's number system. Thereby at least as a function's
+ |   arguments begin to loose precision, the function correspondingly
+ |   degrades in precision correspondingly and consistently, without
+ |   after already yielding relatively inaccurate results decides it
+ |   doesn't know the answer at all, or chooses to return a value
+ |   which is inconsistent with it's previous results. (admittedly in
+ |   my opinion)
+
+SRFI-73 is about exact numbers.  EXPT will only return exact numbers
+for exact arguments.  Loss of precision means inexact numbers.
+
+ | &gt; (expt 0 0) ==&gt; 1 is one of the possibilities for SRFI-70.  But I
+ | &gt; am leaning toward the &quot;0/0 or signal an error&quot; choice to catch
+ | &gt; the rare coding error.
+ | 
+ | - Again, in just my opinion, I'd rather a function return the most
+ |   likely useful static value as a function of it's arguments, rather
+ |   than it trying to pretend it knows something about the arguments
+ |   passed to it and potentially generating a runtime fault.
+ | 
+ |   However it does seem potentially useful to be optionally warned
+ |   whenever the precision of a primitive calculation drops below
+ |   some minimal precision; i.e. it's likely much more useful to know
+ |   when a floating point value is demoralized (as it means that the
+ |   value now no longer has a represent-able reciprocal, or when an
+ |   argument to an addition is less than the represented precision of
+ |   the other operand, as these are the type of circumstances which
+ |   result in inaccuracies, which by the time one may underflow to 0,
+ |   or overflow to inf, and hope it gets trapped by some misguided
+ |   function implementation which should have simply just returned
+ |   the correct value based upon the arguments it was given and have
+ |   the application check for what it believes is correct, it's
+ |   already much too late, as regardless of whether some
+ |   implementation's arithmetic system discontinuity was ticked, the
+ |   results of a calculation are at best already suspect.
+
+Bear@xxxxxxxxx is also interested in specifying precision.  See
+&lt;<a  rel="nofollow" href="http://srfi.schemers.org/srfi-70/mail-archive/msg00088.html">http://srfi.schemers.org/srfi-70/mail-archive/msg00088.html</a>&gt; about an
+idea for latent precisions.
+
+ | &gt;  | Where I understand that all inf's are not strictly equivalent,
+ | &gt;  | but when expressed as inexact values it seems more ideal to
+ | &gt;  | consider +-inf.0 to be equivalent to the bounds of the inexact
+ | &gt;  | representation number system, thereby +-inf.0 are simply
+ | &gt;  | treated as the greatest, and +-0.0 the smallest representable
+ | &gt;  | inexact value;
+ | &gt; 
+ | &gt; &lt;<a  rel="nofollow" href="http://srfi.schemers.org/srfi-70/srfi-70.html#6.2.2x">http://srfi.schemers.org/srfi-70/srfi-70.html#6.2.2x</a>&gt; shows that
+ | &gt; inexact real numbers correspond to intervals of the real number line.
+ | &gt; Infinities corresponding to the remaining half-lines gives very clean
+ | &gt; semantics for inexact real numbers.  Infinitesimals (+-0.0) are a
+ | &gt; solution in search of a problem.
+ | 
+ | - only if it's not considered important that inexact infinities have
+ |   corresponding reciprocals;
+
+Inexact infinities have reciprocals: zero.  Their reciprocals are not
+unique, but that is already the case with IEEE-754 floating-point
+representations:
+
+  179.76931348623151e306		==&gt; 179.76931348623151e306
+  179.76931348623157e306		==&gt; 179.76931348623157e306
+  (/ 179.76931348623151e306)		==&gt; 5.562684646268003e-309
+  (/ 179.76931348623157e306)		==&gt; 5.562684646268003e-309
+
+ |   which seems clearly desirable as otherwise any expression which
+ |   may overflow the dynamic range of the number system can't
+ |   preserve the sign of it's corresponding infinitesimal value,
+ |   which if not considered important, there's no reason to have
+ |   signed infinities, either, etc. ?
+
+#i+1/0 is the half-line beyond the largest floating-point value.  The
+projection of that interval through / is a small open interval
+bordering 0.0.  That interval overlaps the interval of floating-point
+numbers closer to 0.0 than to any other.  Thus the reciprocal of
+#i+1/0 is 0.0.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00011" href="msg00011.html">Re: comparison operators and *typos</a></strong>
+<ul><li><em>From:</em> Paul Schlie</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00009" href="msg00009.html">Re: comparison operators and *typos</a></strong>
+<ul><li><em>From:</em> Paul Schlie</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00009.html">Re: comparison operators and *typos</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00011.html">Re: comparison operators and *typos</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00009.html">Re: comparison operators and *typos</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00011.html">Re: comparison operators and *typos</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00010"><strong>Date</strong></a></li>
+<li><a href="threads.html#00010"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

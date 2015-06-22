@@ -1,0 +1,213 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: logical operations in if&#45;implements -->
+<!--X-From-R13: [nep Trryrl <srryrlNveb.hzbagerny.pn> -->
+<!--X-Date: Tue, 23 Mar 1999 22:54:29 &#45;0600 (CST) -->
+<!--X-Message-Id: 199903240454.XAA09438@raptor.IRO.UMontreal.CA -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 199901160602.WAA10985@cygnus.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: logical operations in if-implements</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00027.html">Date Prev</a>][<a href="msg00029.html">Date Next</a>][<a href="msg00012.html">Thread Prev</a>][<a href="msg00029.html">Thread Next</a>][<a href="maillist.html#00028">Date Index</a>][<a href="threads.html#00028">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: logical operations in if-implements</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-0@DOMAIN.HIDDEN">srfi-0@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: logical operations in if-implements</li>
+<li><em>From</em>: Marc Feeley &lt;<a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 23 Mar 1999 23:54:12 -0500 (EST)</li>
+<li><em>Cc</em>: <a href="mailto:bothner@DOMAIN.HIDDEN">bothner@xxxxxxxxxx</a>, <a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:199901160602.WAA10985@DOMAIN.HIDDEN">199901160602.WAA10985@xxxxxxxxxx</a>&gt; (message from Per Bothner on	Fri, 15 Jan 1999 22:02:28 -0800)</li>
+<li><em>References</em>: &lt;<a href="mailto:199901160602.WAA10985@DOMAIN.HIDDEN">199901160602.WAA10985@xxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Sorry for the long wait but only now am I catching up on the mail
+concerning SRFI-0.  Here goes:
+
+Per Bothner &lt;bothner@xxxxxxxxxx&gt; noted the analogy between the
+if-implements form and C's #ifdef and #if preprocessor directives, and
+suggested that if-implements be generalized to permit either:
+
+1) and, or and not combinations such as (if-implements (and SRFI-3 SRFI-5) A B)
+
+or even
+
+2) a Scheme side-effect free expression as the if-implements predicate
+which would be evaluated at macro expansion time (in a special
+compile-time namespace).
+
+The first part of this proposal adds no power, just convenience for
+the user.  This convenience could also be provided by a macro (defined
+in another SRFI?) which expands into if-implements forms.  I don't
+actually see much of a need for it (except for &quot;not&quot; but please supply
+compelling examples to convince me otherwise) and I don't like
+overloading &quot;and&quot;, &quot;or&quot; and &quot;not&quot;.
+
+The second part of this proposal is too hairy for my taste.  How do
+you define precisely the sublanguage of Scheme which constitutes
+&quot;side-effect free&quot; expressions?  Can you use set! on local variables?
+eq??  delay?  call-with-current-continuation? exceptions?  Before you
+know it you have to be so restrictive that you are left with a
+crippled, probably ill-defined, unappealing sublanguage that needs its
+own interpreter.  Also for this to work:
+
+	(if-implements (and SRFI-123 (= foo-version 200)) work-around)
+
+this sublanguage must treat unbound variables (such as the SRFI-123)
+specially so that they evaluate to #f.  Yuck!
+
+Let me repeat myself... it is important that the if-implements form
+have a clear, unambiguous semantics.  This will allow all of us to
+build on top of it instead of around it.  Also I think the
+if-implements form should be easy to implement so that it doesn't add
+much to the interpreter's or compiler's size (I'm thinking of an
+interpreter/compiler which checks the syntax of the if-implements form
+and reports appropriate error messages...).
+
+
+Dave, Mike, and Shriram (The SRFI Editors) have come up with a counter
+proposal which allows the program to request that a specific feature
+be available and allows the program to test that a feature is
+available (using COND-IMPLEMENTS a multiway if-implements).  The feature
+requested can affect the reader's syntax (IMPORT-READER-SYNTAX) and/or
+the macro syntax and environment bindings (IMPORT-IMPLEMENTATION).
+Three forms are proposed:
+
+  (COND-IMPLEMENTS (&lt;feature-test&gt; &lt;body&gt;)... (ELSE &lt;body&gt;))
+  (IMPORT-IMPLEMENTATION &lt;feature-id&gt;)
+  (IMPORT-READER-SYNTAX &lt;feature-id&gt;)
+
+where &lt;feature-test&gt; is a &lt;feature-id&gt; or a combination with &quot;and&quot;,
+&quot;or&quot;, &quot;not&quot;.  COND-IMPLEMENTS is *not* analogous to COND because it
+can choose any of the clauses for which a &lt;feature-test&gt; checks out.
+I just don't see how this non-determinism can actually be helpful in
+real programs.  There is not even the guarantee that identical
+COND-IMPLEMENTS expressions will take the same branch.  Please provide
+some convincing examples...  Apart from this peculiarity the
+COND-IMPLEMENTS form could be built on top of the if-implements form
+as a macro.
+
+An important question for the IMPORT-IMPLEMENTATION and
+IMPORT-READER-SYNTAX forms is their &quot;execution time&quot; with respect to
+the test performed by the COND-IMPLEMENTS form.  Consider:
+
+  (COND-IMPLEMENTS (SRFI-123 foo))
+  (IMPORT-IMPLEMENTATION SRFI-123)
+
+For this to work, the interpreter/compiler must process the
+IMPORT-IMPLEMENTATION form before the COND-IMPLEMENTS form.  Because
+IMPORT-IMPLEMENTATION can only appear at toplevel this apparently can
+be done easily in a processing phase that is between &quot;reading&quot; and
+&quot;macro-expansion&quot; which just checks toplevel forms.  But what is
+really meant by &quot;toplevel&quot;...  which of these would be OK if found at
+toplevel (sic!):
+
+1) (begin (define x 1) (IMPORT-IMPLEMENTATION SRFI-100))
+
+2) (include &quot;foo.scm&quot;) ; if &quot;foo.scm&quot; contains (IMPORT-IMPLEMENTATION SRFI-100)
+
+3) (my-import SRFI-100) ; if my-import is a macro that expands to an
+                        ; IMPORT-IMPLEMENTATION form.
+
+4) (COND-IMPLEMENTS (SRFI-200 (IMPORT-IMPLEMENTATION SRFI-100)))
+
+The problem is that all of these require that macro-expansion be done
+*before* IMPORT-IMPLEMENTATION forms can be processed.  So either
+these uses of IMPORT-IMPLEMENTATION are disallowed (which I find to be
+inelegant) or an iterative process, similar to one for finding
+fixpoints, is used (which I find to be difficult to specify and
+implement).
+
+Moreover what happens if there are two *separately* compiled files and
+one contains an (IMPORT-IMPLEMENTATION SRFI-100) and the other a
+(COND-IMPLEMENTS (SRFI-100 foo))...  Either
+
+1) the &quot;compiler&quot; basically does nothing... it reads the source and
+delays macro-expansion, code-generation, etc to link time (where a
+&quot;real&quot; global compilation is done), the advantage here is that
+the COND-IMPLEMENTS tests are globally consistent.
+
+2) the COND-IMPLEMENTS tests are only consistent on a file by file
+basis, which is not very elegant.
+
+The IMPORT-READER-SYNTAX has similar binding-time problems, and
+additionally some systems already treat the first datum of a file
+specially.  For example, for Gambit-C, if the first datum of a file is
+the &quot;script object&quot; #! (as in: #! /usr/local/bin/gambit) then the file
+is treated as a Scheme script (the first line is ignored and the
+command line arguments visible to the script are computed specially
+from the command line arguments).
+
+The question I ask is why should all of this be in SRFI-0?  Why not
+leave it to some other SRFI, so that SRFI-0 can be lean and simple.
+In particular, I see lots of overlap in functionality between
+IMPORT-IMPLEMENTATION/IMPORT-READER-SYNTAX and a module system, so its
+probably best to work on a general module system SRFI than on the
+relatively crippled IMPORT-IMPLEMENTATION/IMPORT-READER-SYNTAX.
+
+Marc
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00029" href="msg00029.html">SRFI 0 philosophy [WAS: logical operations in if-implements]</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr. Preprocessor]</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00012" href="msg00012.html">logical operations in if-implements</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00027.html">Re: a separate configuration language</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00029.html">SRFI 0 philosophy [WAS: logical operations in if-implements]</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00012.html">logical operations in if-implements</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00029.html">SRFI 0 philosophy [WAS: logical operations in if-implements]</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00028"><strong>Date</strong></a></li>
+<li><a href="threads.html#00028"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

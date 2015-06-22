@@ -1,0 +1,187 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Problems with "curry"'s formal specification -->
+<!--X-From-R13: fronfgvna.rtareNcuvyvcf.pbz -->
+<!--X-Date: Tue, 26 Feb 2002 16:56:43 +0100 (NFT) -->
+<!--X-Message-Id: OF997C2FF3.BB439C43&#45;ONC1256B6C.004C425E@diamond.philips.com -->
+<!--X-Content-Type: multipart/alternative -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Problems with &quot;curry&quot;'s formal specification</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00054.html">Date Prev</a>][<a href="msg00056.html">Date Next</a>][<a href="msg00048.html">Thread Prev</a>][<a href="msg00061.html">Thread Next</a>][<a href="maillist.html#00055">Date Index</a>][<a href="threads.html#00055">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Problems with &quot;curry&quot;'s formal specification</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-26@DOMAIN.HIDDEN">srfi-26@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Problems with &quot;curry&quot;'s formal specification</li>
+<li><em>From</em>: <a href="mailto:sebastian.egner@DOMAIN.HIDDEN">sebastian.egner@xxxxxxxxxxx</a></li>
+<li><em>Date</em>: Tue, 26 Feb 2002 16:53:29 +0100</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-26@DOMAIN.HIDDEN">srfi-26@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+
+<br><font size=2 face="Courier New">Al,</font>
+<br>
+<br><font size=2 face="Courier New">&gt; Al wrote:</font>
+<br><font size=2 face="Courier New">&gt; The formal spec of curry is vague in a few respects:</font>
+<br><font size=2 face="Courier New">...<br>
+&gt; Why are &quot;const&quot;s called &quot;constant&quot;? &nbsp;May they be any expressions?<br>
+&gt; When is the procedure _expression_ evaluated? &nbsp;When are the &quot;constants&quot;<br>
+&gt; evaluated? &nbsp;In other words, which of the following expressions are<br>
+&gt; legal, and what do they return?<br>
+&gt; <br>
+&gt; &nbsp; (let* ((x +) (y (curry x &lt;&gt; 1))) (set! x -) &nbsp;(y 0))<br>
+&gt; &nbsp; (let* ((x 1) (y (curry + &lt;&gt; x))) (set! x -1) (y 0))<br>
+&gt; <br>
+&gt; The reference implementations give different results.</font>
+<br>
+<br><font size=2 face="Courier New">You raise a number of issues at the same time.</font>
+<br><font size=2 face="Courier New">Let me address them in order.</font>
+<br>
+<br><font size=2 face="Courier New">1. Why are &quot;const&quot;s called &quot;constant&quot;?</font>
+<br>
+<br><font size=2 face="Courier New">The name was chosen because the values put into the</font>
+<br><font size=2 face="Courier New">filled slots do not depend directly on the arguments</font>
+<br><font size=2 face="Courier New">of the resulting procedure. As this is only true if</font>
+<br><font size=2 face="Courier New">there are no common side effects, the name is not as </font>
+<br><font size=2 face="Courier New">accurate as it appears at first sight. Unfortunately,</font>
+<br><font size=2 face="Courier New">argument, parameter, and value are all very ambiguous </font>
+<br><font size=2 face="Courier New">in this context. Do you have a suggestion?</font>
+<br>
+<br><font size=2 face="Courier New">2a. May they [the &quot;constants&quot;, SE] be any _expression_?</font>
+<br>
+<br><font size=2 face="Courier New">Yes. They are only constant with respect to the slots.</font>
+<br><font size=2 face="Courier New">For example, this is perfectly legal:</font>
+<br>
+<br><font size=2 face="Courier New">&nbsp; &nbsp; &nbsp; &nbsp; (curry list &lt;&gt; (+ x 1))</font>
+<br>
+<br><font size=2 face="Courier New">2b. [...], which of the following expressions are legal, [...]?</font>
+<br>
+<br><font size=2 face="Courier New">Under the current specification, both are legal.</font>
+<br>
+<br><font size=2 face="Courier New">3a. When is the procedure _expression_ evaluated?</font>
+<br><font size=2 face="Courier New">3b. When are the &quot;constants&quot; evaluated?</font>
+<br><font size=2 face="Courier New">3c. [...], and what do they [the examples above, SE] return? </font>
+<br>
+<br><font size=2 face="Courier New">(These questions are also the issue raised by the</font>
+<br><font size=2 face="Courier New">'cons-stream' example in your other posting with subject </font>
+<br><font size=2 face="Courier New">line &gt; Re: l, the ultimate curry that is not curry &lt;)</font>
+<br>
+<br><font size=2 face="Courier New">Very good questions! The specification does not say,</font>
+<br><font size=2 face="Courier New">and this is really a serious and dangerous omission</font>
+<br><font size=2 face="Courier New">of this SRFI.</font>
+<br>
+<br><font size=2 face="Courier New">As background info, the original semantics was the one</font>
+<br><font size=2 face="Courier New">produced by the hygienic and referentially transparent</font>
+<br><font size=2 face="Courier New">macro implementation. This means, all expressions (proc</font>
+<br><font size=2 face="Courier New">and consts) are evaluated at the time the specialized</font>
+<br><font size=2 face="Courier New">procedure is being called. In your first example above,</font>
+<br><font size=2 face="Courier New">one could replace &quot;(curry x &lt;&gt; 1)&quot; by &quot;(lambda (a) (x a 1))&quot;</font>
+<br><font size=2 face="Courier New">using a text editor. The result of the entire example</font>
+<br><font size=2 face="Courier New">will then be -1 because the value of the variable x </font>
+<br><font size=2 face="Courier New">at the time it is referenced by the specialized procedure</font>
+<br><font size=2 face="Courier New">is the subtraction function - and not addition function +.</font>
+<br>
+<br><font size=2 face="Courier New">When the procedural implementation came along, I became </font>
+<br><font size=2 face="Courier New">slightly over-enthusiastic about the possibility to</font>
+<br><font size=2 face="Courier New">implement the mechanism without macros---and forgot to </font>
+<br><font size=2 face="Courier New">check the implications for the semantics. Thank you for</font>
+<br><font size=2 face="Courier New">bringing the issue to my attention!</font>
+<br>
+<br><font size=2 face="Courier New">If curry is implemented as a procedure, the way it is</font>
+<br><font size=2 face="Courier New">in the current 'macro-free' implementation, the variable </font>
+<br><font size=2 face="Courier New">x will be referenced at the time (curry x &lt;&gt; 1) is evaluated.</font>
+<br><font size=2 face="Courier New">In this case, the specialized procedure will always just</font>
+<br><font size=2 face="Courier New">add one to its argument, and the example evaluates to 1.</font>
+<br>
+<br><font size=2 face="Courier New">So much for the analysis of the problem.</font>
+<br><font size=2 face="Courier New">Now for some options to deal with it.</font>
+<br>
+<br><font size=2 face="Courier New">OPT1 There is the option to point out the problem and define</font>
+<br><font size=2 face="Courier New">this aspect of the semantics unspecified. This means that</font>
+<br><font size=2 face="Courier New">one should stay clear of instances like the ones you gave</font>
+<br><font size=2 face="Courier New">because they are not necessarily portable. This option</font>
+<br><font size=2 face="Courier New">looks more stupid than it really is. Recall that Scheme</font>
+<br><font size=2 face="Courier New">(R5RS, Sect. 4.1.3) defines that the argument expressions</font>
+<br><font size=2 face="Courier New">of a procedure call are evaluated in an unspecified order;</font>
+<br><font size=2 face="Courier New">which allows examples in the style you gave (different</font>
+<br><font size=2 face="Courier New">results for different implementations). Yet, this does not</font>
+<br><font size=2 face="Courier New">do much harm in practice because we have all learned (I hope)</font>
+<br><font size=2 face="Courier New">to avoid relying on a specific order in Scheme.</font>
+<br>
+<br><font size=2 face="Courier New">OPT2 Another option is to define the macro semantics as the</font>
+<br><font size=2 face="Courier New">only SRFI-compliant semantics. In this case, it may be</font>
+<br><font size=2 face="Courier New">hard to make a 'macro-free' implementation. The only</font>
+<br><font size=2 face="Courier New">mechanisms in R5RS with non-strict evaluation are IF </font>
+<br><font size=2 face="Courier New">and DELAY, and their derivatives. None of them is powerful</font>
+<br><font size=2 face="Courier New">enough to cover the syntax of the SRFI, which is a pitty.</font>
+<br>
+<br><font size=2 face="Courier New">OPT3 Yet another option is to define the procedural semantics</font>
+<br><font size=2 face="Courier New">as the only SRFI-compliant semantics. It is easy to modify</font>
+<br><font size=2 face="Courier New">the macro implementation to evaluate the &quot;constants&quot; before</font>
+<br><font size=2 face="Courier New">the specialized procedure is constructed. In this case, it</font>
+<br><font size=2 face="Courier New">might be better to think about the mechanism as some form</font>
+<br><font size=2 face="Courier New">of partial evaluation, without the tricky bit of really </font>
+<br><font size=2 face="Courier New">doing it.</font>
+<br>
+<br><font size=2 face="Courier New">Whatever happens to the SRFI, this is certainly an issue</font>
+<br><font size=2 face="Courier New">that has to be addressed. What is your advice?</font>
+<br>
+<br><font size=2 face="Courier New">Sebastian.</font>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00061" href="msg00061.html">Re: Problems with &quot;curry&quot;'s formal specification</a></strong>
+<ul><li><em>From:</em> Al Petrofsky</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00054.html">Re: is that useful?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00056.html">Re: is that useful?</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00048.html">Problems with &quot;curry&quot;'s formal specification</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00061.html">Re: Problems with &quot;curry&quot;'s formal specification</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00055"><strong>Date</strong></a></li>
+<li><a href="threads.html#00055"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

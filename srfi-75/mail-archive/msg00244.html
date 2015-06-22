@@ -1,0 +1,171 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Surrogates and character representation -->
+<!--X-From-R13: Oyna Ingfba <n.jngfbaNnfgebfzb.hanz.zk> -->
+<!--X-Date: Thu, 28 Jul 2005 00:15:10 +0200 (DFT) -->
+<!--X-Message-Id: 42E8074B.7040106@astrosmo.unam.mx -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 42E7F7D8.2020201@verizon.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Surrogates and character representation</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00243.html">Date Prev</a>][<a href="msg00245.html">Date Next</a>][<a href="msg00243.html">Thread Prev</a>][<a href="msg00253.html">Thread Next</a>][<a href="maillist.html#00244">Date Index</a>][<a href="threads.html#00244">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Surrogates and character representation</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: William D Clinger &lt;<a href="mailto:cesura@DOMAIN.HIDDEN">cesura@xxxxxxxxxxx</a>&gt;, <a href="mailto:srfi-75@DOMAIN.HIDDEN">srfi-75@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Surrogates and character representation</li>
+<li><em>From</em>: Alan Watson &lt;<a href="mailto:a.watson@DOMAIN.HIDDEN">a.watson@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 27 Jul 2005 17:14:35 -0500</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-75@DOMAIN.HIDDEN">srfi-75@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:42E7F7D8.2020201@DOMAIN.HIDDEN">42E7F7D8.2020201@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Organization</em>: Centro de Radioastronom&#xED;a y Astrof&#xED;sica UNAM</li>
+<li><em>References</em>: &lt;<a href="mailto:42E7F7D8.2020201@DOMAIN.HIDDEN">42E7F7D8.2020201@xxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mozilla Thunderbird 1.0 (X11/20050317)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+William D Clinger wrote:
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Referring to the Boyer-Moore fast string searching algorithm,
+Alan Watson wrote:
+ &gt; Yes, but I think you can implement this for UTF-8 or UTF-16
+ &gt; strings using offsets to the underlying bytes or shorts.  I
+ &gt; don't think that you need character offsets.
+
+You certainly don't need character offsets to do a string
+search, but the naive algorithm without random access to
+characters is O(mn).  The Boyer-Moore algorithm improves
+this to O(n/m) in many cases.  I believe one can construct
+artificial examples to show that some O(n/m) cases would
+degrade to an intermediate complexity, or even back to O(mn),
+in UTF-8 or UTF-16 without character offsets.  I don't know
+how often examples of those cases would arise in practice.
+</pre></blockquote><pre style="margin: 0em;">
+
+n = string length
+m = pattern length
+
+I can see four cases when UTF-8 is the underlying representation:
+
+</pre><tt>(a) You have access to the underlying byte vector and you want a byte 
+</tt><tt>index. O(n/m). Life is sweet.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>(b) You have access to the underlying byte vector but you want a 
+</tt><tt>character index. O(n/m) to find the byte index then O(n) to convert it 
+</tt><tt>to a character index. Life is fairly sweet.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>(c) You do not have access to the underlying byte vector, there is no 
+</tt><tt>caching of character index to byte index conversions, and you want a 
+</tt><tt>character index. O(n&#xB2;/m), I think, because basically each character 
+</tt><tt>index is an O(n) operation. You say (nm). Either way, life sucks.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>(d) You do not have access to the underlying byte vector, the 
+</tt><tt>implementation caches the last two character index to byte index 
+</tt><tt>conversions, and you want a character index. O(n), I think. Life is 
+</tt><tt>fairly sweet.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>Case (d) works out not too badly because, I think, your next character 
+</tt><tt>index is always just a few characters (up to m) from one of the last two 
+</tt><tt>character indexes. Yes? I think you could even get away with the 
+</tt><tt>implementation caching only the last index, provided it knows how to 
+</tt><tt>search backwards as well as forwards from this point (pretty easy with 
+</tt><tt>UTF-8).
+</tt><pre style="margin: 0em;">
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+I just think
+it's a good idea to understand the efficiency issues before
+we dismiss them.  [...] SRFI-75 does penalize certain poor choices of
+representation, and I think that's good too.
+</pre></blockquote><pre style="margin: 0em;">
+
+</pre><tt>Yes. I was simply making the point that UTF-8 is not such a losing 
+</tt><tt>representation as one might think initially.
+</tt><pre style="margin: 0em;">
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+I appreciate the fact that some implementations will want to
+use the same representation as some other language or system,
+even if that is not a particularly good representation.  From
+that point of view, I think the main problem with SRFI-75 is
+that it requires mutable strings, which (in the presence of
+concurrency or an obsession with object identity) make it hard
+to change the representation transparently---code written in
+some other language or in a concurrent thread might notice the
+</pre><tt>change, even if the Scheme code in this thread doesn't.  
+</tt></blockquote><pre style="margin: 0em;">
+
+</pre><tt>Good point, but I think that if you impose an extra layer of 
+</tt><tt>indirection, you might be able to solve these problems (at least for the 
+</tt><tt>other language reading the Scheme string). For example, instead of 
+</tt><tt>having the Scheme implementation say to C &quot;here is a pointer to a 
+</tt><tt>UTF-8/UTF-16/UCS-32 string that represents this Scheme string&quot;, you have 
+</tt><tt>it say &quot;here is a pointer to a pointer to ...&quot;. Ditto for the length.
+</tt><pre style="margin: 0em;">
+
+Regards,
+
+Alan
+--
+Dr Alan Watson
+Centro de Radioastronom&#xED;a y Astrof&#xED;sica
+Universidad Astron&#xF3;mico Nacional de M&#xE9;xico
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00243.html">Re: Surrogates and character representation</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00245.html">Re: Surrogates and character representation</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00243.html">Re: Surrogates and character representation</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00253.html">Re: Surrogates and character representation</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00244"><strong>Date</strong></a></li>
+<li><a href="threads.html#00244"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

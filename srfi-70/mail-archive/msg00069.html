@@ -1,0 +1,180 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: [srfi&#45;70] Limit -->
+<!--X-From-R13: Ohoerl Xnssre <ntwNnyhz.zvg.rqh> -->
+<!--X-Date: Wed, 15 Jun 2005 21:07:42 +0200 (DFT) -->
+<!--X-Message-Id: 20050615190817.38F751B77B4@voluntocracy.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20050615042546.24839136@mx1.informatik.uni&#45;tuebingen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: [srfi-70] Limit</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00068.html">Date Prev</a>][<a href="msg00070.html">Date Next</a>][<a href="msg00067.html">Thread Prev</a>][<a href="msg00033.html">Thread Next</a>][<a href="maillist.html#00069">Date Index</a>][<a href="threads.html#00069">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: [srfi-70] Limit</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:mathematica@DOMAIN.HIDDEN">mathematica@xxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: [srfi-70] Limit</li>
+<li><em>From</em>: Aubrey Jaffer &lt;<a href="mailto:agj@DOMAIN.HIDDEN">agj@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 15 Jun 2005 15:08:17 -0400 (EDT)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-70@DOMAIN.HIDDEN">srfi-70@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-70@DOMAIN.HIDDEN">srfi-70@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20050615042546.24839136@DOMAIN.HIDDEN">20050615042546.24839136@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	(<a href="mailto:mathematica@DOMAIN.HIDDEN">mathematica@xxxxxxxxx</a>)</li>
+<li><em>References</em>: &lt;<a href="mailto:20050615042546.24839136@DOMAIN.HIDDEN">20050615042546.24839136@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre> | Date: Wed, 15 Jun 2005 12:25:24 +0800
+ | From: &quot;Chongkai Zhu&quot; &lt;mathematica@xxxxxxxxx&gt;
+ |   
+ | ======= At 2005-06-14, 03:33:33 Aubrey Jaffer wrote: =======
+ | &gt;The new limit procedure works better than I had expected; even
+ | &gt;handling a nasty example from an old Macsyma manual (see appended
+ | &gt;examples).  Arguments that limits are too esoteric or new
+ | &gt;counterexamples may yet scuttle them from srfi-70.
+ | &gt;
+ | 
+ | A counterexample:
+ | 
+ | &gt; (limit (lambda (x) (exp (expt x -2))) 0.1 0.2)
+ | +1/0
+ | &gt; (exp (expt 0.1 -2))
+ | 2.6881171418161084e+043
+ | &gt; (limit (lambda (x) (exp (expt x -2))) 0.1 0.1000001)
+ | +1/0
+ | &gt; (limit (lambda (x) (exp (expt x -2))) 0.1 0.1000000001)
+ | +1/0
+
+The x2 value in your example is too large; testing the region between
+0.1125 and 0.2.  Choosing a smaller x2 gives the expected result:
+
+&gt; (limit (lambda (x) (exp (expt x -2))) .1 1e-12)
+26.881171418152036e42
+
+ | As I understand the problem, a 'limit that treats the procedure as
+ | a &quot;black box&quot; is unsolvable.
+
+Extrapolation is a technique used in differential equation solvers and
+elsewhere.  Functions that are &quot;continuously differentiable&quot; can be
+approximated by (polynomial) Taylor series.  So extrapolating these
+functions by polynomials will work for small enough x2.
+
+ | Even if you fix this particular counterexample, the new 'limit will
+ | have other counterexamples.
+
+The LIMIT procedure needs no modification to work on your example.
+
+But the documentation should express the constraint on x2 being
+smaller than any &quot;feature size&quot; of the function near x1.  Can anyone
+suggest how to word this?
+
+ | Something similar to the halting-problem.
+
+The fundamental limitations to this technique are reached when the
+truncation error of the number representation becomes comparable to
+the calculated differences.  But the same is true of `/' and some
+transcendental functions.
+
+ | The additional argument k itself shows that the 'limit seems
+ | un-Scheme-ish.  Could you tell another Scheme procedrue (either
+ | from R?RS or some other SRFI) that has a similar additional
+ | argument?
+
+NUMBER-&gt;STRING and STRING-&gt;NUMBER in R5RS:
+
+ -- procedure: number-&gt;string z
+ -- procedure: number-&gt;string z radix
+     RADIX must be an exact integer, either 2, 8, 10, or 16.  If
+     omitted, RADIX defaults to 10. ...
+
+ -- procedure: string-&gt;number string
+ -- procedure: string-&gt;number string radix
+     ...  RADIX must be an exact integer, either 2, 8, 10, or 16...
+     If RADIX is not supplied, then the default radix is 10.
+
+RATIONALIZE in R3RS:
+
+ - procedure: rationalize x y
+ - procedure: rationalize x
+     ... With two arguments, `rationalize' produces the rational
+     number with smallest denominator differing from X by no more than
+     Y.  With one argument, `rationalize' produces the best rational
+     approximation to X, preserving all of the precision in its
+     representation.
+
+<a  rel="nofollow" href="http://srfi.schemers.org/srfi-27/srfi-27.html">http://srfi.schemers.org/srfi-27/srfi-27.html</a>
+
+(random-source-make-reals s) -&gt; rand
+(random-source-make-reals s unit) -&gt; rand
+    ...  In case unit is absent it defaults to a reasonably small
+    value (related to the width of the mantissa of an efficient number
+    format).
+
+ | 
+ | For Computer Algebra Systems, procedures such as 'limit are only
+ | supposed to &quot;do right&quot; for daily inputs.  But Scheme is requested
+ | to be &quot;well-defined&quot; &quot;unambiguous, aesthetically appealing, and
+ | consistent specications&quot;.  Copying something from CASs into Scheme
+ | is is both overly ambitious and unnecessary.
+
+SRFI-70 LIMIT is an original numerical algorithm.  Although a CAS was
+used to derive the extrapolation formulas, LIMIT does not use symbolic
+algebra.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00067" href="msg00067.html">Re: Re: [srfi-70] Limit</a></strong>
+<ul><li><em>From:</em> Chongkai Zhu</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00068.html">Revision of SRFI 70 available</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00070.html">Re: string-&gt;number</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00067.html">Re: Re: [srfi-70] Limit</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00033.html">Re: infinities reformulated [was Re: My ideas about infinity in Scheme (revised)]</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00069"><strong>Date</strong></a></li>
+<li><a href="threads.html#00069"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

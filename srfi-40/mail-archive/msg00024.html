@@ -1,0 +1,223 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Stream&#45;filter and space leaks -->
+<!--X-From-R13: [ngguvnf @rhonhre <arhonhreNvasbezngvx.hav&#45;servohet.qr> -->
+<!--X-Date: Tue, 25 Feb 2003 17:01:45 +0100 (NFT) -->
+<!--X-Message-Id: xg865r8qrhd.fsf@hapuna.informatik.uni&#45;freiburg.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: E18mEjd&#45;0000jR&#45;00@rosebud -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Stream-filter and space leaks</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00023.html">Date Prev</a>][<a href="msg00025.html">Date Next</a>][<a href="msg00022.html">Thread Prev</a>][<a href="msg00025.html">Thread Next</a>][<a href="maillist.html#00024">Date Index</a>][<a href="threads.html#00024">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Stream-filter and space leaks</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Richard Kelsey &lt;<a href="mailto:kelsey@DOMAIN.HIDDEN">kelsey@xxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Stream-filter and space leaks</li>
+<li><em>From</em>: Matthias Neubauer &lt;<a href="mailto:neubauer@DOMAIN.HIDDEN">neubauer@xxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: 25 Feb 2003 17:01:34 +0100</li>
+<li><em>Cc</em>: <a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>, <a href="mailto:pbewig@DOMAIN.HIDDEN">pbewig@xxxxxxxxxx</a>,	<a href="mailto:srfi-40@DOMAIN.HIDDEN">srfi-40@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-40@DOMAIN.HIDDEN">srfi-40@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:E18mEjd-0000jR-00@DOMAIN.HIDDEN"><a href="msg00022.html">E18mEjd-0000jR-00@rosebud</a></a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:E18mEjd-0000jR-00@DOMAIN.HIDDEN"><a href="msg00022.html">E18mEjd-0000jR-00@rosebud</a></a>&gt;</li>
+<li><em>Sender</em>: <a href="mailto:neubauer@DOMAIN.HIDDEN">neubauer@xxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Gnus/5.0808 (Gnus v5.8.8) XEmacs/21.1 (Cuyahoga Valley)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Richard Kelsey &lt;kelsey@xxxxxxx&gt; writes:
+
+&gt;    From: sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx (Michael Sperber [Mr.  Preprocessor])
+&gt;    Date: Fri, 21 Feb 2003 11:04:03 +0100
+&gt; 
+&gt;    The code you posted seems to be essentially the definition of
+&gt;    DELAY/FORCE from Scheme 48.  However, Phil's old code does leak in
+&gt;    Scheme 48 and doesn't leak with the proposed fix.
+&gt; 
+&gt; Right.  I was mistaken about the source of the leak.  This time around
+&gt; I have actually tested the code.
+
+I tested it, too. And I am totally confused now, because I still see
+the space leak even *with* the proposed fix?!
+
+I, for my part, downloaded the current reference implementation as
+found on <a  rel="nofollow" href="http://srfi.schemers.org/srfi-40/srfi-40.txt">http://srfi.schemers.org/srfi-40/srfi-40.txt</a>. The only thing
+that I then changed was that I replaced the former version of
+STREAM-FILTER by the one Phil posted last Thursday. When I load this
+into my scsh (0.6.3) and evaluate
+
+(stream-car (stream-filter (lambda (x) (zero? x)) (stream-from 1)))
+
+the whole thing dies pretty soon ejecting a post-gc interrupt---i.e,
+scsh seems to run out of memory.
+
+Enlightened by Richard's last post I afterwards tried another setup: I
+used the above implementation (i.e. the one with the _new_
+implementation of STREAM-FILTER) but also replaced DELAY and FORCE by
+Richard's non-reentrant versions. Unfortunately I *still* see the
+space leak!
+
+So I suspect that either I use a bogus version of scsh, or I use
+completely different srfi implementation than you guys, or I am unable
+to operate scsh, or I don't know what else ... :-)
+
+Anyhow, I totally sympathize with Richard's approach. There should be
+only one general stream transformer (like stream-unfoldn) that is
+implemented in a space-safe way (if this is possible). Any other
+stream procedure should then be implemented with that, and as a
+consequence should also &quot;work&quot;. For example, I'd like to be able to
+define something like
+
+(define (my-stream-filter pred? stream)
+  (stream-unfoldn (lambda (stream)
+                    (let ((results
+		          (if (stream-null? stream)
+			      (list '() '())
+			      (let* ((head (stream-car stream))
+			             (test (pred? head)))
+			        (if test
+			            (list (list head) #f)
+			            (list #f (list head)))))))
+                      (values (stream-cdr stream)
+                              results)))
+		  stream
+		  2))
+
+and this should work! If this is not possible, I think the whole
+effort to make this srfi &quot;space safe&quot; should be abandoned completely.
+
+The only thing I am not sure about is, if STREAM-UNFOLDN is the right
+abstraction to transform streams (it looks a little bit too &quot;heavy
+weight&quot; to me ...). Last summer I learned about another way to
+transform streams: Richard Bird and Jeremy Gibbons proposed in [1,
+page 26] a stream transformer &quot;stream&quot; that transforms one stream into
+another by alternating between consuming and producing stream
+elements. To my mind, this seems a little bit &quot;simpler&quot;. In addition,
+this function also has some nice properties; it allows you to &quot;fuse&quot;
+unfolds with folds, which I think could be very neat, too. I just
+tried to code it (I named it STREAM-TRANSFORM for now):
+
+(define (stream-transform producer consumer state stream)
+
+  (define (loop state stream)
+    (if (null? (stream-value stream))
+	(stream-value (stream-prepend (car (producer state)) stream-null))
+	(if (null? (car (producer state)))
+	    (loop (consumer (cdr (producer state))
+			    (car (stream-value stream)))
+		  (cdr (stream-value stream)))
+	    (let ((res (producer state)))
+	      (stream-value
+	       (stream-prepend (car res)
+			       (make-stream 
+				(my-delay
+				 (loop (consumer (cdr res)
+						 (car (stream-value stream)))
+				       (cdr (stream-value stream)))))))))))
+
+  (make-stream
+   (my-delay
+     (loop state stream))))
+
+(stream-define (stream-prepend l stream)
+  (let inner-loop ((l l))
+      (if (null? l)
+	  stream
+	  (stream-cons (car l)
+		       (inner-loop (cdr l))))))
+
+(define (stream-value s)
+  (my-force (stream-promise s)))
+
+With that, STREAM-FILTER is also very easy to define:
+
+(define (my-stream-filter-2 pred? stream)
+  (stream-transform (lambda (state)
+		      (cons 
+		       (if state
+			   (list state)
+			   '())
+		       'foo))
+		    (lambda (foo c)
+		      (if (pred? c)
+			  c
+			  #f))
+		    #f
+		    stream))
+
+Works, but is also not space-safe yet ...
+
+Cheers,
+
+Matthias
+
+[1] <a  rel="nofollow" href="http://www.cs.uu.nl/~johanj/afp/afp4/arith-4.pdf">http://www.cs.uu.nl/~johanj/afp/afp4/arith-4.pdf</a>
+
+-- 
+Matthias Neubauer                                       |
+Universit&#xE4;t Freiburg, Institut f&#xFC;r Informatik           | tel +49 761 203 8060
+Georges-K&#xF6;hler-Allee 79, 79110 Freiburg i. Br., Germany | fax +49 761 203 8052
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00025" href="msg00025.html">Re: Stream-filter and space leaks</a></strong>
+<ul><li><em>From:</em> Richard Kelsey</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00022" href="msg00022.html">Re: Stream-filter and space leaks</a></strong>
+<ul><li><em>From:</em> Richard Kelsey</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00023.html">Re: Stream-filter and space leaks</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00025.html">Re: Stream-filter and space leaks</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00022.html">Re: Stream-filter and space leaks</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00025.html">Re: Stream-filter and space leaks</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00024"><strong>Date</strong></a></li>
+<li><a href="threads.html#00024"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

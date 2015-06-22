@@ -1,0 +1,331 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: straw&#45;man [was Re: arithmetic issues] -->
+<!--X-From-R13: Ivyyvnz R Qyvatre <jvyyNppf.arh.rqh> -->
+<!--X-Date: Fri, 20 Jan 2006 23:08:21 +0100 (MET) -->
+<!--X-Message-Id: E1F04IM&#45;0007Yi&#45;Gb@adara.ccs.neu.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: straw-man [was Re: arithmetic issues]</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00380.html">Date Prev</a>][<a href="msg00382.html">Date Next</a>][<a href="msg00348.html">Thread Prev</a>][<a href="msg00391.html">Thread Next</a>][<a href="maillist.html#00381">Date Index</a>][<a href="threads.html#00381">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: straw-man [was Re: arithmetic issues]</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:agj@DOMAIN.HIDDEN">agj@xxxxxxxxxxxx</a>, <a href="mailto:will@DOMAIN.HIDDEN">will@xxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: straw-man [was Re: arithmetic issues]</li>
+<li><em>From</em>: William D Clinger &lt;<a href="mailto:will@DOMAIN.HIDDEN">will@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 20 Jan 2006 16:59:46 -0500</li>
+<li><em>Cc</em>: <a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>, <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Rather than dive into a detailed response to Aubrey
+Jaffer's message, let me summarize it and then respond
+to my own summary.  Then I will respond to some details
+of Jaffer's message.
+
+Jaffer correctly observes that efficiency is one of the
+concerns of SRFI-77.  He correctly points out that no
+one knows all there is to know about efficiency, and
+that some people believe certain things.  He correctly
+points out that SRFI-77 does not consider the alternative
+of using type declarations as was done in Common Lisp.
+
+I have never claimed that efficiency is not a concern
+of SRFI-77.  What I said is that it is not the primary
+rationale.  The opening paragraph of SRFI-77's abstract
+mentions inefficiency as the third of three problems
+(confusion, portability problems, inefficiency) that
+SRFI-77 tries to address.  The second paragraph of the
+abstract then repeats these concerns, in a slightly
+different order:
+
+    This SRFI is an effort to extend and clarify the R5RS
+    arithmetic to make it more portable, more comprehensive,
+    and enable faster programs.
+
+Notice that efficiency is once again the third concern
+listed.  The SRFI's Rationale also discusses portability
+before it mentions efficiency.  As the author of these
+paragraphs, I know this ordering was not accidental:
+Sperber and I both regard portability and clarity as the
+most serious issues, and regard efficiency as a somewhat
+less serious issue that is nevertheless important enough
+to deserve attention.
+
+In particular, both of the stated rationales for the fixnum
+operations of SRFI-77 have to do with portability.  First,
+the Rationale observes:
+
+    The portability problems can most easily be solved by
+    requiring all implementations to support the full numeric
+    tower. To prevent that requirement from making Scheme
+    substantially more difficult to implement, we provide a
+    reference implementation that constructs the full numeric
+    tower from a fixnum/flonum base. To ensure the portability
+    of such reference implementations, the fixnum/flonum base
+    must be described and (at least partially) standardized.
+
+Secondly, the standardization of the fixnum/flonum base
+will improve the portability of programs that, for whatever
+reason, already use implementation-specific fixnum or flonum
+operations.  In most cases, these implementation-specific
+operations are motivated by efficiency, which demonstrates
+that some programmers are willing to forgo the portability
+of R5RS procedures if they think it will make their programs
+run faster.  Even if you think these programmers are all
+wrong about their programs running faster when they use
+fixnum or flonum operations, you should still be able to
+see how standardizing the names and (to some extent) the
+semantics of those operations will improve the portability
+of programs that, in your opinion, so foolishly use them.
+
+The primary motivation for the flonum-specific operations,
+the exact-specific operations, and the inexact-specific
+operations is to improve the reliability and predictability
+of programs by detecting a class of errors that are common
+in R5RS Scheme programs.  What is common to these errors
+is that a number of some unintended type is inadvertently
+introduced into some calculation that was intended to work
+with numbers of some other type.
+
+Type declarations of the kind used in Common Lisp could
+serve this purpose almost as well, but only if systems
+could be required to enforce those declarations.  Allowing
+implementations to ignore type declarations at their whim
+would not accomplish their main purpose.
+
+While it is true that SRFI-77's flonum-specific operations
+would not accomplish this purpose in unsafe mode, SRFI-77
+says &quot;The R6RS should require a Scheme implementation to
+provide the safe mode.&quot;  Please note also that SRFI-77's
+exact and inexact operations would accomplish this purpose
+even in unsafe mode.
+
+In short, it is not true that ignorable type declarations
+are just as good as the type-specific operations of SRFI-77.
+For type declarations to serve the same purposes, there
+would have to be a &quot;safe mode&quot; in which implementations
+are not allowed to ignore the declarations.
+
+I will now address selected details of Jaffer's message.
+
+&gt;  | 1.  Speedups that are achievable only by compilers are not
+&gt;  | particularly important.
+&gt;  | 
+&gt;  | Assumption 1 does not require a response.
+&gt; 
+&gt; There is a constituency within the Scheme community which doesn't use
+&gt; compilers.  Doing violence to the language solely in support of
+&gt; compilers has no upside for this constituency.
+
+That is true.  What is not true is that the violence
+advocated by SRFI-77 is solely in support of compiled
+implementations.  SRFI-77 is not even primarily about
+compiled implementations, because the portability,
+reliability, and confusion issues addressed by SRFI-77
+are almost as much of a problem for interpreted systems
+as for compiled.
+
+&gt; The words &quot;efficient&quot;, &quot;efficiency&quot;, and &quot;faster&quot; appear 16 times in
+&gt; srfi-77.  Its abstract states:
+&gt; 
+&gt;   Moreover, the R5RS generic arithmetic is difficult to implement as
+&gt;   efficiently as purely fixnum or purely flonum arithmetic.
+&gt; 
+&gt; &quot;Interpreter-branch&quot; disproves this asserertion as far as interpreters
+&gt; with immediate fixnums and boxed numbers are concerned.
+
+I agree that, in an interpreter, fully generic operations
+are likely to be just about as fast as type-specific
+operations.  I have never claimed otherwise.
+
+It is also true that the discussions of efficiency in
+SRFI-77 generally assume a compiled implementation.  The
+reason for that is quite simple:  When efficiency really
+matters, users and programmers generally use compiled
+systems.
+
+By the way, the Design Rationale was added to SRFI-77, at
+Sperber's request, to explain the fairly arcane matter of
+why it is desirable for Scheme's reals to have an exact
+zero as their imaginary part.  If you exclude the Design
+Rationale, then the words &quot;efficient&quot;, &quot;efficiency&quot;, and
+&quot;faster&quot; occur only 10 times.  Variations on the word
+&quot;portable&quot; occur 11 times.
+
+&gt; SRFI-77 talks about efficiency as though it is obvious which practices
+&gt; will run fast and which won't.  For CPUs performing speculative
+&gt; execution, such claims are not merely unsubstantiated; they are
+&gt; probably wrong.  Attention to branch prediction may well eliminate the
+&gt; speed penalty for arithmetic type dispatch compiling some programs.
+
+It isn't obvious, but an awful lot of research has been
+done on what runs fast and what doesn't, and we have an
+awful lot of experience as well.  It doesn't help to
+pretend that none of that research and experience is
+relevant to this discussion.
+
+Consider, for example, the nucleic2 benchmark [1,2].
+This benchmark is the computational kernel of a real
+program that is fairly typical of scientific computations.
+As published, this benchmark uses fixnum- and flonum-specific
+operations.  On this and similar benchmarks, the fastest
+implementations are the compiled systems that have put
+serious effort into generating good code for arithmetic
+operations of limited precision.  If the type-specific
+operations of the Scheme version are replaced by the
+generic operations of R5RS, then the fastest implementations
+of Scheme are the compiled systems that have put serious
+effort into generating good code for generic arithmetic.
+In both cases, most of the interpreted systems are so much
+slower that they aren't worth discussing; the exceptions
+interpret a compiled form of the source, and are arguably
+compilers themselves.
+
+This is as true on processors that perform speculative
+execution as on those that don't.  It is as true on the
+Intel IA32 as on processors for which branch prediction
+incurs no penalty (e.g. certain PowerPC processors).
+To pretend otherwise is not helpful.
+
+I'd just as soon not get into a detailed public critique
+of your online articles.  It is enough to observe that
+your measurements were conducted on an interpreted system
+whose bignum performance is quite impressive, but whose
+performance on programs like nucleic2 cannot compete with
+the compiled systems that would be preferred if efficiency
+were a real issue.
+
+&gt; You seem to be making an assumption that complete arithmetic
+&gt; reproducibility across implementations is desirable to all Scheme
+&gt; users.
+
+No, I am not making that assumption.  I have long denied
+that reproducibility of inexact arithmetic across
+implementations is realistic or even desirable.  Notice,
+for example, that SRFI-77 does not specify the precision
+of fixnum or flonum arithmetic, nor does it require the
+use of anything resembling IEEE floating point arithmetic.
+
+Notice also that the R5RS mandates complete reproducibility
+for exact arithmetic, with certains exceptions allowed by
+reason of implementation restriction.
+
+&gt; Unpredictability in a program indicates poor numerical
+&gt; conditioning.
+
+I wish that were so.  Currently, a lot of unpredictability
+is caused by implementation restrictions such as incomplete
+implementations of R5RS generic arithmetic.  Some of these
+implementations also violate the R5RS by returning exact
+results under some circumstances in which the R5RS clearly
+requires an inexact result.
+
+In addition, some unpredictability results from program bugs
+that introduce an inexact value into a computation that was
+intended to be exact, or a non-real value into a computation
+that was intended to use inexact reals.  The flonum, exact,
+and inexact operations of SRFI-77 are intended to make these
+bugs easier to detect and to remedy.
+
+&gt;  | By the way, when speed is a goal, the Common Lisp experience
+&gt;  | suggests that type declarations are often less effective than
+&gt;  | type-specific operations, mainly because programmers would
+&gt;  | rather write and read (fx+ (foo x) (baz y)) than
+&gt;  | (the fixnum (+ (the fixnum (foo x)) (the fixnum (baz y)))).
+&gt; 
+&gt; What about (* (the fixnum (foo x)) (the flonum (baz y)))?
+
+As opposed to what?  Here are four distinct possible semantics
+for your example, as expressed using SRFI-77:
+
+    (fl* (fixnum-&gt;flonum (foo x)) (baz y))
+or
+    (in* (exact-&gt;inexact (foo x)) (baz y))
+or
+    (fx* (foo x) (flonum-&gt;fixnum (baz y)))
+or
+    (ex* (foo x) (inexact-&gt;exact (baz y)))
+
+We don't yet have any empirical evidence for this particular
+kind of example, but I suspect that many programmers would
+prefer one of the SRFI-77 expressions to using the type
+declarations.  Even without empirical evidence, your example
+suggests to me that this SRFI's approach is less ambiguous
+than type declarations, with correspondingly less opportunity
+for confusion.
+
+Will
+
+[1] M. Feeley, M. Turcotte, G. Lapalme.  Using Multilisp for
+    Solving Constraint Satisfaction Problems: an Application
+    to Nucleic Acid 3D Structure Determination.  Lisp and
+    Symbolic Computation 7(2/3), 231-246, 1994.
+
+[2] P.H. Hartel, M. Feeley, et al.  Benchmarking Implementations
+    of Functional Languages with &quot;Pseudoknot&quot;, a Float-Intensive
+    Benchmark.  Journal of Functional Programming 6(4), 621-655,
+    1996.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00391" href="msg00391.html">Re: straw-man [was Re: arithmetic issues]</a></strong>
+<ul><li><em>From:</em> Bradley Lucier</li></ul></li>
+<li><strong><a name="00392" href="msg00392.html">Re: straw-man [was Re: arithmetic issues]</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00380.html">Re: arithmetic issues</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00382.html">Re: arithmetic issues</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00348.html">Draft extension</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00391.html">Re: straw-man [was Re: arithmetic issues]</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00381"><strong>Date</strong></a></li>
+<li><a href="threads.html#00381"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

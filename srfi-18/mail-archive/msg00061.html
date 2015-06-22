@@ -1,0 +1,260 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: non critical&#45;section uses of mutexes -->
+<!--X-From-R13: [nep Trryrl <srryrlNWDA.G[bagerny.QO> -->
+<!--X-Date: Sat, 22 Apr 2000 16:32:54 &#45;0500 (CDT) -->
+<!--X-Message-Id: 200004222132.RAA04545@trex.IRO.UMontreal.CA -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>non critical-section uses of mutexes</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00060.html">Date Prev</a>][<a href="msg00062.html">Date Next</a>][<a href="msg00055.html">Thread Prev</a>][<a href="msg00063.html">Thread Next</a>][<a href="maillist.html#00061">Date Index</a>][<a href="threads.html#00061">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>non critical-section uses of mutexes</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-18@DOMAIN.HIDDEN">srfi-18@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: non critical-section uses of mutexes</li>
+<li><em>From</em>: Marc Feeley &lt;<a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 22 Apr 2000 17:32:37 -0400</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>While rereading the discussion archive, it occured to me that my
+mailbox example had a nasty bug which is due to the fact that the
+mutexes are not used to implement a critical section (of the form:
+lock, critical-section, unlock).  I reproduce the code below.
+
+    ; an implementation of a mailbox object of depth one
+
+    (define (make-empty-mailbox)
+      (let ((put-mutex (make-mutex)) ; allow put! operation
+            (get-mutex (make-mutex (current-thread))) ; prevent get! operation
+            (cell #f))
+
+        (define (put! obj)
+          (mutex-lock! put-mutex) ; prevent put! operation
+          (set! cell obj)
+          (mutex-unlock! get-mutex)) ; allow get! operation
+
+        (define (get!)
+          (mutex-lock! get-mutex) ; wait until object in mailbox
+          (let ((result cell))
+            (set! cell #f) ; prevent space leaks
+            (mutex-unlock! put-mutex) ; allow put! operation
+            result))
+
+        (lambda (msg)
+          (case msg
+            ((put!) put!)
+            ((get!) get!)
+            (else (error &quot;unknown message&quot;))))))
+
+When a thread T1 &quot;put!&quot;s an object in the mailbox, T1 becomes the
+owner of the &quot;put-mutex&quot; (due to the call (mutex-lock! put-mutex)).
+T1 will remain the owner until some thread T2 &quot;get!&quot;s the object from
+the mailbox (the call (mutex-unlock! put-mutex) will break the link
+from the mutex to T1).
+
+But if after the &quot;put!&quot; T1 decides to terminate and another thread T3
+performs a &quot;put!&quot; (before the &quot;get!&quot; by T2) then the put-mutex will be
+abandoned when T3 does the &quot;put!&quot;, which will raise an &quot;abandoned
+mutex&quot; exception.
+
+The problem is that the notion of &quot;mutex ownership&quot; is only meaningful
+if the owner of a mutex is the one responsible for unlocking the mutex
+(this is the case when implementing critical sections, but not in the
+mailbox example).  Also, in the context of a real-time multithreading
+system with priority inheritance, you don't want priority inheritance
+to occur for mutexes not used in critical sections (because the
+&quot;priority boost&quot; of the lower priority thread will in no way help the
+higher priority thread to lock the mutex faster).
+
+So I am considering adding a new mutex state that indicates that the
+mutex is locked but has no owner, and the primitive
+&quot;mutex-lock-anonymously!&quot;  which is like &quot;mutex-lock!&quot; but puts the
+mutex in this new state.  The code above would work properly if both
+calls of mutex-lock! are replaced by calls to mutex-lock-anonymously!.
+
+Below are the relevant changes to the SRFI document:
+
+
+&lt;H4&gt;Mutex&lt;/H4&gt;
+
+&lt;P&gt;
+A mutex can be in one of four states: locked (either owned or not
+owned) and unlocked (either abandoned or not abandoned).  An attempt
+to lock a mutex only succeeds if the mutex is in an unlocked state,
+otherwise the current thread must wait.  A mutex in the locked/owned
+state has an associated &quot;owner&quot; thread.  A mutex becomes locked/owned
+when a thread locks it using the &lt;CODE&gt;mutex-lock!&lt;/CODE&gt; primitive
+(the thread becomes the mutex's owner) and when the mutex is created
+with a call to the &lt;CODE&gt;make-mutex&lt;/CODE&gt; primitive that specifies an
+initial owner thread.  A mutex becomes locked/not-owned when a thread
+locks it using the &lt;CODE&gt;mutex-lock-anonymously!&lt;/CODE&gt; primitive.  A
+mutex becomes unlocked/abandoned when the owner of a locked/owned
+mutex terminates.  A mutex becomes unlocked/not-abandoned when a
+thread unlocks it using the &lt;CODE&gt;mutex-unlock!&lt;/CODE&gt; and
+&lt;CODE&gt;condition-variable-wait!&lt;/CODE&gt; primitives.  Mutexes are not
+recursive (i.e. if a thread tries to lock a mutex that is currently
+locked the thread will block even if it is the owner of the mutex).
+&lt;/P&gt;
+
+&lt;DT&gt;&lt;PRE&gt;
+(mutex-owner &lt;I&gt;mutex&lt;/I&gt;)                                   ;procedure
+&lt;/PRE&gt;&lt;DD&gt;
+
+    Returns information about the state of the &lt;CODE&gt;&lt;I&gt;mutex&lt;/I&gt;&lt;/CODE&gt;.  The
+    possible results are:
+
+       &lt;UL&gt;
+
+       &lt;LI&gt;&lt;STRONG&gt;thread T&lt;/STRONG&gt;:
+           the &lt;CODE&gt;&lt;I&gt;mutex&lt;/I&gt;&lt;/CODE&gt; is in the locked/owned state
+           and thread T is the owner of the &lt;CODE&gt;&lt;I&gt;mutex&lt;/I&gt;&lt;/CODE&gt;
+
+       &lt;LI&gt;&lt;STRONG&gt;symbol &lt;CODE&gt;not-owned&lt;/CODE&gt;&lt;/STRONG&gt;:
+           the &lt;CODE&gt;&lt;I&gt;mutex&lt;/I&gt;&lt;/CODE&gt; is in the locked/not-owned state
+
+       &lt;LI&gt;&lt;STRONG&gt;symbol &lt;CODE&gt;abandoned&lt;/CODE&gt;&lt;/STRONG&gt;:
+           the &lt;CODE&gt;&lt;I&gt;mutex&lt;/I&gt;&lt;/CODE&gt; is in the unlocked/abandoned
+           state
+
+       &lt;LI&gt;&lt;STRONG&gt;symbol &lt;CODE&gt;not-abandoned&lt;/CODE&gt;&lt;/STRONG&gt;:
+           the &lt;CODE&gt;&lt;I&gt;mutex&lt;/I&gt;&lt;/CODE&gt; is in the unlocked/not-abandoned
+           state
+
+       &lt;/UL&gt;
+
+&lt;PRE&gt;
+    (mutex-owner (make-mutex))  ==&gt;  not-abandoned
+
+    (define (thread-alive? thread)
+      (let* ((mutex (make-mutex thread))
+             (result (eq? (mutex-owner mutex) thread)))
+        (mutex-unlock! mutex) ; avoid space leak
+        result))
+&lt;/PRE&gt;
+
+&lt;DT&gt;&lt;PRE&gt;
+(mutex-lock! &lt;I&gt;mutex&lt;/I&gt; [&lt;I&gt;timeout&lt;/I&gt;])                         ;procedure
+&lt;/PRE&gt;&lt;DD&gt;
+
+    If the &lt;CODE&gt;&lt;I&gt;mutex&lt;/I&gt;&lt;/CODE&gt; is currently locked, the current
+    thread is suspended until the &lt;CODE&gt;&lt;I&gt;mutex&lt;/I&gt;&lt;/CODE&gt; is
+    unlocked, or until the timeout is reached if
+    &lt;CODE&gt;&lt;I&gt;timeout&lt;/I&gt;&lt;/CODE&gt; is supplied.  If the timeout is
+    reached, &lt;CODE&gt;&lt;I&gt;#f&lt;/I&gt;&lt;/CODE&gt; is returned.  Otherwise the
+    &lt;CODE&gt;&lt;I&gt;mutex&lt;/I&gt;&lt;/CODE&gt; becomes locked/owned and the current
+    thread is its owner.  An &quot;abandoned mutex exception&quot; is raised
+    after locking the &lt;CODE&gt;&lt;I&gt;mutex&lt;/I&gt;&lt;/CODE&gt; if the
+    &lt;CODE&gt;&lt;I&gt;mutex&lt;/I&gt;&lt;/CODE&gt; was unlocked/abandoned, otherwise
+    &lt;CODE&gt;mutex-lock!&lt;/CODE&gt; returns &lt;CODE&gt;#t&lt;/CODE&gt;.  It is not an
+    error if the &lt;CODE&gt;&lt;I&gt;mutex&lt;/I&gt;&lt;/CODE&gt; is owned by the current
+    thread (but the current thread will block).
+
+&lt;DT&gt;&lt;PRE&gt;
+(mutex-lock-anonymously &lt;I&gt;mutex&lt;/I&gt; [&lt;I&gt;timeout&lt;/I&gt;])              ;procedure
+&lt;/PRE&gt;&lt;DD&gt;
+
+    If the &lt;CODE&gt;&lt;I&gt;mutex&lt;/I&gt;&lt;/CODE&gt; is currently locked, the current
+    thread is suspended until the &lt;CODE&gt;&lt;I&gt;mutex&lt;/I&gt;&lt;/CODE&gt; is
+    unlocked, or until the timeout is reached if
+    &lt;CODE&gt;&lt;I&gt;timeout&lt;/I&gt;&lt;/CODE&gt; is supplied.  If the timeout is
+    reached, &lt;CODE&gt;&lt;I&gt;#f&lt;/I&gt;&lt;/CODE&gt; is returned.  Otherwise the
+    &lt;CODE&gt;&lt;I&gt;mutex&lt;/I&gt;&lt;/CODE&gt; becomes locked/not-owned.  An &quot;abandoned
+    mutex exception&quot; is raised after locking the
+    &lt;CODE&gt;&lt;I&gt;mutex&lt;/I&gt;&lt;/CODE&gt; if the &lt;CODE&gt;&lt;I&gt;mutex&lt;/I&gt;&lt;/CODE&gt; was
+    unlocked/abandoned, otherwise &lt;CODE&gt;mutex-lock-anonymously!&lt;/CODE&gt;
+    returns &lt;CODE&gt;#t&lt;/CODE&gt;.  It is not an error if the
+    &lt;CODE&gt;&lt;I&gt;mutex&lt;/I&gt;&lt;/CODE&gt; is owned by the current thread (but the
+    current thread will block).
+
+&lt;PRE&gt;
+    ; an implementation of a mailbox object of depth one
+
+    (define (make-empty-mailbox)
+      (let ((put-mutex (make-mutex)) ; allow put! operation
+            (get-mutex (make-mutex (current-thread))) ; prevent get! operation
+            (cell #f))
+
+        (define (put! obj)
+          (mutex-lock-anonymously! put-mutex) ; prevent put! operation
+          (set! cell obj)
+          (mutex-unlock! get-mutex)) ; allow get! operation
+
+        (define (get!)
+          (mutex-lock-anonymously! get-mutex) ; wait until object in mailbox
+          (let ((result cell))
+            (set! cell #f) ; prevent space leaks
+            (mutex-unlock! put-mutex) ; allow put! operation
+            result))
+
+        (lambda (msg)
+          (case msg
+            ((put!) put!)
+            ((get!) get!)
+            (else (error &quot;unknown message&quot;))))))
+
+    (define (mailbox-put! m obj) ((m 'put!) obj))
+    (define (mailbox-get! m) ((m 'get!)))
+
+    ; an alternative implementation of thread-sleep!
+
+    (define (sleep! timeout)
+      (let ((m (make-mutex)))
+        (mutex-lock-anonymously! m)
+        (mutex-lock-anonymously! m timeout)))
+&lt;/PRE&gt;
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00060.html">Re: Another RT issue</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00062.html">extensibility to real-time multithreading</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00055.html">thread-priority&gt;?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00063.html">Re: non critical-section uses of mutexes</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00061"><strong>Date</strong></a></li>
+<li><a href="threads.html#00061"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

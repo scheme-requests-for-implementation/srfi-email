@@ -1,0 +1,162 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: I don't believe in "(may GC)" -->
+<!--X-From-R13: orne <orneNfbavp.arg> -->
+<!--X-Date: Mon,  5 Jan 2004 18:54:03 +0100 (NFT) -->
+<!--X-Message-Id: Pine.LNX.4.58.0401050920200.589@bolt.sonic.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: E1AdTVM&#45;0000D3&#45;00@mail.mumble.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: I don't believe in &quot;(may GC)&quot;</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00161.html">Date Prev</a>][<a href="msg00163.html">Date Next</a>][<a href="msg00159.html">Thread Prev</a>][<a href="msg00173.html">Thread Next</a>][<a href="maillist.html#00162">Date Index</a>][<a href="threads.html#00162">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: I don't believe in &quot;(may GC)&quot;</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Richard Kelsey &lt;<a href="mailto:kelsey@DOMAIN.HIDDEN">kelsey@xxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: I don't believe in &quot;(may GC)&quot;</li>
+<li><em>From</em>: bear &lt;<a href="mailto:bear@DOMAIN.HIDDEN">bear@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 5 Jan 2004 09:53:49 -0800 (PST)</li>
+<li><em>Cc</em>: <a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>, <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:E1AdTVM-0000D3-00@DOMAIN.HIDDEN">E1AdTVM-0000D3-00@xxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:E1AdTVM-0000D3-00@DOMAIN.HIDDEN">E1AdTVM-0000D3-00@xxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+On Mon, 5 Jan 2004, Richard Kelsey wrote:
+
+&gt;   If I'm using some exotic number representation (constructive reals,
+&gt;   perhaps), then EXTRACT_DOUBLE may very well involve some pretty hairy,
+&gt;   hence possibly GC-causing, computation.
+&gt;
+&gt;This doesn't worry me too much; there aren't a lot of such
+&gt;implementations around.
+
+SISC allows inexact reals of greater precision than the hardware
+can directly represent, and places the precision of inexact computations
+under user control by allowing the user to set two &quot;special variables&quot;
+named min-precision and max-precision.
+
+Chicken can be compiled with an extended numeric library to support
+inexact-reals represented as floating point numbers of any chosen size.
+
+I dunno their exact internals, but do you really wanna bet that both
+of them wouldn't have difficulty implementing an EXTRACT_DOUBLE that
+didn't allocate a call frame?
+
+&gt;   If I'm using some exotic string representations (I'm working on a
+&gt;   functional-splay-tree string type for Pika) -- same deal:
+&gt;   extract-string may take some (possibly GC-causing) work.
+&gt;
+&gt;This does worry me (it's listed in the 'issues' section of the SRFI).
+&gt;
+&gt;   Even something innocent like:
+&gt;
+&gt;	int SCHEME_CHAR_P(scheme_value)
+&gt;
+&gt;   can cause GC if my implementation let's me attach to a hook in its
+&gt;   implementation.
+&gt;
+
+&gt;Again, I don't think this will be very common.  Is there an existing
+&gt;implementation for which this (or anything similar) is an issue?
+
+The lack of existing implementations that use an &quot;exotic&quot;
+representation for strings is one of the main reasons I
+wound up writing my own.  I don't know whether you'd say
+that my homebrew system &quot;exists&quot; or not since it's not
+released, but handling long strings and Unicode is the only
+thing it does *better* than other schemes, and an exotic
+character and string representation is why it can do it.
+
+So this is more than just closing the door on something
+that nobody's doing; it's closing the door on things that
+are, for some applications, The Right Thing.
+
+In Natural-Language work, it's not that uncommon to *want* a
+string that's the entire text of a novel when you're doing
+corpus work, and the natural method of parsing and annotating
+concentrates on adding and deleting characters usually near the
+front of the string.  That's horribly inefficient with c-style
+strings.  Until I got my tree representation of strings working,
+I had to deal with novels with much more complicated code, a
+page at a time or less, so as not to force the underlying
+implementation to do something terribly inefficient.
+
+I don't think it's okay to lock implementors out of using
+this &quot;exotic&quot; representation, when they may want to go to it
+as a means of *improving* their schemes or adapting to the
+new realities of Unicode Support.  And this is important
+to your design because, if I want to traverse a stringtree
+copying characters into a C buffer, I do have to allocate a
+linked list of pointers to parent nodes in the string, and
+that may trigger GC.
+
+				Bear
+
+
+
+
+
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00154" href="msg00154.html">Re: I don't believe in &quot;(may GC)&quot;</a></strong>
+<ul><li><em>From:</em> Richard Kelsey</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00161.html">Re: no constants please</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00163.html">Re: I don't believe in &quot;(may GC)&quot;</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00159.html">Re: I don't believe in &quot;(may GC)&quot;</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00173.html">Re: I don't believe in &quot;(may GC)&quot;</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00162"><strong>Date</strong></a></li>
+<li><a href="threads.html#00162"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

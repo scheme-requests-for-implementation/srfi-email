@@ -1,0 +1,110 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: bug in reference implementation of HASH&#45;TABLE&#45;UPDATE! -->
+<!--X-From-R13: Fnlybe D Qnzcoryy <pnzcoryyNzhzoyr.arg> -->
+<!--X-Date: Mon, 21 Dec 2009 09:06:18 +0000 (UTC) -->
+<!--X-Message-Id: y9lzl5ck86u.fsf@deinprogramm.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>bug in reference implementation of HASH-TABLE-UPDATE!</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00007.html">Date Prev</a>][Date Next][<a href="msg00007.html">Thread Prev</a>][Thread Next][<a href="maillist.html#00008">Date Index</a>][<a href="threads.html#00008">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>bug in reference implementation of HASH-TABLE-UPDATE!</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-69@DOMAIN.HIDDEN">srfi-69@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: bug in reference implementation of HASH-TABLE-UPDATE!</li>
+<li><em>From</em>: Taylor R Campbell &lt;<a href="mailto:campbell@DOMAIN.HIDDEN">campbell@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 21 Dec 2009 10:06:17 +0100</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-69@DOMAIN.HIDDEN">srfi-69@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Old-date</em>: Sun, 20 Dec 2009 04:13:22 -0500</li>
+<li><em>User-agent</em>: Gnus/5.110011 (No Gnus v0.11) XEmacs/21.5-b29 (darwin)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Quoth the SRFI document:
+
+   Procedure: hash-table-update! hash-table key function [ thunk ]
+     ---&gt; undefined
+
+   Semantically equivalent to, but may be implemented more efficiently
+   than, the following code:
+
+   (hash-table-set! hash-table key
+                    (function (hash-table-ref hash-table key thunk)))
+
+But after loading the reference implementation into my friendly
+neighbourhood Scheme REPL:
+
+(let ()
+  (define (test procedure)
+    (let ((ht (make-hash-table)))
+      (hash-table-set! ht 0 'fnord)
+      (procedure ht)
+      (hash-table-ref ht 0 (lambda () #f))))
+  (define (update-procedure ht)
+    (lambda (x)
+      x                               ;ignore
+      (hash-table-delete! ht 0)
+      'foobar))
+  (define (do-update ht)
+    (hash-table-update! ht 0 (update-procedure ht) (lambda () 'lose)))
+  (define (do-ref-and-set ht)
+    (hash-table-set!
+     ht
+     0
+     ((update-procedure ht) (hash-table-ref ht 0 (lambda () 'lose)))))
+  (list (test do-update)
+        (test do-ref-and-set)))
+;Value: (#f foobar)
+
+So it appears that the two expressions, one using HASH-TABLE-UPDATE!
+and the other using HASH-TABLE-REF and HASH-TABLE-SET!, are not
+equivalent in the reference implementation.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00007.html">fwd: [William D Clinger] patch file for SRFI 69 reference implementation</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00007.html">fwd: [William D Clinger] patch file for SRFI 69 reference implementation</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00008"><strong>Date</strong></a></li>
+<li><a href="threads.html#00008"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

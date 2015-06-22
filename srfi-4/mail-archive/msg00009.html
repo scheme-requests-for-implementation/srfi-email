@@ -1,0 +1,325 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Read&#45;time _apply_: an external representation for any value -->
+<!--X-From-R13: byrtNcbobk.pbz -->
+<!--X-Date: Sun, 11 Apr 1999 16:01:54 &#45;0500 (CDT) -->
+<!--X-Message-Id: 199904112055.PAA31367@x16.dejanews.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Read-time _apply_: an external representation for any value</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00008.html">Date Prev</a>][<a href="msg00010.html">Date Next</a>][<a href="msg00008.html">Thread Prev</a>][<a href="msg00010.html">Thread Next</a>][<a href="maillist.html#00009">Date Index</a>][<a href="threads.html#00009">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Read-time _apply_: an external representation for any value</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-4@DOMAIN.HIDDEN">srfi-4@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Read-time _apply_: an external representation for any value</li>
+<li><em>From</em>: <a href="mailto:oleg@DOMAIN.HIDDEN">oleg@xxxxxxxxx</a></li>
+<li><em>Date</em>: Sun, 11 Apr 1999 20:55:48 GMT</li>
+<li><em>Keywords</em>: SRFI-4, external representation, printed form, reader-macro, read-time eval, Scheme</li>
+<li><em>Newsgroups</em>: <a href="news:comp.lang.scheme">comp.lang.scheme</a>, <a href="news:comp.lang.lisp">comp.lang.lisp</a></li>
+<li><em>Organization</em>: Deja News - The Leader in Internet Discussion</li>
+<li><em>Reply-to</em>: <a href="mailto:oleg@DOMAIN.HIDDEN">oleg@xxxxxxxxx</a></li>
+<li><em>Summary</em>: Read-time application as a printed form for any datatype</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>This article was inspired by an exchange of messages between
+Dr. Clinger and Dr. Feeley about external representation of uniform
+vectors, which are proposed in SRFI-4. This post attempts to make a
+rather sweeping generalization of Dr. Clinger's suggestion. It
+proposes an extensible, new old way for external representation of
+Scheme values: read-time _application_.
+
+
+Motivation
+Introduction
+Proposed syntax
+Examples
+Representation of uniform vectors and matrices
+Comparisons
+        Comparisons with CL's #. reader-macro
+How to extend the reader while it scans the code
+Going ahead
+
+
+Motivation
+
+The exchange of messages mentioned above stemmed from a minor
+incompatibility between SRFI-4 and some Scheme implementations: SRFI-4
+says:
+&gt; [T]he external representation of instances of the datatype TAGvector is
+&gt; #TAG(... elements ...). ... Note that the syntax for float vectors
+&gt; conflicts with Standard Scheme which parses #f32() as 3 objects: #f, 32,
+&gt; and ().  For this reason, conformance to this SRFI implies this minor
+&gt; nonconformance to Standard Scheme.
+
+In a message &lt;<a  rel="nofollow" href="http://srfi.schemers.org/srfi-4/mail-archive/msg00002.html">http://srfi.schemers.org/srfi-4/mail-archive/msg00002.html</a>&gt;
+Dr. Clinger proposed a general workaround for this incompatibility
+problem:
+&gt; why not consume just one more octathorpe [that is, #]
+&gt; character (say 'v' for vector) as follows:
+&gt;    #vs8(...) #vu8(...) [elided] #vf64(...)
+&gt; Then some future SRFI for vectors of vectors of floating point numbers
+&gt; (or whatever) will have a notation that can be extended for the purpose,
+&gt; and we won't have to have this same discussion all over again for the
+&gt; second time, redundantly.
+
+I'd like to discuss an even more generic, universal way of
+representing an arbitrary Scheme data type. It is similar to
+Smalltalk's object serialization and CL's #. reader-macro.
+
+
+Introduction
+
+In Smalltalk, any object that defines a 'writeOn:' method may be asked
+to externalize itself. The result is a string that spells out a
+particular invocation of object's constructor. Evaluation of this
+string by an interpreter recreates the original object. LISP X3J13 document
+&lt;<a  rel="nofollow" href="http://www.harlequin.com/education/books/HyperSpec/Body/sec_2-4-8-6.html">http://www.harlequin.com/education/books/HyperSpec/Body/sec_2-4-8-6.html</a>&gt;
+expresses the goal of a read-time _evaluation_ with utmost clarity:
+&quot;For an object that does not have a convenient printed representation,
+a form that computes the object can be given using the #. notation.&quot;
+
+It appears however that a weaker alternative -- a read-time
+_application_ -- may suffice. Most of the Scheme values -- with an
+exceptions of ports, structures, wills, semaphores and other exotic
+beasts -- have an external representation. The representations of
+booleans, numbers, lists, vectors, strings, etc. are codified in
+RnRS. Every Scheme reader has an in-born knowledge how to parse the
+corresponding strings and build Scheme values they represent. The set
+of these built-in constructors is however fixed, and not amenable. I'd
+like to propose to lift this limitation.
+
+
+Proposed syntax of a read-time application
+
+        #`(tag arg1 ...)
+A 'tag' must be an (external representation of an) identifier, and
+'arg1' etc. are external representations of some values, including
+other read-time applications. #@ (rather than #`) seems to be another
+good way to denote read-time applications.
+
+Upon encountering an #` external form, the read procedure should
+locate a read-constructor associated with the 'tag', read the
+arguments 'arg1'... and apply the constructor to the arguments. The
+result of the application is taken to be the value that corresponds to
+the external form under consideration
+
+There must be a way to declare an association between a tag and the
+corresponding constructor-procedure. Regular 'define' introduces an
+association between an identifier and a procedure applied at run time;
+'define-macro' or 'define-syntax' introduce bindings for procedures
+applicable at compile time. Thus 'define-reader-ctor' literally
+suggest itself as a form to introduce a constructor to apply at read
+time.
+
+Examples:
+If
+        (define-reader-ctor 'vector vector)
+then
+        (with-input-from-string &quot;#`(vector 1 2 3)&quot; read) ==&gt; '#(1 2 3)
+        (equal? '#(1 2 3) '#`(vector 1 2 3)) ==&gt; #t
+
+Thus #`(vector 1 2 3) becomes another external representation for a
+vector. With suitably defined reader-constructors, all standard Scheme
+data types may be represented in an external form of
+read-applications:
+
+        #`(list 1 2 3)
+        #`(list #`(string #\1 #\a) 1 2 #`(vector #f #f))
+
+Furthermore, structures (records) and ports gain a printed form and
+can be read in:
+
+        #`(make-structure point (x 3) (y 5) (color read))
+        #`(open-input-file &quot;/tmp/a&quot;)
+For example, an expression
+
+        (with-input-from-string &quot;#`(open-input-file \&quot;/tmp/a\&quot;)&quot;
+                (lambda () (read-char (read))))
+will return the first character of the file &quot;/tmp/a&quot;
+
+
+Representation of uniform vectors and matrices
+
+The proposed read-time application gives uniform vectors the following
+generic external form:
+
+        #`(vector-f32 1 2 3)
+        #`(vector-u8 1 2 3), etc.
+
+This notation also appears to help with a problem of representing a 2D
+matrix with a zero dimension. This problem was mentioned by Dr. Feeley
+in &lt;<a  rel="nofollow" href="http://srfi.schemers.org/srfi-4/mail-archive/msg00003.html">http://srfi.schemers.org/srfi-4/mail-archive/msg00003.html</a>&gt;:
+&gt; The only problem with such a [SRFI-4] representation is that it is
+&gt; not possible to distinguish a 0 by 4 float vector from an empty
+&gt; one dimensional float vector, but a special notation could be used
+&gt; for this very unusual case,
+&gt;  #f32((0.0 0.0 0.0 0.0) ^ 0) ; a 0 by 4 float vector
+&gt;  #f32((0.0 ^ 4) ^ 0)         ; the same 0 by 4 float vector
+&gt;  #f32(() ^ 0)                ; a 0 by 0 float vector
+
+The notation proposed in the present article can easily handle even
+the unusual cases above. Assuming we have defined a procedure (define
+(build-matrix-f32 dims values) ...) and an association
+(define-reader-ctor 'matrix-f32 build-matrix-f32), we can write
+        #`(matrix-f32 (2 3) (10. 1.0) (20. 2.0) (30. 4.0))
+        #`(matrix-f32 (0 4)) ; a 0 by 4 float vector
+        #`(matrix-f32 (4 0)) ; a 4 by 0 float vector
+        #`(matrix-f32 (0 0)) ; a 0 by 0 float vector
+        #`(matrix-f32 (0)) ; a 0 element one-dimensional float vector,
+                which is the same as #`(vector-f32)
+
+Comparisons
+
+In Metcast Request Language
+&lt;<a  rel="nofollow" href="http://pobox.com/~oleg/ftp/Scheme/Request-Language.html">http://pobox.com/~oleg/ftp/Scheme/Request-Language.html</a>&gt;, which is
+used to describe an order for a great variety of weather-related data,
+a form &quot;(tag a b ...)&quot; is interpreted as (apply OBJ-loader:tag a b
+...) where given 'tag', a procedure OBJ-loader:tag is looked up in the
+current dynamic &quot;environment&quot;.
+
+Guile allows a user to declare his own #-symbol dispatch. In this
+proposal, the user is not limited to one letter after #.
+
+Read-time application mechanism defined in this article is rather
+close to Lisp reader's macro functions. Unlike CL, however, a
+reader-constructor is not allowed to read from the input stream on its
+own. It may only build values from other values, which must have
+already been read and internalized. A reader-constructor must always
+return one value; it may not return &quot;nothing&quot;. It may however throw an
+exception or simply return an &quot;inappropriate&quot; value such as #f, which
+will be caught later. Unlike compile-time function applications (that
+is, macro-expansions), a read-time application has no &quot;second pass&quot;.
+
+Common Lisp defines an external form #.obj, which instructs the Lisp
+reader to evaluate 'obj' right after the reader parsed it. While #. is
+a general-purpose read-evaluator:
+        #.obj === (eval obj)
+#` is merely an application:
+        #`obj === (apply (lookup (car obj)) (cdr obj))
+and obj must be an external representation of a list. Read-time
+applications are further restricted to only those procedures that have
+been specifically declared for that purpose (via
+define-reader-ctor). The user thus has a fine-grained control over
+which functions are being applied at read time.
+
+The following examples will show the difference between #. and #`. The
+examples are hypothetical - I don't have a CL system handy to verify
+the Lisp reader returns what I think it does, and #` is still a
+proposal.
+
+(read-from-string &quot;#.(+ 1 2)&quot;) ==&gt; 3
+
+(define-reader-ctor '+ +)
+(with-input-from-string &quot;#`(+ 1 2)&quot; read) ==&gt; 3
+
+(read-from-string &quot;#.(+ 1 (+ 2 3))&quot;) ==&gt; 6
+
+(define-reader-ctor '+ +)
+(with-input-from-string &quot;#`(+ 1 (+ 2 3))&quot; read) ==&gt; error: can't add
+                a number 1 and a list '(+ 2 3)
+(with-input-from-string &quot;#`(+ 1 #`(+ 2 3))&quot; read) ==&gt; 6
+
+(define-reader-ctor 'my-vector
+        (lambda x (apply vector (cons 'my-vector-tag x))))
+(with-input-from-string &quot;#`(my-vector (my-vector 1 2))&quot; read) ==&gt;
+        a vector whose second element is a list of a symbol my-vector,
+        number 1, and number 2.
+(with-input-from-string &quot;#`(my-vector #`(my-vector 1 2))&quot; read) ==&gt;
+        a vector whose second element is a my-vector constructed from
+        numbers 1 and 2.
+
+How to extend the reader while it scans the code
+
+The remaining question is how and _when_ to define
+reader-constructors.  If define-reader-ctor is a regular built-in
+function, declaration of a new reader-constructor will affect the
+Scheme reader only when the code has been completely read,
+(byte)compiled and is being executed. We would like to be able to
+extend the Scheme reader while it still reads the code. For example,
+we want to declare (define-reader-ctor 'vector-f32 &lt;constructor&gt;) and
+be able to write
+        (let ((v1 #`(vector-f32 1 2 3)))
+         ...)
+further down the code. Fortunately, there are several ways code can
+affect a compiler/interpreter while it scans the code. For example,
+define-macro or define-syntax &quot;extend&quot; a Scheme compiler at compile
+time. So do command-line switches and pragmas, which are present in
+many systems. In Gambit, pragmas are called &quot;declare forms&quot;. In
+addition, Gambit allows customization via profile forms, which may
+also be specified on command line:
+        gsi -e &quot;(set-case-conversion! #f)&quot; /tmp/case-sensitive-code.scm
+
+
+Going ahead
+
+Implementation of the proposed reader-application scheme is relatively
+straightforward, especially in Gambit. A Gambit reader is actually
+quite close to the Lisp reader -- readtables and such. Introducing of
+#` will require only few minor extensions. As Gambit reader is written
+in Scheme, reader-constructors could immediately be ported to other
+implementations. However, since the Gambit reader is written and
+copyrighted by Marc Feeley, and is a big chunk of gambc30/lib/_io.scm
+file, it is wise to seek Dr. Feeley's permission first. I can
+implement reader-constructors relatively quickly -- provided it is
+worth doing at all.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00010" href="msg00010.html">Re: Read-time _apply_: an external representation for any value</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00008.html">Initialization</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00010.html">Re: Read-time _apply_: an external representation for any value</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00008.html">Initialization</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00010.html">Re: Read-time _apply_: an external representation for any value</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00009"><strong>Date</strong></a></li>
+<li><a href="threads.html#00009"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

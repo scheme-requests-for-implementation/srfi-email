@@ -1,0 +1,291 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: testing inexacts -->
+<!--X-From-R13: Bre Pbguare <creNobguare.pbz> -->
+<!--X-Date: Sat, 29 Jan 2005 04:56:52 +0100 (NFT) -->
+<!--X-Message-Id: 41FB0971.1000001@bothner.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20050129024352.012261B7730@voluntocracy.org -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: testing inexacts</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00001.html">Date Prev</a>][<a href="msg00003.html">Date Next</a>][<a href="msg00001.html">Thread Prev</a>][<a href="msg00003.html">Thread Next</a>][<a href="maillist.html#00002">Date Index</a>][<a href="threads.html#00002">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: testing inexacts</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Aubrey Jaffer &lt;<a href="mailto:agj@DOMAIN.HIDDEN">agj@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: testing inexacts</li>
+<li><em>From</em>: Per Bothner &lt;<a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 28 Jan 2005 19:56:33 -0800</li>
+<li><em>Cc</em>: <a href="mailto:srfi-64@DOMAIN.HIDDEN">srfi-64@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-64@DOMAIN.HIDDEN">srfi-64@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20050129024352.012261B7730@DOMAIN.HIDDEN">20050129024352.012261B7730@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:20050129024352.012261B7730@DOMAIN.HIDDEN">20050129024352.012261B7730@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.7.3) Gecko/20041020</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+Aubrey Jaffer wrote:
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+ | The test-name is a string that names the test case. It is used when
+ | reporting errors, and also when skipping tests, as described below.
+
+Must TEST-NAMEs be unique?
+</pre></blockquote><pre style="margin: 0em;">
+
+No.  After all, they're optional: a missing name is equivalent to &quot;&quot;.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+If not, then aren't calls to TEST-END ambiguous?
+</pre></blockquote><pre style="margin: 0em;">
+
+I don't believe so.  test-begin/test-end have to be properly
+bracketed. The name in the test-end is mainly for readability and
+to catch test-suite errors.  I also intend that if the test-end
+name doesn't match the current name (from the previous test-begin),
+but it matches an earlier one, then extra implicit test-end
+calls would be added.  However, the implementation doesn't yet do
+that.  This would primarily for recovering from test-suite errors,
+or exceptions that aren't caught.  I.e. like recovering from a
+syntax error in that the test suite would fail, but we try to
+fail a little more elegantly.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+ |  *Rationale:* In some ways using symbols would be preferable.
+ |  However, we want human-readable names, and standard Scheme does
+ |  not provide a way to include spaces or mixed-case text in literal
+ |  symbols.
+
+Writing tests should be about the tests; and not about making
+capitalization consistent.
+</pre></blockquote><pre style="margin: 0em;">
+
+The point is *reporting* the results of tests.  The report should
+be human-readable, and allowing mixed case and spaces in test names
+helps that.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Please allow symbols as well.
+</pre></blockquote><pre style="margin: 0em;">
+
+Using symbols allows us to match test names using eq?.
+Using strings requires matching test names using equal?.
+That is an acceptable price to pay for more readable test names.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+And while we are at it, R5RS sections are hierarchically numbered.
+Why not allow integers?
+</pre></blockquote><pre style="margin: 0em;">
+
+Since these are just names, and we're not doing any operations on
+test names except displaying them and comparing them, there is no
+particular value to allowing integers.  E.g. allowing the name 34
+doesn't add much compared to using &quot;34&quot;.
+
+However, I have no strong opposition to allowing numbers - or
+symbols.  The concern I have is with &quot;test specifiers&quot;.  Those
+&quot;evaluate&quot; to procedures, but it may be convenient to allow
+short-hands.  The draft allows &quot;test-name&quot; as a short-hand for
+(test-match-named &quot;test-name&quot;).  I have considered allowing
+integers, perhaps as a short-hand for test-match-nth.  That
+wouldn't work if we allow integers as test-names.
+
+Feedback on the &quot;syntax&quot; of test-specifiers wojuld be welcome.
+Though I guess I should post my ideas.  If you look at the
+HTML source (section &quot;Skiping selected tests&quot;) you see some
+ideas I had before settled on defining specifiers as
+boolean functions; I'd like to combine the convenient
+syntax for the commented-out specifiers with the simple
+and general model of using procedures.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+ | The following forms may be more convenient than using |test-assert|
+ | directly:
+</pre><tt> | 
+</tt><tt> | (test-eqv [test-name] test-expr expected)
+</tt><pre style="margin: 0em;">
+
+The EXPECTED is usually shorter to write than the TEST-EXPR.  I
+recommend swapping TEST-EXPR and EXPECTED.
+</pre></blockquote><pre style="margin: 0em;">
+
+I don't feel strongly about it.  However, the &quot;flow&quot; is that you
+first evaluate text-expr, and then compare that to the expected
+result, so having the latter last may be more natural.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Also, putting the optional
+argument last is what Scheme programmers are accustomed to.
+</pre></blockquote><pre style="margin: 0em;">
+
+True, but I think the test-name should still come first.
+I think having the name first, as we do for declarations,
+and as we do in documents (like dictionaries) is more natural.
+Visually scanning quickly for a test-name is also easier if
+the test-name is first.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+TEST-EQUAL is just as useful as TEST-EQV and should be provided.
+</pre></blockquote><pre style="margin: 0em;">
+
+It's in the draft, but just in passing:
+
+  Similarly test-equal and test-eq are shorthand for
+  test-assert combined with equal? or eq?, respectively.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+For
+testing inexact calculations, a TEST-APPROXIMATE procedure which
+accepts values within a small range of the expected number would be
+very useful.
+</pre></blockquote><pre style="margin: 0em;">
+
+That sounds useful.  Should the error range be specified
+absolutely or relatively?  The latter is presumably more
+general - except for &quot;approximately zero&quot;.  How about:
+
+(test-approximate [test-name] test-expression expected [error])
+where error defaults to (say) 0.01 and is relative to expected
+I.e. (and (&gt;= result (- expected (* expected error))
+          (&gt;= result (+ expected (* expected error))))
+
+(test-zero [test-name] test-expression [error])
+where error is absolute and defaults (say) 0.01
+I.e. (and (&gt;= result (- error)) (&lt;= result error))
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+For extra points make TEST-APPROXIMATE recursively
+descend list and array structures, using its standard of approximate
+numerical match.  The range (delta) should be a property of the test
+runner.
+</pre></blockquote><pre style="margin: 0em;">
+
+Perhaps the default delta should be a test runner property,
+but test-approximate/test-zero could override it?
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Of course, having optional inexact tests in a testing file isn't
+portable to implementations lacking inexacts.  R5RS requires those
+implementations to signal an error when inexact number syntax is
+encountered (macros don't help).  &quot;r4rstest.scm&quot; goes through the
+hassle of replacing what would be literal inexact numbers with calls
+to STRING-&gt;NUMBER.  I would really like a better way to do this.
+</pre></blockquote><pre style="margin: 0em;">
+
+Not all testing files are going to be portable.  The goal is that
+the api be portable, so it is easy to write portable tests, but
+presumably not more portable than what you're testing.  E.g. a
+test for complex numbers is only going to work if the implementation
+supports complex numbers.  What you want is for the complex tests
+to be skipped (and the report summary say so) if complex is
+unavailable.  If the tests depend on reader syntax one can
+always put them in a separate file and load it. E.g.:
+
+(if no-complex
+ (test-skip &quot;complex number tests&quot;))
+(test-group &quot;complex number tests&quot;
+  (load &quot;complex-number-tests.scm&quot;))
+
+If we allow test-specifiers to be integers interpreted relatively,
+this could be simplified to:
+
+(if no-complex
+ (test-skip 1)) ;; skip following group
+(test-group &quot;complex number tests&quot;
+  (load &quot;complex-number-tests.scm&quot;))
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+ | Additionally, if the matching |test-begin| installed a new test-runner,
+ | then the |test-end| will de-install it, after reporting the accumulated
+ | test results in an implementation-defined manner.
+</pre><tt> | 
+</tt><tt> | (test-group suite-name decl-or-expr ...)
+</tt><tt> | 
+</tt><tt> | Equivalent to:
+</tt><tt> | 
+</tt><tt> | (if (not (test-to-skip% suite-name))
+</tt><pre style="margin: 0em;">
+ |   (dynamic-wind
+ |     (lambda () (test-begin suite-name))
+ |     (lambda () decl-or-expr ...)
+ |     (lambda () (test-end suite-name))))
+
+In a test system it is desirable to use the fewest possible features
+of Scheme, so that problems in the implementation are less likely to
+render the test system unusable.  In this light, is the nesting of
+test-groups bringing benefits large enough to justify the use of
+complicated constructs like DYNAMIC-WIND?
+</pre></blockquote><pre style="margin: 0em;">
+
+We only use dynamic-wind to &quot;cleanup&quot; - i.e &quot;unwind-protect&quot;.
+In an implementation without dynamic-wind it would be acceptable
+to replace it with a macro that just calls the 3 thunks in sequence.
+In an implementation that doen't have full dynamic-wind
+but does have &quot;cleanups&quot; (e.g. Kawa, since it doesn't yet have
+full continuations) it would be nice to register the final
+thunk as a cleanup.
+
+I can change the implementation to make it easier tweak this
+part.
+--
+	--Per Bothner
+per@xxxxxxxxxxx   <a  rel="nofollow" href="http://per.bothner.com/">http://per.bothner.com/</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00001" href="msg00001.html">testing inexacts</a></strong>
+<ul><li><em>From:</em> Aubrey Jaffer</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00001.html">testing inexacts</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00003.html">procedural interface</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00001.html">testing inexacts</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00003.html">procedural interface</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00002"><strong>Date</strong></a></li>
+<li><a href="threads.html#00002"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

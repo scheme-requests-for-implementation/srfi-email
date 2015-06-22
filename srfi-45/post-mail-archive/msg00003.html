@@ -1,0 +1,322 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Bug fix -->
+<!--X-From-R13: Oaqer ina Fbaqre <naqerNabj.urg.oebja.rqh> -->
+<!--X-Date: Sat, 12 Jun 2004 03:50:12 +0200 (DFT) -->
+<!--X-Message-Id: Pine.GSO.4.60.0406112149190.11369@now.het.brown.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Bug fix</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00002.html">Date Prev</a>][<a href="msg00004.html">Date Next</a>][<a href="msg00002.html">Thread Prev</a>][<a href="msg00004.html">Thread Next</a>][<a href="maillist.html#00003">Date Index</a>][<a href="threads.html#00003">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Bug fix</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-45@DOMAIN.HIDDEN">srfi-45@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Bug fix</li>
+<li><em>From</em>: Andre van Tonder &lt;<a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 11 Jun 2004 21:50:07 -0400 (EDT)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-45@DOMAIN.HIDDEN">srfi-45@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+Thank you to Alexandro and John for pointing out the bugs in the
+implementation.  I have fixed them and included the suggested extra
+tests in the update below.
+
+Best regards
+Andre
+
+;=====================================================================
+; Boxes
+
+(define (box x) (list x))
+(define unbox car)
+(define set-box! set-car!)
+
+;==========================================================
+; Primitives for lazy evaluation:
+
+(define-syntax lazy
+   (syntax-rules ()
+     ((lazy exp)
+      (box (box (cons 'lazy (lambda () exp)))))))
+
+(define (eager x)
+   (box (box (cons 'eager x))))
+
+(define-syntax delay
+   (syntax-rules ()
+     ((delay exp) (lazy (eager exp)))))
+
+(define (force promise)
+   (let ((content (unbox (unbox promise))))
+     (case (car content)
+       ((eager) (cdr content))
+       ((lazy)  (let* ((promise* ((cdr content)))
+                       (content  (unbox (unbox promise))))
+                  (when (not (eqv? (car content) 'eager))    ; for reentrancy test 3
+                    (set-box! (unbox promise) (unbox (unbox promise*)))
+                    (set-box! promise* (unbox promise)))
+                  (force promise))))))
+
+
+;============================================================
+; BENCHMARKS:
+;============================================================
+
+
+;============================================================
+; Memoization test 1:
+
+(define s (delay (begin (display 'hello) 1)))
+
+(force s)
+(force s)
+                ;===&gt; Should display 'hello once
+
+;============================================================
+; Memoization test 2:
+
+(let ((s (delay (begin (display 'bonjour) 2))))
+   (+ (force s) (force s)))
+
+                ;===&gt; Should display 'bonjour once
+
+;============================================================
+; Memoization test 3: (pointed out by Alejandro Forero Cuervo)
+
+(define s (delay (begin (display 'hi) 1)))
+(define t (lazy s))
+
+(force t)
+(force s)
+                ;===&gt; Should display 'hi once
+
+;============================================================
+; Memoization test 4: Stream memoization
+
+(define (stream-drop s index)
+   (lazy
+    (if (zero? index)
+        s
+        (stream-drop (cdr (force s)) (- index 1)))))
+
+(define (from n)
+   (delay (begin
+            (display 'ho)
+            (cons n (from (+ n 1))))))
+(define s (from 0))
+
+(car (force (stream-drop s 4)))
+(car (force (stream-drop s 4)))
+
+                ;===&gt; Should display 'ho five times
+
+;=============================================================
+; Reentrancy test 1: from R5RS
+
+(define count 0)
+(define p
+   (delay (begin (set! count (+ count 1))
+                 (if (&gt; count x)
+                     count
+                     (force p)))))
+(define x 5)
+(force p)                     ;===&gt;  6
+(set! x 10)
+(force p)                     ;===&gt;  6
+
+
+;===========================================================
+; Reentrancy test 2: from SRFI 40
+
+(define f
+   (let ((first? #t))
+     (delay
+       (if first?
+           (begin
+             (set! first? #f)
+             (force f))
+           'second))))
+
+(force f)                     ;===&gt; 'second
+
+;===========================================================
+; Reentrancy test 3: due to John Shutt
+
+(define q
+   (let ((count 5))
+     (define (get-count) count)
+     (define p (delay (if (&lt;= count 0)
+                          count
+                          (begin (set! count (- count 1))
+                                 (force p)
+                                 (set! count (+ count 2))
+                                 count))))
+     (list get-count p)))
+(define get-count (car q))
+(define p (cadr q))
+
+(get-count)  ; =&gt;   5
+(force p)    ; =&gt;   0
+(get-count)  ; =&gt;   10
+
+;=============================================================
+; Test leaks:  All the leak tests should run in bounded space.
+
+;============================================================
+; Leak test 1: Infinite loop in bounded space.
+
+(define (loop) (lazy (loop)))
+;(force (loop))
+
+;============================================================
+; Leak test 2: Pending memos should not accumulate
+;              in shared structures.
+
+(define s (loop))
+;(force s)
+
+;============================================================
+; Leak test 3: Safely traversing infinite stream.
+
+(define (from n)
+   (delay (cons n (from (+ n 1)))))
+
+(define (traverse s)
+   (lazy (traverse (cdr (force s)))))
+;(force (traverse (from 0)))
+
+;============================================================
+; Leak test 4: Safely traversing infinite stream
+;              while pointer to head of result exists.
+
+(define s (traverse (from 0)))
+;(force s)
+
+
+;=========================================================================
+; Convenient list deconstructor.
+
+(define-syntax match
+   (syntax-rules ()
+     ((match exp
+        (()      exp1)
+        ((h . t) exp2))
+      (let ((lst exp))
+        (cond ((null? lst) exp1)
+              ((pair? lst) (let ((h (car lst))
+                                 (t (cdr lst)))
+                             exp2))
+              (else 'match-error))))))
+
+;==============================================================
+(define (stream-filter p? s)
+   (lazy (match (force s)
+           (()      (delay '()))
+           ((h . t) (if (p? h)
+                        (delay (cons h (stream-filter p? t)))
+                        (stream-filter p? t))))))
+
+
+;============================================================
+; Leak test 5: Naive stream-filter should run in bounded space.
+;              Simplest case.
+
+;(force (stream-filter (lambda (n) (= n 10000000000))
+;                      (from 0)))
+
+; The stream-ref procedure below does not strictly need to be lazy.
+; It is defined lazy for the purpose of testing safe compostion of lazy procedures in
+; the times3 benchmark below (previous candidate solutions had failed this).
+
+(define (stream-ref s index)
+   (lazy
+    (match (force s)
+      (()      'error)
+      ((h . t) (if (zero? index)
+                   (delay h)
+                   (stream-ref t (- index 1)))))))
+
+; Check that evenness is correctly implemented - should terminate:
+
+(force (stream-ref (stream-filter zero? (from 0))
+                    0))
+
+;============================================================
+; Leak test 6: Another long traversal should run in bounded space.
+
+(define s (stream-ref (from 0) 100000000))
+;(force s)
+
+(define (times3 n)
+   (stream-ref (stream-filter
+                (lambda (x) (zero? (modulo x n)))
+                (from 0))
+               3))
+
+;============================================================
+; Leak test 7: Infamous example from SRFI 40.
+
+(force (times3 7))
+;(force (times3 100000000))
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00004" href="msg00004.html">Re: Bug fix</a></strong>
+<ul><li><em>From:</em> Matthias Radestock</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00002.html">Re: Problem with (force (lazy (delay expr)))</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00004.html">Re: Bug fix</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00002.html">Re: Problem with (force (lazy (delay expr)))</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00004.html">Re: Bug fix</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00003"><strong>Date</strong></a></li>
+<li><a href="threads.html#00003"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

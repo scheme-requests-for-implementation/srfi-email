@@ -1,0 +1,151 @@
+<!-- MHonArc v2.6.16 -->
+<!--X-Subject: Re: arity failures -->
+<!--X-From-R13: Euveb Ynjnv <fuvebNynin.arg> -->
+<!--X-Date: Fri, 13 Nov 2009 20:13:13 +0000 (UTC) -->
+<!--X-Message-Id: 20091113.100810.706149373443304580.shiro@lava.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 1258138480.11968.55.camel@kozaki.becket.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: arity failures</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00032.html">Date Prev</a>][<a href="msg00034.html">Date Next</a>][<a href="msg00028.html">Thread Prev</a>][Thread Next][<a href="maillist.html#00033">Date Index</a>][<a href="threads.html#00033">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: arity failures</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:tb@DOMAIN.HIDDEN">tb@xxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: arity failures</li>
+<li><em>From</em>: Shiro Kawai &lt;<a href="mailto:shiro@DOMAIN.HIDDEN">shiro@xxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 13 Nov 2009 10:08:10 -1000 (HST)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-102@DOMAIN.HIDDEN">srfi-102@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-102@DOMAIN.HIDDEN">srfi-102@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:1258138480.11968.55.camel@DOMAIN.HIDDEN">1258138480.11968.55.camel@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:1258138480.11968.55.camel@DOMAIN.HIDDEN">1258138480.11968.55.camel@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>I rather think that the point of the arity query procedure
+is for some kind of crude optimization, rather than strict
+error checking, given the nature of the ambiguity Thomas mentioned.  
+
+For example, higher order procedure can branch out the typical
+cases to avoid folding arguments (it can be abstracted to a macro).
+
+(define (complement fn)
+  (case (arity fn) ;; some optimization
+    ((0) (lambda () (not (fn))))
+    ((1) (lambda (x) (not (fn x))))
+    ((2) (lambda (x y) (not (fn x y))))
+    (else (lambda args (not (apply fn args))))))
+
+If an implementation doesn't care about such kludge, it can
+just have procedure-arity return &quot;arbitrary number of arguments&quot;
+to all the procedures.  Third-party library written in the above
+way can still work without any disadvantages.
+
+--shiro
+
+
+From: Thomas Bushnell BSG &lt;tb@xxxxxxxxxx&gt;
+Subject: arity failures
+Date: Fri, 13 Nov 2009 10:54:40 -0800
+
+&gt; So &quot;passing&quot; an arity check doesn't mean that the number of arguments
+&gt; you pass is correct, as Dybvig's already noted.
+&gt; 
+&gt; Also, &quot;failing&quot; an arity check doesn't mean that you will get any kind
+&gt; of error or exception as a result.
+&gt; 
+&gt; For example, in response to the question, &quot;what is the arity of read&quot;, I
+&gt; said that under my proposal,
+&gt;   (procedure-arity read) =&gt; 0, #t
+&gt; and then I gave code which throws an error if more than one argument is
+&gt; passed.  But no error is required by Scheme, both because an
+&gt; implementation is free to assign a meaning to (read a b c), and further,
+&gt; because an implementation is free to assign a meaning in general to
+&gt; &quot;extra arguments&quot; passed to procedures.
+&gt; 
+&gt; I can understand then &quot;arity&quot; to mean something which matches the syntax
+&gt; specification for lambda formals lists, in which there is a minimum and
+&gt; permission for more arguments.
+&gt; 
+&gt; People seem to want some *other* meaning than that.  Something like &quot;the
+&gt; number of arguments that can be passed without signaling an error&quot;,
+&gt; though that's not a very clear concept without specifying which errors
+&gt; are involved.  Moreover, for the reasons Dybvig has indicated
+&gt; previously, this is not something most systems could successfully
+&gt; implement, what with passing argument lists around via apply and such.
+&gt; 
+&gt; So, to recap:
+&gt; 
+&gt; Being told that a procedure takes, say, exactly three arguments, does
+&gt; not mean that
+&gt;   1) You won't get an error for passing three arguments;
+&gt;   2) You will get an error for passing other than three arguments.
+&gt; 
+&gt; However, I believe it could mean that:
+&gt;   * The procedure was created with a proper lambda formals list
+&gt; containing exactly three identifiers.
+&gt; 
+&gt; Thomas
+&gt; 
+&gt; 
+&gt; 
+&gt; 
+&gt; 
+&gt; 
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00021" href="msg00021.html">arity failures</a></strong>
+<ul><li><em>From:</em> Thomas Bushnell BSG</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00032.html">Re: proposing a simpler mechanism</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00034.html">Re: proposing a simpler mechanism</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00028.html">Re: arity failures</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00033"><strong>Date</strong></a></li>
+<li><a href="threads.html#00033"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

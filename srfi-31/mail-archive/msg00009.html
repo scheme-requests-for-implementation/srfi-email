@@ -1,0 +1,151 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: SRFI&#45;31 (rec): name; overjustification; formal specification -->
+<!--X-From-R13: Oy Brgebsfxl <nyNcrgebsfxl.bet> -->
+<!--X-Date: Thu,  8 Aug 2002 17:16:57 +0200 (DFT) -->
+<!--X-Message-Id: 200208081516.IAA15349@radish.petrofsky.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>SRFI-31 (rec): name; overjustification; formal specification</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00008.html">Date Prev</a>][<a href="msg00010.html">Date Next</a>][<a href="msg00008.html">Thread Prev</a>][<a href="msg00010.html">Thread Next</a>][<a href="maillist.html#00009">Date Index</a>][<a href="threads.html#00009">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>SRFI-31 (rec): name; overjustification; formal specification</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-31@DOMAIN.HIDDEN">srfi-31@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: SRFI-31 (rec): name; overjustification; formal specification</li>
+<li><em>From</em>: Al Petrofsky &lt;<a href="mailto:al@DOMAIN.HIDDEN">al@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 8 Aug 2002 08:16:54 -0700</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-31@DOMAIN.HIDDEN">srfi-31@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>I just noticed that a new draft was made two months ago.
+
+[Note to srfi editors: I would actually prefer it if the entirety of
+each draft revision was automatically sent out on the srfi's
+discussion list.  Well, perhaps very long drafts shouldn't be emailed,
+but they should certainly all be archived.  It is sometimes difficult
+to extract wisdom from the discussion archives when there is no
+archive of the drafts being discussed.  [Query to srfi editors: where
+should this suggestion be discussed?  Should there be a srfi-srfi
+mailing list?]]
+
+The name of the srfi should include rec, as in &quot;Rec: a special form
+for recursive evaluation&quot;.  It's quite annoying that the full title of
+srfi-11, &quot;Syntax for receiving multiple values&quot;, fails to indicate
+whether it's the let-values srfi or the receive srfi.
+
+I think the rationale section is too long and distracting.  Rec is not
+a novel feature, and there's no need to go into detail about the
+difference between a definition and an expression.  How about a simple
+&quot;Rec provides a concise syntax for those letrec expressions in which
+there is a single variable clause and the body is just a reference to
+this variable.  It provides an even more concise syntax, consistent
+with prototype definitions, for such letrecs in which the initializer
+is a lambda expression.&quot;
+
+To your list of example factorial expressions, I would add one using
+internal define, and one using only lambda, thus making the following
+list (in decreasing order of brevity):
+
+  (rec (f n) (if (zero? n) 1 (* n (f (- n 1)))))
+  (let () (define (f n) (if (zero? n) 1 (* n (f (- n 1))))) f)
+  (lambda (n) (let f ((n n)) (if (zero? n) 1 (* n (f (- n 1))))))
+  (letrec ((f (lambda (n) (if (zero? n) 1 (* n (f (- n 1))))))) f)
+  ((lambda (f) (f f))
+   (lambda (f) (lambda (n) (if (zero? n) 1 (* n ((f f) (- n 1)))))))
+  
+Your attempt to specify rec's semantics in terms of define (which you
+mistakenly call a &quot;command&quot;) makes little sense to me, and seems not
+to cover many details, such as whether or not (rec x (set! x 1)) is an
+error[1].  As you discuss in the rationale, a rec expression is very
+different from a definition.  Why not simply specify rec in terms of
+letrec?
+
+I think the formal syntax and semantics should more closely follow the
+model of r5rs, like so:
+
+  Formal syntax:
+
+    &lt;rec expression&gt; is added to the production for &lt;derived expression&gt;.
+
+    &lt;rec expression&gt; ---&gt; (rec &lt;variable&gt; &lt;expression&gt;)
+			| (rec (&lt;variable&gt; &lt;def formals&gt;) &lt;body&gt;)
+
+  Formal semantics:
+
+    A rec expression has the semantics of the letrec expression
+    that results from the use of this macro:
+
+    (define-syntax rec
+      (syntax-rules ()
+	((rec (name . args) . body)
+	 (letrec ((name (lambda args . body))) name))
+	((rec name expression)
+	 (letrec ((name expression)) name))))
+
+BNF and syntax-rules are the right languages to use for these
+specifications.  Devising your own method of specification is almost
+sure to cause confusion.
+
+-al
+
+
+[1]  (letrec ((x (set! x 1))) x) is an error in r5rs, but many
+implementations allow it.  I will refrain from mentioning that
+(call-with-current-continuation (lambda (k) (define x (set! x (k 1))) x))
+is a legal r5rs expression that evaluates to 1.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00008.html">Re: SRFI 31 procedure vs. named-lambda (2)</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00010.html">SRFI 31</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00008.html">Re: SRFI 31 procedure vs. named-lambda (2)</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00010.html">SRFI 31</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00009"><strong>Date</strong></a></li>
+<li><a href="threads.html#00009"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

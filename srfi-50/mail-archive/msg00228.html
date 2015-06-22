@@ -1,0 +1,166 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: when GC is permitted -->
+<!--X-From-R13: Tryvk Ivaxryznaa <sryvkNcebkvzn&#45;zg.qr> -->
+<!--X-Date: Thu,  8 Jan 2004 09:58:13 +0100 (NFT) -->
+<!--X-Message-Id: opr1f8iyou1ushe7@post.strato.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: E1AeMEw&#45;0005uG&#45;00@mail.mumble.net -->
+<!--X-Reference: 200401072314.PAA05456@morrowfield.regexps.com -->
+<!--X-Reference: vt2vfnnrz9y.fsf@zenia.home -->
+<!--X-Reference: opr1f4lapl1ushe7@post.strato.de -->
+<!--X-Reference: vt2r7yahm8p.fsf@zenia.home -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: when GC is permitted</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00227.html">Date Prev</a>][<a href="msg00229.html">Date Next</a>][<a href="msg00227.html">Thread Prev</a>][<a href="msg00232.html">Thread Next</a>][<a href="maillist.html#00228">Date Index</a>][<a href="threads.html#00228">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: when GC is permitted</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Jim Blandy &lt;<a href="mailto:jimb@DOMAIN.HIDDEN">jimb@xxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: when GC is permitted</li>
+<li><em>From</em>: Felix Winkelmann &lt;<a href="mailto:felix@DOMAIN.HIDDEN">felix@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 08 Jan 2004 09:58:00 +0100</li>
+<li><em>Cc</em>: Tom Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>&gt;, <a href="mailto:kelsey@DOMAIN.HIDDEN">kelsey@xxxxxxx</a>,	<a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:vt2r7yahm8p.fsf@DOMAIN.HIDDEN">vt2r7yahm8p.fsf@xxxxxxxxxx</a>&gt;</li>
+<li><em>Organization</em>: Proxima</li>
+<li><em>References</em>: &lt;<a href="mailto:E1AeMEw-0005uG-00@DOMAIN.HIDDEN">E1AeMEw-0005uG-00@xxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:200401072314.PAA05456@DOMAIN.HIDDEN">200401072314.PAA05456@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:vt2vfnnrz9y.fsf@DOMAIN.HIDDEN">vt2vfnnrz9y.fsf@xxxxxxxxxx</a>&gt; &lt;<a href="mailto:opr1f4lapl1ushe7@DOMAIN.HIDDEN">opr1f4lapl1ushe7@xxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:vt2r7yahm8p.fsf@DOMAIN.HIDDEN">vt2r7yahm8p.fsf@xxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Opera7.21/Win32 M2 build 3218</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+Am 08 Jan 2004 03:34:45 -0500 hat Jim Blandy &lt;jimb@xxxxxxxxxx&gt; geschrieben:
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+I don't understand this. If the C code does not hold direct references
+to the data (i.e. if you add an extra indirection), and if you access
+the data only over a designated interface, GC can certainly run
+whenever it wants, even during the execution of the C code. That's
+the whole point of the abstraction exercise.
+</pre></blockquote><pre style="margin: 0em;">
+
+I'm sorry.  I shouldn't be trying to write so late at night.
+</pre></blockquote><pre style="margin: 0em;">
+
+No worries.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+
+In code using this SRFI's interface, there are two classes of Scheme
+values:
+
+- Values that reside in GCPRO'd variables.
+
+- Values that reside anywhere else: in other variables,
+  compiler-generated temporaries, and so on.
+
+Values in the first class the GC can update when it relocates objects;
+those in the second class it cannot, because it can't find them.
+Values in the second class are unavoidable if you're actually
+operating on the values, since you can't control the code the compiler
+generates.
+</pre></blockquote><pre style="margin: 0em;">
+
+Absolutely. With the current SRFI-50 draft the problem is exactly
+as you point out.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+
+By using the 'begin / end' pair of functions, you'd promise the
+SRFI-50 implementation that, outside such pairs, no values of the
+second class exist, and it is free to collect at any time.  When any
+thread is within such a pair, there exist object references the
+collector can't find or update, so collection has to wait until the
+thread reaches a &quot;may gc&quot; function.
+
+</pre></blockquote><pre style="margin: 0em;">
+
+I should have been more precise there: I understand the intention
+behind the &quot;critical section&quot;. My point is that with an extra-indirection
+(as proposed by Tom or as used in JNI/minor - if I understand it right)
+the second class values point to something opaque. The values inside
+</pre><tt>C locals and registers point to some &quot;box&quot; object that could easily be 
+</tt><tt>registered
+</tt><pre style="margin: 0em;">
+with the collector. Since the user can only access the data via
+extraction forms, it's completely transparent.
+
+This means that the problem would simply go away (IMHO), provided the
+current draft proposal is changed in an appropriate manner.
+
+
+cheers,
+felix
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00232" href="msg00232.html">Re: when GC is permitted</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00219" href="msg00219.html">Re: when GC is permitted</a></strong>
+<ul><li><em>From:</em> Richard Kelsey</li></ul></li>
+<li><strong><a name="00220" href="msg00220.html">Re: when GC is permitted</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00222" href="msg00222.html">Re: when GC is permitted</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+<li><strong><a name="00224" href="msg00224.html">Re: when GC is permitted</a></strong>
+<ul><li><em>From:</em> Felix Winkelmann</li></ul></li>
+<li><strong><a name="00227" href="msg00227.html">Re: when GC is permitted</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00227.html">Re: when GC is permitted</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00229.html">Re: Strings/chars</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00227.html">Re: when GC is permitted</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00232.html">Re: when GC is permitted</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00228"><strong>Date</strong></a></li>
+<li><a href="threads.html#00228"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

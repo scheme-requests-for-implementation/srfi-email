@@ -1,0 +1,138 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: non critical&#45;section uses of mutexes -->
+<!--X-From-R13: [nep Trryrl <srryrlNWDA.G[bagerny.QO> -->
+<!--X-Date: Wed, 26 Apr 2000 20:27:28 &#45;0500 (CDT) -->
+<!--X-Message-Id: 200004270127.VAA00314@trex.IRO.UMontreal.CA -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200004262158.VAA07086@fnmoc.navy.mil -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: non critical-section uses of mutexes</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00063.html">Date Prev</a>][<a href="msg00065.html">Date Next</a>][<a href="msg00063.html">Thread Prev</a>][<a href="msg00065.html">Thread Next</a>][<a href="maillist.html#00064">Date Index</a>][<a href="threads.html#00064">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: non critical-section uses of mutexes</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:oleg@DOMAIN.HIDDEN">oleg@xxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: non critical-section uses of mutexes</li>
+<li><em>From</em>: Marc Feeley &lt;<a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 26 Apr 2000 21:27:27 -0400</li>
+<li><em>Cc</em>: <a href="mailto:srfi-18@DOMAIN.HIDDEN">srfi-18@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:200004262158.VAA07086@DOMAIN.HIDDEN">200004262158.VAA07086@xxxxxxxxxxxxxx</a>&gt; (<a href="mailto:oleg@DOMAIN.HIDDEN">oleg@xxxxxxxxx</a>)</li>
+<li><em>References</em>: &lt;<a href="mailto:200004262158.VAA07086@DOMAIN.HIDDEN">200004262158.VAA07086@xxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; Let thread T1 execute
+&gt; 	(set! global-mbox (make-empty-mailbox))
+&gt; 
+&gt; and yield control to T2, which will do
+&gt; 	((global-mbox 'get!))
+&gt; This will immediately block T2. The control reverts to T1. Suppose
+&gt; that T1 terminates right away. global-mbox::get-mutex was locked by T1
+&gt; upon mailbox creation.  After T1 is gone, the mutex becomes abandoned,
+&gt; so T2 all of the sudden gets &quot;abandoned mutex exception&quot;.
+
+You are right, there is an error in my code.  I meant to start
+the get-mutex in the locked/not-owned state:
+
+ (define (make-empty-mailbox)
+   (let ((put-mutex (make-mutex)) ; allow put! operation
+         (get-mutex (make-mutex))
+         (cell #f))
+
+     ...
+
+     (mutex-lock-anonymously! get-mutex) ; prevent get! operation
+
+     (lambda (msg) ...)))
+
+&gt;         It gets worse. Suppose T1 runs
+&gt;         (set! global-mbox (make-empty-mailbox))
+&gt;         ((global-mbox 'put!) 'value)
+&gt;         ((global-mbox 'get!))
+&gt; However, in the middle of ((global-mbox 'get!)), right after
+&gt; executing (set! cell #f) but _before_ (mutex-unlock! put-mutex),
+&gt; thread T1 exhausts its quantum and is kicked off the CPU. Suppose
+&gt; thread T3 gets control, and forcibly terminates T1. T1 is not running,
+&gt; so it dies instantly. However, the global-mbox::get-mutex does not
+&gt; become abandoned, because it was locked anonymously. So,
+&gt; global-mbox::get-mutex remains locked, and so does
+&gt; global-mbox::put-mutex (because T1 lost CPU control before it could
+&gt; unlock the mutex). Thus both mailbox mutexes are locked, and no one
+&gt; can put to or take anything from the mailbox. If some threads were
+&gt; waiting on put!, they will wait forever. Wasn't mutex ownership
+&gt; introduced to specifically prevent this kind of problem?
+
+Under what authority does T3 terminate T1?  As I have pointed out in
+the spec, thread-terminate! must be used very carefully to avoid
+stopping a thread at an &quot;unsafe&quot; point (such as in the middle of a
+critical section).  If T3 needs to terminate T1 then there is a close
+coupling between the two (i.e. whoever implements T3 must know how T1
+is implemented).
+
+Unfortunately, I don't see any simple way to write the mailbox example
+using the mutex operations currently available such that it is
+possible to cleanly terminate threads, even if T3 and T1 cooperate.
+
+I'll give it some thought but am open to suggestions.
+
+Marc
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00063" href="msg00063.html">Re: non critical-section uses of mutexes</a></strong>
+<ul><li><em>From:</em> oleg</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00063.html">Re: non critical-section uses of mutexes</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00065.html">Re: non critical-section uses of mutexes</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00063.html">Re: non critical-section uses of mutexes</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00065.html">Re: non critical-section uses of mutexes</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00064"><strong>Date</strong></a></li>
+<li><a href="threads.html#00064"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

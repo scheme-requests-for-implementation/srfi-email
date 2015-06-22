@@ -1,0 +1,180 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: inexactness vs. exactness -->
+<!--X-From-R13: orne <orneNfbavp.arg> -->
+<!--X-Date: Sun, 31 Jul 2005 20:47:16 +0200 (DFT) -->
+<!--X-Message-Id: Pine.LNX.4.58.0507311116390.25085@bolt.sonic.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: BF124FA3.B08F%schlie@comcast.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: inexactness vs. exactness</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00179.html">Date Prev</a>][<a href="msg00181.html">Date Next</a>][<a href="msg00179.html">Thread Prev</a>][<a href="msg00181.html">Thread Next</a>][<a href="maillist.html#00180">Date Index</a>][<a href="threads.html#00180">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: inexactness vs. exactness</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Paul Schlie &lt;<a href="mailto:schlie@DOMAIN.HIDDEN">schlie@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: inexactness vs. exactness</li>
+<li><em>From</em>: bear &lt;<a href="mailto:bear@DOMAIN.HIDDEN">bear@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 31 Jul 2005 11:46:54 -0700 (PDT)</li>
+<li><em>Cc</em>: Aubrey Jaffer &lt;<a href="mailto:agj@DOMAIN.HIDDEN">agj@xxxxxxxxxxxx</a>&gt;, <a href="mailto:will@DOMAIN.HIDDEN">will@xxxxxxxxxxx</a>,	<a href="mailto:srfi-70@DOMAIN.HIDDEN">srfi-70@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-70@DOMAIN.HIDDEN">srfi-70@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:BF124FA3.B08F%25schlie@DOMAIN.HIDDEN">BF124FA3.B08F%schlie@xxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:BF124FA3.B08F%25schlie@DOMAIN.HIDDEN">BF124FA3.B08F%schlie@xxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+Limiting the precision to that of the most-precise inexact argument,
+as suggested by Will Clinger and myself at different times, seems
+like a relatively practical thing to do (explanations below).
+However, it would be forbidden by the current suggested wording,
+because it runs against the principle of using a particular inexact
+value (expressible in, say, four words because one of the arguments
+was an inexact with four words of precision) when there are inexact
+values (which are expressible in 1024 words) that are actually
+closer to the mathematically expected result.
+
+
+
+On Sun, 31 Jul 2005, Paul Schlie wrote:
+
+&gt;&gt; From: bear &lt;bear@xxxxxxxxx&gt;
+&gt;&gt; I know that it's not the right thing in all cases and all times,
+&gt;&gt; but I think it's a good thing in most of the cases I use, for
+&gt;&gt; an operation on exact arguments whose mathematically correct
+&gt;&gt; result is too large to be represented as an exact number, to
+&gt;&gt; (silently) return an inexact number of the highest available
+&gt;&gt; precision.
+
+&gt;- As personally I think it's poor idea to place the responsibility
+&gt;  to limit the precision of exact data such that calculations will
+&gt;  not exceed the practical physical limitations of an exact
+&gt;  implementation's representational capabilities on the programmer,
+&gt;  but rather believe that it's the responsibility of the implementation
+&gt;  to endeavor to limit the precision of an exact value's representation
+&gt;  to some practical physical limit in an effort to prevent such
+&gt;  scenarios; I'd rather see it become acceptable that an exact
+&gt;  implementation may return an imprecise exact value limited to some
+&gt;  implementation defined precision limit, where the precision limit
+&gt;  of an exact value's representation is presumed to be greater than
+&gt;  the precision supported by an inexact value's representation.
+
+Uh, this is faint and fuzzy thinking; no matter what the precision
+limit, if you have a situation where you're not getting the
+exact mathematically correct result, you must mark the result as
+being an inexact number.  There is no limit on the size of the
+representation for inexact numbers; the &quot;highest available precision&quot;
+for inexacts may be several kilobytes long depending on what the
+implementation's author did.
+
+I agree with you, I think, about the desirable behavior: use exact
+results until they get too big, and then switch to inexact results
+_of_about_the_same_representational_precision to prevent further
+out-of-control growth.
+
+Unfortunately, most implementors limit inexacts to 64 bit (or even
+32 bit) real values, and therefore have drastically different precision
+ranges and limits available for exact and inexact numbers.
+
+&gt;  As this would imply that such an exact implementation may have some
+&gt;  practical precision limit, it correspondingly must either be defined
+&gt;  to have the same representational magnitude bounds as an inexact
+&gt;  implementation, or by implication have distinct infinite and reciprocal
+&gt;  bounds defined. (where the former seems simplest, although apparently
+&gt;  only suggested in jest earlier).
+
+Ehhh.  Only half in jest.  Most of these problems do go away if you
+provide inexact numbers as big and precise as your exact numbers;
+But general-purpose schemata can't really be expected to do so, since
+most of them want blazing speed out of inexact numbers and are perfectly
+happy with inexact precision limited to 64 bits.  I think I'd be happy
+in a scheme that represented numbers in up to 1024 words of memory,
+whether exact or inexact, marked them &quot;inexact&quot; if that wasn't enough
+to hold the correct answer but was enough to hold an approximation
+within reasonable roundoff errors, and returned an error object if
+the result was actually out of range (beyond the highest/lowest
+representable number).
+
+But for certain kinds of calculations, you'd still want a way to
+specify a much lower &quot;precision limit&quot; in order to get wrong answers
+really really fast.  An example is most iterative adaptive algorithms;
+you get closer to the correct answer by making more iterations, much
+faster rather than by carrying each iteration out to 1024 words of
+precision.  And since those answers were doomed to be wrong anyway
+(since they usually home in on irrationals) and the correctness is
+not usually very critical within a small roundoff error, why *not*
+limit them to 4 words of precision?
+
+So, I think it's desirable to have a numeric system where inexacts
+have a range of different precisions, depending on the precision
+of the arguments to the procedures that produced them as results.
+But this is where we violate the principle of always using &quot;the&quot;
+closest representable inexact value to the mathematically correct
+result.
+
+				Bear
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00181" href="msg00181.html">Re: inexactness vs. exactness</a></strong>
+<ul><li><em>From:</em> Paul Schlie</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00179" href="msg00179.html">Re: inexactness vs. exactness</a></strong>
+<ul><li><em>From:</em> Paul Schlie</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00179.html">Re: inexactness vs. exactness</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00181.html">Re: inexactness vs. exactness</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00179.html">Re: inexactness vs. exactness</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00181.html">Re: inexactness vs. exactness</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00180"><strong>Date</strong></a></li>
+<li><a href="threads.html#00180"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

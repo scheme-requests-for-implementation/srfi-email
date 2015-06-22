@@ -1,0 +1,203 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: current input &#38; output ports -->
+<!--X-From-R13: orne <orneNfbavp.arg> -->
+<!--X-Date: Sun, 19 Jun 2005 20:51:44 +0200 (DFT) -->
+<!--X-Message-Id: Pine.LNX.4.58.0506191106570.27880@bolt.sonic.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: Pine.LNX.4.44.0506161545250.10146&#45;100000@autodrip.bloodandcoffee.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: current input &amp; output ports</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00044.html">Date Prev</a>][<a href="msg00046.html">Date Next</a>][<a href="msg00036.html">Thread Prev</a>][<a href="msg00038.html">Thread Next</a>][<a href="maillist.html#00045">Date Index</a>][<a href="threads.html#00045">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: current input &amp; output ports</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Taylor Campbell &lt;<a href="mailto:campbell@DOMAIN.HIDDEN">campbell@xxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: current input &amp; output ports</li>
+<li><em>From</em>: bear &lt;<a href="mailto:bear@DOMAIN.HIDDEN">bear@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 19 Jun 2005 11:51:38 -0700 (PDT)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-68@DOMAIN.HIDDEN">srfi-68@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-68@DOMAIN.HIDDEN">srfi-68@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:Pine.LNX.4.44.0506161545250.10146-100000@DOMAIN.HIDDEN">Pine.LNX.4.44.0506161545250.10146-100000@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:Pine.LNX.4.44.0506161545250.10146-100000@DOMAIN.HIDDEN">Pine.LNX.4.44.0506161545250.10146-100000@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+On Thu, 16 Jun 2005, Taylor Campbell wrote:
+
+&gt; One thing that has always bothered me about Scheme's I/O
+&gt; system is the seemingly random presence of 'current
+&gt; ports.'  I haven't been able to find a rationale for the
+&gt; existence of the mechanism, and exactly what the 'current
+&gt; {input,output} port' is meant to be used for has never
+&gt; been clear to me.
+
+I think that the input and output ports are the strongest
+argument for dynamic variables in a Lisp.  Having adopted
+Lexical scope, the scheme RnRS authors didn't want to muddy
+the waters for just two variables, so they made them global
+instead.
+
+But this is a problem. If as an implementor you take them at
+their word and implement a purely lexically-scoped language,
+you'll find that the globals &quot;do the wrong thing&quot; in the
+presence of call/cc, so you'll wind up making them dynamic
+anyway and hiding the details under obfuscating
+constructions like CALL-WITH-INPUT-PORT, etc.
+
+&gt; Not only is the mechanism itself vague,
+&gt; but it also introduces unnecessary complexities in the
+&gt; interface: because the port argument to many operations is
+&gt; optional (which I believe Mike doesn't like anyway), the
+&gt; port must go last, which skews the possibility of other
+&gt; optional arguments and which is contrary to the very
+&gt; common convention of putting the important aggregate datum
+&gt; in the first argument.
+
+That &quot;very common convention&quot; you mentioned is a direct
+consequence of single-argument type-based method dispatch,
+which is the OO mechanism that first appeared in Smalltalk,
+was popularized by C++ and now inherited by Java, C#, et al.
+The convention did not exist yet when scheme adopted its
+contrary convention.
+
+Note that Lispy conventions of OO (as typified by CLOS)
+mostly use multiple-argument method dispatch for their generic
+functions, which eliminates the &quot;pride of place&quot; constraint
+you mentioned, but which also creates problems with optional
+arguments! *sigh*.
+
+Perhaps what we want is keyword arguments?
+
+&gt; I recognize that it can be useful to store different kinds
+&gt; of 'current ports' in the dynamic environment, such as a
+&gt; port for general noise output, a port for error output, or
+&gt; ports for terminal interaction.  But I don't think that
+&gt; the 'current input &amp; output ports,' as outlined by R5RS &amp;
+&gt; the current SRFI document, suit any of these roles very
+&gt; well, and I see no reason to make a special case for two
+&gt; vaguely specified ports so that the argument conventions
+&gt; of all of the port operations are skewed with respect to
+&gt; optionality and inconsistent with their stream I/O
+&gt; counterparts.
+
+You're talking about the way function calls are written, but
+the ugliness here (at least in Schemes that don't support
+dynamic variables) goes way *way* deeper than that.
+
+I think the reason current-input-port and
+current-output-port have remained so vague and
+underspecified is because as dynamic structures in a
+lexically-scoped language, they are contrary to the design
+of the rest of the language.  To specify them clearly and
+precisely, you'd have to specify a lot of behavior that
+scheme simply does not otherwise use.
+
+&gt; Additionally, the procedures CURRENT-INPUT-PORT, CURRENT-OUTPUT-PORT,
+&gt; CALL-WITH-CURRENT-INPUT-PORT, &amp; CALL-WITH-CURRENT-OUTPUT-PORT, would
+&gt; all be removed.  The current error output port could still remain, and
+&gt; I'd also recommend possibly adding a current noise output port, but it
+&gt; is of little significance.
+
+
+I have a very similar proposal that differs in a few
+particulars and would break marginally less (but still most)
+code while still cleaning up the design.
+
+Let the current input and output ports be global _AND_IMMUTABLE_.
+   (Then the threading and dynamic-variable problems go away)
+
+Add a third global, immutable port, the current error port or
+   current debug port.
+
+Specify that they correspond to C's &quot;stdin/stdout/stderr&quot;, and
+   while in a REPL, correspond to things read and written from
+   the console, but allow for scheme &quot;scripts&quot; to be invoked
+   with input redirected from or output redirected to pipes.
+
+With these ports immutable, syntax that alters them in the
+   scope of procedures called from those forms
+   (CALL-WITH_FOO, etc) becomes nonsensical and must be
+   removed.
+
+With these procedures removed, the port must be passed explicitly
+   in the lexical environment just like any other variable.
+   Procedures that take &quot;optional&quot; port arguments should therefore
+   be changed to take &quot;mandatory&quot; port arguments.
+
+Library syntax for forms that write explicitly to the standard
+   immutable ports would then become trivial to define.
+
+&gt; I also have some suggestions for how to take advantage of
+&gt; the new possibilities for making some arguments optional
+&gt; introduced by the elimination of the current input &amp;
+&gt; output ports, but that can be left for another mail.
+
+Just to make sure you know, there's nothing stopping you from
+having multiple optional arguments in the same call...  right?
+
+				Bear
+
+
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00031" href="msg00031.html">current input &amp; output ports</a></strong>
+<ul><li><em>From:</em> Taylor Campbell</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00044.html">Re: output streams vs output ports</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00046.html">Re: output streams vs output ports</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00036.html">Re: current input &amp; output ports</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00038.html">output streams vs output ports</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00045"><strong>Date</strong></a></li>
+<li><a href="threads.html#00045"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

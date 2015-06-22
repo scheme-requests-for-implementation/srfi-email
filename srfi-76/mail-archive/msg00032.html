@@ -1,0 +1,151 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Constructor rationale questions -->
+<!--X-From-R13: Oaqer ina Fbaqre <naqerNyngre.urg.oebja.rqh> -->
+<!--X-Date: Mon, 19 Sep 2005 18:28:15 +0200 (MST) -->
+<!--X-Message-Id: 200509191628.j8JGS6jA017256@later.het.brown.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Constructor rationale questions</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00031.html">Date Prev</a>][<a href="msg00033.html">Date Next</a>][<a href="msg00039.html">Thread Prev</a>][<a href="msg00038.html">Thread Next</a>][<a href="maillist.html#00032">Date Index</a>][<a href="threads.html#00032">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Constructor rationale questions</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-76@DOMAIN.HIDDEN">srfi-76@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Constructor rationale questions</li>
+<li><em>From</em>: Andre van Tonder &lt;<a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 19 Sep 2005 12:28:06 -0400 (EDT)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-76@DOMAIN.HIDDEN">srfi-76@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Reply-to</em>: Andre van Tonder &lt;<a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>I have a few questions regarding the stated rationale for custom constructors/
+field initialization.  
+
+I suspect the reasons for the rationale are not entirely justified, and I 
+think that, in addition to the problem with pattern matching mentioned 
+already, a case can be made for removing this feature:
+
+From document:
+==============
+&quot;If the custom field initialization were omitted, it would still be possible 
+to perform custom initialization by writing a separate constructor procedure, 
+which would wrap a record type's actual constructor. However, this creates the 
+need for an extra procedure name which is not part of the record type's 
+definition.&quot;
+
+* This does not seem compelling, since I have to wrap the constructor anyway 
+  in many quite elementary cases due to the limitations on custom field
+  initialization:
+
+  (define-type real-rational (num denom)
+    (fields num denom))
+    
+  (define (make-rational x y)
+    (let ((common (gcd x y)))
+      (make-real-rational (/ x common) (/ y common)))) 
+
+* Why does the same rationale not apply to accessors?  For example,
+  why is it important to make an underlying hash table constructor private
+  but not, for argument's sake, an account-balance-set! mutator, or to 
+  have to wrap an accessor but not a constructor?
+  Since constructing and accessing are dual, it seems inelegant to treat
+  them differently.  
+  
+* Most Scheme module systems provide a more elegant, orthogonal and uniform
+  alternative for hiding private constructors and accessors/mutators.   
+
+From document:
+==============
+&quot;... this creates the need for an extra procedure name which is not part of 
+the record type's definition.  This means that extensions which deal with the
+record type's definition (such extensions to support keyword arguments, etc.) 
+don't have access to the record type's actual constructor.&quot;
+
+* This does not seem correct.  As a counterexample, SRFI-57 is exactly
+  such an extension of SRFI-9.  It hides the underlying SRFI-9 
+  constructor as follows (schematically): 
+
+  (define-syntax define-SRFI-57-type
+    (lambda (form)
+      (syntax-case form ()
+        ((_ name SRFI-57-constructor .....))
+         (begin 
+           (register-constructor #'name #'SRFI-57-constructor)
+           #'
+            (begin
+              (define-record-type name secret-underlying-constructor 
+                  ........)
+              (define SRFI-57-constructor
+                 ........secret-underlying-constructor............)
+              ......
+               ))))
+         
+  Due to hygiene, |secret-underlying-constructor| is really invisible.
+         
+Cheers
+Andre
+            
+             
+      
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00038" href="msg00038.html">Re: Constructor rationale questions</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00031.html">Incompatibility with pattern matching</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00033.html">Re: Problems with field initialization: Proposal</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00039.html">Re: Incompatibility with pattern matching</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00038.html">Re: Constructor rationale questions</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00032"><strong>Date</strong></a></li>
+<li><a href="threads.html#00032"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

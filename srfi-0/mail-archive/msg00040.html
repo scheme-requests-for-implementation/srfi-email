@@ -1,0 +1,146 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: SRFI 0 philosophy [WAS: logical operations in if&#45;implements] -->
+<!--X-From-R13: [nep Trryrl <srryrlNveb.hzbagerny.pn> -->
+<!--X-Date: Wed, 7 Apr 1999 14:07:21 &#45;0500 (CDT) -->
+<!--X-Message-Id: 199904071907.PAA31476@trex.IRO.UMontreal.CA -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 199901160602.WAA10985@cygnus.com -->
+<!--X-Reference: 199903240454.XAA09438@raptor.IRO.UMontreal.CA -->
+<!--X-Reference: y9l1zifxp6x.fsf_&#45;_@brabantio.informatik.uni&#45;tuebingen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: SRFI 0 philosophy [WAS: logical operations in if-implements]</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00039.html">Date Prev</a>][<a href="msg00041.html">Date Next</a>][<a href="msg00031.html">Thread Prev</a>][<a href="msg00013.html">Thread Next</a>][<a href="maillist.html#00040">Date Index</a>][<a href="threads.html#00040">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: SRFI 0 philosophy [WAS: logical operations in if-implements]</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: SRFI 0 philosophy [WAS: logical operations in if-implements]</li>
+<li><em>From</em>: Marc Feeley &lt;<a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 7 Apr 1999 15:07:18 -0400</li>
+<li><em>Cc</em>: <a href="mailto:srfi-0@DOMAIN.HIDDEN">srfi-0@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:y9l1zifxp6x.fsf_-_@DOMAIN.HIDDEN">y9l1zifxp6x.fsf_-_@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	(<a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>)</li>
+<li><em>References</em>: &lt;<a href="mailto:199901160602.WAA10985@DOMAIN.HIDDEN">199901160602.WAA10985@xxxxxxxxxx</a>&gt; &lt;<a href="mailto:199903240454.XAA09438@DOMAIN.HIDDEN">199903240454.XAA09438@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:y9l1zifxp6x.fsf_-_@DOMAIN.HIDDEN">y9l1zifxp6x.fsf_-_@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; I think we editors have pretty much adopted Richard's view that the
+&gt; whole feature business should happen in a separate configuration
+&gt; language.  His message is at:
+&gt; 
+&gt; <a  rel="nofollow" href="http://srfi.schemers.org/srfi-0/mail-archive/msg00020.html">http://srfi.schemers.org/srfi-0/mail-archive/msg00020.html</a>
+
+I've looked at Richard's proposal and, generally speaking, the idea of
+a separate configuration language for programs is compatible with the
+cond-implements form as I see it but it is not the only way to go.  I
+don't want to discuss the specifics of Richard's proposal at this
+point because I think this would be premature.
+
+The fundamental problem is that we want a way to express the fact that
+a certain piece of code in our program (a &quot;chunk&quot; so as to not use the
+term &quot;module&quot;) is dependent on some SRFI.  Richard's proposal places
+this information outside of the chunk.  It seems to me that the only
+reasons for doing this is that we don't have a formal notion of what a
+chunk is (i.e. a scope) and a way to define chunks and the things it
+is dependent on (other chunks, SRFIs, etc).  This cries out **MODULE
+SYSTEM** to me.  Yes I know that we don't currently have a module
+system, but this is clearly where such information should be placed.
+
+Note that I'm not saying that a configuration file for programs (such
+as the one suggested by Richard) doesn't have a place.  In fact, I'm
+pretty sure such a thing is useful to glue the various modules
+together.  All I am saying is that, for modularity reasons, the SRFI
+dependency information should be put on the module, not in the program
+configuration file.  As an example (intentionnaly naive), if we
+defined a &quot;module&quot; to mean a source file, then we could say that the
+first couple of forms in that file declare the dependency information
+and the scope of these declarations extends to the end of the file.
+
+Matthew Flatt's variant of Richard's external configuration language
+is a more modular approach, closer to what I have in mind.  However, I
+think this should not be part of SRFI-0 and the reason is simply that
+we need something **NOW**.  Agreeing on a module system will take a
+long time.  So what I want to propose for SRFI-0 is simply a
+cond-implements form that tests for the presence of a feature.  Future
+module system SRFIs or configuration language SRFIs can provide
+mechanisms for requiring that the Scheme implementation provide a
+particular feature, possibly limited to the scope of a particular
+module or whatever.  Until such module SRFIs surface (!) it will be up
+to the user of a piece of code to add whatever is needed for their
+Scheme implementation to satisfy the cond-implements forms that are
+found (in fact I can easily imagine an automatic tool, supplied with
+each Scheme implementation, that would do this automatically... i.e.
+the tool tries to load the program and, if it bombs at load time
+because some SRFI hasn't been put in the configuration file, it adds
+this dependency to the configuration file, and tries to load the
+program anew).  What isn't obvious to me is how to word SRFI-0 so that
+it will be compatible with future module SRFIs (in my original
+proposal feature identifiers had global scope, i.e. a particular
+feature either is available in all parts of the program or is not, but
+the notion of a not-necessarily-global &quot;feature identifier scope&quot; has
+to be part of SRFI-0).
+
+Marc
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00012" href="msg00012.html">logical operations in if-implements</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+<li><strong><a name="00028" href="msg00028.html">Re: logical operations in if-implements</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+<li><strong><a name="00029" href="msg00029.html">SRFI 0 philosophy [WAS: logical operations in if-implements]</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr. Preprocessor]</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00039.html">apology for nonsense</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00041.html">cond-implements -&gt; cond-expand</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00031.html">Re: SRFI 0 philosophy [WAS: logical operations in if-implements]</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00013.html">Suggestion for SRFI 0</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00040"><strong>Date</strong></a></li>
+<li><a href="threads.html#00040"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

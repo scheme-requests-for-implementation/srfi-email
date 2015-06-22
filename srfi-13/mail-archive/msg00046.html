@@ -1,0 +1,244 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Case&#45;mapping, Unicode &#38; internationalisation -->
+<!--X-From-R13: fuvirefNnv.zvg.rqh -->
+<!--X-Date: Mon, 24 Jan 2000 07:37:46 &#45;0600 (CST) -->
+<!--X-Message-Id: 200001241337.IAA09036@mongkok.smartleaf.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Case-mapping, Unicode &amp; internationalisation</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00045.html">Date Prev</a>][<a href="msg00047.html">Date Next</a>][<a href="msg00045.html">Thread Prev</a>][<a href="msg00047.html">Thread Next</a>][<a href="maillist.html#00046">Date Index</a>][<a href="threads.html#00046">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Case-mapping, Unicode &amp; internationalisation</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-13@DOMAIN.HIDDEN">srfi-13@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Case-mapping, Unicode &amp; internationalisation</li>
+<li><em>From</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxx</a></li>
+<li><em>Date</em>: Mon, 24 Jan 2000 08:37:45 -0500</li>
+<li><em>Reply-to</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>I would like SRFI-13 to take advantage of the opportunity to tackle
+the issues arising from internationalisation and Unicode, and do a
+proper job. My design criteria for SRFI-13 are these:
+
+  - The SRFI-13 spec is independent of the implementation chosen for 
+    representing characters -- one should be able to use SRFI-13 procedures
+    in Schemes that use ASCII, Latin-1, Unicode or other encodings for chars.
+
+  - The spec *is* designed to allow string-processing code to be portable
+    across different character encodings. This means that we include string
+    primitives (such as string comparison, case mapping) which cannot be
+    portably implemented using simple character primitives for Unicode
+    Schemes. For example, lower-casing a string requires more than mapping
+    CHAR-DOWNCASE over the string -- see below for the subtleties involved
+    when dealing with the full spectrum of Unicode.
+
+In other words, I don't want to put in Unicode-specific ops, but I want all
+the ops to make sense in a Unicode world. This is similar to my design
+criteria for shared-text substrings.
+
+Ben Goettner has been advising me on the subtleties of Unicode and case. The
+good news is that there is a whole tech report from the Unicode people on this
+issue. The bad news is that the possibility of Unicode does have impact on the
+design of basic string operations.
+
+The issues of case-mapping are laid out in Unicode Tech Report 21, which is
+short, clear and available on the Web:
+    <a  rel="nofollow" href="http://www.unicode.org/unicode/reports/tr21/">http://www.unicode.org/unicode/reports/tr21/</a>
+(It can be easily read in a few minutes.)
+
+The short summary is that we are dropping two procedures (STRING-UPCASE!
+and STRING-DOWNCASE!) and reinstating WORD-CAPITALIZE with a new name
+(STRING-TITLECASE) and new semantics.
+
+Here are the issues and their impact on SRFI-13.
+
+- Case-mapping requires surrounding context
+
+  In Unicode, you can't actually do case-mapping on a single char in
+  isolation.  In a few cases, it requires surrounding context info.  For
+  example, Greek capital sigma downcases to two different chars depending upon
+  whether it is the final character of a word or not.
+
+  STRING-UPCASE &amp; STRING-DOWNCASE use context in a Unicode Scheme. However,
+  context does not extend beyond the limits of the start/end indices, when
+  these are supplied.
+
+  CHAR-UPCASE and CHAR-DOWNCASE are not in the purview of SRFI-13. However,
+  this SRFI recommends that these two functions simply choose a reasonable
+  default for these cases (e.g., the NON_FINAL mapping).
+
+- Titlecase &lt;&gt; uppercase
+  Unicode defines three kinds of case mapping: lowercase, uppercase, and
+  titlecase. The difference between uppercasing and titlecasing a character
+  or character sequence can be seen in compound characters (that is,
+  a single character that represents a compount of two characters).
+
+  For example, in Unicode, character U+01F3 is LATIN SMALL LETTER DZ.  (Let us
+  write this compound character using ASCII as &quot;dz&quot;.) This character
+  uppercases to character U+01F1, LATIN CAPITAL LETTER DZ.  (Which is
+  basically &quot;DZ&quot;.) But it titlecases to to character U+01F2, LATIN CAPITAL
+  LETTER D WITH SMALL LETTER Z. (Which we can write &quot;Dz&quot;.)
+
+      character	uppercase titlecase
+      --------- --------- ---------
+      dz	DZ	  Dz
+
+  Scheme needs CHAR-TITLECASE and CHAR-TITLECASE? functions, but this is not
+  in the purview of SRFI-13, which handles strings, not chars.
+
+  STRING-CAPITALIZE is required to do the right thing with compound characters
+  in a Unicode implementation.
+
+  We also add STRING-TITLECASE, which uses the Unicode definition
+  of titlecasing a text string: every character not preceded by a
+  cased character is titlecased. All other characters are lowercased. E.g.
+	(string-titlecase &quot;olin g. sHIVERS&quot;) =&gt; &quot;Olin G. Shivers&quot;
+	(string-titlecase &quot;Laurence McCullough&quot;) =&gt; &quot;Laurence Mccullough&quot;
+	(string-titlecase &quot;3com mAkes ROUTERS.&quot;) =&gt; &quot;3Com Makes Routers.&quot;
+
+  (This is essentially the task handled by the old CAPITALIZE-WORDS function,
+  which was dropped a few rounds ago.)  If the optional start index is given,
+  it is treated as the beginning of the string. E.g.:
+
+        (string-titlecase &quot;jamie clark&quot; 2) =&gt; &quot;Mie Clark&quot;
+
+  To recap, STRING-CAPITALIZE titlecases the *initial* character of a string.
+  STRING-TITLECASE processes the entire string.
+
+- A single lowercase char can upcase into multiple chars 
+
+  For example, German eszet upcases to &quot;SS&quot;. 
+
+  This is a problem for CHAR-UPCASE; STRING-UPCASE and STRING-TITLECASE can
+  handle it properly, and are required to do so in a Latin-1 or Unicode Scheme.
+  
+  STRING-UPCASE! and STRING-DOWNCASE! are being dropped, since they cannot
+  guarantee to handle their arguments in-place. (Bummer.)
+
+- Turkish has different case mappings.
+  
+  Case-mapping functions are sensitive to external environment settings
+  in ways not defined by this SRFI. E.g., the current $LC locale in Unix.
+
+  Note that Turkish is the only language in the Unicode set with this problem.
+
+- CHAR-UPCASE and CHAR-DOWNCASE
+  These functions are not in the purview of SRFI-13. However,
+  this SRFI recommends that these two functions
+
+  - pass through unchanged characters whose case-mapping expands them into
+    multi-character sequences, such as when upcasing the Latin-1 German
+    eszet to &quot;SS.&quot; This will allow old code to continue to work, and is
+    consistent with what modern Unicode OS's do (e.g., Windows 2000) --
+    hence implementations can use the native OS case-mapping facilities,
+    when possible.
+  
+  - return a reasonable default when asked to case-map a character
+    that has multiple possible results depending upon context (such as
+    downcasing the Greek capital sigma).
+
+- This SRFI additionally recommends 
+
+  - numeric codes for standard functions that map between characters and
+    integers should be required to use the Unicode/Latin-1/ASCII mapping. This
+    allows programmers to write portable code. 
+
+  - CHAR-TITLECASE be added to CHAR-UPCASE and CHAR-DOWNCASE
+
+  - CHAR-TITLECASE? be added to CHAR-UPCASE? and CHAR-DOWNCASE?
+
+  - Title/up/down-case functions might be added to the character-processing
+    suite which return immutable string values. Note that the context issue
+    (e.g., properly downcasing Greek Sigma) is not resolved by these functions.
+
+  These recommendations are not a part of the SRFI-13 spec. Note also that
+  requiring a Unicode/Latin-1/ASCII interface to integer/char mapping
+  functions does not imply anything about the actual underlying encodings of
+  characters.
+
+- Summary
+  (upcase-string    string [start end]) -&gt; string
+  (downcase-string  string [start end]) -&gt; string
+  (titlecase-string string [start end]) -&gt; string
+
+- Char function recommendations:
+  (char-upcase    char) -&gt; char
+  (char-downcase  char) -&gt; char
+  (char-titlecase char) -&gt; char
+
+  (char-upcase?    char) -&gt; boolean
+  (char-downcase?  char) -&gt; boolean
+  (char-titlecase? char) -&gt; boolean
+
+  (upcase-char-&gt;string    char) -&gt; immutable-string
+  (downcase-char-&gt;string  char) -&gt; immutable-string
+  (titlecase-char-&gt;string char) -&gt; immutable-string
+
+- Other internationalisation issues
+
+  Case mapping is not the only tricky issue in a rich character world
+  like Unicode. I'll deal with the following issues in later notes.
+  - Procedures to find word boundaries and line-break opportunities portably.
+  - String comparison: collation order, case-folding, normalisation
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00047" href="msg00047.html">Re: Case-mapping, Unicode &amp; internationalisation</a></strong>
+<ul><li><em>From:</em> Sergei Egorov</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00045.html">Re: Substring indices everywhere? and the XS&gt;&lt; form</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00047.html">Re: Case-mapping, Unicode &amp; internationalisation</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00045.html">Re: Substring indices everywhere? and the XS&gt;&lt; form</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00047.html">Re: Case-mapping, Unicode &amp; internationalisation</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00046"><strong>Date</strong></a></li>
+<li><a href="threads.html#00046"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

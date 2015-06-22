@@ -1,0 +1,268 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: new function or modify read -->
+<!--X-From-R13: orne <orneNfbavp.arg> -->
+<!--X-Date: Wed, 18 Dec 2002 06:31:20 +0100 (NFT) -->
+<!--X-Message-Id: Pine.LNX.4.40.0212171954550.26029&#45;100000@bolt.sonic.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200212172158.gBHLw4a02482@dino00.iro.umontreal.ca -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: new function or modify read</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00017.html">Date Prev</a>][<a href="msg00019.html">Date Next</a>][<a href="msg00017.html">Thread Prev</a>][<a href="msg00020.html">Thread Next</a>][<a href="maillist.html#00018">Date Index</a>][<a href="threads.html#00018">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: new function or modify read</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Marc Feeley &lt;<a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: new function or modify read</li>
+<li><em>From</em>: bear &lt;<a href="mailto:bear@DOMAIN.HIDDEN">bear@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 17 Dec 2002 21:31:18 -0800 (PST)</li>
+<li><em>Cc</em>: <a href="mailto:kumo@DOMAIN.HIDDEN">kumo@xxxxxxxxxxxxx</a>, &lt;<a href="mailto:srfi-38@DOMAIN.HIDDEN">srfi-38@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-38@DOMAIN.HIDDEN">srfi-38@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:200212172158.gBHLw4a02482@DOMAIN.HIDDEN">200212172158.gBHLw4a02482@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+On Tue, 17 Dec 2002, Marc Feeley wrote:
+
+&gt;This is not at all my perspective.  I manipulate large cyclic data
+&gt;structures all the time (doubly-linked lists, trees with
+&gt;back-pointers, object system class descriptors, etc), my programs
+&gt;(sometimes!) have bugs and I want to dump these cyclic data-structures
+&gt;nicely so that I can figure out what the problem is.  I do this all
+&gt;the time!  It would be a shame if I could not combine the
+&gt;pretty-printing feature with the shared data printing feature.  My
+&gt;point is that these features are not mutually exclusive, so the API
+&gt;should be designed to let the user pick the features needed.
+
+Okay.... you've convinced me that there needs to be some kind of
+extensible mechanism for specifying options.
+
+&gt;  - Should hidden fields of an object be written or not?  This is
+&gt;    useful for debugging but also for saving an object to a file and
+&gt;    reading it back in later.
+
+This is immaterial since &quot;hidden fields&quot; are a completely undefined
+concept in R5RS and, AFIR, also undefined in all existing Scheme
+standards and SRFI's.  I'm not convinced that hidden fields as such
+are a good idea, and if anyone needs them they can be implemented with
+standard scheme data structures such as pairs, vectors, etc.  I'm not
+going to piggyback definitions of entirely new, or implementation-
+dependent, language features onto this SRFI.
+
+&gt;  - Should numbers that are eq? be marked as shared or not?  For
+&gt;    example in (123 . 123) both numbers are probably eq?, and perhaps
+&gt;    also in (0.0 . 0.0).
+
+Well, my intent was to recover (eq?) relationships when reading
+anything that had been written.  And at first glance I was prepared to
+simply answer, &quot;no, numbers are (eq?) whenever they are (eqv?), so
+this is a distinction that makes no difference.&quot;  However, that was
+over hasty, because R5RS states:
+
+
+&gt;    Eq? and eqv? are guaranteed to have the same behavior on symbols,
+&gt;    booleans, the empty list, pairs, procedures, and non-empty
+&gt;    strings and vectors. Eq?'s behavior on numbers and characters is
+&gt;    implementation- dependent, but it will always return either true
+&gt;    or false, and will return true only when eqv? would also return
+&gt;    true. Eq?  may also behave differently from eqv? on empty vectors
+&gt;    and empty strings.
+
+
+So it appears that there may be situations in which numbers may be
+(eqv?) without being (eq?) in some schemes.  (What scheme are you
+using, marc?  I've never had this happen and didn't know it was
+possible!)
+
+So at second glance it would look like this would gum up the works
+badly, because if I, in an implementation where numbers are (eq?)
+whenever they are (eqv?), write a structure and marc, in an
+implementation where numbers have individual identities as well as
+values, reads a structure, odds are the structure I wrote is not going
+to be the same as the structure he reads regardless of the behavior
+of our (write-showing-shared) function.  And vice versa, of course.
+
+But at third glance, (eq?) objects behave just like (eqv?) objects in
+the absence of assignment - and there is no way in R5RS to assign to a
+number or a character without changing its identity and thereby
+terminating the (eq?) relationship -- without a side effect on
+whatever it formerly had an (eq?) relationship with.  In an
+implementation where (eqv?) numbers can be non-(eq?), they are
+guaranteed to be non-(eq?) after an assignment to one of them, and the
+other will not be changed by that assignment.  This is just as though
+they had been non-(eq?). And this is also true of characters.  Numbers
+and characters are the lowest-level entities, not mutable containers
+for values.  So the effects of mutation on numbers or characters that
+are or aren't (eq?) will never make a difference to normal program
+semantics.  So this must be why the R5RS authors chose to allow
+implementation-dependent behavior on exactly those two classes of
+values; because under normal program semantics the distinction can
+never matter.
+
+And at fourth glance, we must take into account abnormal program
+semantics. Of course, those are the ones that are specifically relying
+on the function (eq?)  itself -- and this is unavoidable because (eq?)
+itself has different semantics in our two implementations and our
+programs would have behaved differently even on the identical original
+structure!  Aargh!
+
+What we have here is a clear case of trying to provide stable,
+portable infrastructure and discovering that infrastructure necessary
+to support it and beyond the scope of what we are trying to provide
+here, is neither completely stable or portable.
+
+Crap.
+
+I still believe that (write-showing-shared) is more portable and
+reliable than (write), but clearly the Right Thing To Do is forced to
+also be implementation-dependent, and thus of limited portability,
+here; on schemes that allow non-(eq?)  numbers and characters to be
+(eqv?) it should show (eq?) relationships among numbers and
+characters, and in schemes where all (eqv?) numbers and characters are
+also (eq?), it should not.
+
+&gt;  - Should the low-level code of procedures (bytecode, or whatever) be
+&gt;    dumped?  Same issue for continuations.
+
+Again, implementation-dependent.  (Write-showing-shared) must produce
+an external representation for anything that has an external
+representation under (write), and those are entities that may or may
+not have an external representation under your particular
+implementation's (write) and (read) functions.  If this SRFI mandates
+implementors coming up with a portable notation for the low-level code
+of comiled routines, just watch how fast they scramble to ignore it.
+I'd like to have that, sure, but it's unreasonable - and also not
+easily or portably implementable.
+
+&gt;  - Should the object be written as text or in binary?  After all if a
+&gt;    human is not going to read the data using text is just wasteful.
+&gt;    A binary representation, or even a special purpose textual
+&gt;    representation would be more compact.
+
+Text is now and has always been more portable across systems. And
+human readability, while not the purpose of a structure write, has
+benefits in debugging and other places as you've pointed out.
+
+&gt;So in the end the &quot;write-showing-shared&quot; procedure still needs
+&gt;parameters.
+
+I'm considering it, but I'm far from convinced.
+
+&gt; We don't yet know how many we need (and probably never
+&gt;will as the need for new features never ceases to grow).
+
+And this makes me exceedingly loath to include and define them at this
+point.
+
+&gt; This is why
+&gt;an API based on dynamically bound parameter objects is needed.
+&gt;Alternatively, explicit keyword parameters could also be used:
+
+No.  Dynamically-scoped parameters and keyword parameters are pure
+mud in a lexically-scoped prefix-notation language.  I will not
+recommend them because they are ugly and introduce complications
+and dependencies.  What you want to pass in, *IF* you insist on
+parameterizing the call at all, is probably a thunk.
+
+&gt;   (write obj port shared: #t pretty: #t)
+
+Without introducing any strange unportable calling conventions or
+syntax definitions, you could say this;
+
+(let ((writetable
+         (lambda (arg)
+           (case (arg)
+             ((prettyprint) #t)
+             ((show-shared) #t)
+             (else #f))))
+      (port standard-output-port))
+   (write port writetable))
+
+You can dress it up with syntax any way you want, but the above is the
+basic structure of the call you want, and probably what I'd write
+because I don't like keeping bunches of syntax definitions in my head.
+
+But I persist in saying that while leaving room for a prettyprint
+extension isn't a bad idea, providing the prettyprint extension, or
+any other beyond showing shared structure, is absolutely not what this
+is about.
+
+&gt;I have also found readtables to be a good way to package up the
+&gt;parameters that are used by &quot;write&quot; and &quot;read&quot;.  The readtable
+&gt;specifies the external representation and &quot;write&quot; and &quot;read&quot; use
+&gt;the readtable when generating the external representation or
+&gt;when parsing an object.
+
+Right, the same idea as the thunk I assigned to the variable named
+'writetable' above.  But I would avoid calling it readtable; that name
+is in use for a different concept by Common Lisp.
+
+				Bear
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00020" href="msg00020.html">numbers; efficiency</a></strong>
+<ul><li><em>From:</em> Aluminum Petrofsky</li></ul></li>
+<li><strong><a name="00022" href="msg00022.html">Re: new function or modify read</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00017" href="msg00017.html">Re: new function or modify read</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00017.html">Re: new function or modify read</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00019.html">Re: new function or modify read</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00017.html">Re: new function or modify read</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00020.html">numbers; efficiency</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00018"><strong>Date</strong></a></li>
+<li><a href="threads.html#00018"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,244 @@
+<!-- MHonArc v2.6.16 -->
+<!--X-Subject: Updated SRFI&#45;110 posted. -->
+<!--X-From-R13: "Rnivq O. Iurryre" <qjurryreNqjurryre.pbz> -->
+<!--X-Date: Tue,  6 Aug 2013 14:07:38 +0200 (MST) -->
+<!--X-Message-Id: E1V6g36&#45;0004Gh&#45;Pw@rmm6prod02.runbox.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Updated SRFI-110 posted.</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00212.html">Date Prev</a>][<a href="msg00214.html">Date Next</a>][<a href="msg00212.html">Thread Prev</a>][<a href="msg00214.html">Thread Next</a>][<a href="maillist.html#00213">Date Index</a>][<a href="threads.html#00213">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Updated SRFI-110 posted.</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &quot;srfi-110&quot; &lt;<a href="mailto:srfi-110@DOMAIN.HIDDEN">srfi-110@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Updated SRFI-110 posted.</li>
+<li><em>From</em>: &quot;David A. Wheeler&quot; &lt;<a href="mailto:dwheeler@DOMAIN.HIDDEN">dwheeler@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 06 Aug 2013 08:07:36 -0400 (EDT)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-110@DOMAIN.HIDDEN">srfi-110@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Reply-to</em>: <a href="mailto:dwheeler@DOMAIN.HIDDEN">dwheeler@xxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>An updated SRFI-110 has been posted, with a significantly simpler specification.
+I'm in the process of making more changes, with the hopes that it'll be
+even simpler (while being just as precise).
+
+Below are the &quot;key BNF productions&quot;.  Notice that each production
+is much simpler. I've basically tried to give productions
+better names, split productions into smaller and more digestible
+pieces, and simplified rules in a number of cases.
+
+The full spec defines the supporting productions.
+For example, the &quot;hs&quot; production consumes any tabs and spaces;
+&quot;skippable&quot; consumes comments that aren't ;-comments.
+
+At this point I don't think trying an LALR(1)
+presentation would make it any clearer.  But I think
+Mark H Weaver was absolutely right that the spec could be
+made clearer and simpler; I'm hoping this direction is both.
+
+ANTLR produces 0 warnings with this grammar.  That doesn't
+mean it's perfect, of course, but it does mean that it avoids
+certain kinds of problems.
+
+Thoughts?
+
+--- David A. Wheeler
+
+=======================================
+
+
+// Production &quot;collecting_content&quot; returns a collecting list's contents.
+// Precondition: After collecting start and horizontal spaces.
+// Postcondition: Consumed the matching COLLECTING_END.
+// FF = formfeed (\f aka \u000c), VT = vertical tab (\v aka \u000b)
+
+collecting_content returns [Object v]
+  : it_expr more=collecting_content {(conse $it_expr $more)}
+  | comment_eol    retry1=collecting_content {$retry1}
+  | (FF | VT)+ EOL retry2=collecting_content {$retry2}
+  | COLLECTING_END {'()} ;
+
+collecting_list returns [Object v]
+  : COLLECTING hs cc=collecting_content hs {$cc} ;
+
+// Process line after &quot;. hspace+&quot; sequence.  Does not go past current line.
+
+post_period returns [Object v]
+  : skippable retry=post_period {$retry}
+    | pn=n_expr hs skippable* (n_expr error)? {$pn}
+    | cl=collecting_list skippable* (n_expr error)? {$cl}
+    | /*empty*/ {'.} ;
+
+// Production &quot;line_exprs&quot; reads the 1+ n-expressions on one line; it will
+// return the list of n-expressions on the line.  If there is one n-expression
+// on the line, it returns a list of exactly one item.
+// Precondition: At beginning of line after indent
+// Postcondition: At unconsumed EOL
+
+line_exprs returns [Object v]
+  : PERIOD /* Leading &quot;.&quot;: escape following datum like an n-expression. */
+      (hspace+ pp=post_period {(list $pp)}
+       | /*empty*/    {(list '.)} )
+  | cl=collecting_list
+      (rr=rest_of_line    {(cons $cl $rr)}
+       | /*empty*/        {(list $cl)} )
+  | basic=n_expr_first /* Only match n_expr_first */
+      ((hspace+ (br=rest_of_line  {(cons $basic $br)}
+                 | /*empty*/      {(list $basic)} ))
+       | /*empty*/                {(list $basic)} ) ;
+
+// Production &quot;rest_of_line&quot; reads the rest of the expressions on a line,
+// after the first expression of the line.
+// Precondition: At beginning of non-first expression on line (past hspace)
+// Postcondition: At unconsumed EOL
+
+rest_of_line returns [Object v]
+  : PERIOD hspace+ pp=post_period {$pp} /* Improper list */
+  | skippable (retry=rest_of_line {$retry} | /*empty*/ {'()})
+  | cl=collecting_list
+    (rr=rest_of_line     {(cons $cl $rr)}
+     | /*empty*/         {(list $cl)} )
+  | basic=n_expr
+      ((hspace+ (br=rest_of_line {(cons $basic $br)}
+                 | /*empty*/     {(list $basic)} ))
+       | /*empty*/               {(list $basic)} ) ;
+
+// Production &quot;body&quot; handles the sequence of 1+ child lines in an it_expr
+// (e.g., after &quot;line_expr&quot;), each of which is itself an it_expr.
+// It returns the list of expressions in the body.
+
+body returns [Object v]
+  : i=it_expr
+     (same
+       ( {(isperiodp $i)}? =&amp;gt;   f=it_expr DEDENT {$f} // Improper list
+       | {(isemptyvaluep $i)}? =&amp;gt; retry=body     {$retry}
+       | {(not_period_and_not_empty $i)}? =&amp;gt; nxt=body {(conse $i $nxt)} )
+     | DEDENT {(list1e $i)} ) ;
+
+// Production &quot;normal_it_expr&quot; is an it_expr without a special prefix.
+
+normal_it_expr returns [Object v] 
+  : line_exprs (
+     GROUP_SPLIT hs {(monify $line_exprs)} // split
+     | SUBLIST hs sub_i=it_expr {(appende $line_exprs (list1e $sub_i))}
+     | comment_eol // Normal case, handle child lines if any:
+       (INDENT children=body {(appende $line_exprs $children)}
+        | /*empty*/          {(monify $line_exprs)} /* No child lines */ )) ;
+
+// These are it_expr's with a special prefix like \\ or $:
+
+datum_comment_line returns [Object v]
+  : DATUM_COMMENTW hs
+    (is_i=it_expr | comment_eol INDENT body ) {empty_value} ;
+
+group_line returns [Object v]
+  : (GROUP_SPLIT | scomment) hs /* Initial; Interpet as group */
+      (group_i=it_expr {$group_i} /* Ignore initial GROUP/scomment */
+       | comment_eol
+         (INDENT g_body=body {$g_body} /* Normal GROUP use */
+          | /*empty*/ {empty_value} )) ;
+
+sublist_line returns [Object v] // &quot;$&quot; first on line
+  : SUBLIST hs is_i=it_expr {(list1e $is_i)} ;
+
+abbrevw_line returns [Object v]
+  : abbrevw hs
+      (comment_eol INDENT ab=body {(appende (list $abbrevw) $ab)}
+       | ai=it_expr               {(list2e $abbrevw $ai)} ) ;
+
+// Production &quot;it_expr&quot; (indenting sweet-expression)
+// is the main production for sweet-expressions in the usual case.
+// Precondition: At beginning of line after indent, NOT at an EOL char
+// Postcondition: it-expr ended by consuming EOL + examining indent
+
+it_expr returns [Object v]
+  : normal_it_expr     {$normal_it_expr}
+  | datum_comment_line {$datum_comment_line}
+  | group_line         {$group_line}
+  | sublist_line       {$sublist_line}
+  | abbrevw_line       {$abbrevw_line} ;
+
+// Production &quot;initial_indent_expr&quot; is for an expression starting with indent.
+
+initial_indent_expr returns [Object v]
+  : (INITIAL_INDENT | separator_initial_indent) (scomment hs)*
+    (n_expr {$n_expr}
+     | comment_eol {empty_value} ) ;
+
+// Production &quot;t_expr_real&quot; handles special cases, else it invokes it_expr.
+
+t_expr_real returns [Object v]
+  : comment_eol    r1=t_expr_real {$r1} // Skip initial blank lines
+  | (FF | VT)+ EOL r2=t_expr_real {$r2} // Skip initial FF|VT lines
+  | EOF                           {(generate_eof)} // End of file
+  | initial_indent_expr           {$initial_indent_expr}
+  | i=it_expr                     {$i} /* Normal case */ ;
+
+// Production &quot;t_expr&quot; is the top-level production for sweet-expressions.
+
+t_expr returns [Object v]
+  : te=t_expr_real	
+      {(if (isemptyvaluep $te) (t_expr) $te)} ; retry if empty_value.
+
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00214" href="msg00214.html">Re: Updated SRFI-110 posted.</a></strong>
+<ul><li><em>From:</em> John Cowan</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00212.html">Re: Very minor grammar tweak</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00214.html">Re: Updated SRFI-110 posted.</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00212.html">Re: Very minor grammar tweak</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00214.html">Re: Updated SRFI-110 posted.</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00213"><strong>Date</strong></a></li>
+<li><a href="threads.html#00213"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

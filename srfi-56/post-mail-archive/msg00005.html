@@ -1,0 +1,132 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Implementation of read&#45;ieee&#45;float64 -->
+<!--X-From-R13: Penqyrl Zhpvre <yhpvreNzngu.cheqhr.rqh> -->
+<!--X-Date: Fri,  9 Dec 2005 20:51:28 +0100 (CET) -->
+<!--X-Message-Id: AE38B8A8&#45;8480&#45;422F&#45;9731&#45;AB68C9C33909@math.purdue.edu -->
+<!--X-Content-Type: multipart/mixed -->
+<!--X-Reference: DAD12F48&#45;4E49&#45;4B32&#45;A29D&#45;7CD3018C3E8B@math.purdue.edu -->
+<!--X-Reference: 5fb7e0870512081912v7fd21074q3777d53c60a45822@mail.gmail.com -->
+<!--X-Reference: 5FEEDB41&#45;F863&#45;44D0&#45;A1BA&#45;6F9B0BA81911@math.purdue.edu -->
+<!--X-Reference: 4B0436D6&#45;15A8&#45;4317&#45;8A82&#45;96DECA36D83C@iro.umontreal.ca -->
+<!--X-Derived: binmA0ZFXKTzN.bin -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Implementation of read-ieee-float64</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00004.html">Date Prev</a>][Date Next][<a href="msg00004.html">Thread Prev</a>][Thread Next][<a href="maillist.html#00005">Date Index</a>][<a href="threads.html#00005">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Implementation of read-ieee-float64</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Marc Feeley &lt;<a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Implementation of read-ieee-float64</li>
+<li><em>From</em>: Bradley Lucier &lt;<a href="mailto:lucier@DOMAIN.HIDDEN">lucier@xxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 9 Dec 2005 13:51:24 -0600</li>
+<li><em>Cc</em>: Bradley Lucier &lt;<a href="mailto:lucier@DOMAIN.HIDDEN">lucier@xxxxxxxxxxxxxxx</a>&gt;,	Alex Shinn &lt;<a href="mailto:alexshinn@DOMAIN.HIDDEN">alexshinn@xxxxxxxxx</a>&gt;, <a href="mailto:srfi-56@DOMAIN.HIDDEN">srfi-56@xxxxxxxxxxxxxxxxx</a>,	Gambit List &lt;<a href="mailto:Gambit-list@DOMAIN.HIDDEN">Gambit-list@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-56@DOMAIN.HIDDEN">srfi-56@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:4B0436D6-15A8-4317-8A82-96DECA36D83C@DOMAIN.HIDDEN">4B0436D6-15A8-4317-8A82-96DECA36D83C@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:DAD12F48-4E49-4B32-A29D-7CD3018C3E8B@DOMAIN.HIDDEN">DAD12F48-4E49-4B32-A29D-7CD3018C3E8B@xxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:5fb7e0870512081912v7fd21074q3777d53c60a45822@DOMAIN.HIDDEN">5fb7e0870512081912v7fd21074q3777d53c60a45822@xxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:5FEEDB41-F863-44D0-A1BA-6F9B0BA81911@DOMAIN.HIDDEN">5FEEDB41-F863-44D0-A1BA-6F9B0BA81911@xxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:4B0436D6-15A8-4317-8A82-96DECA36D83C@DOMAIN.HIDDEN">4B0436D6-15A8-4317-8A82-96DECA36D83C@xxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+
+On Dec 9, 2005, at 8:27 AM, Marc Feeley wrote:
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><tt>Brad, would it be sound to compute (expt X -Y) as (expt (/ X) Y) ?   
+</tt><tt>This would solve the denormalized result case but I'm wondering how  
+</tt><tt>this compares precision-wise to (/ (expt X Y)).
+</tt></blockquote><pre style="margin: 0em;">
+
+</pre><tt>Neither is great if X or Y is a floating-point number and the other  
+</tt><tt>is real.  We really need to use the built-in pow, which is more  
+</tt><tt>accurate than what we can do with the repeated squaring algorithm.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>I include *UNTESTED* code below; since I have a cold today I won't  
+</tt><tt>test it soon.
+</tt><pre style="margin: 0em;">
+
+For example, with this code you get (expt is the current expt)
+
+&gt; (compile-file &quot;expt.scm&quot;)
+#t
+&gt; (load &quot;expt&quot;)
+&quot;/Users/lucier/programs/gambc40b15/expt/expt.o13&quot;
+&gt; (exp (* (+ (expt 2 54) 7) (log (- 1 (expt 2. -53)))))
+.13533528323661256
+&gt; (expt (- 1 (expt 2. -53)) (+ (expt 2 54) 7))
+.13533528122258084
+&gt; (##my-expt (- 1 (expt 2. -53)) (+ (expt 2 54) 7))
+.1353352832366126
+&gt;  (expt 2. -1074)
+0.
+&gt; (##my-expt 2. -1074)
+5e-324
+
+</pre><tt>etc.  So the way you do expt when y is an integer can lead to really  
+</tt><tt>big relative errors, even away from the underflow threshold.
+</tt><pre style="margin: 0em;">
+
+Brad
+
+
+</pre><p><strong>Attachment:
+<a href="binmA0ZFXKTzN.bin" ><tt>expt.scm</tt></a></strong><br>
+<em>Description:</em> Binary data</p>
+
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00001" href="msg00001.html">Implementation of read-ieee-float64</a></strong>
+<ul><li><em>From:</em> Bradley Lucier</li></ul></li>
+<li><strong><a name="00002" href="msg00002.html">Re: Implementation of read-ieee-float64</a></strong>
+<ul><li><em>From:</em> Alex Shinn</li></ul></li>
+<li><strong><a name="00003" href="msg00003.html">Re: Implementation of read-ieee-float64</a></strong>
+<ul><li><em>From:</em> Bradley Lucier</li></ul></li>
+<li><strong><a name="00004" href="msg00004.html">Re: Implementation of read-ieee-float64</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00004.html">Re: Implementation of read-ieee-float64</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00004.html">Re: Implementation of read-ieee-float64</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00005"><strong>Date</strong></a></li>
+<li><a href="threads.html#00005"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

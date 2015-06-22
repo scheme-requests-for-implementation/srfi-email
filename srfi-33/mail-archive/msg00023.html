@@ -1,0 +1,223 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Resuming SRFI&#45;33 discussion -->
+<!--X-From-R13: fuvirefNpp.tngrpu.rqh -->
+<!--X-Date: Tue,  8 Apr 2003 09:11:30 +0200 (DFT) -->
+<!--X-Message-Id: 200304080711.h387BHJa022425@mongkok.dyndns.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Resuming SRFI-33 discussion</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00022.html">Date Prev</a>][<a href="msg00024.html">Date Next</a>][<a href="msg00022.html">Thread Prev</a>][<a href="msg00024.html">Thread Next</a>][<a href="maillist.html#00023">Date Index</a>][<a href="threads.html#00023">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Resuming SRFI-33 discussion</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-33@DOMAIN.HIDDEN">srfi-33@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Resuming SRFI-33 discussion</li>
+<li><em>From</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxxxxx</a></li>
+<li><em>Date</em>: Tue, 8 Apr 2003 03:11:17 -0400</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-33@DOMAIN.HIDDEN">srfi-33@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Reply-to</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>I have gone over all unresolved issues from the old discussions.
+Below, the resolutions. I will send the current draft in a following
+message; Francisco can install it in the right place at his convenience.
+    -Olin
+
+-------------------------------------------------------------------------------
+Summary:
+  - NAND &amp; NOR are no longer n-ary. Only associative ops are.
+  - Sticking with SIZE/POSITION field specs over FROM/TO.
+  - Staying with &quot;op-curry&quot; convention for param order.
+  - ANY/ALL lexemes switched to more standard/more-parallel ANY/EVERY for
+      ANY-BIT-SET?
+      EVERY-BIT-SET?
+  - New pair of complementary functions
+      BIT-FIELD-ANY? BIT-FIELD-EVERY?
+    replaces unbalanced TEST-BIT-FIELD?.
+  - &quot;BIT-FIELD&quot; lexeme consistently moved to front of name for
+      BIT-FIELD-ANY? BIT-FIELD-EVERY?
+      BIT-FIELD-EXTRACT BIT-FIELD-CLEAR 
+      BIT-FIELD-REPLACE BIT-FIELD-COPY
+    (Is everyone agreeable to this?)
+
+-------------------------------------------------------------------------------
+    From: Bengt Kleberg &lt;eleberg@xxxxxxxxxxxxxxx&gt;
+
+    i have no objection to the functionality/set of operations offered by
+    the &quot;Integer Bitwise-operation Library&quot; by Olin Shivers. instead i
+    would like to change function names and argument order to make them
+    slightly more reminiscent of the string and vector operations.
+
+    1 would it be possible to change
+      arithmetic-shift i count -&gt; exact-integer
+    to
+      bit-shift-left i count -&gt; exact-integer
+      bit-shift-right i count -&gt; exact-integer
+
+This doesn't seem sufficiently compelling to warrant further stewing around.
+I'm going to leave things with the traditional &quot;arithmetic shift&quot;
+functionality.
+
+    2 would it be possible to change
+      bit-set? index i -&gt; boolean
+      any-bits-set? test-bits i -&gt; boolean
+      all-bits-set? test-bits i -&gt; boolean
+      first-set-bit i -&gt; exact-integer
+    to
+      bit-set? i index -&gt; boolean
+      bit-set-any? i test-bits -&gt; boolean
+      bit-set-all? i test-bits -&gt; boolean
+      bit-set-smallest i -&gt; exact-integer
+
+No, I think this would be a bad idea, since the convention to which you are
+suggesting we hew is one that implies we are thus operating on a
+data-structure called a &quot;bit set.&quot; But we aren't. Sets of bits are a pretty
+boring data structure -- there are only four such sets! Rather, we are
+checking to see if any bits in a bit string are set.
+
+    3 would it be possible to change
+      extract-bit-field size position i -&gt; exact-integer
+      test-bit-field?   size position i -&gt; boolean
+      clear-bit-field   size position i -&gt; exact-integer
+      replace-bit-field size position new-field i -&gt; exact-integer
+      copy-bit-field    size position from to     -&gt; exact-integer
+    to
+      bit-field-extract i size position -&gt; exact-integer
+      bit-field-test?   i size position -&gt; boolean
+      bit-field-clear   i size position -&gt; exact-integer
+      bit-field-replace i size position new-field -&gt; exact-integer
+      bit-field-copy   from to size position     -&gt; exact-integer
+
+Your param order issue is the &quot;op-currying&quot; vs. &quot;data-structure accessor&quot;
+parameter convention. See below.
+
+Your names seem more in tune with Scheme conventions, so I am converting to
+them. If people don't like this, speak up.
+
+    4 i have been unable to find a better name for
+      integer-length i -&gt; nonnegative-exact-integer
+    but would really like to have a 'bit' prefix here too.
+
+Nothing leaps to mind for me, either. It is the traditional name.
+It works fine. 
+
+-------------------------------------------------------------------------------
+- Are NAND &amp; NOR n-ary?
+  I am frankly somewhat divided on this issue.
+  Given that Al Petrofsky now supports going with the simple
+  associative-ops-are-the-n-ary-ops design heuristic, I have 
+  gone with this. I don't think it's a big deal, either way.
+
+  I have also just noticed that this split is precisely what
+  Common Lisp does.
+
+- SIZE/POSITION vs. FROM/TO
+  I went with SIZE/POSITION. Here is the rationale from the SRFI.
+
+  SIZE/POSITION vs. FROM/TO field specs
+  Several functions in this library
+      extract-bit-field size position i -&gt; integer
+      test-bit-field?   size position i -&gt; boolean
+      clear-bit-field   size position i -&gt; integer
+      replace-bit-field size position new-field i -&gt; integer
+      copy-bit-field    size position from to     -&gt; integer
+  specify a contiguous &quot;field&quot; of bits in a bitstring. There are two
+  conventions we might use to do so: 
+
+    - SIZE/POSITION 
+      E.g., &quot;the 8-bit field beginning at bit 3&quot;, and
+
+    - FROM/TO 
+      E.g., &quot;the field from bit 3 up to, but not including, bit 11&quot;, or, perhaps,
+            &quot;the field from bit 3 up to bit 10, inclusive.&quot;
+
+  FROM/TO specs are conventionally and most usefully &quot;half-open&quot; specs, meaning
+  &quot;all i such that FROM &lt;= i and i &lt; TO&quot; -- the FROM index is included and the
+  TO index is excluded.
+
+  I have chosen to use SIZE/POSITION instead of FROM/TO for this library.
+  Doing so eliminates any possibility of fencepost errors on the TO endpoint.
+  It is also the convention chosen by Common Lisp.
+
+  It is not, however, a widely-used convention within Scheme. Most ranges
+  in Scheme are specified with half-open intervals of the [from,to) form
+  (e.g., (substring s from to)). One might argue that SIZE/POSITION is still
+  the right thing for bit fields, as they are, in practice, frequently of fixed
+  size, unlike element ranges in strings or vectors.
+
+- ANY/ALL lexemes -&gt; standard ANY/EVERY lexemes
+  I have noticed that the ANY-BITS-SET? / ALL-BITS-SET? pair of functions
+  do not follow the Scheme naming convention of using ANY and EVERY.
+  Also, ALL is a word that pairs with SOME; ANY pairs with EVERY.
+  So I have renamed them:
+    ANY-BITS-SET? =&gt; ANY-BIT-SET?
+    ALL-BITS-SET? =&gt; EVERY-BIT-SET?
+  Notice the &quot;bit-set&quot; lexem is now consistently singular, which is
+  both more consistent with other names and grammatically correct.
+
+- TEST-BIT-FIELD? =&gt; BIT-FIELD-ANY? BIT-FIELD-EVERY?
+  TEST-BIT-FIELD tests for *any* bit in the field being set; it should be 
+  complemented with a function to test for *all* bits in the field being
+  set. So I have replaced it with the pair of functions
+    BIT-FIELD-ANY? 
+    BIT-FIELD-EVERY?
+  Note that you can also check for any/every bit in the field being clear,
+  as well, by negating these functions.
+
+  This name choice is also closer to Bengt's preferred choices.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00022.html">Re: HEY! Wake up!</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00024.html">Late request for additional functions</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00022.html">Re: HEY! Wake up!</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00024.html">Late request for additional functions</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00023"><strong>Date</strong></a></li>
+<li><a href="threads.html#00023"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

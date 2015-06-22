@@ -1,0 +1,152 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Testing the reference implementation -->
+<!--X-From-R13: Penqyrl Zhpvre <yhpvreNzngu.cheqhr.rqh> -->
+<!--X-Date: Mon, 21 Nov 2005 00:50:37 +0100 (CET) -->
+<!--X-Message-Id: 2A7FEFEF&#45;1C65&#45;42D4&#45;8893&#45;27F3F0BD20B4@math.purdue.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 65F0ACB8&#45;5A26&#45;46A1&#45;96F5&#45;B98A22C783E2@math.purdue.edu -->
+<!--X-Reference: y9l3bmd2lo2.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: 49FC3032&#45;779B&#45;4B7E&#45;AAFF&#45;A976A8A3A21A@math.purdue.edu -->
+<!--X-Reference: y9lsltr9x83.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: BAE825C5&#45;EFDE&#45;453D&#45;BFE4&#45;A43A0AF6CA14@math.purdue.edu -->
+<!--X-Reference: y9lwtj39caz.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Testing the reference implementation</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00339.html">Date Prev</a>][<a href="msg00341.html">Date Next</a>][<a href="msg00339.html">Thread Prev</a>][<a href="msg00341.html">Thread Next</a>][<a href="maillist.html#00340">Date Index</a>][<a href="threads.html#00340">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Testing the reference implementation</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Michael Sperber &lt;<a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Testing the reference implementation</li>
+<li><em>From</em>: Bradley Lucier &lt;<a href="mailto:lucier@DOMAIN.HIDDEN">lucier@xxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 20 Nov 2005 17:50:27 -0600</li>
+<li><em>Cc</em>: Bradley Lucier &lt;<a href="mailto:lucier@DOMAIN.HIDDEN">lucier@xxxxxxxxxxxxxxx</a>&gt;,	<a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:y9lwtj39caz.fsf@DOMAIN.HIDDEN">y9lwtj39caz.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:65F0ACB8-5A26-46A1-96F5-B98A22C783E2@DOMAIN.HIDDEN">65F0ACB8-5A26-46A1-96F5-B98A22C783E2@xxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:y9l3bmd2lo2.fsf@DOMAIN.HIDDEN">y9l3bmd2lo2.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:49FC3032-779B-4B7E-AAFF-A976A8A3A21A@DOMAIN.HIDDEN">49FC3032-779B-4B7E-AAFF-A976A8A3A21A@xxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:y9lsltr9x83.fsf@DOMAIN.HIDDEN">y9lsltr9x83.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:BAE825C5-EFDE-453D-BFE4-A43A0AF6CA14@DOMAIN.HIDDEN">BAE825C5-EFDE-453D-BFE4-A43A0AF6CA14@xxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:y9lwtj39caz.fsf@DOMAIN.HIDDEN">y9lwtj39caz.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+
+On Nov 20, 2005, at 4:36 PM, Michael Sperber wrote:
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+The reason is that you're assuming a semantics for
+WITH-EXCEPTION-HANDLER which the SRFI 34 version of it doesn't have:
+It doesn't throw back to the call of WITH-EXCEPTION-HANDLER when an
+exception occurs.  Consequently, you get (&quot;ERROR&quot;) objects thrown deep
+into the innards of the reference implementation, and that makes it
+gag, and, subsequently, less than articulate.
+
+You probably want something like:
+
+   (let ((result
+            (guard
+             (exc
+              (else error-object))
+             (operation first-arg second-arg))))
+     ...)
+
+in its place.
+</pre></blockquote><pre style="margin: 0em;">
+
+Thanks, I changed the code to
+
+(let ((result (call-with-current-continuation
+	       (lambda (c)
+		 (with-exception-handler
+		  (lambda (args) (c error-object))
+		  (lambda ()
+		    (operation first-arg second-arg)))))))
+  (print-result name first-arg second-arg result))
+
+and it got rid of that problem.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Having said that, your test program spotted a few more typos after
+this change---thanks for that!  I've put an updated reference
+implementation up at the SRFI site which fixes at least the most
+obvious ones.
+</pre></blockquote><pre style="margin: 0em;">
+
+</pre><tt>Is this a semi-official announcement of a new implementation at the  
+</tt><tt>srfi web site?
+</tt><pre style="margin: 0em;">
+
+Brad
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00341" href="msg00341.html">Re: Testing the reference implementation</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00128" href="msg00128.html">Testing the reference implementation</a></strong>
+<ul><li><em>From:</em> Bradley Lucier</li></ul></li>
+<li><strong><a name="00316" href="msg00316.html">Re: Testing the reference implementation</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+<li><strong><a name="00317" href="msg00317.html">Re: Testing the reference implementation</a></strong>
+<ul><li><em>From:</em> Bradley Lucier</li></ul></li>
+<li><strong><a name="00334" href="msg00334.html">Re: Testing the reference implementation</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+<li><strong><a name="00336" href="msg00336.html">Re: Testing the reference implementation</a></strong>
+<ul><li><em>From:</em> Bradley Lucier</li></ul></li>
+<li><strong><a name="00339" href="msg00339.html">Re: Testing the reference implementation</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00339.html">Re: Testing the reference implementation</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00341.html">Re: Testing the reference implementation</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00339.html">Re: Testing the reference implementation</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00341.html">Re: Testing the reference implementation</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00340"><strong>Date</strong></a></li>
+<li><a href="threads.html#00340"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

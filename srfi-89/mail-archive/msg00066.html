@@ -1,0 +1,153 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Simple symbols as keywords -->
+<!--X-From-R13: "fbb" <vavgNvavFrez.pbz> -->
+<!--X-Date: Mon,  8 May 2006 05:01:13 +0200 (MST) -->
+<!--X-Message-Id: 000101c6724b$a764c2b0$8c85093b@INITERM -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Simple symbols as keywords</title>
+<link rev="made" href="mailto:init@iniTerm.com">
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00065.html">Date Prev</a>][<a href="msg00067.html">Date Next</a>][<a href="msg00071.html">Thread Prev</a>][<a href="msg00072.html">Thread Next</a>][<a href="maillist.html#00066">Date Index</a>][<a href="threads.html#00066">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Simple symbols as keywords</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &lt;<a href="mailto:srfi-89%40srfi.schemers.org">srfi-89@srfi.schemers.org</a>&gt;</li>
+<li><em>Subject</em>: Re: Simple symbols as keywords</li>
+<li><em>From</em>: &quot;soo&quot; &lt;<a href="mailto:init%40iniTerm.com">init@iniTerm.com</a>&gt;</li>
+<li><em>Date</em>: Mon, 8 May 2006 12:01:07 +0900</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-89%40srfi.schemers.org">srfi-89@srfi.schemers.org</a></li>
+<li><em>Importance</em>: Normal</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>For examples, we can use simple symbols as keywords as follows: 
+
+((check-lambda (a
+		b
+		&quot;opt&quot; c
+		&quot;key&quot; ((d dd) 30) e (f 40)
+		. g)
+   (list a b c d e f g))
+ 0 1 2 'dd 3 'f 6 'd 4 'dd 5)	=&gt; unknown keysymbol d
+
+((check-lambda (a
+		b
+		&quot;opt&quot; c
+		&quot;key&quot; ((d dd) 30) e (f 40)
+		&quot;allow-other-keys&quot;
+		. g)
+   (list a b c d e f g))
+ 0 1 2 'dd 3 'f 6 'd 4 'dd 5)	=&gt; duplicate keysymbol dd
+
+((check-lambda (a
+		b
+		&quot;opt&quot; c
+		&quot;key&quot; ((d dd) 30) e (f 40)
+		&quot;allow-other-keys&quot;
+		&quot;allow-duplicate-keys&quot;
+		. g)
+   (list a b c d e f g))
+ 0 1 2 'dd 3 'f 6 'd 4 'dd 5)	=&gt; (0 1 2 3 #f 6 (d 4 dd 5))
+
+((check-lambda (a
+		b
+		&quot;opt&quot; c
+		&quot;key&quot; ((d dd) 30) e (f 40)
+		#t
+		. g)
+   (list a b c d e f g))
+ 0 1 2 'dd 3 'f 6 'd 4 'dd 5)	=&gt; (0 1 2 3 #f 6 (d 4 dd 5))
+
+The following is the specification:
+(check-lambda  &lt;formals&gt; &lt;body&gt;)
+(check-lambda* &lt;formals&gt; &lt;body&gt;)
+
+&lt;formals&gt; --&gt;
+| (&lt;required variable spec&gt;* &lt;fixed spec&gt;* &lt;named spec&gt;* &lt;option&gt;)
+| &lt;variable&gt;
+| (&lt;required variable spec&gt;+ &lt;fixed spec&gt;* &lt;named spec&gt;* &lt;option&gt; .
+&lt;variable&gt;)
+| (&lt;fixed spec&gt;+ &lt;named spec&gt;* &lt;option&gt; . &lt;variable&gt;)
+| (&lt;named spec&gt;+ &lt;option&gt; . &lt;variable&gt;)
+| (&quot;cat&quot; . &lt;variable&gt;)
+&lt;required variable spec&gt; --&gt; &lt;variable&gt; | (&lt;variable&gt; &lt;test&gt;+)
+&lt;fixed spec&gt; --&gt; &quot;opt&quot; &lt;fixed variable spec&gt;*
+&lt;named spec&gt; --&gt; &quot;key&quot; &lt;named variable spec&gt;*
+	       | &quot;key&quot; &lt;named variable spec&gt;+ &lt;named option&gt;
+&lt;fixed variable spec&gt; --&gt; &lt;variable&gt; | (&lt;variable&gt; &lt;default value&gt;
+&lt;test&gt;*)
+&lt;named variable spec&gt; --&gt; &lt;fixed variable spec&gt;
+			| ((&lt;variable&gt; &lt;keyword name&gt;))
+			| ((&lt;variable&gt; &lt;keyword name&gt;) &lt;default value&gt;
+&lt;test&gt;*)
+&lt;named option&gt; --&gt; #f | #t | &lt;named option modifier&gt;+
+&lt;named option modifier&gt; --&gt; &quot;allow-other-keys&quot;  | &quot;allow-non-keys&quot;
+			  | &quot;allow-duplicate-keys&quot;
+&lt;option&gt; --&gt; &quot;cat&quot; | &lt;empty&gt;
+&lt;default value&gt; --&gt; &lt;expression&gt;
+&lt;test&gt; --&gt; &lt;expression&gt;
+&lt;keyword name&gt; --&gt; &lt;identifier&gt;
+
+I can attach the implementation, if you want to take a look at it.
+
+--
+Joo ChurlSoo
+
+
+
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00065.html">Re: New draft</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00067.html">Re: New draft</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00071.html">Re: Simple symbols as keywords</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00072.html">Re: Simple symbols as keywords</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00066"><strong>Date</strong></a></li>
+<li><a href="threads.html#00066"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,169 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Format strings are wrong -->
+<!--X-From-R13: Oyrk Euvaa <sbbsNflagupbqr.pbz> -->
+<!--X-Date: Mon, 29 Dec 2003 08:10:12 +0100 (NFT) -->
+<!--X-Message-Id: 87pte8drwm.wl@strelka.synthcode.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: y9lekur77gi.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: 20031228043744.GA30222@synthcode.com -->
+<!--X-Reference: 27BAA5B1&#45;397C&#45;11D8&#45;8C98&#45;000A95CCCEE4@evdev.ath.cx -->
+<!--X-Reference: 87u13ke4if.wl@strelka.synthcode.com -->
+<!--X-Reference: BEA9F702&#45;39BA&#45;11D8&#45;BAEF&#45;000A95CCCEE4@evdev.ath.cx -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Format strings are wrong</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00047.html">Date Prev</a>][<a href="msg00049.html">Date Next</a>][<a href="msg00045.html">Thread Prev</a>][<a href="msg00056.html">Thread Next</a>][<a href="maillist.html#00048">Date Index</a>][<a href="threads.html#00048">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Format strings are wrong</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-48@DOMAIN.HIDDEN">srfi-48@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Format strings are wrong</li>
+<li><em>From</em>: Alex Shinn &lt;<a href="mailto:foof@DOMAIN.HIDDEN">foof@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 29 Dec 2003 16:06:33 +0900</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-48@DOMAIN.HIDDEN">srfi-48@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:BEA9F702-39BA-11D8-BAEF-000A95CCCEE4@DOMAIN.HIDDEN">BEA9F702-39BA-11D8-BAEF-000A95CCCEE4@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:y9lekur77gi.fsf@DOMAIN.HIDDEN">y9lekur77gi.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:20031228043744.GA30222@DOMAIN.HIDDEN">20031228043744.GA30222@xxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:27BAA5B1-397C-11D8-8C98-000A95CCCEE4@DOMAIN.HIDDEN">27BAA5B1-397C-11D8-8C98-000A95CCCEE4@xxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:87u13ke4if.wl@DOMAIN.HIDDEN">87u13ke4if.wl@xxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:BEA9F702-39BA-11D8-BAEF-000A95CCCEE4@DOMAIN.HIDDEN">BEA9F702-39BA-11D8-BAEF-000A95CCCEE4@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Wanderlust/2.10.1 (Watching The Wheels) Emacs/21.3 Mule/5.0 (SAKAKI)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>At Sun, 28 Dec 2003 23:52:03 -0500, Taylor Campbell wrote:
+&gt; 
+&gt; On Dec 28, 2003, at 9:34 PM, Alex Shinn wrote:
+&gt; &gt; You can do this with CL format too.
+
+[...]
+
+&gt; &gt;                                      Or just FORMATTER.
+&gt; 
+&gt; ?
+
+For the same reason that Scheme doesn't have FUNCALL.  Think about it.
+
+&gt; Er, please tell me how these differ significantly:
+&gt; 
+&gt; (format #t
+&gt;      &quot;~STRING~ my-local-variable = ~WRITE~; other-variable = 
+&gt; ~WRITE~~NEWLINE~&quot;
+&gt;    debug-header
+&gt;    my-local-variable
+&gt;    other-variable)
+&gt; 
+&gt; (format/port (sequence-formatter debug-header &quot; my-local-variable = &quot;
+&gt;                 (write-formatter my-local-variable)
+&gt;                 &quot;; other-variable = &quot; (write-formatter other-variable)
+&gt;                 (char-formatter #\newline)))
+
+Or
+
+(begin (display debug-header) (display &quot; my-local-variable = &quot;)
+       (write my-local-variable)
+       (display &quot;; other-variable = &quot;) (write other-variable)
+       (newline))
+
+Please stop using FUNCALL, this is Scheme not CL.
+
+The significant differences arise in the fact that the format string
+cleanly separates data from logic.  Some advantages
+
+1) As already mentioned, this allows easier runtime/data-driven
+configuration.  eval opens up a whole can of worms involving concerns of
+semantic errors, runtime speed and space usage, and security concerns.
+
+2) It easier to optimize.  Just as Scheme without call/cc is easier to
+optimize.  There are serious advantages to restricted languages when you
+don't need anything more complicated.
+
+3) In a localized environment you can fetch the format string above from
+a gettext database, far more easily than you can come up with a
+convoluted way to fetch alternating sequences of display and write to
+act on variable names that are likely to be changed at any time.  You
+can change your mind and edit the labels separately, and even give a
+file containing the labels to a non-programmer for editing or
+translation.  Show me a company providing translation services that will
+give you results in terms of consecutive (writes ...) and (displays ...)
+and I will show you a very expensive translation company.
+
+... for a start.
+
+&gt; Much of your argument has been about conciseness; by extending the
+&gt; names of the formatting routines, you're going to lose a lot of that.
+
+No, only a tiny portion of my arguments are about conciseness.  Ignore
+conciseness if it bothers you, I will never mention it again in this
+discussion.
+
+-- 
+Alex
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00056" href="msg00056.html">customizing write-char (was Re: Format strings are wrong)</a></strong>
+<ul><li><em>From:</em> Alex Shinn</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00031" href="msg00031.html">Re: Format strings are wrong</a></strong>
+<ul><li><em>From:</em> Paul Schlie</li></ul></li>
+<li><strong><a name="00035" href="msg00035.html">Re: Format strings are wrong</a></strong>
+<ul><li><em>From:</em> Alex Shinn</li></ul></li>
+<li><strong><a name="00038" href="msg00038.html">Re: Format strings are wrong</a></strong>
+<ul><li><em>From:</em> Taylor Campbell</li></ul></li>
+<li><strong><a name="00041" href="msg00041.html">Re: Format strings are wrong</a></strong>
+<ul><li><em>From:</em> Alex Shinn</li></ul></li>
+<li><strong><a name="00045" href="msg00045.html">Re: Format strings are wrong</a></strong>
+<ul><li><em>From:</em> Taylor Campbell</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00047.html">Re: format strings are the Right Thing</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00049.html">Re: what is scheme's formal refinement/extension philosophy? (Re: 	Format strings are wrong)</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00045.html">Re: Format strings are wrong</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00056.html">customizing write-char (was Re: Format strings are wrong)</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00048"><strong>Date</strong></a></li>
+<li><a href="threads.html#00048"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

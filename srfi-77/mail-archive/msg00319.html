@@ -1,0 +1,350 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Unifying the two generic arithmetic alternatives -->
+<!--X-From-R13: Oaqerj Ivypbk <njvypbkNnaqerjjvypbk.anzr> -->
+<!--X-Date: Tue, 15 Nov 2005 01:16:36 +0100 (CET) -->
+<!--X-Message-Id: 20051115001633.49A59600037@iris.wilcoxsoftware.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Unifying the two generic arithmetic alternatives</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00318.html">Date Prev</a>][<a href="msg00320.html">Date Next</a>][<a href="msg00318.html">Thread Prev</a>][<a href="msg00320.html">Thread Next</a>][<a href="maillist.html#00319">Date Index</a>][<a href="threads.html#00319">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Unifying the two generic arithmetic alternatives</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Unifying the two generic arithmetic alternatives</li>
+<li><em>From</em>: Andrew Wilcox &lt;<a href="mailto:awilcox@DOMAIN.HIDDEN">awilcox@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 14 Nov 2005 16:16:33 -0800 (PST)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Here's an idea that I hope will help unify the competing alternatives
+of R5RS-style Generic Arithmetic and Generic Exact Arithmetic.
+
+My proposal has contagious inexactness, while also offering generic
+procedures that perform the same operation across different types.
+
+I am indebted to your work on SRFI-77 and [Egner et al. 2004], which
+explained and clarified many of the issues for me.
+
+
+
+Confusion Around Exact/Inexact
+
+SRFI 77 uses the words &quot;exact&quot;/&quot;inexact&quot; for a variety of concepts:
+
+ * Whether the result of a calculation is known exactly or not.
+
+ * Whether an arithmetic operation is performed accurately or fast and
+   approximately.
+
+ * Certain number representations such as flonums are said to be
+   &quot;inexact&quot; representations.
+
+ * Whether or not a Scheme implementation is free to read a external
+ representation such as &quot;0.1&quot; and store an approximation of the
+ number.
+
+While all these concepts are related, I believe this ambiguity in
+language makes the issues harder to think and talk about.  Thus I'd
+like to propose a different terminology -- at least for the second
+concept.
+
+In deference to EXACT? an INEXACT? in R5RS, I'll continue to call the
+first concept &quot;exactness&quot;.
+
+For the second, I propose the term &quot;accurate&quot;.
+
+   Now I can say, &quot;I'd like to be able to perform an accurate add on
+   inexact arguments.&quot;
+
+   You can disagree with me on whether such an operation should be
+   supported or not.  But at least I can *say* it!
+
+   In contrast, using the current language of the SRFI, for me to say
+   &quot;I'd like to be able to perform an exact add on inexact arguments&quot;
+   sounds rather nonsensical.
+
+The third concept that &quot;flonums are inexact&quot; is misleading, in my
+opinion.  Aside from the nonrationals INF and NaN, every floating
+point number represents some particular rational number.  A floating
+point *operation* may choose a number close to but not the same as the
+true result, a Scheme implementation may feel free to print out an
+decimal approximation of a floating point number, but that doesn't
+make the floating point *number* not be some particular number.
+
+
+
+Harmful Generic Operators
+
+Some languages overload operators so that, for example, X + Y is a
+plus operation if X and Y are numbers, and a string concatenation if X
+and Y are strings.
+
+In dynamically typed languages this is a serious pain.
+
+In JavaScript, for example, you end up having to do things like
+
+     var sum = (foo - 0) + (bar - 0) 
+
+to ensure that you're getting an add operation instead of a string
+concatenation.
+
+R5RS is a pain in the same way because + can perform an accurate add
+or a fast approximate add, depending on its arguments.
+
+Both choices are wrong!  Simply because I've happened to have accurate
+calculations up to this point in my program, doesn't mean I want to have
+a slow operation now!
+
+Simply because I've had approximate calculations up to now doesn't
+mean that now I want an approximate operation that's going to give me
+a *further* loss of precision!
+
+If I want an accurate add in R5RS, I have to coerce my arguments to
+exact numbers.  But now I've lost the information of whether any of my
+arguments were inexact!
+
+If I want a fast add in R5RS, I have to coerce my arguments to
+inexact.  And I can't just do it at the beginning of my calculation!
+Procedures in R5RS are permitted to return an exact number if they can
+prove that the exactness of the result is not affected by the
+inexactness of its arguments.  So at any point along my calculation my
+value may turn into an exact one and suddenly I'm using SLOW
+arithmetic!
+
+Now, don't get me wrong.  I like contagious inexactness.  (I make a
+proposal for supporting contagious inexactness below).  I'm delighted
+when a Scheme implementation returns an exact result for (* 0 X).
+
+However, I hope that I've made the strong point that *choosing*
+whether to do an accurate or approximate calculation on the basis of
+the exactness of the arguments is the *wrong* thing to do.
+
+
+
+Useful Generic Operators
+
+In contrast, generic operators are useful if they implement the SAME
+operation while accepting different types.
+
+For example, in Perl &quot;.&quot; is a string concatenation operator.  It
+always concatenates.  But it accepts numbers, which it will convert to
+strings.  
+
+    1 . 2 =&gt; &quot;12&quot;
+
+In practice this works well.  I use this principle throughout my
+proposal.
+
+
+
+Accurate Add
+
+Let's construct a useful generic ACCURATE+ operator.
+
+ACCURATE+ accepts any kind of number, including flonums, but excepting
+NaN and INF because accurate calculations can not be performed with
+them.
+
+The procedure always performs an accurate (if perhaps slow)
+calculation.
+
+Note that a floating point number (aside from INF and NaN) represents
+one and precisely one rational number.  Thus to perform an accurate
+calculation with a flonum, we simply use its actual value.
+
+I agree with [Egner et al. 2004] that flonum +0 and -0 should be
+treated as 0 in accurate calculations.
+
+The Scheme implementation is free to return any type representing the
+number, as long as the result is accurate.
+
+In practice a Scheme implementation will probably always just convert
+a flonum to a ratnum, and that's fine.  But it's not required to do so
+by this proposal.  If adding a flonum 1 to a flonum 2 has the accurate
+result of a flonum 3, the implementation is free to return a flonum 3.
+
+I talk about how to handle inexactness below.
+
+
+
+Fast Add
+
+FAST+ always performs a fast (if perhaps inaccurate) operation --
+returning a flonum, or a complex number made up of flonums.
+
+Arguments which are too large or small to be represented as a flonum
+are converted to +/- 0/INF.
+
+Like ACCURATE+, FAST+ is a generic procedure that accepts any kind
+of number as an argument.
+
+
+
+Contagious Inexactness
+
+I propose supporting contagious exactness in an orthogonal way, which:
+
+    * makes it useful in a wider variety of algorithms
+    * doesn't force accurate/slow operations on the programmer
+    * simplifies the standard
+
+In this proposal inexactness becomes an *independent* attribute of
+values.
+
+Thus EXACT? and INEXACT? test an inexactness bit in the type, and
+EXACT-&gt;INEXACT and INEXACT-&gt;EXACT return the value with the bit set or
+cleared.
+
+Note that INEXACT-&gt;EXACT and EXACT-&gt;INEXACT don't do any *conversions*
+in this proposal.
+
+To take an example of [Egner et al. 2004], (&lt; x y) in this proposal
+returns an *inexact* boolean, if either X or Y is inexact.
+
+Inexactness thus propagates through the entire calculation, and is not
+lost when I do a comparison.
+
+Now I can use accurate operators without losing information about the
+inexactness of my result:
+
+    (inexact? (accurate+ 3 #i4))  =&gt;  #t
+
+
+Operations that use approximate calculations set the inexactness flag
+on their return value.
+
+    (inexact? (fl/ 10 3))         =&gt;  #t
+
+
+
+But Let It Be Optional
+
+I understand that many Scheme implementors want to minimize the number
+of bits of type information that they need to carry around, and others
+would like to minimize the complexity of flow analysis.
+
+Thus I propose that support for EXACT?, INEXACT? and contagious
+inexactness be optional in R6RS.
+
+
+
+Comparison with Generic Exact Arithmetic
+
+ACCURATE+ isn't *required* to make any conversions in the types of its
+arguments in the way that Generic Exact Arithmetic converts all
+arguments to &quot;exact&quot; representations.
+
+Unlike with Generic Exact Arithmetic, inexactness information is not
+lost when an accurate add is used.
+
+
+
+Comparison with R5RS-style Generic Arithmetic
+
+Like R5RS-style Generic Arithmetic, in my proposal inexactness is
+contagious.  This is a natural reflection of the idea that if you
+perform an operation on inexact arguments, you're going to get an
+inexact result.
+
+My proposal avoids some of the limitations of R5RS:
+
+  * Inexactness is truly contagious.
+
+  * Programmers are not forced to lose exactness information to use
+    accurate procedures.
+
+  * Generic procedures always perform the same operation across
+    arguments of different types.
+
+
+
+Comparison with Exact Arithmetic
+
+ACCURATE+ is similar to ex+, given that what SRFI-77 calls &quot;exact
+operations&quot; is what I call &quot;accurate operations&quot;.
+
+The differences are that ACCURATE+ accepts any kind of number,
+including flonums (leaving out only NaN and the infinities), and that
+inexactness information is not lost when the programmer wishes to use
+an accurate operation.
+
+
+
+Incomplete Though It Is 
+
+There are obviously many more issues that would need to be dealt with
+for a complete proposal.
+
+However, I'm running over 250 lines of text in my email message here
+already, so I'll toss it out now to be stomped on.
+
+
+Cheers,
+
+Andrew Wilcox
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00320" href="msg00320.html">Re: Unifying the two generic arithmetic alternatives</a></strong>
+<ul><li><em>From:</em> Marcin 'Qrczak' Kowalczyk</li></ul></li>
+<li><strong><a name="00323" href="msg00323.html">Re: Unifying the two generic arithmetic alternatives</a></strong>
+<ul><li><em>From:</em> John.Cowan</li></ul></li>
+<li><strong><a name="00324" href="msg00324.html">Re: Unifying the two generic arithmetic alternatives</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00318.html">(- 1.0 1.0) =&gt; 0 ; not +0.0 ?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00320.html">Re: Unifying the two generic arithmetic alternatives</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00318.html">(- 1.0 1.0) =&gt; 0 ; not +0.0 ?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00320.html">Re: Unifying the two generic arithmetic alternatives</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00319"><strong>Date</strong></a></li>
+<li><a href="threads.html#00319"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

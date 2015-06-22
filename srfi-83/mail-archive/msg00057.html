@@ -1,0 +1,194 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: fundamental design issues (long message) -->
+<!--X-From-R13: Fnlybe Qnzcoryy <pnzcoryyNzhzoyr.arg> -->
+<!--X-Date: Sat,  3 Dec 2005 19:12:49 +0100 (CET) -->
+<!--X-Message-Id: 20051203181215.2B4ED9806E@pluto.mumble.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20051203050404.A827E9805C@pluto.mumble.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: fundamental design issues (long message)</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00056.html">Date Prev</a>][<a href="msg00058.html">Date Next</a>][<a href="msg00051.html">Thread Prev</a>][<a href="msg00060.html">Thread Next</a>][<a href="maillist.html#00057">Date Index</a>][<a href="threads.html#00057">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: fundamental design issues (long message)</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:mflatt@DOMAIN.HIDDEN">mflatt@xxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: fundamental design issues (long message)</li>
+<li><em>From</em>: Taylor Campbell &lt;<a href="mailto:campbell@DOMAIN.HIDDEN">campbell@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat,  3 Dec 2005 18:12:15 +0000 (UTC)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-83@DOMAIN.HIDDEN">srfi-83@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-83@DOMAIN.HIDDEN">srfi-83@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20051203050404.A827E9805C@DOMAIN.HIDDEN">20051203050404.A827E9805C@xxxxxxxxxxxxxxxx</a>&gt; (<a href="mailto:mflatt@DOMAIN.HIDDEN">mflatt@xxxxxxxxxxx</a>)</li>
+<li><em>Sender</em>: Taylor Campbell &lt;<a href="mailto:campbell@DOMAIN.HIDDEN">campbell@xxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: IMAIL/1.21; Edwin/3.116; MIT-Scheme/7.7.90.+</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>   Date: Fri, 2 Dec 2005 22:04:03 -0700
+   From: Matthew Flatt &lt;mflatt@xxxxxxxxxxx&gt;
+
+   Thanks for your thoughts, and for taking the time to put together an
+   alternative proposal.
+
+   The editors looked closely at Scheme48's module design. I'll try to
+   report the editors' consensus (or at least dominant opinion) on the
+   issues that you bring up:
+
+Thanks for the speedy response.  I hope that the individual editors
+will elaborate on their own opinions, but in the meantime I'll briefly
+respond to these points:
+
+   1. On the issue of storing source, there is firm opposition to mixing
+      any notion of files into the standard. The current proposal can be
+      seen as requiring portable code to use an implicit `code' form.
+
+I'm a bit confused, if this is the case, about how libraries can use
+other libraries in practice if there is no way to refer to them other
+than by some unspecified URI convention.  Surely some notion of
+resources containing Scheme source is implied by the relative URI
+naming mechanism for other libraries; why couldn't this be applied
+equally well to what I (&amp; Scheme48) call FILES clauses?
+
+   2. The `&lt;language&gt;' part of the library form is present so in the hope
+      that we can refine the `import', `export', and library body syntax
+      in the future without breaking R6RS-based code. There are other ways
+      to achieve the same goal, but declaring the library's language seems
+      to be the simplest.
+
+Do you expect to be changing the module system dramatically in the
+near future after finalization?  I think that this use of the language
+device conflates two separate issues, the module language and the
+source code language, which should be managed in different ways.  A
+SCHEME (or SCHEME-R6RS, or (SCHEME R6RS), or whatever) module/library
+is a simple way to manage the latter; if you really want to include
+information about the module language revision, why not include
+something at the top of the file, like (R6RS) or something?  Is it
+useful to be able to use dramatically different module languages
+within a single set of modules?
+
+One useful property of having the Scheme language module hold regular
+status among other modules is that its interface can be transformed as
+with any other modules.  Aubrey Jaffer's concern about shadowing
+standard Scheme identifiers would be easily answered in this way; for
+example, a module that uses Jaffer's commutative ring library might be
+defined like this:
+
+ (define-module my-module my-module-interface
+   (import (modify r6rs-scheme (hide + * / - zero?))
+           commutative-rings
+           ...)
+   ...)
+
+   3. On the issue of using `for-syntax' and nested `for-syntax', the
+      editors have a bit more work to do. There is a rationale for the
+      current syntax, however: it's easier to state --- and maybe easier
+      to check --- the constraint that an identifier can be imported from
+      only one source, even across phases. (This constraint doesn't exist
+      in Scheme48 or MzScheme, but it's a crucial compromise in the
+      current SRFI.)
+
+I'm a bit unclear on this constraint you mention; could you explain it
+in a bit more detail?
+
+                     Meanwhile, there is significant opposition to the
+      idea that a library can be instantiated once for its use in all
+      phases. (Compiling a library multiple times is not necessary.)
+
+This was the point I had in mind when I mentioned that the SRFI
+authors would probably disagree with me.  I've read the paper, and I
+see in section 3.3 (Phase Separation) *that* the MzScheme module
+system executes every module for every phase at which another module
+uses it, but I can't find any explanation of *why* that is.  The need
+for the separation of the lexical environment is obvious, but why
+could not two phases' lexical environments refer to identical modules
+(i.e. the same, single instantiation of one module)?
+
+I'll agree, of course, that in any actual software system modules will
+be instantiated more than once for their existence in the universe,
+but I'd like to understand why they are mandated to be instantiated
+for every phase at which every other module's instantiation uses them.
+
+   4. On indirect exports, I'm actually not certain whether it matters to
+      have a separate `indirect-export' form instead of bundling the
+      information with `define-syntax'. I'll have to get back to you on
+      this suggestion.
+
+OK.  I'm not sure whether I mentioned this already, but Scheme48 gets
+by with the auxiliary name list (or indirect export list, whichever
+term is preferred) being specified in each macro's definition, which
+makes it possible for the SYNTAX-RULES macro transformer to generate
+the list itself and not need it specified elsewhere.  The need to
+specify the auxiliary names explicitly in psyntax's module system has
+always bugged me.
+
+   5. On the issue of separating interface from implementation, there was
+      considerable opposition to requiring a separation. Optional
+      separation, then, was omitted in the interest of simplicity. The
+      current proposal does, however, include a relevant compromise:
+      macros cannot expand to `import' or `export', and all imports and
+      exports must appear at the beginning of the library, so the
+      library's interface is textually apparent.
+
+I'm curious to know why there was opposition to separation.  One of
+the important properties of my proposal, though, is stronger than the
+'textually apparent' nature of libraries' exports in the current SRFI.
+Not only is it textually apparent separately from the library's body,
+but you don't need to look at the expression or file containing the
+body at all: all you need are the module descriptions.  bear's point
+here is relevant, as is the point that code embedded in module
+definitions is fundamentally incompatible with reader extensions,
+which I'd like the module system not to preclude.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00056.html">Re: wrapping procedures</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00058.html">Re: Independent optimizing compilation [was: fundamental design issues]</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00051.html">Re: fundamental design issues (long message)</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00060.html">Re: fundamental design issues (long message)</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00057"><strong>Date</strong></a></li>
+<li><a href="threads.html#00057"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

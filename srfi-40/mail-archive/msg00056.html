@@ -1,0 +1,340 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Much simpler leak&#45;free implementation possible? -->
+<!--X-From-R13: Buvy Prjvt <corjvtNfjoryy.arg> -->
+<!--X-Date: Mon, 18 Aug 2003 16:53:58 +0200 (DFT) -->
+<!--X-Message-Id: y9l3cfzauf1.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: Pine.sola.4.10.10308141818190.6253&#45;100000@now.het.brown.edu -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Much simpler leak-free implementation possible?</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00055.html">Date Prev</a>][<a href="msg00057.html">Date Next</a>][<a href="msg00055.html">Thread Prev</a>][<a href="msg00057.html">Thread Next</a>][<a href="maillist.html#00056">Date Index</a>][<a href="threads.html#00056">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Much simpler leak-free implementation possible?</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Andre van Tonder &lt;<a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Much simpler leak-free implementation possible?</li>
+<li><em>From</em>: Phil Bewig &lt;<a href="mailto:pbewig@DOMAIN.HIDDEN">pbewig@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 18 Aug 2003 16:53:54 +0200</li>
+<li><em>Cc</em>: <a href="mailto:srfi-40@DOMAIN.HIDDEN">srfi-40@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-40@DOMAIN.HIDDEN">srfi-40@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:Pine.sola.4.10.10308141818190.6253-100000@DOMAIN.HIDDEN">Pine.sola.4.10.10308141818190.6253-100000@xxxxxxxxxxxxxxxxx</a>&gt; (Andre van Tonder's message of &quot;Thu, 14 Aug 2003 18:38:02 -0400 (EDT)&quot;)</li>
+<li><em>References</em>: &lt;<a href="mailto:Pine.sola.4.10.10308141818190.6253-100000@DOMAIN.HIDDEN">Pine.sola.4.10.10308141818190.6253-100000@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Gnus/5.090019 (Oort Gnus v0.19) XEmacs/21.5 (cassava, berkeley-unix)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+On Thursday, August 14, 2003 5:38 PM, Andre van Tonder
+[SMTP:andre@xxxxxxxxxxxxx] wrote:
+&gt;   Although late in the process and a newcomer to this group, the 
+&gt;   following may be of some interest:
+
+Many thanks for an insightful and thoughtful post on implementing
+streams via continuation-passing style.  I implemented my streams
+via promises, and it is highly interesting to see an implementation
+so totally different.
+
+I encourage you to extend your proof-of-concept to a full reference
+implementation.  Having a second reference implementation would
+be useful for a variety of reasons.  It would let the srfi discussion
+more easily separate concepts from implementation.  Implementers
+would doubtless like to have two reference implementations, as one
+or the other might fit better with their scheme system.  And it would
+be useful for testing, especially to be sure that libraries of stream
+functions are portable across the two implementations.
+
+I have several suggestions if you decide to extend your proof-of-
+concept.  I've even appended some code that might help.
+
+First, you will need to implement streams in terms of SRFI-9 records
+or some other system that provides disjointness of types, so you
+can write type-checking functions like stream?, stream-null?, and
+stream-pair?.  This isn't hard, and gives you an opportunity to hide
+some of the underlying mechanism.
+
+Second, you will need to decide on and implement some abstraction
+that hides the underlying cps mechanism.  In my implementation,
+that abstraction is stream-delay, which is syntax that takes an
+expression and returns a stream.  As an example of what your
+implementation would need to do, consider stream-map, in the style
+of the srfi reference implementation, on the left, and andre-map, the
+equivalent function using your cps-style streams, on the right (error
+checking has been removed for clarity, only one stream may be
+input, this code is untested use at your own risk):
+
+(define (stream-map f s)                    (define (andre-map f s)
+  (stream-delay                                   (codelay
+                                                           (lambda (k)
+                                                             (andre-map* f s k))))
+                                                      (define (andre-map* f s k)
+                                                        (coforce s
+                                                          (lambda (s*)
+    (if (stream-null? s)                              (if (null? s*)
+       stream-null                                         (k '())
+       (stream-cons                                      (k (cons
+         (func (stream-car s))                              (func (car s))
+         (stream-map f                                       (andre-map f
+           (stream-cdr s)))))))                                 (cdr s))))))))
+
+The difficulties for a user of your stream library are that they have to
+understand all of the codelay/coforce and lambda/define stuff that
+forms the cps mechanism, and they have to understand why they
+should use car and cdr rather than stream-car and stream-cdr.  That
+makes their life hard, needlessly; it is also a likely source of error.
+Better your life as the implementer should be hard, since you only
+have to do the hard work once.
+
+Third, you will have to extend your implementation of stream-unfold.
+Although I appreciate the insight behind your cps implementation,
+I belive your characterization of your stream-unfold as &quot;trivial&quot; and
+&quot;vastly simpler&quot; than the one in the srfi reference implementation
+is unfair, because you solve a considerably simpler problem.  Here
+is an implementation of a stream-unfold1 that is similar to your
+unfold but based on promises as in the srfi (again, this is untested
+code):
+
+(define (stream-unfold1 gen seed)
+  (stream-delay
+    (let unfold1 ((seed seed))
+      (call-with-values
+        (lambda () (gen seed))
+        (lambda (next result)
+          (cond ((pair? result)
+                     (stream-cons (car result) (unfold1 next)))
+                   ((null? result) stream-null)
+                   ((not result) (unfold1 next))))))))
+
+That is no more difficult or complicated than your code, just
+different.  Extending this code to handle multiple output streams
+is hard.  The problem is that each &quot;turn of the crank&quot; of the
+generator function may produce output for some of the streams,
+but not all of them, and keeping the various output streams in
+sync requires some tedious bookkeeping.  I can testify from
+bitter experience that it is harder than it seems.
+
+The other source of complexity in the srfi implementation of
+stream-unfold is the desire for it to be fully lazy across all
+implementations.  A major problem with the first reference
+implementation was that the degree of laziness of the various
+stream functions was highly dependent on the underlying scheme
+implementation.  The current reference implementation solves
+this problem by doing everything it possibly can -- a private
+low-level delay and force, lambda lifting, and explicit tail
+recursion elimination -- to be lazy everywhere, on all scheme
+systems.  Some of the effort may not be needed everywhere,
+and may amount to useless complication.
+
+Fourth, you will need to complete some missing functions.
+I have provided some of them for you in an attachment to
+this note.
+
+You suggested in your post that the cps implementation is
+more natural and more easily extended to other data types
+than the promise implementation.  Perhaps you could talk
+more about these topics.  I implemented my streams using
+promises, because that is traditional.  I see your implementation
+using continuation-passing style as different, but neither more
+nor less natural, and not inherently simpler, or clearer, or more
+efficient, or easier to extend.  Certainly it is not hard to use
+promises to implement other lazy data types besides streams,
+as Okasaki demonstrates.
+
+You said in a companion posting:
+
+    By the way, the SRFI-40 reference implementation of
+    stream-filter unfortunately seems to leak memory quite
+    rapidly in MzScheme and even more rapidly in Chez
+    Scheme.
+
+    On my machine the times3 example using the SRFI
+    stream-filter will run out of memory in &lt;15 minutes in
+    Mz and &lt;5 minutes in Chez.     
+
+I can tell you that times3 runs to completion and correctly
+evaluates (times3 1000000) on my Windows 98 machine, using
+both MzScheme and Petite Chez Scheme, without thrashing
+the hard disk looking for memory, although it does indeed run
+quite slowly (several minutes for each, I never bothered to
+time it).  Additionally, I have heard no other reports of space
+leaks regarding the current implementation.
+
+Please don't take anything I have said as being critical; as I
+said earlier, yours is an interesting and insightful post.  I am
+intrigued by your suggestions, and am hopeful you will provide
+a complete reference implementation.
+
+Phil
+
+
+;;; andre-streams
+
+(define-syntax codelay
+  (syntax-rules ()
+    [(codelay thunk-cps)
+     (let ([memo-pair (cons #f #f)])
+       (lambda (k*)
+         (if (car memo-pair)
+             (k* (cdr memo-pair))
+             (thunk-cps (make-memoizer memo-pair k*)))))]))
+
+(define (make-memoizer memo-pair k)
+  (lambda (x)
+    (set-car! memo-pair #t)
+    (set-cdr! memo-pair x)
+    (k x)))
+
+(define (coforce promise k) (promise k))
+
+(define-syntax match
+  (syntax-rules ()
+    [(match lst
+       [()      exp1]
+       [(h . t) exp2])
+     (cond [(null? lst) exp1]
+           [(pair? lst) (let ([h (car lst)]
+                              [t (cdr lst)])
+                          exp2)]
+           [else 'match-error])]))
+
+(define andre-nil
+  (codelay
+    (lambda (k)
+      (k '()))))
+
+(define (andre-nil? s)
+  (coforce s (lambda (x) (null? x))))
+
+(define-syntax andre-cons
+  (syntax-rules ()
+    ((stream-cons x s)
+      (codelay
+        (lambda (k)
+          (k (cons x s)))))))
+
+(define (andre-car s)
+  (coforce s (lambda (x) (car x))))
+
+(define (andre-cdr s)
+  (coforce s (lambda (x) (cdr x))))
+
+(define (andre-cutoff n s)
+  (cond
+    ((zero? n) '())
+    ((andre-nil? s) '())
+    (else (cons
+             (andre-car s)
+             (andre-cutoff (- n 1) (andre-cdr s))))))
+
+(define (andre-map f s)
+  (codelay
+    (lambda (k)
+      (andre-map* f s k))))
+(define (andre-map* f s k)
+  (coforce s
+    (lambda (s*)
+      (match s*
+        (()     (k '()))
+        ((h .t) (k (cons (f h) (andre-map f t))))))))
+
+(define (andre-countdown n)
+  (codelay
+    (lambda (k)
+      (k (cons n (andre-countdown (- n 1)))))))
+
+(define (andre-ref n s)
+  (coforce s
+    (lambda (s*)
+      (match s*
+        (()      (error 'andre-ref))
+        ((h . t) (if (zero? n)
+                     h
+                     (andre-ref (- n 1) t)))))))
+
+(define (andre-filter p? s)
+  (codelay
+    (lambda (k)
+      (andre-filter* p? s k))))
+(define (andre-filter* p? s k)
+  (coforce s
+    (lambda (s*)
+      (match s*
+        (()      (k '()))
+        ((h . t) (if (p? h)
+                     (k (cons h (andre-filter p? t)))
+                     (andre-filter* p? t k)))))))
+
+;; andre-unfold1 : (b -&gt; (#f | (cons (a | 'drop) b)) b -&gt; stream a
+(define (andre-unfold1 f seed)
+  (codelay
+    (lambda (k)
+      (andre-unfold1* f seed k))))
+(define (andre-unfold1* f seed k)
+  (cond
+    ((f seed) =&gt;
+      (lambda (res)
+        (match res
+          (()      (k 'error))
+          ((h . t) (if (eq? h 'drop)
+                       (andre-unfold1* f t k)
+                       (k (cons h (andre-unfold1 f t))))))))
+    (else (k '()))))
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00054" href="msg00054.html">Much simpler leak-free implementation possible?</a></strong>
+<ul><li><em>From:</em> Andre van Tonder</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00055.html">Re: Much simpler leak-free implementation possible?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00057.html">Re: Much simpler leak-free implementation possible?</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00055.html">Re: Much simpler leak-free implementation possible?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00057.html">Re: Much simpler leak-free implementation possible?</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00056"><strong>Date</strong></a></li>
+<li><a href="threads.html#00056"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

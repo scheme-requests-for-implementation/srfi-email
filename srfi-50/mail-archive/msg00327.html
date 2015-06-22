@@ -1,0 +1,203 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: when GC is permitted -->
+<!--X-From-R13: [nep Trryrl <srryrlNWDA.G[bagerny.QO> -->
+<!--X-Date: Thu, 15 Jan 2004 03:45:35 +0100 (NFT) -->
+<!--X-Message-Id: 200401150245.i0F2jMpC017014@baro.iro.umontreal.ca -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: E1AfqY8&#45;0005Qq&#45;00@mail.mumble.net -->
+<!--X-Reference: 200401120355.i0C3tv7G007768@baro.iro.umontreal.ca -->
+<!--X-Reference: y9lfzeigrb6.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: when GC is permitted</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00326.html">Date Prev</a>][<a href="msg00328.html">Date Next</a>][<a href="msg00307.html">Thread Prev</a>][<a href="msg00329.html">Thread Next</a>][<a href="maillist.html#00327">Date Index</a>][<a href="threads.html#00327">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: when GC is permitted</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: when GC is permitted</li>
+<li><em>From</em>: Marc Feeley &lt;<a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 14 Jan 2004 21:45:22 -0500</li>
+<li><em>Cc</em>: <a href="mailto:kelsey@DOMAIN.HIDDEN">kelsey@xxxxxxx</a>, <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a>,	<a href="mailto:srfi-0@DOMAIN.HIDDEN">srfi-0@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Full-name</em>: Marc Feeley</li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:y9lfzeigrb6.fsf@DOMAIN.HIDDEN">y9lfzeigrb6.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt; (message from	Michael Sperber on Wed, 14 Jan 2004 22:21:01 +0100)</li>
+<li><em>References</em>: &lt;<a href="mailto:E1AfqY8-0005Qq-00@DOMAIN.HIDDEN">E1AfqY8-0005Qq-00@xxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:200401120355.i0C3tv7G007768@DOMAIN.HIDDEN">200401120355.i0C3tv7G007768@xxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:y9lfzeigrb6.fsf@DOMAIN.HIDDEN">y9lfzeigrb6.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; &gt;&gt;&gt;&gt;&gt; &quot;Marc&quot; == Marc Feeley &lt;feeley@xxxxxxxxxxxxxxxx&gt; writes:
+&gt; 
+&gt; Marc&gt; But cond-expand is a portable 35 line R5RS macro.  How can you say it
+&gt; Marc&gt; is difficult to implement in any reasonable Scheme system?  I know
+&gt; Marc&gt; that you don't want to implement it in Scheme 48 because you disagree
+&gt; Marc&gt; with the philosophy behind it, and I respect that, but that is very
+&gt; Marc&gt; different from saying that it is technically difficult.
+&gt; 
+&gt; You misunderstand.  While it probably is also a matter of philosophy,
+&gt; it's first and foremost a technical issue.  Indeed, implementing
+&gt; SRFI 0 in Scheme 48 would be technically trivial, but the result would
+&gt; be useless: in Scheme 48, lots of features exist, but none are
+&gt; available in the sense of SRFI 0.  Essentially the same holds for PLT
+&gt; Scheme.
+
+I got a similar reply from Richard Kelsey, and I feel I must answer
+because I just simply don't understand what the problem is.  I'm CCing
+to the SRFI-0 mailing list since this should be archived there.
+
+SRFI-0 does not assume that all available SRFIs (i.e. &quot;features&quot;) are
+built-in.  It says so explicitly in the SRFI document.  &quot;cond-expand&quot;
+simply tests for the presence of a feature.  An implementation of
+Scheme may choose to make all available SRFIs built-in, or to have
+another mechanism (such as a module system) to do this.  In fact an
+implementation of Scheme may have some features that must be requested
+through the module system and some others built-in (either because the
+system implements extensions to Scheme, like a thread system, that are
+available all the time, or because a particular feature can only be
+built-in, such as the char-&gt;integer/integer-&gt;char procedures obeying
+the Unicode encoding and allowing Unicode characters in Scheme
+strings).
+
+To implement the interaction between the module system and
+&quot;cond-expand&quot;, the module system could maintain a &quot;feature&quot;
+environment or extend the cond-expand macro for the body of the
+module.  So if the module does (require foo) and (require bar), then
+both &quot;foo&quot; and &quot;bar&quot; are recognized by cond-expand as available
+features for the body of the module (this is just to give the
+idea... it might be better to have the foo and bar modules explicitly
+indicate which features they provide, with a (provide foo) form, and
+only these features would be added to the available features for the
+body of the module).
+
+The need for &quot;cond-expand&quot; does not disappear when a module system is
+available.  Here is an example.  Suppose I write a web-server in
+Scheme using threads.  The web-server needs basic thread primitives
+like those in SRFI-18 (Multithreading support).  However, real-time
+response of the web-server can be improved by using the
+&quot;thread-priority-boost-set!&quot; procedure that is only available in
+SRFI-21 (Real-time multithreading support).  This is the only feature
+of SRFI-21 that is useful; all other thread operations are from
+SRFI-18 (note that SRFI-21 is a strict superset of SRFI-18).  Moreover
+assume that these thread SRFIs are not built-in.  So the source-code
+of the web-server will look something like this:
+
+(module web-server
+
+  (require (or srfi-21 srfi-18))
+
+  (cond-expand (srfi-18
+                (define (thread-priority-boost-set! thread boost) #f)) ; noop
+               (srfi-21
+                ; thread-priority-boost-set! exists in srfi-21
+                ))
+
+  ...
+
+  (define (respond-to request)
+    (let ((t (make-thread (lambda () (process request)))))
+      (thread-priority-boost-set! t 10)
+      (thread-start! t)))
+
+  ...
+)
+
+The &quot;require&quot; form used here is hypothetical.  I use the &quot;or&quot; to indicate
+that the system tries to locate the modules in order and the first that
+is found prevents the search for the other modules.  The nice thing with
+the module expressed with a &quot;cond-expand&quot; is that it adapts to the
+features that are available.  The author of the web-server has designed
+the module so that it can work in either context.
+
+Unfortunately, the Scheme module systems I have seen don't support
+this form of &quot;require&quot;.  The &quot;require&quot; form usually means that this
+and only this module will do.  So in such systems the web-server would
+probably be written like this:
+
+(module web-server
+
+  (require srfi-21) ;;; if you do not have srfi-21 available it is OK
+                    ;;; to replace this line with (require srfi-18)
+
+  (cond-expand (srfi-18 ...))
+
+  ...
+)
+
+Here the author has left a comment that allows the user of the
+web-server to make a simple change to the code if srfi-21 is not
+available (this is not great, but it is better than having to read,
+understand, and modify the source code so that it does not use
+thread-priority-boost-set!, and so can be used with srfi-18).  It is
+also better (in my view) than creating two web-server modules (one for
+srfi-21 and one for srfi-18) that only differ in a few places, or that
+use &quot;include&quot; forms to factor the common parts.
+
+Marc
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00329" href="msg00329.html">Re: when GC is permitted</a></strong>
+<ul><li><em>From:</em> Richard Kelsey</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00275" href="msg00275.html">Re: when GC is permitted</a></strong>
+<ul><li><em>From:</em> Richard Kelsey</li></ul></li>
+<li><strong><a name="00277" href="msg00277.html">Re: when GC is permitted</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+<li><strong><a name="00307" href="msg00307.html">Re: when GC is permitted</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00326.html">Re: Comparing Pika-syle and JNI-style</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00328.html">Re: Comparing Pika-syle and JNI-style</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00307.html">Re: when GC is permitted</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00329.html">Re: when GC is permitted</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00327"><strong>Date</strong></a></li>
+<li><a href="threads.html#00327"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

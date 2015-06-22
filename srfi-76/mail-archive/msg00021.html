@@ -1,0 +1,200 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Problems with field initialization: Proposal -->
+<!--X-From-R13: Oaqer ina Fbaqre <naqerNabj.urg.oebja.rqh> -->
+<!--X-Date: Fri, 16 Sep 2005 14:56:52 +0200 (MST) -->
+<!--X-Message-Id: Pine.GSO.4.60.0509160832130.10968@now.het.brown.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200509151634.j8FGYlec024397@later.het.brown.edu -->
+<!--X-Reference: y9lr7bq8ag1.fsf@sams.informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: Pine.GSO.4.60.0509151624251.9460@now.het.brown.edu -->
+<!--X-Reference: y9lslw57ahr.fsf@sams.informatik.uni&#45;tuebingen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Problems with field initialization: Proposal</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00020.html">Date Prev</a>][<a href="msg00022.html">Date Next</a>][<a href="msg00019.html">Thread Prev</a>][<a href="msg00023.html">Thread Next</a>][<a href="maillist.html#00021">Date Index</a>][<a href="threads.html#00021">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Problems with field initialization: Proposal</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Michael Sperber &lt;<a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Problems with field initialization: Proposal</li>
+<li><em>From</em>: Andre van Tonder &lt;<a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 16 Sep 2005 08:56:33 -0400 (EDT)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-76@DOMAIN.HIDDEN">srfi-76@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-76@DOMAIN.HIDDEN">srfi-76@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:y9lslw57ahr.fsf@DOMAIN.HIDDEN">y9lslw57ahr.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:200509151634.j8FGYlec024397@DOMAIN.HIDDEN">200509151634.j8FGYlec024397@xxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:y9lr7bq8ag1.fsf@DOMAIN.HIDDEN">y9lr7bq8ag1.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:Pine.GSO.4.60.0509151624251.9460@DOMAIN.HIDDEN">Pine.GSO.4.60.0509151624251.9460@xxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:y9lslw57ahr.fsf@DOMAIN.HIDDEN">y9lslw57ahr.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+On Fri, 16 Sep 2005, Michael Sperber wrote:
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Andre van Tonder &lt;andre@xxxxxxxxxxxxxxxxx&gt; writes:
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Here is an alternative suggestion:
+
+   (define-type eq-hash-table
+     (parent hash-table)
+     (constructor (lambda (pred hasher size)
+                    (values pred
+                            hasher
+                            size
+                            0)))
+     (fields (gc-count mutable)))
+</pre></blockquote><pre style="margin: 0em;">
+
+Ok.  Now, you said that you're doing this partly to improve clarity.
+The problem this has is that it's no longer visually apparent which
+arguments go into the parent constructor and which one into this
+type's.
+</pre></blockquote><pre style="margin: 0em;">
+
+</pre><tt>Well, you just count from right to left.  You could make it apparent by simply 
+</tt><tt>having a comment:
+</tt><pre style="margin: 0em;">
+
+    (define-type eq-hash-table
+      (parent hash-table)
+      (constructor (lambda (pred hasher size)
+                     (values ;; parent arguments
+                             pred
+                             hasher
+                             size
+                             ;; child field
+                             0)))
+      (fields (gc-count mutable)))
+
+or you could use LIST for the parent arguments:
+
+    (define-type eq-hash-table
+      (parent hash-table)
+      (constructor (lambda (pred hasher size)
+                     (values (list ;; parent arguments
+                                   pred
+                                   hasher
+                                   size)
+                             0)))
+      (fields (gc-count mutable)))
+
+
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+So for clarity, I prefer the solution that's in the draft (especially
+as it smoothly extends into some kind of class notation),
+</pre></blockquote><pre style="margin: 0em;">
+
+
+</pre><tt>I would like to understand this remark better.  For example, the Java 
+</tt><tt>constructor paradigm seems more similar to my suggestion than the draft.
+</tt><pre style="margin: 0em;">
+
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+You're also doing this to improve on generality, and there it's clear
+you score.  However, there's ways to achieve that within the current
+framework.  The question (which we also discussed among the R6RS
+committee at some length) is whether it's worth the effort.  The
+authors of the SRFI came out on the side that it's not, but some
+examples might help convince at least me of the general point.
+</pre></blockquote><pre style="margin: 0em;">
+
+
+How would you suggest handling, within the current spec, the following:
+
+  (define-type unit-vector
+    (constructor (lambda (x y z)
+                   (let ((length (+ (* x x) (* y y) (* z z))))
+                     (values (/ x length)
+                             (/ y length)
+                             (/ z length)))))
+    (fields x y z))
+
+or
+
+  (define-type rational
+    (constructor (lambda (x y)
+                   (let ((common (gcd x y)))
+                     (values (/ x common)
+                             (/ y common)))))
+    (fields num denom))
+
+
+</pre><tt>If the spec cannot handle these common cases, is there a clear rationale why 
+</tt><tt>not, and why the distinction is not arbitrary?  Could this rationale perhaps
+</tt><pre style="margin: 0em;">
+be included in the spec?
+
+Cheers
+Andre
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00023" href="msg00023.html">Re: Problems with field initialization: Proposal</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00013" href="msg00013.html">Re: Problems with field initialization: Proposal</a></strong>
+<ul><li><em>From:</em> Andre van Tonder</li></ul></li>
+<li><strong><a name="00014" href="msg00014.html">Re: Problems with field initialization: Proposal</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+<li><strong><a name="00017" href="msg00017.html">Re: Problems with field initialization: Proposal</a></strong>
+<ul><li><em>From:</em> Andre van Tonder</li></ul></li>
+<li><strong><a name="00019" href="msg00019.html">Re: Problems with field initialization: Proposal</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00020.html">Re: Problem with type inference</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00022.html">Re: Problems with field initialization: Proposal</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00019.html">Re: Problems with field initialization: Proposal</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00023.html">Re: Problems with field initialization: Proposal</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00021"><strong>Date</strong></a></li>
+<li><a href="threads.html#00021"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

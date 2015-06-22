@@ -1,0 +1,161 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: constant&#45;time access to variable&#45;width encodings -->
+<!--X-From-R13: Bre Pbguare <creNobguare.pbz> -->
+<!--X-Date: Wed, 13 Jul 2005 22:36:10 +0200 (DFT) -->
+<!--X-Message-Id: 42D57B2F.1060608@bothner.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 42D559A9.1080000@bothner.com -->
+<!--X-Reference: 20050713.101557.865676685.shiro@lava.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: constant-time access to variable-width encodings</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00056.html">Date Prev</a>][<a href="msg00058.html">Date Next</a>][<a href="msg00056.html">Thread Prev</a>][<a href="msg00058.html">Thread Next</a>][<a href="maillist.html#00057">Date Index</a>][<a href="threads.html#00057">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: constant-time access to variable-width encodings</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Shiro Kawai &lt;<a href="mailto:shiro@DOMAIN.HIDDEN">shiro@xxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: constant-time access to variable-width encodings</li>
+<li><em>From</em>: Per Bothner &lt;<a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 13 Jul 2005 13:35:59 -0700</li>
+<li><em>Cc</em>: <a href="mailto:srfi-75@DOMAIN.HIDDEN">srfi-75@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-75@DOMAIN.HIDDEN">srfi-75@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20050713.101557.865676685.shiro@DOMAIN.HIDDEN">20050713.101557.865676685.shiro@xxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:42D559A9.1080000@DOMAIN.HIDDEN">42D559A9.1080000@xxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20050713.101557.865676685.shiro@DOMAIN.HIDDEN">20050713.101557.865676685.shiro@xxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mozilla Thunderbird 1.0.2-6 (X11/20050513)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+Shiro Kawai wrote:
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+I feel a bit uncomfortable, though, with the fact that indexes and
+string-length differ among different implementations, or even in the
+same implementations with different character encodings.
+</pre></blockquote><pre style="margin: 0em;">
+
+</pre><tt>I'm assuming a single character encoding per implementation: either 
+</tt><tt>UTF-8, UTF-16, or a plain array of 20-bit characters.  Supporting 
+</tt><tt>general character encodings is problematic, since you cannot always tell 
+</tt><tt>if a byte is an initial or subsequent (partial) character.
+</tt><pre style="margin: 0em;">
+
+In explaining/specifying my proposal it might be useful to add:
+(define (char-representation-size ch)
+  ;; Implementations will do this more efficiently!
+  (string-length (make-string 1 ch)))
+
+</pre><tt>&gt; It makes a datastructure that holds a string and its indexes 
+</tt><tt>non-portable, for example.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>I can see an issue if you try to write that out using one 
+</tt><tt>implementation, and read it back in with another.  Not sure how 
+</tt><tt>important that is.
+</tt><pre style="margin: 0em;">
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+I'd agree the proposal if it introduces a different means of
+indexing, other than character count used for string-ref.  Call it
+'offset' for now.  string-offset-ref, substring-offset etc. would
+provide offset-based operation, while string-ref, substring etc.
+work on character-based op.
+</pre></blockquote><pre style="margin: 0em;">
+
+That might be reasonable.  But ...
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Though it may be too cumbersome for
+core language.
+</pre></blockquote><pre style="margin: 0em;">
+
+</pre><tt>Well, the complication is that existing code will be less efficient, and 
+</tt><tt>people have a choice between using string-ref (portable to R5RS but 
+</tt><tt>potentially slow) and string-offset-ref (portable to R6RS only but fast).
+</tt><pre style="margin: 0em;">
+
+</pre><tt>An alternative idea is to have a cache that maps the most recent (char 
+</tt><tt>index, offset) mapping.  One problem is that even an immutable string 
+</tt><tt>now requires a mutable cache, with possible synchronization issues.
+</tt><pre style="margin: 0em;">
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+ And this is too much variable-length-character centric
+API, which fixed-length character implementation or other
+implementations (such as tree of segments) wouldn't care much.
+</pre></blockquote><pre style="margin: 0em;">
+
+</pre><tt>Not sure your point.  Certainly a more complex data structure is 
+</tt><tt>appropriate for (say) a text editor, especially once you support 
+</tt><tt>character &quot;attributes&quot;.
+</tt><pre style="margin: 0em;">
+--
+	--Per Bothner
+per@xxxxxxxxxxx   <a  rel="nofollow" href="http://per.bothner.com/">http://per.bothner.com/</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00058" href="msg00058.html">Re: constant-time access to variable-width encodings</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+<li><strong><a name="00060" href="msg00060.html">Re: constant-time access to variable-width encodings</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00050" href="msg00050.html">constant-time access to variable-width encodings</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+<li><strong><a name="00056" href="msg00056.html">Re: constant-time access to variable-width encodings</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00056.html">Re: constant-time access to variable-width encodings</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00058.html">Re: constant-time access to variable-width encodings</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00056.html">Re: constant-time access to variable-width encodings</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00058.html">Re: constant-time access to variable-width encodings</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00057"><strong>Date</strong></a></li>
+<li><a href="threads.html#00057"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,185 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Wrapping up SRFI&#45;70 -->
+<!--X-From-R13: orne <orneNfbavp.arg> -->
+<!--X-Date: Wed, 10 Aug 2005 07:38:02 +0200 (DFT) -->
+<!--X-Message-Id: Pine.LNX.4.58.0508092135590.25357@bolt.sonic.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20050810030837.1C5711B77B4@voluntocracy.org -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Wrapping up SRFI-70</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00210.html">Date Prev</a>][<a href="msg00212.html">Date Next</a>][<a href="msg00228.html">Thread Prev</a>][<a href="msg00216.html">Thread Next</a>][<a href="maillist.html#00211">Date Index</a>][<a href="threads.html#00211">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Wrapping up SRFI-70</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Aubrey Jaffer &lt;<a href="mailto:agj@DOMAIN.HIDDEN">agj@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Wrapping up SRFI-70</li>
+<li><em>From</em>: bear &lt;<a href="mailto:bear@DOMAIN.HIDDEN">bear@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 9 Aug 2005 22:37:41 -0700 (PDT)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-70@DOMAIN.HIDDEN">srfi-70@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-70@DOMAIN.HIDDEN">srfi-70@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20050810030837.1C5711B77B4@DOMAIN.HIDDEN">20050810030837.1C5711B77B4@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:20050810030837.1C5711B77B4@DOMAIN.HIDDEN">20050810030837.1C5711B77B4@xxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+On Tue, 9 Aug 2005, Aubrey Jaffer wrote:
+
+&gt;Its time to wrap up SRFI-70.
+&gt;
+&gt;As with my other SRFIs, the Issues section generates no discussion,
+&gt;even though it has the issues I consider unsettled.
+
+Yes, I consider them unsettled too - and largely unsettlable
+in the way this SRFI is attempting to do them.  With some
+regrets, I think I also recommend withdrawal.
+
+Having a numeric-error object (such as nan) that propagates
+forward in calculations from a division by zero or other
+erroneous operation answers the requirements in the abstract far
+better than introducing and attempting to reason about
+&quot;infinities.&quot;  It allows people to avoid deeply nested checks for
+zero, instead testing whenever they like whether the most recent
+iteration of their algorithm has produced the error object.  You
+can test for it and explicitly throw an exception if that's how
+you want to handle it, or you can make a substitution or
+correction explicitly and carry on.
+
+Given the usual vast differences in both absolute range and
+precision between exact and inexact notations, reasoning about
+&quot;infinity&quot; in exact and inexact forms is difficult and frequently
+produces transparently wrong answers when numbers of both exact
+and inexact forms are used.  Given that, I'd have to regard
+numerics with nans as a superior choice mathematically and
+technically to numerics with infinities, for a language that
+distinguishes exact and inexact numbers.
+
+There is also (pardon me for saying this, but...) faint and fuzzy
+thinking in this SRFI about the properties of exactness and
+inexactness.  Exact numbers, by definition, already denote a
+single mathematical number, with infinite precision.
+
+Some numbers cannot be represented exactly on any finite machine
+architecture because their representations would be too large to
+fit.  &quot;Precision&quot; in the sense of representation length in exact
+numbers decides the size of the set of numbers we can represent,
+not the degree to which those numbers are precisely represented.
+
+The requirements you make of rouding for inexact numbers are
+reasonable-sounding, but cannot be carried forward through any
+level of abstraction.  With an abstraction such as a procedure,
+we define a new mathematical operation in terms of one or more
+existing operations.  Even if those existing (primitive)
+operations conform to your rounding requirement (simple
+connectivity), there is no way to assure that the composite
+operation represented by an abstraction also does so.
+
+For example, if I round two numbers up as I read them, and
+then add them and round the result of addition up, I have
+already reached a point where the &quot;exact&quot; result would be
+rounded to an inexact number which is not the number
+returned from the addition.  Addition in this case is a
+composite operation because it subsumes the rounding errors
+of its arguments.  The fact that it adds a rounding error
+of its own makes matters even more confused.
+
+So introducing the rounding requirements you do, without
+specifying exactly which primitive operations they apply to,
+does not permit any &quot;ordinary&quot; implementation of composite
+mathematical operations, because it is impossible to define a
+composite operation without making it subject to the same
+requirement, and also impossible to assure that it meets
+that requirement.
+
+The SRFI also proposes to repeal an implementation's power to
+return an exact number when it can prove that the result is
+exactly known.  The specific example given in R5RS uses an exact
+zero as an example.  This example is capital-T True, according to
+laws much deeper than the surface consistency on which grounds
+you object to it, because zero is a multiplicative identity
+element.  Forbidding an implementation to return an exact zero in
+that situation is to ignore a fundamental law of mathematics and
+also forbid the implementation from providing true and
+potentially useful information to its user.
+
+&gt; Given the vagueness of the term &quot;flonum&quot;, the section 6.2.3
+&gt; paragraphs giving requirements for systems with flonums are not
+&gt; dangerous in terms of preventing interesting implementations;
+&gt; and SRFI-70 doesn't change them.  It would be nice to improve
+&gt; it; but converting exact to inexact is a thorny problem.
+
+Agreed fully, but....
+
+I think this SRFI is like an attempt to hold jelly in place with
+nails; there's a good thought, and nails are a valid way to hold
+some things in place, but for this particular problem a different
+approach is likely to be better.
+
+				Bear
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00216" href="msg00216.html">Re: Wrapping up SRFI-70</a></strong>
+<ul><li><em>From:</em> Aubrey Jaffer</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00207" href="msg00207.html">Wrapping up SRFI-70</a></strong>
+<ul><li><em>From:</em> Aubrey Jaffer</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00210.html">NaN</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00212.html">Re: NaN</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00228.html">Re: Wrapping up SRFI-70</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00216.html">Re: Wrapping up SRFI-70</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00211"><strong>Date</strong></a></li>
+<li><a href="threads.html#00211"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

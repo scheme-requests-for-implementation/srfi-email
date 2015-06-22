@@ -1,0 +1,175 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: when GC is permitted -->
+<!--X-From-R13: Fbz Zbeq <ybeqNrzs.arg> -->
+<!--X-Date: Fri,  9 Jan 2004 00:40:16 +0100 (NFT) -->
+<!--X-Message-Id: 200401090006.QAA10211@morrowfield.regexps.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: E1AegLm&#45;0005zT&#45;00@mail.mumble.net -->
+<!--X-Reference: 200401082158.NAA09647@morrowfield.regexps.com -->
+<!--X-Reference: vt2u136t5do.fsf@zenia.home -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: when GC is permitted</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00248.html">Date Prev</a>][<a href="msg00250.html">Date Next</a>][<a href="msg00246.html">Thread Prev</a>][<a href="msg00245.html">Thread Next</a>][<a href="maillist.html#00249">Date Index</a>][<a href="threads.html#00249">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: when GC is permitted</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:jimb@DOMAIN.HIDDEN">jimb@xxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: when GC is permitted</li>
+<li><em>From</em>: Tom Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 8 Jan 2004 16:06:40 -0800 (PST)</li>
+<li><em>Cc</em>: <a href="mailto:kelsey@DOMAIN.HIDDEN">kelsey@xxxxxxx</a>, <a href="mailto:felix@DOMAIN.HIDDEN">felix@xxxxxxxxxxxxx</a>, <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:vt2u136t5do.fsf@DOMAIN.HIDDEN">vt2u136t5do.fsf@xxxxxxxxxx</a>&gt; (message from Jim Blandy on 08 Jan	2004 17:58:11 -0500)</li>
+<li><em>References</em>: &lt;<a href="mailto:E1AegLm-0005zT-00@DOMAIN.HIDDEN">E1AegLm-0005zT-00@xxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:200401082158.NAA09647@DOMAIN.HIDDEN">200401082158.NAA09647@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:vt2u136t5do.fsf@DOMAIN.HIDDEN">vt2u136t5do.fsf@xxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+
+    &gt; From: Jim Blandy &lt;jimb@xxxxxxxxxx&gt;
+
+    &gt; Tom Lord &lt;lord@xxxxxxx&gt; writes:
+    &gt; &gt;     &gt; Also, when running in a system with a precise collector and 
+    &gt; &gt;     &gt; interrupt-anytime threads, Pika-style would require the elided
+    &gt; &gt;     &gt; mn__[begin|end]_incoherent() critical section calls?
+
+    &gt; &gt; No.
+
+    &gt; &gt; There is an independent and wholly unrelated reason to want those for
+    &gt; &gt; different examples, but they are not required for any of what we are
+    &gt; &gt; discussing.
+
+    &gt; Under such a GC, would Pika-style scm_car and scm_cdr require critical
+    &gt; sections to be marked internally?
+
+To my mind, the specific mention of CAR and CDR is a red herring.
+You could more clearly ask the more general question:
+
+
+	With a precise collector and interrupt-anytime (or concurrent)
+        threads, would there need to be GC-exclusion around all reads
+        from and writes to Scheme locations, as well as any cases
+        where a reference to a Scheme value may exist outside of any
+        Scheme location?
+
+Absent stronger guarantees about the C store than are provided by
+the C standard itself, of course the answer is yes.
+
+What you are really suggesting with your question is an issue about 
+some code which is semantically equivalent to the Scheme fragment:
+
+
+	(set! x (cdr y))
+        (set! x (car x))
+
+In translating that into C code, and assuming that we pay a penalty
+for GC exclusion, might we not get better code for:
+
+
+	(with-gc-excluded
+	  (set! x (cdr y))
+          (set! x (car x)))
+
+?
+
+We certainly might.   And that is a sound argument for making CADR a
+_native_ function rather than one that would have to be implemented in
+a portable FFI.
+
+It is also a sound argument for portable FFI _extensions_ (i.e., not
+essential in the first SRFI) that would allow C code like:
+
+
+	{
+          SCM_GC_EXCLUDED_BLOCK_DECLS;
+
+          [....]
+
+          SCM_GC_EXCLUDED_BLOCK_BEGIN;
+
+          [....]
+
+	  scm_clusterable_cdr (&amp;result, instance, pair);
+	  scm_clusterable_car (&amp;result, instance, &amp;result);
+
+          [....]
+
+          SCM_GC_EXCLUDED_BLOCK_END;
+        }
+
+
+but the right to write such portable-FFI-using code is a privelege for
+grownups who are stretching a good FFI to its limits -- not an
+objection to using Pika-style conventions as the baseline.
+
+(If you are looking at the CAR and CDR implementations in the Pika
+code base -- note that they are not currently thread-safe.   That's
+why they're segregated into the `reps' (&quot;representations&quot;) directory.)
+
+-t
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00237" href="msg00237.html">Re: when GC is permitted</a></strong>
+<ul><li><em>From:</em> Richard Kelsey</li></ul></li>
+<li><strong><a name="00241" href="msg00241.html">Re: when GC is permitted</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00246" href="msg00246.html">Re: when GC is permitted</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00248.html">Re: Strings/chars</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00250.html">Re: Couple things...</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00246.html">Re: when GC is permitted</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00245.html">Re: when GC is permitted</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00249"><strong>Date</strong></a></li>
+<li><a href="threads.html#00249"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

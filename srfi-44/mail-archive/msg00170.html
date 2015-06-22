@@ -1,0 +1,275 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: [oleg@pobox.com: Interface view of dictionaries] -->
+<!--X-From-R13: "Penqq I. Embalr" <oenqq+fesvNfmbalr.pbz> -->
+<!--X-Date: Tue, 28 Oct 2003 06:33:38 +0100 (NFT) -->
+<!--X-Message-Id: 20031028053331.GC10098@loki.vpn.szonye.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20031028012813.GB12968@freenetproject.org -->
+<!--X-Reference: 20031028042549.GA10098@loki.vpn.szonye.com -->
+<!--X-Reference: 20031028045401.GB16906@freenetproject.org -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: [oleg@xxxxxxxxx: Interface view of dictionaries]</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00169.html">Date Prev</a>][<a href="msg00171.html">Date Next</a>][<a href="msg00169.html">Thread Prev</a>][<a href="msg00171.html">Thread Next</a>][<a href="maillist.html#00170">Date Index</a>][<a href="threads.html#00170">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: [oleg@xxxxxxxxx: Interface view of dictionaries]</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: <a href="mailto:%5Boleg@DOMAIN.HIDDEN">[oleg@xxxxxxxxx</a>: Interface view of dictionaries]</li>
+<li><em>From</em>: &quot;Bradd W. Szonye&quot; &lt;<a href="mailto:bradd%2Bsrfi@DOMAIN.HIDDEN">bradd+srfi@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 27 Oct 2003 21:33:31 -0800</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20031028045401.GB16906@DOMAIN.HIDDEN">20031028045401.GB16906@xxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Mail-followup-to</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>References</em>: &lt;<a href="mailto:20031028012813.GB12968@DOMAIN.HIDDEN">20031028012813.GB12968@xxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20031028042549.GA10098@DOMAIN.HIDDEN">20031028042549.GA10098@xxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20031028045401.GB16906@DOMAIN.HIDDEN">20031028045401.GB16906@xxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mutt/1.4i</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; Bradd W. Szonye wrote:
+&gt;&gt; However, there's a significant class of collections -- any tree-based
+&gt;&gt; dictionary, for example -- where you can improve from O(N)
+&gt;&gt; performance to O(lg N + K) performance for sequential access to keys.
+&gt;&gt; That's both efficient and generic.
+
+scgmille@xxxxxxxxxxxxxxxxxx wrote:
+&gt; I agree, and I expect a tree implementation of dictionaries to specify
+&gt; exactly those operators.  But they don't necessarily extend to
+&gt; hashtables, disk file databases, or any number of other dictionary
+&gt; mappable datastructures... a set which is larger than the set of Tree
+&gt; dictionaries.
+
+That's when you ask, &quot;Are these interfaces actually inefficient for
+other kinds of dictionaries? They're still convenient, so is there a
+good reason not to provide them?&quot;
+
+Consider procedures that operate on K sequential elements, starting with
+a given key. It's a common operation for dictionaries that permit
+duplicate keys; you often need to enumerate all elements that match a
+given key.
+
+You can always use the FOLD primitive to implement these operations, but
+it runs in O(N) time. (If you need to mutate a collection with an
+unstable enumerator, that increases to O(N-squared) time.) If you
+provide the interface as an atomic operation, however, a typical
+tree dictionary can cut that to O(lg N + K), and a typical hash table
+dictionary can cut it to O(K). Alists don't give you anything special,
+but they do still match the enumerator's O(N), and it may be able to
+the avoid O(N-squared) penalty for unstable mutations, if you implement
+it atomically.
+
+Do you know of any common dictionary types that would actually do worse
+with the atomic operation? (Given that you can always implement it with
+a full enumeration, I doubt it.)
+
+&gt;&gt; And Bear is trying to establish that some of these functions are not
+&gt;&gt; only common but important extensions. For most dictionary-type
+&gt;&gt; collections, primitives aren't sufficient. There's a convenience
+&gt;&gt; argument *and* a performance argument for extending the set.
+
+&gt; But only if those operators generalize to all dictionaries.
+
+They'd better, or it'll be very difficult to deal with duplicate keys.
+IIRC, I mentioned this in my last review of dictionaries; the interface
+doesn't even have GET-ANY to fetch all matching elements. That's an
+important interface for dictionaries with non-unique keys.
+
+&gt; Otherwise they impair the elegance and utility of the API that is
+&gt; general to all dictionaries.
+
+Pardon my vulgarity, but screw elegance. It means different things to
+everyone, and it's the doom of many a design. The overzealous desire for
+so-called elegance is one of the things that leads to what Bear called
+APIs for stupid programs.
+
+I see this desire for elegance in designers of all kinds, and it almost
+always reflects the author's unreasoning infatuation with some design,
+whether it's actually useful or not. In my opinion, &quot;elegance&quot; should
+never, ever be a design goal; it's a primrose path that leads to Hell.
+
+Oleg wrote:
+&gt;&gt;&gt; The intent is not to make it unnecessary to add more API in future
+&gt;&gt;&gt; SRFIs. Rather, the intent is to make it unnecessary to remove
+&gt;&gt;&gt; SRFI-44 features in future SRFIs.
+
+&gt;&gt; Why would you need to remove a function that is more convenient and more
+&gt;&gt; efficient?
+
+&gt; Because they may not apply to a hypothetical collection.
+
+I'm sorry, what sort of dictionary does &quot;fetch K elements from key&quot; not
+apply to? This is a perfect example of being too attached to &quot;elegance&quot;
+and too willing to throw away useful concepts.
+
+&gt;&gt; Also, speaking of things which might need to be removed, I'm
+&gt;&gt; concerned about the object-oriented nature of the containers .... For
+&gt;&gt; example, the hierarchy looks like it's based on a traditional
+&gt;&gt; &quot;objects as references&quot; class-based system, when an &quot;objects as
+&gt;&gt; values&quot; prototype-based system may fit better into Scheme.
+&gt;&gt; (Especially given the way such a system incorporates primitive data
+&gt;&gt; structures according to content rather than type).
+
+&gt; Hardly.  The SRFI was defined before there was even an object system
+&gt; selected for the reference implementation.  We were very careful not
+&gt; to evey specify polymorphism.  The SRFI only requires that the more
+&gt; general functions work for the 'subtypes' of the SRFI.  It never says
+&gt; that the collections actually be subtypes in some object system, its
+&gt; just a useful metaphor.
+
+But the metaphor reeks of class-based, objects-as-references
+inheritance. I asked before, and I'll ask again: What's the OO design
+principle behind the classes? Should the Liskov Substitution Principle
+hold? Why isn't set a subtype of bag, or vice versa? Why aren't
+dictionaries and sequences more closely related? Is the bag type
+justified at all?
+
+Right now, I don't know why the hierarchy looks the way it does. For all
+I know, the design was, &quot;These collection types seem kinda related.
+Let's make one a subtype of the other.&quot; What are the actual principles,
+and how will they hold up in a prototype-based system or with parametric
+polymorphism? Does the hierarchy constrain implementors in ways that you
+don't expect?
+
+With no explicit design goals, no complete implementation, and no
+examples of the collections in actual use, how are we supposed to trust
+that these won't be problems?
+
+&gt; You seem to portray this as if I'm hiding some dark secret about
+&gt; limitations to the API.  I'm quite confident in the API in fact, and
+&gt; just don't believe that I need 'prove' its good to you by writing a
+&gt; bunch of code that won't wind up in the SRFI.
+
+That's nice that you're confident in your own design. But isn't that the
+whole point of the reference implementation? We're not *supposed* to
+take your implementation on faith. *You're* supposed to demonstrate that
+it's actually implementable. Extra points if you can show that it stands
+up well under real use.
+
+If it seems like I'm being a jerk about this, it's because my day job is
+100% about quality -- code reviews, design reviews, testing,
+verification, making sure that we have more than just the developer's
+word that a system is good. This &quot;I don't need to prove that my design
+is good&quot; attitude doesn't fly in a code review. And isn't that exactly
+what the SRFI draft process is?
+
+&gt; I have limited time for this SRFI among many many projects, so this is
+&gt; strictly pragmatic.
+
+Again, that's nice. It's not going to convince me to lower my standards
+for code reviews, though.
+
+&gt;&gt; So while I agree that there is value in a stable API, I don't think
+&gt;&gt; there's any value in rushing an immature API to finalization just so
+&gt;&gt; that we can call it &quot;stable.&quot; It'd be much better to propose a
+&gt;&gt; concrete collection or three, get some experience with their use, and
+&gt;&gt; it they're successful, factor out the interface and publish that as a
+&gt;&gt; SRFI.
+
+&gt; This is arguably bad design. Writing many collections and then culling
+&gt; the common operators is a great way to wind up with a poorly thought
+&gt; out system.
+
+Not if those collections are themselves well-designed. Design a good
+system, implement it, determine what can be reused or factored out for
+future projects. That's how reuse works. If you haven't already, I
+strongly recommend that you study it. I can dig out some good titles if
+you like, although they're all for C++ rather than Scheme.
+
+Write some real, useful collections to your spec. Use them in a project
+or two -- doesn't need to be anything huge, just something bigger than a
+toy. Change the interfaces that are too cumbersome, maybe add a few.
+Review the design again. Factor out everything that worked well and
+publish that. Even better, just publish the useful collections and let
+the design speak for itself. That would be *much* more useful than an
+untested design doc.
+
+&gt; Especially when the stated goal here is to create a general,
+&gt; *interoperable* framework for collections.
+
+Once again: It isn't general or interoperable until you've seen it in
+use, until you've tried to use it and reuse it. Until then, it's just an
+interface that you *hope* is reusable. Many projects start out by
+assuming that interfaces like these will be reusable. They typically
+fail. Again, spend some time studying reusability if you haven't
+already; getting it right is a LOT harder than it seems.
+
+&gt;&gt; Actually, if they're successful, there's less need to publish the
+&gt;&gt; interface separately. Future developers will imitate it like they
+&gt;&gt; already imitate SRFI-1. That's a much more desirable outcome: We get
+&gt;&gt; useful collection types *and* a de facto standard interface that way.
+
+&gt; Name one language with a useful generic collections library that got
+&gt; it this way?
+
+You have heard of C++, right?
+-- 
+Bradd W. Szonye
+<a  rel="nofollow" href="http://www.szonye.com/bradd">http://www.szonye.com/bradd</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00171" href="msg00171.html">Re: [oleg@xxxxxxxxx: Interface view of dictionaries]</a></strong>
+<ul><li><em>From:</em> scgmille</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00165" href="msg00165.html">[oleg@xxxxxxxxx: Interface view of dictionaries]</a></strong>
+<ul><li><em>From:</em> scgmille</li></ul></li>
+<li><strong><a name="00167" href="msg00167.html">Re: [oleg@xxxxxxxxx: Interface view of dictionaries]</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+<li><strong><a name="00169" href="msg00169.html">Re: [oleg@xxxxxxxxx: Interface view of dictionaries]</a></strong>
+<ul><li><em>From:</em> scgmille</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00169.html">Re: [oleg@xxxxxxxxx: Interface view of dictionaries]</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00171.html">Re: [oleg@xxxxxxxxx: Interface view of dictionaries]</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00169.html">Re: [oleg@xxxxxxxxx: Interface view of dictionaries]</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00171.html">Re: [oleg@xxxxxxxxx: Interface view of dictionaries]</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00170"><strong>Date</strong></a></li>
+<li><a href="threads.html#00170"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

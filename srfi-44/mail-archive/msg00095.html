@@ -1,0 +1,181 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: s/&#45;LEFT//g? -->
+<!--X-From-R13: "Penqq I. Embalr" <oenqq+fesvNfmbalr.pbz> -->
+<!--X-Date: Mon, 20 Oct 2003 21:13:40 +0200 (DFT) -->
+<!--X-Message-Id: 20031020191331.GB4433@ogre.szonye.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20031016200629.GE2858@ogre.szonye.com -->
+<!--X-Reference: 20031020182528.GA26827@freenetproject.org -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: s/-LEFT//g?</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00094.html">Date Prev</a>][<a href="msg00096.html">Date Next</a>][<a href="msg00093.html">Thread Prev</a>][<a href="msg00097.html">Thread Next</a>][<a href="maillist.html#00095">Date Index</a>][<a href="threads.html#00095">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: s/-LEFT//g?</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: s/-LEFT//g?</li>
+<li><em>From</em>: &quot;Bradd W. Szonye&quot; &lt;<a href="mailto:bradd%2Bsrfi@DOMAIN.HIDDEN">bradd+srfi@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 20 Oct 2003 12:13:31 -0700</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20031020182528.GA26827@DOMAIN.HIDDEN">20031020182528.GA26827@xxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Mail-followup-to</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>References</em>: &lt;<a href="mailto:20031016200629.GE2858@DOMAIN.HIDDEN">20031016200629.GE2858@xxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20031020182528.GA26827@DOMAIN.HIDDEN">20031020182528.GA26827@xxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mutt/1.4i</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; On Thu, Oct 16, 2003 at 01:06:29PM -0700, Bradd W. Szonye wrote:
+&gt;&gt; As an extension of my idea to change collection-fold-left to
+&gt;&gt; collection-fold, how about removing all of the -lefts? Rationale:
+&gt;&gt; 
+&gt;&gt; 1. It's the naming convention in SRFI-1.
+&gt;&gt; 2. The -left suffix doesn't make sense for &quot;disordered&quot; collections.
+&gt;&gt; 3. It's less to type.
+
+scgmille@xxxxxxxxxxxxxxxxxx wrote:
+&gt; Its less to type, but in this case its important, as it really is
+&gt; indicating directionality.  If it was just get-value or such, it
+&gt; wouldn't convey the message that its retrieving a very specific value
+&gt; from the collection, the left most or least precedent.
+
+But that's only true for directional collections. Nondirectional
+collections (like grab-bags and true mathematical sets) have no concept
+of &quot;first&quot; or &quot;last.&quot; In those cases, there is no message to convey,
+because they necessarily return an arbitrary value, not a specific one.
+
+&gt; *-left provides a symmetry that the *-right functions can compare
+&gt; themselves against.  
+
+While the names aren't symmetrical, there's just as much *conceptual*
+symmetry in all of these:
+
+    Convention                              Precedent
+    *-method-left and *-method-right        PLT list.ss library
+    *-method and *-method-right             SRFI-1
+    *-method and *-reverse-method           C++ Standary Library
+
+I would peronally prefer one of the latter two conventions, because
+(1) *-method-left doesn't make sense for non-directional collections,
+and (2) it's more to type.
+
+I would also accept an alternate approach where all collections have
+*-method and only directional collections have *-method-left and -right.
+
+    Convention          Meaning
+    *-method-left       operate from the left (least) end
+    *-method-right      operate from the right (greatest) end
+    *-method            operate in arbitrary order
+
+Directional (aka &quot;reversible&quot;) collections would probably define
+*-method to be equivalent to *-method-left, but that shouldn't be a
+requirement. This way, you could implement an ordered-hash-table which
+would provide these enumerators:
+
+    collection-fold         enumerate in efficient (storage) order
+    collection-fold-left    enumerate in sorted order
+    collection-fold-right   enumerate in reverse-sorted order
+
+In general, I would expect a directional collection to use *-method for
+the most efficient order, *-method-left for guaranteed in-order, and
+*-method-right for guaranteed reverse-order. For many directional
+collections, but not all of them, *-method and *-method-left will be the
+same.
+
+I like this approach because it allows totally generic algorithms (i.e.,
+algorithms that don't care whether it's an ordered collection) to use
+the most efficient methods -- you only get the (possibly-inefficient)
+in-order methods when you specifically ask for them.
+
+I think this would resolve both my objections and yours:
+
+1. No more applying &quot;directional&quot; method names like *-left to
+   non-directional collections.
+2. Directional/reversible collections have symmetric method names.
+3. Less verbose naming convention for common cases.
+
+Plus an added benefit:
+
+4. Directional collections have (possibly more efficient) nondirectional
+   methods for users who don't care about the order of elements.
+
+SUMMARY OF PROPOSAL
+
+All containers have *-method, which uses an arbitrary order.
+
+Reversible containers have *-method-left and *-method-right, which use
+the container's ordering-function or inherent order (for sequences).
+
+Reversible containers may optionally define *-method to use a specific
+ordering (usually &quot;same as *-method-left&quot;  or &quot;most efficient order&quot;).
+-- 
+Bradd W. Szonye
+<a  rel="nofollow" href="http://www.szonye.com/bradd">http://www.szonye.com/bradd</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00097" href="msg00097.html">Re: s/-LEFT//g?</a></strong>
+<ul><li><em>From:</em> scgmille</li></ul></li>
+<li><strong><a name="00102" href="msg00102.html">Re: s/-LEFT//g?</a></strong>
+<ul><li><em>From:</em> scgmille</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00092" href="msg00092.html">s/-LEFT//g?</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+<li><strong><a name="00093" href="msg00093.html">Re: s/-LEFT//g?</a></strong>
+<ul><li><em>From:</em> scgmille</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00094.html">Re: Traits, dictionaries</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00096.html">Re: Traits, dictionaries</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00093.html">Re: s/-LEFT//g?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00097.html">Re: s/-LEFT//g?</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00095"><strong>Date</strong></a></li>
+<li><a href="threads.html#00095"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

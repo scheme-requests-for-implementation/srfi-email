@@ -1,0 +1,152 @@
+<!-- MHonArc v2.6.16 -->
+<!--X-Subject: note on Scribble compatibility -->
+<!--X-From-R13: Bre Pbguare <creNobguare.pbz> -->
+<!--X-Date: Wed, 29 May 2013 00:06:46 +0200 (MST) -->
+<!--X-Message-Id: 51A52A6E.3040803@bothner.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>note on Scribble compatibility</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00075.html">Date Prev</a>][<a href="msg00077.html">Date Next</a>][<a href="msg00077.html">Thread Prev</a>][<a href="msg00078.html">Thread Next</a>][<a href="maillist.html#00076">Date Index</a>][<a href="threads.html#00076">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>note on Scribble compatibility</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-108@DOMAIN.HIDDEN">srfi-108@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: note on Scribble compatibility</li>
+<li><em>From</em>: Per Bothner &lt;<a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 28 May 2013 15:06:38 -0700</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-108@DOMAIN.HIDDEN">srfi-108@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Mozilla/5.0 (X11; Linux x86_64; rv:17.0) Gecko/20130514 Thunderbird/17.0.6</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+A discussion that started on this srfi-11 list led me
+to think again about Scribble syntax and compatibility
+for SRFI-108.  Specifically with the motivation: If we
+swiched to Scribbe-compatible syntax, could the SRFI-108
+family get better acceptance?
+
+First, I'm less concerned than I was about how Scribble
+reads @{foo bar} as (&quot;foo bar&quot;) in contrast to what I think
+is the more useful (quasi-)literal &quot;foo bar&quot;. The solution
+to that is to use a different prefix character for quasi-strings.
+For example backquote seems quite readable: `{foo bar}
+
+The big incompatibility in terms of semantics is that
+Scribble uses the standard namespace.  Specifically:
+  @foo{Hello!}
+is read as plain:
+  (foo &quot;Hello!&quot;)
+rather than:
+  ($construct$:foo &quot;Hello!&quot;)
+
+However, I think being able to distinguish foo and &amp;foo
+is a very valuable feature.  Consider a document processing
+language wanting to use @list or @format - while still having
+the standard definitions available in embedded expressions.
+Or even more subtle variations: One might want @T{foo} to
+be different from (T &quot;foo&quot;) even if both are used to construct
+a T object.
+
+One possibility is to use the Scribble prefix syntax @foo, while
+still having the reader translate that to ($construct$:foo ...).
+But then you get to a more subtle problem.  In Scribble,
+the foo is actually an arbitrary Scheme expression.  For
+example the standard way to unquote an addition might be:
+@(+ a b) - which gets actually evaluated, not quoted.
+Identifiers in general expression should *not* be in
+the $construct$ &quot;namespace&quot;.
+Thus we get:
+  @foo{bar}   --&gt; ($construct$:foo &quot;bar)
+  @(foo bar)  --&gt; (foo bar)
+  @foo        --&gt; $construct$:foo or foo ???
+
+Scribble uses vertical bars as delimiter.  That leads to
+another question:
+  @|foo|      --&gt; $construct$:foo or foo ???
+
+SRFI-108/-109 has various escape sequences for special
+characters and other uses:
+  &amp;newline;
+Scribble instead uses embedded string literals with string escapes:
+  @&quot;\n&quot;
+This seems a reasonable approach.
+
+It seems possible to work out a decent syntax and semantics
+that satisfies the goals of SRFI-108 and SRFI-109, while fully
+or mostly remaining compatible with Scribble syntax.  The
+question is whether this exercise is worth it at this late
+stage of the game.  Scribble appears to be primarily used
+for standalone documentation (as far as I know); the goal
+SRFI-108 is to in addition support a general &quot;named literal&quot;
+feature, meant to be available by default in the Scheme
+language, so it's a bit more ambitious.
+
+Question to Scheme implementors:  Would switching SRFI-108/-109
+to a (mostly) Scribble-compatible syntax make it more
+(or less?) likely you would implement SRFI-108/-109 in your
+implementation?
+
+If not, there are some good arguments for sticking with the '&amp;' syntax:
+- Using '&amp;' allows compatibility with SRFI-107 (XML literals).
+- The semantic incompatibility of $construct$:foo vs plain foo.
+- It might be useful to save '@' for a splicing operator.
+- SRFI-108 - and -109 can be finalized quickly if we stick to '&amp;'.
+--
+	--Per Bothner
+per@xxxxxxxxxxx   <a  rel="nofollow" href="http://per.bothner.com/">http://per.bothner.com/</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00075.html">Re: making indentation marker &amp;| implicit</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00077.html">Re: making indentation marker &amp;| implicit</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00077.html">Re: making indentation marker &amp;| implicit</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00078.html">Final call for SRFI-108 and 109</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00076"><strong>Date</strong></a></li>
+<li><a href="threads.html#00076"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

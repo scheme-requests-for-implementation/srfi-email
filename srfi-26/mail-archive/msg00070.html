@@ -1,0 +1,198 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: New revision of SRFI 26 available -->
+<!--X-From-R13: Oy Brgebsfxl <nyNcrgebsfxl.bet> -->
+<!--X-Date: Tue,  4 Jun 2002 20:58:05 +0200 (DFT) -->
+<!--X-Message-Id: 200206041857.LAA05958@radish.petrofsky.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: y9lit4z57rp.fsf@sams.informatik.uni&#45;tuebingen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: New revision of SRFI 26 available</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00069.html">Date Prev</a>][<a href="msg00071.html">Date Next</a>][<a href="msg00069.html">Thread Prev</a>][<a href="msg00071.html">Thread Next</a>][<a href="maillist.html#00070">Date Index</a>][<a href="threads.html#00070">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: New revision of SRFI 26 available</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-26@DOMAIN.HIDDEN">srfi-26@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: New revision of SRFI 26 available</li>
+<li><em>From</em>: Al Petrofsky &lt;<a href="mailto:al@DOMAIN.HIDDEN">al@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 4 Jun 2002 11:57:58 -0700</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-26@DOMAIN.HIDDEN">srfi-26@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:y9lit4z57rp.fsf@DOMAIN.HIDDEN">y9lit4z57rp.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	(<a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>)</li>
+<li><em>References</em>: &lt;<a href="mailto:y9lit4z57rp.fsf@DOMAIN.HIDDEN">y9lit4z57rp.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Some issues with the latest draft:
+
+In the code samples within the html, like this:
+
+  &lt;code&gt;(cut cons (+ a 1) &lt;&gt;)&lt;/code&gt;
+ 
+My browser is displaying this as (cut cons (+ a 1) ).  The angle
+brackets need to be escaped.
+
+  (apply + (map (cut if &lt;&gt; 0 1) '(#f #t #t #f)))
+
+This is an error according to the specification that &quot;const&quot;s must be
+expressions.  I suggest you keep that requirement and drop support for
+this usage unless you can come up with a reasonable semantics for (cut
+quasiquote &lt;&gt;), or some way to specify which non-expressions are and
+are not allowed as &quot;const&quot;s.
+
+
+   &lt;const-or-slot&gt; --&gt; &lt;&gt;              ; a &quot;slot&quot;
+                       | &lt;expression&gt;  ; a constant, not directly dependent
+				       ;  on the slots
+
+The constants aren't indirectly dependent on the slots either.
+Perhaps &quot;a `constant', an expression independent of the slot values&quot;
+would be clearer.
+
+  In case there is a rest-slot symbol for the residual arguments of a
+  variable arity procedure, the resulting procedure is also of
+  variable arity
+
+If a system provides a variable-arity? procedure, I would expect it to
+interact with cut like this:
+
+  (variable-arity? list)             =&gt; #t
+  (variable-arity? (cut list &lt;&gt;))    =&gt; #f
+  (variable-arity? cons)             =&gt; #f
+  (variable-arity? (cut cons &lt;...&gt;)) =&gt; #t
+
+Hence, I think it would be simpler and more accurate to say:
+
+  If there is a rest-slot symbol for residual arguments, the resulting
+  procedure is of variable arity
+
+The implementation gets the second of these tests wrong:
+
+  (let* ((x 'cute) (y (cut  list x))) (set! x 'cut) (y))  =&gt; cut
+  (let* ((x 'cute) (y (cute list x))) (set! x 'cut) (y))  =&gt; cute
+
+Two non-bug drawbacks to the implementation are that it doesn't catch
+errors like (cut if &lt;&gt; 0 1) and it forces an evaluation order for the
+&quot;const&quot;s in a cute expression.  Here's one way to address all three
+issues:
+
+; (srfi-26-internal-cut slot-names combination . cs)
+;   transformer used internally
+;     slot-names  : the internal names of the slots
+;     combination : procedure being specialized, followed by its arguments
+;     cs          : consts-or-slots, the qualifiers of the macro
+
+(define-syntax srfi-26-internal-cut
+  (syntax-rules (&lt;&gt; &lt;...&gt;)
+
+    ;; construct fixed- or variable-arity procedure
+    ((srfi-26-internal-cut (slot-name ...) (proc arg ...))
+     (lambda (slot-name ...) ((begin proc) arg ...)))
+    ((srfi-26-internal-cut (slot-name ...) (proc arg ...) &lt;...&gt;)
+     (lambda (slot-name ... . rest-slot) (apply proc arg ... rest-slot)))
+
+    ;; process one const-or-slot
+    ((srfi-26-internal-cut (slot-name ...)   (position ...)      &lt;&gt;    . cs)
+     (srfi-26-internal-cut (slot-name ... x) (position ... x)          . cs))
+    ((srfi-26-internal-cut (slot-name ...)   (position ...)      const . cs)
+     (srfi-26-internal-cut (slot-name ...)   (position ... const)      . cs))))
+
+; (srfi-26-internal-cute slot-names const-bindings combination . cs)
+;   transformer used internally
+;     slot-names     : the internal names of the slots
+;     const-bindings : let-style bindings for the constants.
+;     combination    : procedure being specialized, followed by its arguments
+;     cs             : consts-or-slots, the qualifiers of the macro
+
+(define-syntax srfi-26-internal-cute
+  (syntax-rules (&lt;&gt; &lt;...&gt;)
+    ;; If there are no const-or-slots to process, then:
+    ;; construct a fixed-arity procedure,
+    ((srfi-26-internal-cute
+      (slot-name ...) const-bindings (proc arg ...))
+     (let const-bindings (lambda (slot-name ...) (proc arg ...))))
+    ;; or a variable-arity procedure
+    ((srfi-26-internal-cute
+      (slot-name ...) const-bindings (proc arg ...) &lt;...&gt;)
+     (let const-bindings (lambda (slot-name ... . x) (apply proc arg ... x))))
+
+    ;; otherwise, process one slot:
+    ((srfi-26-internal-cute
+      (slot-name ...)         const-bindings  (position ...)   &lt;&gt;    . cs)
+     (srfi-26-internal-cute
+      (slot-name ... x)       const-bindings  (position ... x)       . cs))
+    ;; or one const
+    ((srfi-26-internal-cute
+      slot-names              const-bindings  (position ...)   const . cs)
+     (srfi-26-internal-cute
+      slot-names ((x const) . const-bindings) (position ... x)       . cs))))
+
+; exported syntax
+
+(define-syntax cut
+  (syntax-rules (&lt;&gt; &lt;...&gt;)
+    ((cut . consts-or-slots)
+     (srfi-26-internal-cut () () . consts-or-slots))))
+
+(define-syntax cute
+  (syntax-rules (&lt;&gt; &lt;...&gt;)
+    ((cute . consts-or-slots)
+     (srfi-26-internal-cute () () () . consts-or-slots))))
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00069" href="msg00069.html">New revision of SRFI 26 available</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr.  Preprocessor]</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00069.html">New revision of SRFI 26 available</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00071.html">Re: New revision of SRFI 26 available</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00069.html">New revision of SRFI 26 available</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00071.html">Re: New revision of SRFI 26 available</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00070"><strong>Date</strong></a></li>
+<li><a href="threads.html#00070"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

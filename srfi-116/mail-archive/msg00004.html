@@ -1,0 +1,166 @@
+<!-- MHonArc v2.6.18 -->
+<!--X-Subject: SRFI 116 issues discussed on the scheme&#45;reports list -->
+<!--X-From-R13: Xbua Qbjna <pbjnaNzrephel.ppvy.bet> -->
+<!--X-Date: Wed, 17 Sep 2014 17:09:23 +0000 (UTC) -->
+<!--X-Message-Id: 20140917170921.GD4261@mercury.ccil.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>SRFI 116 issues discussed on the scheme-reports list</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00003.html">Date Prev</a>][<a href="msg00005.html">Date Next</a>][<a href="msg00008.html">Thread Prev</a>][<a href="msg00007.html">Thread Next</a>][<a href="maillist.html#00004">Date Index</a>][<a href="threads.html#00004">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>SRFI 116 issues discussed on the scheme-reports list</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-116@DOMAIN.HIDDEN">srfi-116@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: SRFI 116 issues discussed on the scheme-reports list</li>
+<li><em>From</em>: John Cowan &lt;<a href="mailto:cowan@DOMAIN.HIDDEN">cowan@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 17 Sep 2014 13:09:21 -0400</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-116@DOMAIN.HIDDEN">srfi-116@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Sender</em>: John Cowan &lt;<a href="mailto:cowan@DOMAIN.HIDDEN">cowan@xxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mutt/1.5.20 (2009-06-14)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>The following issues were discussed on the scheme-reports mailing list.  See
+&lt;<a  rel="nofollow" href="http://lists.scheme-reports.org/pipermail/scheme-reports/2014-September/thread.html">http://lists.scheme-reports.org/pipermail/scheme-reports/2014-September/thread.html</a>&gt;
+for full text.
+
+1. These procedures should take SRFI 114 comparators instead of equality
+predicates?
+
+Rejected.  This library is meant as a drop-in replacement for SRFI 1 in
+most contexts (see issue 7 below).  So the relevant procedure arguments
+woul have to be polymorphic in procedures and comparators, causing an
+inherent slowdown.
+
+2.  First, second, third, etc. should be restored (they were not present
+in the first draft of this SRFI).
+
+Accepted.
+
+3. Xipair (the analogue of SRFI 1 xcons) should be removed in favor of
+a general flip operator in another SRFI.
+
+Rejected.  I am in favor of such a SRFI, but want to keep xipair for
+SRFI 1 compatibility.
+
+4.  Lists as sets should be removed in favor of a SRFI based on immutable
+tree-like sets.
+
+Accepted.
+
+5.  Iqq (immutable quasiquote) should be added.
+
+I don't object to this in principle, but don't feel up to implementing
+it either.  If someone will supply an implementation, I'll add it.
+
+6.  Remove ic*r procedures other than icaar, icadr, icdar, icddr,
+based on the R7RS-small precedent of putting them in a separate library
+(scheme cxr).
+
+Rejected on drop-in replacement grounds.
+
+7.  There shouldn't be different interfaces for mutable and immutable
+pairs.
+
+Rejected.  Immutable pairs are unfortunately not *entirely* a drop-in
+replacement for mutable pairs, at least not without breaking R5RS and
+R7RS-small.  In particular, tail argument lists passed to procedures
+are guaranteed to be freshly allocated and mutable.  Thus, the standard
+`list` procedure can be defined as (lambda list list), and portable
+programs need access to both mutable and immutable pairs.
+
+That said, it is probably worthwhile in the R7RS-large context to make
+a version of (scheme base) that imports the immutable procedures instead
+and imports the mutable equivalents Racket-style as mcar, mcdr, mcons ....
+However, that is an R7RS issue rather than a SRFI 116 issue.
+
+8. () should not be shared between mutable and immutable lists.
+
+Rejected.  The immutable lists of this SRFI are meant to work like
+mutable lists, and there is no reason to duplicate (), since both
+versions are immutable.  What's actually anomalous is that () is
+immutable whereas all other standard lists are mutable, but that ship
+sailed half a century ago.  There will be a future SRFI for truly mutable
+sequences which may be of zero length without losing their identity:
+see &lt;<a  rel="nofollow" href="http://trac.sacrideo.us/wg/wiki/QueuesCowan">http://trac.sacrideo.us/wg/wiki/QueuesCowan</a>&gt; for a preliminary draft.
+
+9. Circular lists should be restored, either through hidden mutators
+available only to a circular list constructor, or else via promises.
+
+Rejected.  The hidden mutators might become available again through
+record introspection, though I hope a successor to SRFI 99 would prevent
+introspection of sealed types.  Respecting promises in icdr fields
+would again slow down operations that should be fast and efficient.
+In addition, only a few SRFI 1 procedures accept circular lists anyway.
+A preliminary proposal for bidirectional immutable cycles is currently
+available at &lt;<a  rel="nofollow" href="http://trac.sacrideo.us/wg/wiki/CyclesMedernach">http://trac.sacrideo.us/wg/wiki/CyclesMedernach</a>&gt;.
+
+10. Consider an -i or -im suffix analogous to the -ci suffix for string
+procedures.
+
+Rejected.  These are among the most commonly used procedures in Scheme,
+so it pays to keep them as short as possible.  I think 'icar' and 'icdr'
+are more readable than 'cari' and 'cdri'.
+
+-- 
+John Cowan          <a  rel="nofollow" href="http://www.ccil.org/~cowan">http://www.ccil.org/~cowan</a>        cowan@xxxxxxxx
+In might the Feanorians / that swore the unforgotten oath
+brought war into Arvernien / with burning and with broken troth.
+and Elwing from her fastness dim / then cast her in the waters wide,
+but like a mew was swiftly borne, / uplifted o'er the roaring tide.
+        --the Earendillinwe
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00003.html">immutable pairs in existing implementations</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00005.html">Re: library for immutate base</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00008.html">Re: immutable pairs in existing implementations</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00007.html">New text on Quotation</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00004"><strong>Date</strong></a></li>
+<li><a href="threads.html#00004"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

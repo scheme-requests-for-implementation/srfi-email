@@ -1,0 +1,166 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Proposed changes to SRFI&#45;19 -->
+<!--X-From-R13: fuvirefNnv.zvg.rqh -->
+<!--X-Date: Sun, 23 Apr 2000 22:06:49 &#45;0500 (CDT) -->
+<!--X-Message-Id: 200004240306.XAA09664@mongkok.ai.mit.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Proposed changes to SRFI-19</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00013.html">Date Prev</a>][<a href="msg00015.html">Date Next</a>][<a href="msg00013.html">Thread Prev</a>][<a href="msg00015.html">Thread Next</a>][<a href="maillist.html#00014">Date Index</a>][<a href="threads.html#00014">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Proposed changes to SRFI-19</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-19@DOMAIN.HIDDEN">srfi-19@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Proposed changes to SRFI-19</li>
+<li><em>From</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxx</a></li>
+<li><em>Date</em>: Sun, 23 Apr 2000 23:06:50 -0400</li>
+<li><em>Reply-to</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>I have a number of comments on this SRFI.
+
+The current draft has this text:
+
+    Second, a real (potentially inexact) between 0 and 61, inclusive, (seconds
+    greater than 59 are for describing rare leap seconds)
+
+This has two errors, I think -- 61 is not a legal second value, and 59.1 is
+a non-leap second. This text fixes these problems:
+
+    Second, a real (potentially inexact) in the range [0,61), (seconds
+    in the range [60,61) are for describing rare leap seconds)
+
+In general, many of the bounds given in the procedure definitions do not
+specify if they are open or closed bounds. This should be cleaned up.
+Most are pretty clear, but the bounds for time zones are not. What are they?
+[0,86400)? (-86400,86400)? [-43200,43200]?
+
+I prefer time-comparison names without terminal question marks.
+I think these
+  (time= t1 t2) 
+  (time&lt; t1 t2)
+are clearer than these
+  (time=? t1 t2)
+  (time&lt;? t1 t2)
+The terminal ? is redundant, hence unnecessary clutter.
+
+A time API that seems excellent to me is found at
+    <a  rel="nofollow" href="http://www.cl.cam.ac.uk/~mgk25/c-time/">http://www.cl.cam.ac.uk/~mgk25/c-time/</a>
+It is designed by a guy that appears to be a time expert, and has
+    - provisions for integer nanoseconds
+        nanosecond field soaks up the leap seconds; seconds field stays
+	in [0,60) range.
+
+    - a timezone struct
+      These structs contain more information about the timezone --
+      a name, summer time changeover information.
+
+    - UTC, TAI, monotonic, process &amp; thread time
+      These concepts are not in the current SRFI.
+
+By &quot;integer nanoseconds,&quot; I mean that a time is represented as an integer
+number of seconds and an integer number of nanoseconds, not as a single real.
+I provided both the real and the pair-of-ints functionality in scsh; see pages
+69 and 70 of
+
+    <a  rel="nofollow" href="ftp://ftp-swiss.ai.mit.edu/pub/su/scsh/scsh-manual.ps">ftp://ftp-swiss.ai.mit.edu/pub/su/scsh/scsh-manual.ps</a>
+
+There's (TIME), which returns an integer, and the pair of procedures
+(TIME+TICKS) &amp; (TICKS/SEC), which gives sub-second precision. TIME+TICKS
+returns two values: an integer number of seconds, and an integer number
+of sub-second &quot;ticks.&quot; The system's tick granularity is given by TICKS/SECOND.
+This was done to allow TIME+TICKS to use very low-overhead implementations,
+suitable for timing program events without the overhead of the time stamp
+perturbing the measurements. (E.g., TIME+TICKS could be inlined as a couple
+of special register fetches on a Pentium...)
+
+You may wish to look at the scsh time spec, at the above URL. It has some
+flaws, due to its close binding to the Posix API, but also has some
+nice features. There are two time representations -- time (seconds), and
+date (broken-out time -- y/m/d/h/m/s etc.) The API is quite simple:
+     (date)         -&gt; the current date (a struct)
+     (date tm [tz]) -&gt; the date for time TM in timezone TZ
+
+     (time)         -&gt; the current time (an integer)
+     (time dt)      -&gt; the time for date DT
+
+The scsh API also provides date-&gt;string formatting functions that
+allow for a range of possible formatting; this kind of functionality
+should be added to this SRFI.
+
+SRFI-19's time zones are too simple. A time-zone structure is needed that
+packages up things like daylight-savings time specs, simple string names,
+etc., that can be passed as a parameter to the SECONDS-&gt;TIME and TIME-&gt;SECONDS
+conversion procedures.
+
+I painfully worked out a css style sheet &amp; layout for doing SRFI's when
+I did SRFI-1. You might want to grab the HTML source for SRFI-1 and look
+at the top of the file -- it's all there, documented and laid out clearly.
+
+Also worth considering carefully is the Java spec for the date, calendar
+and timezone classes, e.g. the very nice writeup at
+   <a  rel="nofollow" href="http://java.sun.com/products/jdk/1.2/docs/api/java/util/Date.html">http://java.sun.com/products/jdk/1.2/docs/api/java/util/Date.html</a>
+Java standardisation is worth tracking; there are large resources being
+poured into careful specification of the language.
+    -Olin
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00015" href="msg00015.html">Re: Proposed changes to SRFI-19</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00013.html">Re: SRFI Revision and Code</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00015.html">Re: Proposed changes to SRFI-19</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00013.html">Re: SRFI Revision and Code</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00015.html">Re: Proposed changes to SRFI-19</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00014"><strong>Date</strong></a></li>
+<li><a href="threads.html#00014"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

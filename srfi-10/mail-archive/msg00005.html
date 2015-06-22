@@ -1,0 +1,154 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Countering the counter&#45;proposal -->
+<!--X-From-R13: Dvpuneq Yryfrl <xryfrlNerfrnepu.aw.arp.pbz> -->
+<!--X-Date: Mon, 4 Oct 1999 18:37:35 &#45;0500 (CDT) -->
+<!--X-Message-Id: 199910042337.TAA11354@kima.nj.nec.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 199910042050.UAA19299@fnmoc.navy.mil -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Countering the counter-proposal</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00004.html">Date Prev</a>][<a href="msg00006.html">Date Next</a>][<a href="msg00004.html">Thread Prev</a>][<a href="msg00006.html">Thread Next</a>][<a href="maillist.html#00005">Date Index</a>][<a href="threads.html#00005">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Countering the counter-proposal</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:oleg@DOMAIN.HIDDEN">oleg@xxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Countering the counter-proposal</li>
+<li><em>From</em>: Richard Kelsey &lt;<a href="mailto:kelsey@DOMAIN.HIDDEN">kelsey@xxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 4 Oct 1999 19:37:20 -0400</li>
+<li><em>Cc</em>: <a href="mailto:srfi-10@DOMAIN.HIDDEN">srfi-10@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:199910042050.UAA19299@DOMAIN.HIDDEN">199910042050.UAA19299@xxxxxxxxxxxxxx</a>&gt; (<a href="mailto:oleg@DOMAIN.HIDDEN">oleg@xxxxxxxxx</a>)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>   Date: Mon, 4 Oct 1999 20:50:52 GMT
+   Reply-to: oleg@xxxxxxxxx
+   From: oleg@xxxxxxxxx
+
+   &gt; Using `#,' in a program has two effects: it causes side effects to
+   &gt; occur at read time and it ensures that a form is evaluated only once.
+   &gt; The first has questionable utility and semantics.  The second is
+   &gt; already available in R5RS as `delay' and `force'. 
+
+   I have come across a counter-example to the last statement.
+
+Not too hard.  I don't know what I was thinking.  Please ignore
+my alternative proposal.
+
+The fact that my solution to the problem doesn't work does not
+mean that SRFI-10 does.  You did not respond to the problem that
+I was trying to solve.
+
+The reader is used in two different ways: it is used to read
+the original program and it is used when that program calls
+`read'.  But how can a program modify the reader that was used
+to read it?  The only way is to break the program in two parts,
+the first of which runs before the second is read.  There is
+no way to do this in Scheme without using either `load' or `eval'.
+It is true that my solution uses `eval' (or `load'), but so does
+yours.
+
+   BTW, nowhere does SRFI-10 tell that the constructor
+   is a Scheme function; it can be written in any language as long as the
+   reader is able to invoke it passing appropriate parameters. For
+   example, one can write a Scheme-&gt;foo _compiler_ in ML and implement
+   reader-constructors as ML functions.
+
+I don't understand.  The only way to supply contructor functions
+in SRFI-10 is by doing
+
+ (define-reader-ctor &lt;symbol&gt; &lt;proc&gt;).
+
+How can &lt;proc&gt; be other than a Scheme function?
+
+	   The biggest problem with the above eval-solution  is that it
+   assumes that the form read from a file is an expression to be
+   evaluated. Suppose the file contains a string
+	   &quot;(1 2 #,(f32 1.0 2.0))&quot;
+   How can you pass the result of reading of this string to eval?
+
+It is easy to give a parameterized reader for use in a program.
+Nothing so involved as read-time evaluation is required.  For
+example:
+
+ (make-reader)   -&gt; &lt;reader&gt;
+ (extend-reader &lt;reader&gt; &lt;symbol&gt; &lt;proc&gt;) -&gt; &lt;reader&gt;
+
+A &lt;reader&gt; is function of one argument, an input port, that
+reads and returns the next s-expression from the port.
+
+ (&lt;reader&gt; &lt;input-port&gt;) -&gt; &lt;s-expression&gt;
+
+`Make-reader' returns a reader that parses the R5RS external
+syntax.  `Extend-reader' returns a new reader that is the same
+as its first argument except that it uses &lt;proc&gt; as a constructor
+when it finds #,(&lt;symbol&gt; . &lt;args&gt;) in the input, as is done
+in SRFI-10.
+
+This provides the same functionality as SRFI-10 for reading
+data values during execution.  It has the added advantages
+of being modular (a program may have multiple readers) and
+being easy to implement in R5RS.
+
+It doesn't solve the problem of using #, in a program, but
+neither does SRFI-10.
+                                  -Richard Kelsey
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00004" href="msg00004.html">Countering the counter-proposal</a></strong>
+<ul><li><em>From:</em> oleg</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00004.html">Countering the counter-proposal</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00006.html">define-reader-ctor is merely an implementation hint</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00004.html">Countering the counter-proposal</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00006.html">define-reader-ctor is merely an implementation hint</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00005"><strong>Date</strong></a></li>
+<li><a href="threads.html#00005"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

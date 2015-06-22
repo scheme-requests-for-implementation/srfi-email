@@ -1,0 +1,153 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Overuse of strings -->
+<!--X-From-R13: Oyrk Euvaa <nyrkfuvaaNtznvy.pbz> -->
+<!--X-Date: Thu, 26 Jan 2006 03:17:05 +0100 (MET) -->
+<!--X-Message-Id: 5fb7e0870601251817n5feedcadk257da95d775f08b4@mail.gmail.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: y9lirs9mrqk.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Overuse of strings</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00112.html">Date Prev</a>][<a href="msg00114.html">Date Next</a>][<a href="msg00117.html">Thread Prev</a>][<a href="msg00114.html">Thread Next</a>][<a href="maillist.html#00113">Date Index</a>][<a href="threads.html#00113">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Overuse of strings</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Lauri Alanko &lt;<a href="mailto:la@DOMAIN.HIDDEN">la@xxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Overuse of strings</li>
+<li><em>From</em>: Alex Shinn &lt;<a href="mailto:alexshinn@DOMAIN.HIDDEN">alexshinn@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 26 Jan 2006 11:17:02 +0900</li>
+<li><em>Cc</em>: <a href="mailto:srfi-83@DOMAIN.HIDDEN">srfi-83@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-83@DOMAIN.HIDDEN">srfi-83@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Domainkey-signature</em>: a=rsa-sha1; q=dns; c=nofws;        s=beta; d=gmail.com;        h=received:message-id:date:from:to:subject:cc:in-reply-to:mime-version:content-type:content-transfer-encoding:content-disposition:references;        b=Q+lmnCAgfhWAcAzLu0Hbgnx/2mM2AV7w4CEX/adJj/rOBqSs7cOkerR/djTKgSNHvmzN86kW8eehYo6UggdLRbYrUfMRVCaUlcvMeScSwo5WKVxZF5M8yUe848ufMYyHHATb3bbb5FI/z0+2Dm+IEYtFVzfkAEJP3fuXMRSyHEQ=</li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:y9lirs9mrqk.fsf@DOMAIN.HIDDEN">y9lirs9mrqk.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:y9lirs9mrqk.fsf@DOMAIN.HIDDEN">y9lirs9mrqk.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>On 1/25/06, Lauri Alanko &lt;la@xxxxxx&gt; wrote:
+&gt;
+&gt; &quot;scheme://r6rs&quot; -&gt; (scheme r6rs)
+
+This does add some ambiguity with the current import syntax.  Does
+
+  (import (add-prefix foo bar))
+
+mean to add the &quot;bar&quot; prefix to module foo, or does it mean to import
+the single module name (add-prefix foo bar)?  In this case we can
+unambiguosly determine that it is in fact the latter, because foo
+should be (foo) if it were a module, but this seems a rather weak
+distinction, and breaks easily with other extensions to the import
+specification.
+
+You could easily enough provide import-prefix, import-rename,
+etc. syntax to unambiguously import modules named by arbitrary sexps,
+however these can't nest without the same ambiguity arising.
+
+One way to disambiguate would be to give the module name a single
+fixed position in all import statements (requiring a separate import
+clause for each module):
+
+  (import &lt;module-name&gt; &lt;import-modifier&gt;*)
+
+where the &lt;import-modifier&gt;s could be any of
+
+  (only &lt;identifier&gt;*)
+  (except &lt;identifier&gt;*)
+  (rename (&lt;identifier&gt; &lt;identifier&gt;)*)
+  (add-prefix &lt;identifier&gt;)
+  (for &lt;phase&gt;*)
+
+and the modifiers are applied in the order they appear.  So the
+example from the draft:
+
+  (import (only &quot;stack&quot; make push! pop!)
+          (add-prefix &quot;balloons&quot; balloon:))
+
+becomes (modulo any changes to the module naming convention)
+
+  (import &quot;stack&quot; (only make push! pop!))
+  (import &quot;balloons&quot; (add-prefix balloon:))
+
+and a nested example would be to translate
+
+  (import (add-prefix (rename (only &quot;stack&quot; make push! pop!)
+                              (make create))
+                       stack:))
+
+to
+
+  (import &quot;stack&quot; (only make push! pop!)
+                  (rename (make create))
+                  (add-prefix stack:))
+
+which to me at least seems easier to parse and reason about.  Humans
+always know right away from the first argument what module is being
+imported, and machines no longer have to worry about ambiguities,
+freeing up discussion for arbitrary module naming conventions.
+
+--
+Alex
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00114" href="msg00114.html">Re: Overuse of strings</a></strong>
+<ul><li><em>From:</em> Ray Blaak</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00101" href="msg00101.html">Re: Overuse of strings</a></strong>
+<ul><li><em>From:</em> Lauri Alanko</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00112.html">Re: Overuse of strings</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00114.html">Re: Overuse of strings</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00117.html">Re: Overuse of strings</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00114.html">Re: Overuse of strings</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00113"><strong>Date</strong></a></li>
+<li><a href="threads.html#00113"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

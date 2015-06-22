@@ -1,0 +1,182 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: SRFI&#45;47 &#45;&#45; types and declarations. -->
+<!--X-From-R13: Ohoerl Xnssre <ntwNnyhz.zvg.rqh> -->
+<!--X-Date: Thu,  4 Dec 2003 16:50:45 +0100 (NFT) -->
+<!--X-Message-Id: 20031204155005.1B856C35EC@mail.voluntocracy.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 4BDB8E60&#45;1F91&#45;11D8&#45;92C6&#45;000A95CCCEE4@evdev.ath.cx -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: SRFI-47 -- types and declarations.</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00019.html">Date Prev</a>][<a href="msg00021.html">Date Next</a>][<a href="msg00015.html">Thread Prev</a>][<a href="msg00019.html">Thread Next</a>][<a href="maillist.html#00020">Date Index</a>][<a href="threads.html#00020">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: SRFI-47 -- types and declarations.</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:campbell@DOMAIN.HIDDEN">campbell@xxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: SRFI-47 -- types and declarations.</li>
+<li><em>From</em>: Aubrey Jaffer &lt;<a href="mailto:agj@DOMAIN.HIDDEN">agj@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu,  4 Dec 2003 10:50:05 -0500 (EST)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-47@DOMAIN.HIDDEN">srfi-47@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-47@DOMAIN.HIDDEN">srfi-47@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:4BDB8E60-1F91-11D8-92C6-000A95CCCEE4@DOMAIN.HIDDEN">4BDB8E60-1F91-11D8-92C6-000A95CCCEE4@xxxxxxxxxxxx</a>&gt; (message from	Taylor Campbell on Tue, 25 Nov 2003 16:49:51 -0500)</li>
+<li><em>References</em>: &lt;<a href="mailto:4BDB8E60-1F91-11D8-92C6-000A95CCCEE4@DOMAIN.HIDDEN">4BDB8E60-1F91-11D8-92C6-000A95CCCEE4@xxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre> | Date: Tue, 25 Nov 2003 16:49:51 -0500
+ | From: Taylor Campbell &lt;campbell@xxxxxxxxxxxx&gt;
+ | 
+ | On Thursday, Nov 20, 2003, at 18:56 US/Eastern, Aubrey Jaffer wrote:
+ | 
+ | &gt; I will remove the read syntax from SRFI-47, which removes many of
+ | &gt; the objections.
+ | 
+ | Why not provide SRFI 10 reader constructors?  This kind of thing is
+ | _exactly_ what SRFI 10 is for!
+
+Array syntax can be the subject of its own SRFI.
+
+ | Also, I don't think my other questions, those not regarding reader
+ | syntax, were addressed: will there be a follow-up complete array
+ | library to deprecate SRFI 43 and some of SRFI 13?
+
+SRFI-43 contains many procedures which do not generalize to rank 2 and
+higher arrays.  So an array-based SRFI would not replace SRFI-43.
+SLIB's array-for-each module defines:
+
+ - Procedure: array-map!   array0 proc array1 ...
+ - Function:  array-map prototype proc array1 array2 ...
+ - Function:  array-for-each proc array0 ...
+ - Function:  array-indexes       array
+ - Procedure: array-index-map!    array proc
+ - Procedure: array-copy!  source destination
+
+The argument order to array-copy! seems inconsistent with the others.
+
+Sequence order is an essential idea in SRFI-13 (and for many functions
+in SRFI-43).  Defining procedures which make sense only for rank-1
+arrays in a multidimensional array package is poor practice.
+
+One might consider a rank-2 array of characters to be text on a page.
+I am unaware of Unicode or other character standards covering such
+constructs.  But with most Schemes still limited to single byte
+characters, we need to resolve the plethora of difficult string issues
+before going where none have gone before.
+
+ | and ARRAY=? is less general than it could be: why isn't it more
+ | like SRFI 1's LIST= or SRFI 43's VECTOR= ?
+
+ARRAY=? was added to facilitate incorporation of arrays into EQUAL?  A
+more complete solution would be to redefine EQUAL? instead.
+
+ | I have also come up with another question: why is there no ARRAY,
+ | analogous to VECTOR as MAKE-ARRAY is analogous to MAKE-VECTOR?
+
+VECTOR and STRING return arrays.
+
+The VECTOR, LIST, and STRING functions allow one to construct those
+objects on the basis of arguments alone -- not requiring explicit
+construction of intermediate lists.  This property was important to
+some of the rrrs-authors; they did not want argument vectors to
+necessarily be lists.
+
+To do the same for arrays would require the dimensions of the array be
+passed as arguments to the ARRAY function.  Passing them without using
+a list or vector would have them as several arguments.  But there are
+a variable number of them, so the rank must also be an argument.  This
+results in a form reminiscent of run-length coding:
+
+ - Function: array prototype j k0 ... k{j-1} obj0 ...
+     J should be an exact nonnegative integer specifying the rank of
+     the array.  K0 ... K{J-1} should be exact nonnegative integers
+     specifying the dimensions of the array.  OBJ0 ... should be
+     (* K0 ... K{J-1}) elements to be stored in the new array in
+     row-major order.
+
+     `Array' returns a newly allocated array of type PROTOTYPE whose
+     elements contain the given OBJ0 ... arguments.
+
+I can think of no Scheme precedent for having a variable number of
+(dimension) arguments followed by a variable number of other
+arguments; but it is well-defined.  The lack of list or other
+structure to organize the obj0 .. arguments would probably make the
+ARRAY function difficult to use for all but the smallest arrays, but
+it could be useful for those.  The prototype functions already
+generate one and zero element arrays.
+
+SCM has a function list-&gt;uniform-array which organizes the elements
+using lists (which should be renamed list-&gt;array):
+
+ - Function: list-&gt;array rank prot lst
+     Returns a uniform array of the type indicated by prototype PROT
+     with elements the same as those of LST.  Elements must be of the
+     appropriate type, no coercions are done.
+
+     In, for example, the case of a rank-2 array, LST must be a list of
+     lists, all of the same length.  The length of LST will be the
+     first dimension of the result array, and the length of each
+     element the second dimension.
+
+     If RANK is zero, LST, which need not be a list, is the single
+     element of the returned array.
+
+Which of these approaches makes the most sense?
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00015" href="msg00015.html">Re: SRFI-47 -- types and declarations.</a></strong>
+<ul><li><em>From:</em> Taylor Campbell</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00019.html">Re: SRFI-47 -- types and declarations.</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00021.html">Re: SRFI-47 -- types and declarations.</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00015.html">Re: SRFI-47 -- types and declarations.</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00019.html">Re: SRFI-47 -- types and declarations.</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00020"><strong>Date</strong></a></li>
+<li><a href="threads.html#00020"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

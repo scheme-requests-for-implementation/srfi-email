@@ -1,0 +1,187 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Exactness (was Re: My comments) -->
+<!--X-From-R13: orne <orneNfbavp.arg> -->
+<!--X-Date: Thu, 20 Oct 2005 03:50:20 +0200 (MST) -->
+<!--X-Message-Id: Pine.LNX.4.58.0510191726410.13819@bolt.sonic.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 87wtk9qro1.fsf@qrnik.zagroda -->
+<!--X-Reference: 20051019191720.GA24703@mimir.szonye.com -->
+<!--X-Reference: 87fyqxb6i6.fsf@qrnik.zagroda -->
+<!--X-Reference: 20051019220800.GF24703@mimir.szonye.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Exactness (was Re: My comments)</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00067.html">Date Prev</a>][<a href="msg00069.html">Date Next</a>][<a href="msg00067.html">Thread Prev</a>][<a href="msg00069.html">Thread Next</a>][<a href="maillist.html#00068">Date Index</a>][<a href="threads.html#00068">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Exactness (was Re: My comments)</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &quot;Bradd W. Szonye&quot; &lt;<a href="mailto:bradd%2Bsrfi@DOMAIN.HIDDEN">bradd+srfi@xxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Exactness (was Re: My comments)</li>
+<li><em>From</em>: bear &lt;<a href="mailto:bear@DOMAIN.HIDDEN">bear@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 19 Oct 2005 18:50:14 -0700 (PDT)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20051019220800.GF24703@DOMAIN.HIDDEN">20051019220800.GF24703@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:87wtk9qro1.fsf@DOMAIN.HIDDEN">87wtk9qro1.fsf@xxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20051019191720.GA24703@DOMAIN.HIDDEN">20051019191720.GA24703@xxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:87fyqxb6i6.fsf@DOMAIN.HIDDEN">87fyqxb6i6.fsf@xxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20051019220800.GF24703@DOMAIN.HIDDEN">20051019220800.GF24703@xxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+It seems to me that there are serious questions about the utility
+and appropriateness of the exact/inexact distinction.
+
+As formulated in R5RS, it is consistent across numbers and numeric
+operations.  The consistency breaks down though, around the edges of
+that domain, where inexactness would cross into other types (inexact
+booleans, inexact flow of control, etc).  And the standard, with an
+eye toward permitting certain shortcuts, doesn't really require a
+fully consistent implementation.
+
+The problem with exactness and inexactness, it appears, is that
+many implementors don't feel that it's worth implementing fully.
+And they have a point, I guess, in that a full implementation of
+it (fully orthogonal to type information) adds overhead to each
+and every fundamental mathematical function.  If you implement
+it fully, it may be true that math in general can only happen,
+at best, at about 2/3 the speed of math in other languages, and
+a lot of implementors see that as an unacceptable cost.
+
+So they usually make the dodges and hacks that the standard fails
+to forbid, specifically making exactness correspond to representation
+type information rather than being orthogonal to type. That fulfills
+the letter of the requirements, but does not correspond to the most
+consistent interpretation of the standard.
+
+And a lot of people want to &quot;fix&quot; the standard by canonizing this
+less-consistent view, or some other less-consistent view, and I've
+listened to the arguments of several people now who want to treat
+exactness specifically as representation type information in
+various ways.
+
+My response is this; if you don't want to *allow* exactness
+that's orthogonal to representation type, I don't think there's
+any purpose in having exactness at all.  R5RS *allows* the
+exactness-as-type interpretation, but it's a dodge; exactness
+is clearly useless if that's all that it's *allowed* to be.
+
+If you mean to use type predicates instead of exactness predicates,
+just use them.  If you want to have functions use exactness as type
+signatures and balk at the idea that people should be allowed to
+report exactness whenever they can mathematically prove it because
+it messes up your Hinley-Miller type inferencing and requires you
+to dispatch on the &quot;return type&quot;, you didn't want exactness in the
+first place; you wanted type information (and incidentally, you
+are reading Hinley-Miller in too restrictive a way; your problem
+is equally solved by treating the exactnesses as additional
+arguments and an additional return value).
+
+Furthermore, treating exactness as type information actively
+messes up people who are trying to use it as exactness; having
+different numeric ranges and precisions for example, for exact
+and inexact numbers leads to all kinds of inconsistencies and
+problems.  For example, when you have A and B such that A &lt; B
+but both are above the range of representable inexact numbers,
+and you use infinities rather than error objects, you have this
+situation:
+
+(&lt; (* 3 A) B) =&gt; #t
+(&gt; (exact-&gt;inexact A) B) =&gt; #t
+
+And although the standard *allows* it, mathematically, that's just
+ridiculous, on a par with having all inexact numbers equal to -19 or
+something.
+
+And the question comes down to this; in view of the widespread
+rebellion against fully implementing exactness among scheme system
+authors, and the harm caused by conflating exactness with type,
+should exactness remain part of the standard?  Because if we
+explicitly make it into mere representation type information, we
+really should get rid of it entirely because it then misleads and
+confuses by implying functionality that isn't there.
+
+Or maybe we should make the whole concept optional, and explictly
+forbid any exact/inexact distinctions at all except in implementations
+where it really *is* information orthogonal to representation type.
+
+I'd like to see more full implementations of exactness, but I'm
+not going to recommend that the standard actually require it; this
+appears to be a situation where making a demand that very few
+would bother to implement would just undermine the authority of
+the standard.
+
+					Bear
+
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00069" href="msg00069.html">Re: Exactness</a></strong>
+<ul><li><em>From:</em> Thomas Bushnell BSG</li></ul></li>
+<li><strong><a name="00070" href="msg00070.html">Re: Exactness</a></strong>
+<ul><li><em>From:</em> Marcin 'Qrczak' Kowalczyk</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00055" href="msg00055.html">My comments</a></strong>
+<ul><li><em>From:</em> Marcin 'Qrczak' Kowalczyk</li></ul></li>
+<li><strong><a name="00056" href="msg00056.html">Re: My comments</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+<li><strong><a name="00062" href="msg00062.html">Re: My comments</a></strong>
+<ul><li><em>From:</em> Marcin 'Qrczak' Kowalczyk</li></ul></li>
+<li><strong><a name="00067" href="msg00067.html">Re: My comments</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00067.html">Re: My comments</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00069.html">Re: Exactness</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00067.html">Re: My comments</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00069.html">Re: Exactness</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00068"><strong>Date</strong></a></li>
+<li><a href="threads.html#00068"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

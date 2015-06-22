@@ -1,0 +1,136 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: closing reader / writer -->
+<!--X-From-R13: Euveb Ynjnv <fuvebNynin.arg> -->
+<!--X-Date: Tue,  7 Jun 2005 12:33:34 +0200 (DFT) -->
+<!--X-Message-Id: 20050607.003322.653218325.shiro@lava.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20050524.142801.434463465.shiro@lava.net -->
+<!--X-Reference: y9lbr6jcye4.fsf@sams.informatik.uni&#45;tuebingen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: closing reader / writer</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00013.html">Date Prev</a>][<a href="msg00015.html">Date Next</a>][<a href="msg00011.html">Thread Prev</a>][<a href="msg00018.html">Thread Next</a>][<a href="maillist.html#00014">Date Index</a>][<a href="threads.html#00014">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: closing reader / writer</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-68@DOMAIN.HIDDEN">srfi-68@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: closing reader / writer</li>
+<li><em>From</em>: Shiro Kawai &lt;<a href="mailto:shiro@DOMAIN.HIDDEN">shiro@xxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 07 Jun 2005 00:33:22 -1000 (HST)</li>
+<li><em>Cc</em>: <a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-68@DOMAIN.HIDDEN">srfi-68@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:y9lbr6jcye4.fsf@DOMAIN.HIDDEN">y9lbr6jcye4.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:20050524.142801.434463465.shiro@DOMAIN.HIDDEN">20050524.142801.434463465.shiro@xxxxxxxx</a>&gt;	&lt;<a href="mailto:y9lbr6jcye4.fsf@DOMAIN.HIDDEN">y9lbr6jcye4.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>From: Michael Sperber &lt;sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx&gt;
+Subject: Re: closing reader / writer
+Date: Mon, 06 Jun 2005 17:12:35 +0200
+
+&gt; &gt; It may also be good to note that the 'close' procedure passed to
+&gt; &gt; make-simple-reader/make-simple-writer is called only synchronously,
+&gt; &gt; when reader-close/write-close procedure is called.
+&gt; 
+&gt; I'm not sure what this would mean.  With &quot;synchronously,&quot; do you mean
+&gt; to prevent other processes in the system, such as GC or finalization?
+&gt; You seem to be saying that below ...
+
+Yes, I meant the finalization issue.  
+
+What I can do in the 'close' procedure is affected so much by
+whether 'close' procedure may be called from finalizers or not.
+Because of the asynchronous nature of the finalizers, 
+when the finalizer is involved, I need to write 'close' procedure
+with care as if I'm writing preemptive multithreaded program,
+even if the program itself is single threaded.  
+
+Finalizers are handy and sometimes inevitable, so I don't think
+it should be absolutely avoided.  But if you mean to allow 'close'
+procedures to be called from finalizers, I think it should be
+noted in the srfi spec.  Otherwise, a library that naively assumed
+only synchronous call of 'close' procedure may fail randomly on
+the implementation that may call it asynchronously.
+
+The situation is similar to MT-safeness.   The library can be
+MT-unsafe, and it is OK, as far as the authors and the users
+know it.
+
+Most Scheme implementations release the system resources when
+a port is GC-ed, but it doesn't raise this issue since they are
+handled atomically &quot;under the hood&quot;.   The Scheme program can
+rely on the implementation that serializes operations to its
+internal resource pools.   Once you open up this low-level stuff
+to Scheme world, the problem becomes visible.
+
+If you do allow asynchronous call, maybe it is nice to provide
+a way for the 'close' procedure to know whether it is called
+synchronously or asynchoronously.
+
+--shiro
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00018" href="msg00018.html">Re: closing reader / writer</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00010" href="msg00010.html">closing reader / writer</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+<li><strong><a name="00011" href="msg00011.html">Re: closing reader / writer</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00013.html">Re: some comments on minor naming matters</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00015.html">Re: finishing output translating stream</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00011.html">Re: closing reader / writer</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00018.html">Re: closing reader / writer</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00014"><strong>Date</strong></a></li>
+<li><a href="threads.html#00014"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

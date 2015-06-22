@@ -1,0 +1,167 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: API conflicts -->
+<!--X-From-R13: Fnlybe Qnzcoryy <pnzcoryyNriqri.ngu.pk> -->
+<!--X-Date: Thu, 30 Oct 2003 00:58:15 +0100 (NFT) -->
+<!--X-Message-Id: BAFDEB4C&#45;0A6B&#45;11D8&#45;8E6E&#45;000A95CCCEE4@evdev.ath.cx -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20031029.122512.653227831.shiro@lava.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: API conflicts</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00293.html">Date Prev</a>][<a href="msg00295.html">Date Next</a>][<a href="msg00290.html">Thread Prev</a>][<a href="msg00288.html">Thread Next</a>][<a href="maillist.html#00294">Date Index</a>][<a href="threads.html#00294">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: API conflicts</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: API conflicts</li>
+<li><em>From</em>: Taylor Campbell &lt;<a href="mailto:campbell@DOMAIN.HIDDEN">campbell@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 29 Oct 2003 18:58:02 -0500</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20031029.122512.653227831.shiro@DOMAIN.HIDDEN">20031029.122512.653227831.shiro@xxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+
+On Wednesday, Oct 29, 2003, at 17:25 US/Eastern, Shiro Kawai wrote:
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Personally I strongly wish the remove/delete issue would be
+solved by renaming them to something more descriptive.
+(e.g. remove-key, remove-value, etc.)
+Among various Scheme implementations, we have several pairs
+of words which are used arbitrarily --- create/make, ref/get,
+set/put, etc.  It is a lot of annoyance when you use several
+implementations.   Remove/delete is another pair, but srfi-1,
+13 and 14 have set a consistent usage.  I wish other srfi
+would follow it.
+
+Certainly, as Taylor mentioned in
+&lt;6F15F131-0A58-11D8-8E6E-000A95CCCEE4@xxxxxxxxxxxx&gt;,
+their name themselves don't conflict to each other.
+However, I think one point of this srfi is to give a consistent
+naming so that people can use large number of similar APIs
+easily---in this respect, it is worth to extend that scope to
+other srfis, so that people using multiple srfis get benefit of
+consistent naming.
+</pre></blockquote><pre style="margin: 0em;">
+
+You make a good point.  How about this:
+
+*-DELETE[-whatever] deletes individual values.
+*-DELETE-AT deletes values at given indices.
+(*-remove PRED? COLLECTION) does like SRFI 1 does.
+
+And also this brings me to another point: argument order (yes, I know
+this has been mentioned before, but I don't remember what the response
+was, if there was any).  I have most often seen, and always followed,
+this convention:
+
+Datastructure operations take the datastructure as the _first_
+argument.  Those that operate on multiple datastructures are usually
+higher-order operations anyways, and so a different rule applies to
+them.  There are a couple of exceptions, e.g. {VECTOR,STRING}-COPY!,
+but that's the only one I can think of off of the top of my head.
+
+Examples of these: TAKE, DROP, *-REF, *-SET!, *-GET, et cetera
+
+Higher-order datastructure operations whose function argument is
+optional follow the same convention.
+
+Examples of these: DELETE, DELETE-DUPLICATES, et cetera
+
+Failure continuation arguments are _last_, without any exception that
+I can think of.
+
+Higher-order datastructure operations whose function argument is _not_
+optional take the function _first_.
+
+Examples of these: MAP, FOR-EACH, FOLD, [the same operations on
+strings and vectors from SRFIs 13 and 43], FILTER, et cetera.
+
+There are some disagreements with this in SRFI 44: the fold
+operations and the dictionary updating operation are the two most
+notable ones I can think of.  Presumably these are due to the fact
+that many dispatching systems work only on the first argument, but
+that doesn't change the fact that it breaks these argument order
+conventions...
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+And now I'm worried about the silent incompatibility of list=,
+regarding how elt= is called.  srfi-1 specifies it precisely,
+but srfi-44 is vague about it.  It may lead to a situation that
+two funcitons, same name and same signature, almost always works
+identically except maybe some rare cases.   I think srfi-1 made
+an effort to specify it in such a precision that there's little
+room of unpredictable behavior.  This srfi can follow it, I guess.
+</pre></blockquote><pre style="margin: 0em;">
+
+Yes, I agree with this: it would be good to specify that #T is
+automatically returned for 0 and 1 collection arguments; on two
+collections, ELT= is applied to consecutive elements of each; and on
+more than two collections, *= is folded across the collections.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+--shiro
+
+
+</pre></blockquote><pre style="margin: 0em;">
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00289" href="msg00289.html">Re: API conflicts</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00293.html">Re: Fundamental design flaws</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00295.html">Re: API conflicts</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00290.html">Re: API conflicts</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00288.html">Re: API conflicts (Was: Re: Reasons for withdrawal)</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00294"><strong>Date</strong></a></li>
+<li><a href="threads.html#00294"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

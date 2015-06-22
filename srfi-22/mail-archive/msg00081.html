@@ -1,0 +1,192 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: SRFI 22 finished? -->
+<!--X-From-R13: [nep Trryrl <srryrlNWDA.G[bagerny.QO> -->
+<!--X-Date: Thu, 17 May 2001 13:34:40 &#45;0500 (CDT) -->
+<!--X-Message-Id: 200105171834.f4HIYd801863@dino00.IRO.UMontreal.CA -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: y9leltobdey.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: 200105171531.f4HFVSP25263@trex.IRO.UMontreal.CA -->
+<!--X-Reference: y9lr8xo6l2b.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: SRFI 22 finished?</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00080.html">Date Prev</a>][<a href="msg00082.html">Date Next</a>][<a href="msg00078.html">Thread Prev</a>][<a href="msg00079.html">Thread Next</a>][<a href="maillist.html#00081">Date Index</a>][<a href="threads.html#00081">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: SRFI 22 finished?</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: SRFI 22 finished?</li>
+<li><em>From</em>: Marc Feeley &lt;<a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 17 May 2001 14:34:39 -0400</li>
+<li><em>Cc</em>: <a href="mailto:srfi-22@DOMAIN.HIDDEN">srfi-22@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:y9lr8xo6l2b.fsf@DOMAIN.HIDDEN">y9lr8xo6l2b.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	(<a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>)</li>
+<li><em>References</em>: &lt;<a href="mailto:y9leltobdey.fsf@DOMAIN.HIDDEN">y9leltobdey.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:200105171531.f4HFVSP25263@DOMAIN.HIDDEN">200105171531.f4HFVSP25263@xxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:y9lr8xo6l2b.fsf@DOMAIN.HIDDEN">y9lr8xo6l2b.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; Marc&gt; Finally, I don't understand the sudden change in the way parameters
+&gt; Marc&gt; are passed to &quot;main&quot;.
+&gt; 
+&gt; What change?  It was this way since day 1 of SRFI 22.
+
+Sorry... I just assumed it from some of the messages I read.
+
+&gt; Marc&gt; It seems much more elegant to define &quot;main&quot; as
+&gt; Marc&gt; a procedure with as many arguments as are needed by the script, which
+&gt; Marc&gt; allows the Scheme interpreter to very naturally catch wrong number of
+&gt; Marc&gt; argument errors, and the code for scripts expecting a fixed number of
+&gt; Marc&gt; arguments is more elegant (they don't have to extract the arguments
+&gt; Marc&gt; from a list). 
+&gt; 
+&gt; But it would require the SRFI to specify what would happen in this
+&gt; place.  The vanilla reaction to this by the Scheme system is very
+&gt; probably not the one you want when someone calls the script with a
+&gt; wrong number of arguments.
+
+Really?  I find that this gives the Scheme implementation a chance to
+(automatically) give a message that is understandable to the user of
+the script.  For example if &quot;main&quot; is
+
+(define (main x y)
+  (write (+ (string-&gt;number x)
+            (string-&gt;number y)))
+  0)
+
+and you call the script with a single argument, Gambit will display
+
+*** ERROR -- Wrong number of arguments passed to procedure
+(main &quot;123&quot;)
+
+Surely other systems will give a similar error message.
+However, if main receives all the arguments in a list, you would write
+
+(define (main arguments)
+  (write (+ (string-&gt;number (car arguments))
+            (string-&gt;number (cadr arguments))))
+  0)
+
+and the error would me much more obscure:
+
+*** ERROR IN &quot;script.scm&quot;@6.29 -- PAIR expected
+(cadr '(&quot;123&quot;))
+
+Note that if you want to display a more friendly error message you still
+can write:
+
+(define (main . arguments)
+  (if (= (length arguments) 2)
+      (begin
+       (write (+ (string-&gt;number (car arguments))
+                 (string-&gt;number (cadr arguments))))
+       0)
+      (begin
+       (display &quot;usage: add first-number second-number\n&quot;)
+       1)))
+
+&gt; Marc&gt; Scripts that handle variable number of arguments (such
+&gt; Marc&gt; as your example) can be written with a rest parameter:
+&gt; 
+&gt; Marc&gt; (define (main . arguments)
+&gt; Marc&gt;   (for-each display-file arguments)
+&gt; Marc&gt;   0)
+&gt; 
+&gt; And vice versa:
+&gt; 
+&gt; (define (main args)
+&gt;   (apply marc-feeley-main args))
+&gt; 
+&gt; Why is this important?
+
+Elegance.  The choice is between
+
+(define (main arguments) ; fixed number of arguments
+  (apply
+   (lambda (x y) ; x and y would be meaningfull names in a realistic example...
+     (write (+ (string-&gt;number x)
+               (string-&gt;number y)))
+     0)
+   arguments))
+
+(define (main arguments) ; variable number of arguments
+  (for-each display arguments)
+  0)
+
+and in the approach I propose:
+
+(define (main x y) ; fixed number of arguments
+  (write (+ (string-&gt;number x)
+            (string-&gt;number y)))
+  0)
+
+(define (main . arguments) ; variable number of arguments
+  (for-each display arguments)
+  0)
+
+Using the approach I propose, the fixed number of arguments case is
+concise and natural and the variable number of arguments case needs an
+extra dot, which is a small price to pay.
+
+Marc
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00076" href="msg00076.html">SRFI 22 finished?</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr. Preprocessor]</li></ul></li>
+<li><strong><a name="00077" href="msg00077.html">Re: SRFI 22 finished?</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+<li><strong><a name="00078" href="msg00078.html">Re: SRFI 22 finished?</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr. Preprocessor]</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00080.html">Re: SRFI 22 finished?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00082.html">getenv</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00078.html">Re: SRFI 22 finished?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00079.html">Re: SRFI 22 finished?</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00081"><strong>Date</strong></a></li>
+<li><a href="threads.html#00081"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

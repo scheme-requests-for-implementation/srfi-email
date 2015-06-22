@@ -1,0 +1,152 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Eq? issue -->
+<!--X-From-R13: [vpunry Ecreore <fcreoreNvasbezngvx.hav&#45;ghrovatra.qr> -->
+<!--X-Date: Thu,  5 Jan 2006 19:47:07 +0100 (MET) -->
+<!--X-Message-Id: y9lbqyqy0kd.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: Pine.GSO.4.60.0601040239320.562@now.het.brown.edu -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Eq? issue</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00097.html">Date Prev</a>][<a href="msg00099.html">Date Next</a>][<a href="msg00092.html">Thread Prev</a>][<a href="msg00100.html">Thread Next</a>][<a href="maillist.html#00098">Date Index</a>][<a href="threads.html#00098">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Eq? issue</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Andre van Tonder &lt;<a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Eq? issue</li>
+<li><em>From</em>: Michael Sperber &lt;<a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 05 Jan 2006 19:46:58 +0100</li>
+<li><em>Cc</em>: <a href="mailto:srfi-76@DOMAIN.HIDDEN">srfi-76@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-76@DOMAIN.HIDDEN">srfi-76@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:Pine.GSO.4.60.0601040239320.562@DOMAIN.HIDDEN">Pine.GSO.4.60.0601040239320.562@xxxxxxxxxxxxxxxxx</a>&gt; (Andre van	Tonder's message of &quot;Wed, 4 Jan 2006 02:44:14 -0500 (EST)&quot;)</li>
+<li><em>References</em>: &lt;<a href="mailto:Pine.GSO.4.60.0601040239320.562@DOMAIN.HIDDEN">Pine.GSO.4.60.0601040239320.562@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Gnus/5.110003 (No Gnus v0.3) XEmacs/21.5-b24 (darwin)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+Andre van Tonder &lt;andre@xxxxxxxxxxxxxxxxx&gt; writes:
+
+&gt; I have a few questions regarding the eq?-issue:
+&gt;
+&gt; - Can one construct/traverse an eq?-cyclic or eqv?-cyclic graph of
+&gt;   immutable record nodes?
+&gt;
+&gt;   According to the spec, it seems that an eq? cyclic graph of
+&gt;   immutable nodes cannot be constructed, 
+
+Correct.
+
+&gt;   so it would have to be eqv?-cyclic, but the spec does not
+&gt;   guarantee that
+&gt;
+&gt;    (let ((f (lambda () (construct ...))))
+&gt;      (eqv? (f) (f))) =&gt; #f
+&gt;
+&gt;   for /immutable/ records, which I think would be required for
+&gt;   such cyclic graphs.
+
+I'm not sure what exactly you mean here---do you mean that
+EQV?-*distinctness* would be required to traverse the graph in finite
+time?
+
+&gt; - I would not like to artificially declare an immutable record as
+&gt;   mutable just so I can use it in a cyclic graph.
+
+That's a very good point (one that Richard Kelsey had also reminded me
+of earlier).  The problem is, of course, that mutability happens at
+the type level rather than the object level.  (A general problem with
+this class of record systems---too much stuff happens at the type
+level.)
+
+If you look in the reference implementation, you'll see that the lower
+layer on top of which records are constructed (&quot;vector types&quot;) doesn't
+have this problem---it associates mutability with objects, and allows
+an object to be made immutable after creation.
+
+&gt; - A problem with treating mutable and immutable differently is that
+&gt;   mutable might easily become immutable in the process of development
+&gt;   if a field is dropped or changed - suddenly a program may break in
+&gt;   places that are difficut to debug.
+
+&gt; - Another problem is that programs that use eq?/eqv? incorrectly will
+&gt;   mostly work on some Schemes, only to fail, and then mysteriously
+&gt;   depending on compiler switches and type inference controlling unboxing,
+&gt;   on others.
+
+Yes; we debated that for quite a while.  (Of course, there's an issue
+bullet on it.)  What we're doing is mainly following the tradition of
+R5RS, which allows the same kind of unboxing.
+
+That unboxing should be supported at *some* level language seems quite
+clear to me, as this enables setting up certain kinds of abstraction
+barriers.  That it should happen at the level of records is less clear
+to me, but we don't have any other place currently.
+
+-- 
+Cheers =8-} Mike
+Friede, V&#xF6;lkerverst&#xE4;ndigung und &#xFC;berhaupt blabla
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00100" href="msg00100.html">Re: Eq? issue</a></strong>
+<ul><li><em>From:</em> Andre van Tonder</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00092" href="msg00092.html">Eq? issue</a></strong>
+<ul><li><em>From:</em> Andre van Tonder</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00097.html">Re: Dead link to Pavel Curtis's 1989 proposal</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00099.html">Re: Dead link to Pavel Curtis's 1989 proposal</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00092.html">Eq? issue</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00100.html">Re: Eq? issue</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00098"><strong>Date</strong></a></li>
+<li><a href="threads.html#00098"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

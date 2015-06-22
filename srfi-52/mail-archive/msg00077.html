@@ -1,0 +1,197 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: RESET     [was Re: Encodings] -->
+<!--X-From-R13: orne <orneNfbavp.arg> -->
+<!--X-Date: Sat, 14 Feb 2004 19:02:06 +0100 (NFT) -->
+<!--X-Message-Id: Pine.LNX.4.58.0402140921460.3589@bolt.sonic.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20040213175508.GA16778@ogre.szonye.com -->
+<!--X-Reference: BC52849E.A528%schlie@comcast.net -->
+<!--X-Reference: 20040213185332.GC16778@ogre.szonye.com -->
+<!--X-Reference: 200402140827.18633.Ken.Dickey@allvantage.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: RESET     [was Re: Encodings]</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00076.html">Date Prev</a>][<a href="msg00078.html">Date Next</a>][<a href="msg00076.html">Thread Prev</a>][<a href="msg00078.html">Thread Next</a>][<a href="maillist.html#00077">Date Index</a>][<a href="threads.html#00077">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: RESET     [was Re: Encodings]</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Ken Dickey &lt;<a href="mailto:Ken.Dickey@DOMAIN.HIDDEN">Ken.Dickey@xxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: RESET     [was Re: Encodings]</li>
+<li><em>From</em>: bear &lt;<a href="mailto:bear@DOMAIN.HIDDEN">bear@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 14 Feb 2004 10:01:59 -0800 (PST)</li>
+<li><em>Cc</em>: &quot;Bradd W. Szonye&quot; &lt;<a href="mailto:bradd%2Bsrfi@DOMAIN.HIDDEN">bradd+srfi@xxxxxxxxxx</a>&gt;,	<a href="mailto:srfi-52@DOMAIN.HIDDEN">srfi-52@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-52@DOMAIN.HIDDEN">srfi-52@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:200402140827.18633.Ken.Dickey@DOMAIN.HIDDEN">200402140827.18633.Ken.Dickey@xxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:20040213175508.GA16778@DOMAIN.HIDDEN">20040213175508.GA16778@xxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:BC52849E.A528%25schlie@DOMAIN.HIDDEN">BC52849E.A528%schlie@xxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20040213185332.GC16778@DOMAIN.HIDDEN">20040213185332.GC16778@xxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:200402140827.18633.Ken.Dickey@DOMAIN.HIDDEN">200402140827.18633.Ken.Dickey@xxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+On Sat, 14 Feb 2004, Ken Dickey wrote:
+
+&gt; A Scheme implementation which properly reads the two files should
+&gt; end up with the identifier occurrences [stored in different
+&gt; encodings] denoted above represented by symbols which are eq?  (NB:
+&gt; _not_ eqv?) to each other.  If not, I term this &quot;broken&quot;.
+
+Yup.  Agreed.  Conforming unicode systems read different encodings
+(sequences of bytes) or canonicalizations (sequences of codepoints)
+and recognize them as being the _same_ string (sequence of abstract
+characters).  This is the strongest single reason why I decided for my
+own implementation that The Right Thing was to draw boundaries for
+character operations at the character level rather than the codepoint
+level.  Unicode forces the abstraction of &quot;character&quot; to a level
+higher than representation or encoding, but each file is still a
+proper sequence of characters,  and each identifier that must be
+equated is the same sequence of characters, even if not the same
+sequence of codepoints.
+
+So if in an NFD file, I get a sequence of codepoints that goes R, e,
+combining accent grave, s, u, m, e, combining accent egu, and in an
+NFC file I read a sequence of codepoints that's R, e-with-grave, s, u,
+m, e-with-egu, then as a conforming implementation of unicode I *MUST*
+recognize that these are the same sequence of characters and treat
+them as the same sequence of characters.  In the case of scheme, that
+means my compiler must understand that they are the same identifier.
+
+
+&gt;[2]
+&gt;
+&gt;[In the absence of reflection] one should be able to consistently replace all
+&gt;occurrences of an identifier in the same scope without changing the meaning/
+&gt;behavior of a program.  If not, I term the situation &quot;broken&quot;.
+
+I'll say &quot;right&quot;, but as you note above, there is always the
+possibility of reflection, since scheme has symbol-&gt;string,
+string-&gt;symbol, and eval.  Programs that don't use them will not,
+generally, need to agree on a syntax for unicode identifiers other
+than a simple escape mechanism that allows them to be written in
+ascii.
+
+&gt;[3]
+&gt;
+&gt; There are many concepts which come in paired/binary parts: on/off, up/down, et
+&gt; cetera, which have no meaning without both parts.
+&gt; [...]
+&gt; So if a glyph/character does not have a case variant, considering it to be
+&gt; lower case makes no logical sense.  I view this as an abuse of terminology.
+&gt; Being outside of normal logic, I term this &quot;bizarre&quot; and if pressed, probably
+&gt; &quot;broken&quot; as well.
+
+This happens in one case, (eszett) for a singular reason; the uppercase
+form of this *ONE* lowercase letter is *TWO* uppercase letters.
+
+There are many other instances in Unicode in which a character's
+lowercase and uppercase form must be represented by a different number
+of codepoints, and if you regard codepoints as characters these
+instances appear to have the same problem (isolated lowercase forms or
+isolated uppercase forms).
+
+&gt; So in all this discussion of multiple canonical forms (another
+&gt; misuse of terminology, IMHO) multiple normal forms, et cetera, I am
+&gt; looking for a description of how to keep [1] and [2] from being
+&gt; broken.
+
+The set of Unicode codepoints is not a character set that has these
+properties.  The set of characters that can be represented by
+sequences of these codepoints is a character set that has these
+properties.
+
+&gt; If satisfying the Unicode Standard means breaking [1], then I say
+&gt; &quot;Don't do that!&quot;.
+
+No.  Satisfying Unicode means, precisely, *NOT* breaking [1].
+Regardless of the encoding of the file (sequences of bytes or
+codepoints) Unicode requires the system to recognize that these
+identifiers are in fact the same sequences of characters.
+
+The multiple &quot;canonicalizations&quot; that people are worried about
+(NFC/NFD versus NFKC/NFKD) can properly be regarded as two character
+sets.  The NFC/NFD character set includes many distinctions smaller
+than the NFKC/NFKD character set can make, and there is a &quot;standard&quot;
+mapping between the two character sets in which there are many
+instances in which NFC/NFD characters are distinct, but mapped to the
+&quot;same&quot; NFKC/NFKD character.
+
+For example, counting mathematical forms, there are about a dozen
+unaccented lowercase latin letter A's in the NFC/NFD character set,
+varying mainly by font.  All of these map to the same NFKC/NFKD
+character.  Inappropriately converting a file in which the
+distinctions are important is a lot like converting a text processor
+document in which different fonts are important to plain ascii - it
+loses information.  I think it is up to the implementor's discretion
+whether his scheme regards its &quot;character set&quot; as the NFKC/NFKD
+character set or the NFC/NFD character set.
+
+Both character sets are, technically, infinite, but the NFKC/NFKD
+character set is a proper subset of the NFC/NFD character set.
+
+Hope this helps,
+
+				Bear
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00044" href="msg00044.html">Re: Encodings.</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+<li><strong><a name="00048" href="msg00048.html">Re: Encodings.</a></strong>
+<ul><li><em>From:</em> Paul Schlie</li></ul></li>
+<li><strong><a name="00049" href="msg00049.html">Re: Encodings.</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+<li><strong><a name="00076" href="msg00076.html">RESET     [was Re: Encodings]</a></strong>
+<ul><li><em>From:</em> Ken Dickey</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00076.html">RESET     [was Re: Encodings]</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00078.html">Re: RESET     [was Re: Encodings]</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00076.html">RESET     [was Re: Encodings]</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00078.html">Re: RESET     [was Re: Encodings]</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00077"><strong>Date</strong></a></li>
+<li><a href="threads.html#00077"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,155 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Mixing characters and bytes -->
+<!--X-From-R13: Bre Pbguare <creNobguare.pbz> -->
+<!--X-Date: Wed, 24 Aug 2005 09:24:41 +0200 (MST) -->
+<!--X-Message-Id: 430C20B1.6010102@bothner.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Mixing characters and bytes</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00072.html">Date Prev</a>][<a href="msg00074.html">Date Next</a>][<a href="msg00107.html">Thread Prev</a>][<a href="msg00077.html">Thread Next</a>][<a href="maillist.html#00073">Date Index</a>][<a href="threads.html#00073">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Mixing characters and bytes</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-68@DOMAIN.HIDDEN">srfi-68@xxxxxxxxxxxxxxxxx</a>, <a href="mailto:srfi-56@DOMAIN.HIDDEN">srfi-56@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Mixing characters and bytes</li>
+<li><em>From</em>: Per Bothner &lt;<a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 24 Aug 2005 00:24:33 -0700</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-68@DOMAIN.HIDDEN">srfi-68@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Mozilla Thunderbird 1.0.6-1.1.fc4 (X11/20050720)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+There are a number of problems in mixing text and binary I/O on the
+same port objects which I won't repeat here.  On the other hand, doing
+so is sometimes useful.  Two use-cases:
+
+* A binary file will often contain strings.
+* A text file may be self-describing in terms of the
+encoding it uses.  In the case of XML files, see:
+<a  rel="nofollow" href="http://www.w3.org/TR/2004/REC-xml-20040204/#sec-guessing">http://www.w3.org/TR/2004/REC-xml-20040204/#sec-guessing</a>
+In that case you start out reading bytes until you can
+determine the encoding, at which point you switch to
+reading characters.
+
+Note that neither use-case is supported by SRFI-68 unless
+you stick to UTF-8 or go down into the stream level.
+
+So how can we specify mixed character/byte ports?
+
+First, if we allow both character and bytes on a port, then a strict
+byte-port vs character-port separation may be undesirable.  However,
+note that the use-cases above do not preclude such a separation.  The
+case of a binary file containing strings can be supported by routines
+to convert from a blob to a string and vice versa.  The second case
+can be handled by opening a text port on top of the &quot;rest of&quot; (tail)
+of a binary port.
+
+Second, some ports are text-only, in the sense that they cannot
+meaningfully support byte operations.  This includes the string ports
+specified by SRFI 6.
+
+For output ports we can handled mixed character/byte output fairly
+cleanly: Underlying the port is a pure byte port (sink).  The port can
+be in either character or byte mode, and starts out in byte mode.  In
+byte mode, byte data is written directly to the byte sink.  A
+character operation in byte mode creates a character buffer and
+switches to character mode.  Subsequence character operstions append
+to the character buffer.  A byte operation *or* closing the file while
+in character mode causes the characters in the character buffer to be
+encoded, and then written to the byte sink.
+
+In Java one can implement this model fairly efficiently using the
+standard character-to-byte encoding machinery.  It can handle
+arbitrary encodings using the standard Java machinery (and doesn't
+need to use the relatively new JDK 1.4 encoding apis).  It loses
+state when switching from text to binary and back again, but
+that's aminor issue: people don't do that very much, nor are
+stateful encoding very common anyway.
+
+Reading is trickier.  I can switch from reading bytes to reading
+characters fairly easily and robustly, assuming I have a function to
+create a character port from a byte port (as Java does).  But
+switching from reading characters to reading bytes is difficult
+because the byte-&gt;character decoder might have read ahead or have
+bytes buffered.  However, I don't think this is a big deal.  It is
+only a factor for binary files that contain strings.  In a sane
+format, the string will either be preceded by a count, or will be
+followed by a delimiter, such as a nul byte.  In that case you can
+extract the string as a byte array, and then convert it.
+(Conceptually, you can write it to a temporary file and then read that
+as a character file.)  Buffering isn't a problem if we're using a
+non-stateful encoding *and* we do our own decoding.  A suggestion:
+Switching from character mode to byte code is invalid unless the
+encoding was *explicitly* specified as UTF-8.  (It's not enough for
+the encoding to default to UTF-8, since in that case we might be using
+the system translator, which might be doing buffering.)
+
+Switching from one encoding to another is similar to switching
+from text to binary to text mode.
+
+I suggest a function:
+(set-port-encoding! port encoding-name)
+--
+	--Per Bothner
+per@xxxxxxxxxxx   <a  rel="nofollow" href="http://per.bothner.com/">http://per.bothner.com/</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00077" href="msg00077.html">Re: Mixing characters and bytes</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00072.html">Re: Specification vs. Implementation</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00074.html">Re: Specification vs. Implementation</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00107.html">Re: a few questions about file-options</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00077.html">Re: Mixing characters and bytes</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00073"><strong>Date</strong></a></li>
+<li><a href="threads.html#00073"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

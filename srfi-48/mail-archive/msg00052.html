@@ -1,0 +1,170 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Another alternative (Re: format strings are the Right Thing) -->
+<!--X-From-R13: Euveb Ynjnv <fuvebNynin.arg> -->
+<!--X-Date: Tue, 30 Dec 2003 00:55:47 +0100 (NFT) -->
+<!--X-Message-Id: 20031229.135532.660857170.shiro@lava.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 87r7yoe341.wl@strelka.synthcode.com -->
+<!--X-Reference: BC15F037.9C8B%schlie@comcast.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Another alternative (Re: format strings are the Right Thing)</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00051.html">Date Prev</a>][<a href="msg00053.html">Date Next</a>][<a href="msg00051.html">Thread Prev</a>][<a href="msg00053.html">Thread Next</a>][<a href="maillist.html#00052">Date Index</a>][<a href="threads.html#00052">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Another alternative (Re: format strings are the Right Thing)</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-48@DOMAIN.HIDDEN">srfi-48@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Another alternative (Re: format strings are the Right Thing)</li>
+<li><em>From</em>: Shiro Kawai &lt;<a href="mailto:shiro@DOMAIN.HIDDEN">shiro@xxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 29 Dec 2003 13:55:32 -1000 (HST)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-48@DOMAIN.HIDDEN">srfi-48@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:BC15F037.9C8B%25schlie@DOMAIN.HIDDEN">BC15F037.9C8B%schlie@xxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:87r7yoe341.wl@DOMAIN.HIDDEN">87r7yoe341.wl@xxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:BC15F037.9C8B%25schlie@DOMAIN.HIDDEN">BC15F037.9C8B%schlie@xxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>From: Paul Schlie &lt;schlie@xxxxxxxxxxx&gt;
+Subject: Re: format strings are the Right Thing
+Date: Mon, 29 Dec 2003 14:52:39 -0500
+
+&gt; Good:
+&gt; - it does likely satisfy most basic static text formatting requirements,
+&gt; and doesn't stress implementations/memory by potentially producing large
+&gt; intermediate strings; however there are other ways to skin the same cat.
+&gt; 
+&gt; Bad:
+&gt; - format control is disassociated from the data itself (as it's embedded
+&gt; within the the constant text field), thereby inhibiting the ability to
+&gt; compose formatted text, and/or variable formatting, as a function of control
+&gt; state or variable data at run time; which is likely it's true flaw.
+&gt; 
+&gt; Ugly:
+&gt; - a function that may return nothing or a string, dual semantics?
+&gt; - the constant text and formatted variable data parameters don't appear
+&gt; in the same linear order as the resulting composed text/string/stream;
+&gt; basically making the composition of the less ideal and likely error prone.
+&gt; 
+
+I got an impression that this format string discussion has similarity
+to the regexp pattern language---it defines a mini-language,
+it has long history tons of variations, it is concise in typical
+usage but can't be composed well and tend to produce an
+incomprehensible code when one try to push it too hard.
+And Olin Shivers showed a solution, SRE.
+
+Can't we do the similar thing here?
+I haven't thought it out well, but the basic idea is like this:
+
+[macro] sfmt &lt;SFMT-SPEC&gt; ...
+Generates a &quot;formatter&quot; closure.  Which takes output port and list of
+args, and emit the formatted output to the given port.
+
+SFMT-SPEC ::
+  &lt;string&gt;                ; literal string to be displayed.
+  (write [limit N])       ; take next arg and write it (up to N chars)
+  (display [limit N])     ; take next arg and display it (up to N chars)
+  (integer [width N][pad C]) ; format as integer
+  (float [width N][precision P] ...) ; format as flonum
+   ;; and so on ...
+  (cl-formattr &lt;string&gt;)  ; traditinal CL-style format string
+
+And the ability to insert evaluated expression in SFMT-SPEC will allow
+the programmer to insert other formatter closure into SFMT-SPEC template.
+(But I have an uneasy feeling about the &quot;implicit backquote&quot; feature
+of SRE... it looks like it make difficult to write a macro that
+generates SRE, though  I haven't used SRE extensively so I can't tell
+for sure).
+
+The legacy format can be defined easily, to support the legacy code:
+
+[procedure] format output-port string . args
+ == ((sfmt (cl-formatter string)) output-port args)
+
+[procedure] format string . args
+ == (let ((out (open-output-string)))
+      ((sfmt (cl-formatter string)) out args)
+      (get-output-string out))
+
+We could also expose low-level build-in formatter procedure,
+which could be similar to the one Paul showed.
+
+Issues:
+ - What should formatter closure return? - you might want to
+   switch behavior by whether the output is chopped by the length
+   limitation or not, for example.   Also the you need to know
+   how many args are consumed by other formatter procedure embedded
+   in SFMT-SPEC.
+ - How to handle reordering of the arguments?  Reordering makes
+   composition of formatters difficult, but is there a better
+   way to support internationalization of formatting templates?
+   (maybe a named argument instead of positional argument?)
+
+--shiro
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00053" href="msg00053.html">Re: Another alternative (Re: format strings are the Right Thing)</a></strong>
+<ul><li><em>From:</em> Paul Schlie</li></ul></li>
+<li><strong><a name="00057" href="msg00057.html">Re: Another alternative (Re: format strings are the Right Thing)</a></strong>
+<ul><li><em>From:</em> Alex Shinn</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00043" href="msg00043.html">format strings are the Right Thing</a></strong>
+<ul><li><em>From:</em> Alex Shinn</li></ul></li>
+<li><strong><a name="00051" href="msg00051.html">Re: format strings are the Right Thing</a></strong>
+<ul><li><em>From:</em> Paul Schlie</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00051.html">Re: format strings are the Right Thing</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00053.html">Re: Another alternative (Re: format strings are the Right Thing)</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00051.html">Re: format strings are the Right Thing</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00053.html">Re: Another alternative (Re: format strings are the Right Thing)</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00052"><strong>Date</strong></a></li>
+<li><a href="threads.html#00052"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

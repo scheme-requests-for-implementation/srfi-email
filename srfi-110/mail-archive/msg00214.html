@@ -1,0 +1,236 @@
+<!-- MHonArc v2.6.16 -->
+<!--X-Subject: Re: Updated SRFI&#45;110 posted. -->
+<!--X-From-R13: Xbua Qbjna <pbjnaNzrephel.ppvy.bet> -->
+<!--X-Date: Tue,  6 Aug 2013 16:46:13 +0200 (MST) -->
+<!--X-Message-Id: 20130806144611.GA30783@mercury.ccil.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: E1V6g36&#45;0004Gh&#45;Pw@rmm6prod02.runbox.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Updated SRFI-110 posted.</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00213.html">Date Prev</a>][<a href="msg00215.html">Date Next</a>][<a href="msg00213.html">Thread Prev</a>][<a href="msg00215.html">Thread Next</a>][<a href="maillist.html#00214">Date Index</a>][<a href="threads.html#00214">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Updated SRFI-110 posted.</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: srfi-110 &lt;<a href="mailto:srfi-110@DOMAIN.HIDDEN">srfi-110@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Updated SRFI-110 posted.</li>
+<li><em>From</em>: John Cowan &lt;<a href="mailto:cowan@DOMAIN.HIDDEN">cowan@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 6 Aug 2013 10:46:11 -0400</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-110@DOMAIN.HIDDEN">srfi-110@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:E1V6g36-0004Gh-Pw@DOMAIN.HIDDEN">E1V6g36-0004Gh-Pw@xxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:E1V6g36-0004Gh-Pw@DOMAIN.HIDDEN">E1V6g36-0004Gh-Pw@xxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Sender</em>: John Cowan &lt;<a href="mailto:cowan@DOMAIN.HIDDEN">cowan@xxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mutt/1.5.20 (2009-06-14)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>David A. Wheeler scripsit:
+
+&gt; Thoughts?
+
+Below is a version with no Java cruft, which I find more readable.
+
+// Production &quot;collecting_content&quot; returns a collecting list's contents.
+// Precondition: After collecting start and horizontal spaces.
+// Postcondition: Consumed the matching COLLECTING_END.
+// FF  formfeed (\f aka \u000c), VT  vertical tab (\v aka \u000b)
+
+collecting_content
+  : it_expr collecting_content
+  | comment_eol    collecting_content
+  | (FF | VT)+ EOL collecting_content
+  | COLLECTING_END;
+
+collecting_list
+  : COLLECTING hs collecting_content hs;
+
+// Process line after &quot;. hspace+&quot; sequence.  Does not go past current line.
+
+post_period
+  : skippable post_period
+    | n_expr hs skippable* (n_expr error)?
+    | collecting_list skippable* (n_expr error)?
+    | /*empty*/;
+
+// Production &quot;line_exprs&quot; reads the 1+ n-expressions on one line; it will
+// return the list of n-expressions on the line.  If there is one n-expression
+// on the line, it returns a list of exactly one item.
+// Precondition: At beginning of line after indent
+// Postcondition: At unconsumed EOL
+
+line_exprs
+  : PERIOD /* Leading &quot;.&quot;: escape following datum like an n-expression. */
+      (hspace+ post_period
+       | /*empty*/)
+  | collecting_list
+      (rest_of_line   
+       | /*empty*/)
+  | n_expr_first /* Only match n_expr_first */
+      ((hspace+ (rest_of_line 
+                 | /*empty*/))
+       | /*empty*/);
+
+// Production &quot;rest_of_line&quot; reads the rest of the expressions on a line,
+// after the first expression of the line.
+// Precondition: At beginning of non-first expression on line (past hspace)
+// Postcondition: At unconsumed EOL
+
+rest_of_line
+  : PERIOD hspace+ post_period /* Improper list */
+  | skippable (rest_of_line | /*empty*/)
+  | collecting_list
+    (rest_of_line    
+     | /*empty*/)
+  | n_expr
+      ((hspace+ (rest_of_line
+                 | /*empty*/))
+       | /*empty*/);
+
+// Production &quot;body&quot; handles the sequence of 1+ child lines in an it_expr
+// (e.g., after &quot;line_expr&quot;), each of which is itself an it_expr.
+// It returns the list of expressions in the body.
+
+body
+  : it_expr
+     (same
+       (? &amp;gt;   it_expr DEDENT // Improper list
+       |? &amp;gt; body    
+       |? &amp;gt; body)
+     | DEDENT);
+
+// Production &quot;normal_it_expr&quot; is an it_expr without a special prefix.
+
+normal_it_expr returns [Object v] 
+  : line_exprs (
+     GROUP_SPLIT hs // split
+     | SUBLIST hs it_expr
+     | comment_eol // Normal case, handle child lines if any:
+       (INDENT body
+        | /*empty*/ /* No child lines */));
+
+// These are it_expr's with a special prefix like \\ or $:
+
+datum_comment_line
+  : DATUM_COMMENTW hs
+    (it_expr | comment_eol INDENT body);
+
+group_line
+  : (GROUP_SPLIT | scomment) hs /* Initial; Interpet as group */
+      (it_expr /* Ignore initial GROUP/scomment */
+       | comment_eol
+         (INDENT body /* Normal GROUP use */
+          | /*empty*/));
+
+sublist_line returns [Object v] // &quot;$&quot; first on line
+  : SUBLIST hs it_expr;
+
+abbrevw_line
+  : abbrevw hs
+      (comment_eol INDENT body
+       | it_expr);
+
+// Production &quot;it_expr&quot; (indenting sweet-expression)
+// is the main production for sweet-expressions in the usual case.
+// Precondition: At beginning of line after indent, NOT at an EOL char
+// Postcondition: it-expr ended by consuming EOL + examining indent
+
+it_expr
+  : normal_it_expr    
+  | datum_comment_line
+  | group_line        
+  | sublist_line      
+  | abbrevw_line      ;
+
+// Production &quot;initial_indent_expr&quot; is for an expression starting with indent.
+
+initial_indent_expr
+  : (INITIAL_INDENT | separator_initial_indent) (scomment hs)*
+    (n_expr
+     | comment_eol);
+
+// Production &quot;t_expr_real&quot; handles special cases, else it invokes it_expr.
+
+t_expr_real
+  : comment_eol    r1t_expr_real // Skip initial blank lines
+  | (FF | VT)+ EOL r2t_expr_real // Skip initial FF|VT lines
+  | EOF                           // End of file
+  | initial_indent_expr          
+  | it_expr                     /* Normal case */;
+
+// Production &quot;t_expr&quot; is the top-level production for sweet-expressions.
+
+t_expr
+  : t_expr_real	
+      ; retry if empty_value.
+
+-- 
+Is a chair finely made tragic or comic? Is the          John Cowan
+portrait of Mona Lisa good if I desire to see           cowan@xxxxxxxx
+it? Is the bust of Sir Philip Crampton lyrical,         <a  rel="nofollow" href="http://ccil.org/~cowan">http://ccil.org/~cowan</a>
+epical or dramatic?  If a man hacking in fury
+at a block of wood make there an image of a cow,
+is that image a work of art? If not, why not?               --Stephen Dedalus
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00215" href="msg00215.html">Re: Updated SRFI-110 posted.</a></strong>
+<ul><li><em>From:</em> David A. Wheeler</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00213" href="msg00213.html">Updated SRFI-110 posted.</a></strong>
+<ul><li><em>From:</em> David A. Wheeler</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00213.html">Updated SRFI-110 posted.</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00215.html">Re: Updated SRFI-110 posted.</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00213.html">Updated SRFI-110 posted.</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00215.html">Re: Updated SRFI-110 posted.</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00214"><strong>Date</strong></a></li>
+<li><a href="threads.html#00214"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,1019 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: SRFI&#45;1 round 2 discussion -->
+<!--X-From-R13: Ayva Euviref <fuvirefNzbatxbx.nv.zvg.rqh> -->
+<!--X-Date: Wed, 17 Feb 1999 15:10:10 &#45;0600 (CST) -->
+<!--X-Message-Id: 199902172113.QAA15925@shivers.ne.mediaone.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>SRFI-1 round 2 discussion</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00032.html">Date Prev</a>][<a href="msg00034.html">Date Next</a>][<a href="msg00032.html">Thread Prev</a>][<a href="msg00034.html">Thread Next</a>][<a href="maillist.html#00033">Date Index</a>][<a href="threads.html#00033">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>SRFI-1 round 2 discussion</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-1@DOMAIN.HIDDEN">srfi-1@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: SRFI-1 round 2 discussion</li>
+<li><em>From</em>: Olin Shivers &lt;<a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 17 Feb 1999 16:13:07 -0500</li>
+<li><em>Reply-to</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>After all of the feedback I got on SRFI-1, I was able to sit down this
+week, go over it all carefully, and write up a document containing all
+the issues and my proposals wrt each one. I am maintaining the issues document
+at
+    <a  rel="nofollow" href="ftp://ftp.ai.mit.edu/people/shivers/srfi-1">ftp://ftp.ai.mit.edu/people/shivers/srfi-1</a>
+and it is also appended to this message.
+
+As you read through these topics, if you don't feel like declaiming or
+writing long, thoughtful essays on the design decisions, but nonetheless
+do have an opinion and would like to vote, then do just that: send me a
+simple vote. I will tabulate them. The easiest way is to read through
+the document, then grab the topic list at the front and annotate each
+line with your vote or opinion.
+
+Thank you all for your reviews and comments; sorry for the delay in the loop;
+I look forward to the next round.
+    -Olin
+
+-------------------------------------------------------------------------------
+This is the list of the ongoing issues. For each issue, I list some of the
+people who have raised it, and quote some of the email to sum up various
+points of view.
+
+In discussion, please refer to the relevant topic by its tag or header. 
+That will help us stay organised as we range over a lot of different
+issues.
+
+I am pretty sure that the draft reference implementation no longer precisely
+conforms to the spec as modified by these topics. Once discussion has
+converged, I will hack the ref imp into conformance.
+
+Here is a list of 26 current issues/discussion topics I have identified from
+the email. Some are minor or simple; some are rather difficult.  You may wish
+to read only the topics about which you care.  To aid navigation, this
+document format can be parsed using emacs' outline mode.
+    Add LIST-DIFFERENCE ?
+    iota defn
+    Naming: iota
+    circular lists
+    improper lists
+    TAKE &amp; DROP
+    Add SUBLIST ?
+    Removing PROPER-LIST?
+    map function termination condition
+    FIND, FIND-TAIL n-ary
+    alist functions in separate lib?
+    FIND-TAIL applies pred to list cells or list elts?
+    Are the right-duplicate deletion procedures worth inclusion?
+    lists-as-sets funs put in separate module?
+    Naming: REMOVE / DELETE conflicts
+    More careful specification of error cases
+    Argument order for FOLDL and FOLDR
+    Naming: right &amp; left variants
+    Add UNZIP1 ?
+    destructive/linear-update
+    Naming: ACONS or ALIST-CONS?
+    Naming: PAIR-frob prefix vs frob-TAIL suffix 
+    MAKE-LIST's default fill argument
+    Naming: CONS* or LIST*
+    Naming: APPEND-REVERSE{!} or REVERSE-APPEND{!}
+    Argument order of = equivalence predicates
+
+This document, along with current drafts of the reference implementation
+and the draft SRFI (in ASCII format) can be found at
+    <a  rel="nofollow" href="ftp://ftp.ai.mit.edu/people/shivers/srfi/srfi-1/">ftp://ftp.ai.mit.edu/people/shivers/srfi/srfi-1/</a>
+I'll HTML'ize them for the final SRFI format when discussion is done.
+
+A related document contains minor issues -- typos, things I went ahead
+and changed without feeling they required discussion:
+    <a  rel="nofollow" href="ftp://ftp.ai.mit.edu/people/shivers/srfi/srfi-1/small-stuff.txt">ftp://ftp.ai.mit.edu/people/shivers/srfi/srfi-1/small-stuff.txt</a>
+
+-Olin
+
+-------------------------------------------------------------------------------
+* Add LIST-DIFFERENCE ?
+
+Several people have asked for an LDIFF or LIST-DIFFERENCE function.
+I asked for examples of its use. After consideration of the function,
+and the examples sent me, I am against adding this routine.
+
+I have examined all the examples people have sent me of uses of
+LDIFF or LIST-DIFFERENCE. Without fail, they can be rewritten
+using other tools for more general or efficient implementations.
+In general, I have come to associate LIST-DIFFERENCE with sloppy
+coding.
+
+However, even if one is attached to some particular use of LIST-DIFFERENCE,
+it can always be written trivially in terms of UNFOLD:
+    (LIST-DIFFERENCE A B)
+is equivalent to
+    (UNFOLD (LAMBDA (L) (EQ? L B)) CAR CDR A)
+However, the UNFOLD idiom is not committed to the EQ? equality predicate.
+(I usually take a commitment to a particular equality predicate as a
+sign of poor design.)
+
+The following PERMUTE function is a frequent example given, credited to Duncan
+Smith (note that the versions I got all produced the buggy base case 
+(permute '()) =&gt; (), instead of (()).
+
+(define (permute ls)
+  (cond ((null ls) '(()))			; Was buggy.
+	((null? (cdr ls)) (list ls))
+	(else (mapcon (lambda (x)
+			(mapcar (lambda (y) (cons (car x) y))
+				(permute (nconc (ldiff ls x)
+						(cdr x)))))
+		      ls))))
+
+With four more lines of code, we can eliminate the redundant scanning
+and rescanning performed by the LDIFF, for a much more efficient 
+implementation:
+
+(define (permute ls)
+  (if (pair? ls)
+      (let lp ((rev-head '()) (tail ls) (ans '()))
+	(if (pair? tail)
+	    (let ((x    (car tail))
+		  (tail (cdr tail)))
+	      (lp (cons x rev-head) tail
+		  (foldl (lambda (perm ans) (cons (cons x perm) ans))
+			 ans
+			 (permute (reverse-append rev-head tail)))))
+	    ans))
+      '(())))
+
+
+LIST-DIFFERENCE is sometimes used to parse lists with an infix 
+separator element, as in this example, where we have a list of the form
+    (x1 ... xn =&gt; y1 ... ym)
+Here's code that splits a list of this form into the pre-=&gt; elements
+and the post-=&gt; elements:
+
+(define (parse-signature spec)
+  (let ((mid (memq '- spec)))
+    (values (list-difference spec mid)
+	    (cdr mid))))
+
+Now, we can always just replace the 
+    (LIST-DIFFERENCE SPEC MID) 
+with the equivalent
+    (UNFOLD (LAMBDA (L) (EQ? L MID)) CAR CDR SPEC)
+However, with two more lines of extra code, we can rewrite PARSE-SIGNATURE
+without LIST-DIFFERENCE or MEMQ, giving an implementation that runs twice
+as fast:
+
+(define (parse-signature spec)
+  (let recur ((elts spec))
+    (let ((elt (car elts)))
+      (if (eq? elt '-) (values '() (cdr elts))
+	  (receive (front tail) (recur (cdr elts))
+	    (values (cons elt front) tail))))))
+    
+Or, better yet, abstract out the pattern of &quot;splitting at some element&quot;
+into this routine:
+
+(define (split-at lis split?)
+  (let recur ((elts spec))
+    (let ((elt (car elts)))
+      (if (split? elt) (values '() (cdr elts))
+	  (receive (front tail) (recur (cdr elts))
+	    (values (cons elt front) tail))))))
+
+...and then define our PARSE-SIGNATURE function in terms of it:
+
+(define (parse-signature spec)
+  (receive (front tail) (split-at spec (lambda (x) (eq? x '=&gt;)))
+    (values front (cdr tail))))
+
+
+Similarly, we can use LIST-DIFFERENCE to save one line of code
+defining an all-but-the-last-element BUTLAST function. Writing
+the function without LIST-DIFFERENCE costs one extra line of code
+and runs twice as fast.
+
+(define (butlast L)
+  (list-difference L (last-pair L)))
+
+(define (butlast lis)
+  (let recur ((x (car lis)) (l (cdr lis)))
+    (if (pair? l) (cons x (recur (car l) (cdr l))) '())))
+
+LIST-DIFFERENCE is a loser.
+
+-------------------------------------------------------------------------------
+* iota defn
+
+From: Donovan Kolbly &lt;donovan@xxxxxxxxxxx&gt;
+From: Doug Evans &lt;devans@xxxxxxxxxx&gt;
+To: srfi-1@xxxxxxxxxxxxxxxxx
+Subject: .iota/iota.
+
+Some have suggested an alternate definition for an iota function:
+    (iota count [start step]) ; start=0; step=1
+
+Evans' proposed IOTA is a fine function. Let's be clear about the difference.
+His iota function is *count* based -- you say how many samples you want.  The
+functions I have proposed are *bounds* based -- you say that the samples run
+over a particular half-open interval, and the function figures out how many
+samples are needed.
+
+While the proposed IOTA is simpler than the :IOTA and IOTA: functions I've
+proposed, in many cases, this just puts the burden of calculation back on the
+programmer -- where there is potential for error. Calculating the proper
+number of samples is a simple bit of arithmetic, but it's easy to get wrong.
+Fencepost errors, getting the floor/ceiling distinction wrong -- there are two
+or three little things that can blow you out of the water, and they come up
+each time you use the function. So the nice thing about the :IOTA and IOTA:
+functions is that you simply say what you want, and the functions give you the
+samples.
+
+I don't intend to fight this one to the death, in part because IOTA is largely
+for interactively fooling around. I see three possibilities, and would like to
+know how people think:
+
+- (IOTA count [start step]) only
+- My :IOTA and IOTA: only
+- All three procedures
+
+I am kinda partial to choice 3. Some may feel differently purely on bloat
+grounds. Also, going with all 3 raises a naming problem.  The naming mnemonic
+with :IOTA and IOTA: is that a colon on the left or right indicates that the
+corresponding interval bound is inclusive -- :IOTA includes the left bound,
+and IOTA: includes the right bound. Unfortunately, IOTA fits into this scheme
+-- as the fully-open interval, just as :IOTA: might mean the fully-closed
+interval. So the proposed IOTA function violates the naming scheme that comes
+along with :IOTA and IOTA:. If we go with choice 3, we need a set of three
+short, convenient names for these functions that fit together.
+
+I have implemented Evans' IOTA and stuck it into the reference lib &amp; spec.
+So it will be pretty easy to do any renaming or deletions on which we decide.
+
+More discussion, please?
+
+-------------------------------------------------------------------------------
+* Naming: iota
+John David Stone &lt;stone@xxxxxxxxxxxxx&gt;
+Harvey Stein
+Sergei Egorov &lt;esl@xxxxxxxxxxxxxxx&gt;
+Donovan Kolbly &lt;donovan@xxxxxxxxxxx&gt;
+
+Several people pointed out that .IOTA and IOTA. are not legal R5RS identifiers
+(which is really irritating -- it's a ridiculuous design misfeature in the
+current spec). So I have replaced these two bindings with
+    :IOTA 
+    IOTA:
+These *are* legal R5RS identifiers. However, see the previous issue
+(&quot;iota defn&quot;) for related discussion.
+
+-------------------------------------------------------------------------------
+* circular lists
+
+From: Doug Currie &lt;e@xxxxxxxxxxx&gt;
+    2 General Comment: The srfi should say which procedures work on improper
+    lists and also which work on circular lists. A quick glance at the model
+    implementation indicates to me that you did not intend the procedures to
+    work on circular lists; the stfi should say so. On the other hand, maybe
+    some procedures should work on circular lists (especially list-length, and
+    maybe list-copy).
+
+Good point. Here is my proposed taxonomy, which corresponds pretty
+closely to the natural, straightforward definitions of these functions,
+with some room left in for fancier implementations:
+
+Works on circular lists: 
+   xcons cons*
+   first ... tenth
+   Taking and dropping from the left
+   zip with at least one finite list
+   append append! reverse-append reverse-append! -- last arg may be circular
+   acons
+   cons pair? null? list?
+   car cdr ... cdddar cddddr set-car! set-cdr! list-ref
+
+May diverge / is an error / bad thing:
+(Plus'd entries have meaningful definitions for circular lists; we might
+ leave these cases open to the implementation. Discussion?)
++  list-copy
+   Taking and dropping from the right
+   last last-pair
+   zip with no finite list
+   append append! reverse-append reverse-append! -- initial args must be finite
++  unzip2 unzip3 unzip4 unzip5
++  filter  partition  remove
++  filter! partition! remove! 
++  del  delq  delv  delete 
++  del! delq! delv! delete!
++  alist-copy
++  delq-duplicates  delv-duplicates  delete-duplicates  del-duplicates 
++  delq-duplicates! delv-duplicates! delete-duplicates! del-duplicates!
++  alist-delete  del-ass  del-assq  del-assv  del-assoc
++  alist-delete! del-ass! del-assq! del-assv! del-assoc!
+   reverse!
+   length reverse 
+
+Some lists may be circular; at least one must be finite:
+   foldl foldr pair-foldl pair-foldr reducel reducer
+   append-map append-map! map! pair-for-each filter-map map-in-order
+   map for-each
+
+May diverge if no hit:
+(Some implementations might do a fancy implementation 
+and *not* diverge. Sure.)
+   find find-tail any every list-index
+   mem member memq memv ass assoc assq assv
+
+
+-------------------------------------------------------------------------------
+* improper lists
+
+The issue has been raised (see, for example, Currie's email quoted in
+topic &quot;circular lists&quot;) of what the list-lib procedures do when applied
+to improper lists.
+
+I try for an &quot;accept a wide spectrum&quot; approach to the inputs the list
+functions take, and intend to spec as many of these procedures to work on
+improper lists as possible. Procedures that work on improper lists must be
+able to treat any non-pair as a list-tail signifying the end of the list --
+that is, the empty list. E.g. a robust LENGTH function that handles improper
+lists must be spec'd so that both of these calls return three:
+    (length '(a b c . ())) =&gt; 3		; Proper
+    (length '(a b c . d))  =&gt; 3		; Improper
+This means that *any non-pair* must be treated as the empty list. This
+fact falls out naturally from the straightforward base cases of these
+recursive functions. Hence
+    (length '()) =&gt; 0	; Proper
+    (length 'd)  =&gt; 0	; Improper
+This is the simplest, most consistent spec that covers improper lists.
+The functions in the current reference implementation have this property.
+
+In this spirit, *all* of the procedures in list-lib are defined to work
+on improper lists. 
+
+As a related design criteria, I am specifying these procedures to replicate
+the proper/improperness of their args in their results where this can
+straightforwardly be defined. So, for example:
+    (filter even? '(2 7 1 8 2))       =&gt; (2 8 2)
+    (filter even? '(2 7 1 8 2 . end)) =&gt; (2 8 2 . end)
+
+There is a trade-off here. On one hand, widening the set of arguments
+acceptable to our utilities reduces our ability to provide error-checks
+when an improper list means an error. On the other, it widens the
+applicability of these procedures. I tilt towards the latter. Scheme
+supports improper lists; so I will support them. Were this ML, the issue
+would not arise -- tuple-trees and lists are statically distinguished by
+the type system.
+
+Replicates the argument's terminating value:
+    list-copy [e.g., (list-copy '(a b . c)) =&gt; (a b . c)]
+    filter  partition  remove
+    filter! partition! remove! 
+    del  delq  delv  delete 
+    del! delq! delv! delete!
+    alist-copy
+    delq-duplicates  delv-duplicates  delete-duplicates  del-duplicates 
+    delq-duplicates! delv-duplicates! delete-duplicates! del-duplicates!
+    alist-delete  del-ass  del-assq  del-assv  del-assoc
+    alist-delete! del-ass! del-assq! del-assv! del-assoc!
+    take take! (from right) drop drop! (from left)
+    member memq memv assoc assq assv
+    map filter-map map-in-order map!
+        -- These n-ary funcs use the terminator from left-most shortest list
+        arg. Simple to implement, and produces the desired result in the
+        single-list map case. Example:
+	    (map + '(1 2 3 4 . a) '(1 0 1 . b) '(0 1 0 . c)) =&gt;
+                (2 3 4 . b)
+    unzip2 unzip3 unzip4 unzip5
+
+Not specified (may either replicate or nil-terminate):
+    reverse! 
+
+Produces nil-terminated result:
+    take take! (from left, always) 
+    drop drop! (from right, always)
+    reverse
+
+Handles improper-list args, but issue of nil-termination does not
+apply to result or is trivial:
+    xcons tree-copy make-list list-tabulate list* 
+    circular-list :iota iota:
+    first second third fourth fifth sixth seventh eighth ninth tenth
+    append append! reverse-append reverse-append!
+    unfold unfold/tail
+    pair-for-each append-map append-map! 
+    foldl foldr pair-foldl pair-foldr reducel reducer
+    find find-tail any every list-index
+    mem ass acons 
+    last last-pair
+    zip
+    cons pair? null? list? list length 
+    car cdr ... cdddar cddddr set-car! set-cdr! list-ref for-each
+
+-------------------------------------------------------------------------------
+* TAKE &amp; DROP
+
+From: Doug Currie &lt;e@xxxxxxxxxxx&gt;
+    3. I like Sergei's comments on TAKE and DROP:
+    &gt;I would prefer to see (SUBLIST list start end) which
+    &gt;is both generic and quite natural, and (LIST-HEAD list k)
+    &gt;to complement existing (LIST-TAIL list k).
+    Perhaps for DROP, LIST-BUTLAST ala Common Lisp and LIST-BUTFIRST (or NTH-CDR).
+
+From: Maciej Stachowiak &lt;mstachow@xxxxxxx&gt;
+    Why not `list-head' and `list-tail' for these, I think those are more
+    intuitive names. `list-ref' vs. `nth' is more an open question, why
+    not have both.
+
+I do not like LIST-HEAD and LIST-TAIL because I find the names confusing.
+Does (LIST-TAIL list k) *drop* K elements or *give* you a K-element tail? With
+TAKE and DROP there is no such confusion. If you *want* K elements, you TAKE
+them. If you want to *remove* K elements, you DROP them.
+
+I particularly dislike the names LIST-HEAD and LIST-TAIL. By all rights,
+these names should be synonyms for CAR and CDR. The head of a list is its
+car; the tail of a list is its cdr.
+
+Matt Flatt argues that separate functions to take from the front and
+back of the list gives better error checking; similarly for dropping.
+
+This is a good point. Note that we currently have four procedures:
+    take drop take! drop!
+This would split each of these procedures into two, for a total of eight
+procedures. We could call them
+    take take/right   take! take/right!
+    drop drop/right   drop! drop/right
+So (DROP LIST 3) would drop the first 3 elements of LIST and
+   (DROP/RIGHT LIST 3) would drop the last 3 elements of LIST.
+This is good &amp; bad. Good is that is might give better dynamic error checking,
+should a client erroneously pass a negative index to the function. On the
+other hand, I don't think it's a very common error. Fencepost errors are when
+you confuse 0 &amp; 1. Drifting over into negative values is much, much rarer. Bad
+is that is induces namespace bloat, and there's a hidden multiplier lurking in
+store: I will be proposing string and vector libs with TAKE and DROP functions
+(e.g., STRING-TAKE and VECTOR-DROP), so the factor of two will hit these libs
+as well.
+
+There are two issues here:
+    The actual functionality -- punting the negative-indexing for twice
+        as many function bindings.
+    In the event of punting negative-indexing, we must deal with the
+        naming choices for the left-end and right-end variants.
+	This relates to the larger naming issue discussed in topic
+	&quot;Naming: right &amp; left variants.&quot;
+
+[By the way, in response to questions of the source of the right-end
+negative-indexing convention -- it's a popular feature in APL and J.]
+
+-------------------------------------------------------------------------------
+* Add SUBLIST ?
+
+Several people have requested (SUBLIST lis start end). I explicitly did not
+put this function in the library, since reaching into the middle of a list
+and taking out a specific, fixed subsegment seems contrary to the general idea
+of lists. But. I realise that many times we sleazily use lists as fixed tuples,
+and in cases like this, SUBLIST can be handy (e.g., the grammatical structure
+of sexp-based languages).
+
+I do *not* think, in any event, that SUBLIST is an acceptable replacement
+for TAKE and DROP. It is much clearer, to my eye, to use functions that
+specifically return prefixes or suffixes than to use the general SUBLIST
+function when this is what is desired. All the more so in the case of lists,
+where one must do a linear-time pass over the whole list just to get the
+final index to pass to SUBLIST.
+
+So some questions: 
+    - Should SUBLIST be added to the existing repertoire of TAKE &amp; DROP funs?
+
+    - If so, should we also add a linear-update SUBLIST! ?
+
+    - Should I tweak the definition of SUBLIST to aid in indexing &quot;from
+      the right&quot;?
+	+ I could make the END argument optional, defaulting to the length
+          of the list.
+	+ I could make the END argument range over negative as well as
+	  non-negative indices, indicating offsets from the right without
+	  requiring the programmer to explicitly precompute the list length.
+	  E.g.
+	    (sublist '(a b c d e f) 2 -1) =&gt; '(c d e f)
+	    (sublist '(a b c d e f) 2 -2) =&gt; '(c d e)
+	    (sublist '(a b c d e f) 2 -3) =&gt; '(c d)
+
+I'm just throwing out as wide a spectrum of sublist-related stuff as I can
+think, here. Personally, I'm pretty indifferent on all of these questions,
+except that I do think overall library consistency requires us to pair
+SUBLIST! with SUBLIST -- neither or both, but not just the one.
+
+-------------------------------------------------------------------------------
+* Removing PROPER-LIST?
+
+This procedure is exactly LIST? While the name &quot;PROPER-LIST?&quot; is slightly
+clearer than &quot;LIST?&quot;, it is not worth breaking with established use. I
+am removing PROPER-LIST? from the list-lib, and leaving LIST? in.
+
+-------------------------------------------------------------------------------
+* map function termination condition
+
+From the original proposal:
+    3.When do n-ary mapping functions (MAP, MAP!, FOR-EACH, PAIR-FOR-EACH,
+     APPEND-MAP, APPEND-MAP!, FILTER-MAP, MAP-IN-ORDER) terminate? 
+		    1.When any list runs out? 
+		    2.When the first list runs out? 
+		    3.All lists must be of equal length? 
+    My preferences are in the order listed. R4RS says #3.  Hence this spec
+    requires #1. Any changes to this *must* happen by the end of the SRFI
+    discussion period. 
+
+The consistent feedback has been to go with definition #1. If you feel
+otherwise, speak up now, otherwise I will regard this issue as closed.
+Below I list two representative remarks I have received on this issue.
+
+Donovan Kolbly
+    Dylan, which has a fairly general collections mechanism, also takes
+    approach #1.  Generalizing lists, a collection in Dylan is regarded as a
+    mapping from keys to values.  The keys for lists and vectors are integers
+    starting at zero.  n-ary mapping functions do an intersection-join on the
+    keys of their arguments, and hence, for the list case, only operate on the
+    common keys, ie, along the shortest list. 
+
+From: John David Stone &lt;stone@xxxxxxxxxxxxx&gt;
+    As soon as any of the lists is exhausted (alternative 1 in
+    Shivers's list).  My second choice is Shivers's alternative 3: all lists
+    must be the same length.
+
+-------------------------------------------------------------------------------
+* FIND, FIND-TAIL n-ary
+
+&quot;Will Fitzgerald&quot; &lt;fitzgerald@xxxxxxxxxxxx&gt;
+    Since ANY, EVERY, FOLDL, FOLDR, PAIR-FOLDL, PAIR-FOLDR, and LIST-INDEX can
+    take multiple lists as arguments, should FIND and FIND-TAIL do the same?
+
+I am uncomfortable with the idea of procedures whose return &quot;arity&quot; depends
+on their call arity. I would prefer to keep FIND and FIND-TAIL simple.
+
+-------------------------------------------------------------------------------
+* alist functions in separate lib?
+
+Separate: John David Stone &lt;stone@xxxxxxxxxxxxx&gt;
+Together: Olin
+
+John David Stone &lt;stone@xxxxxxxxxxxxx&gt;
+    Yes.  The most conclusive point for me is that they take a
+    different copy procedure -- that suggests that they are really a different
+    data type and so deserve a separate library.
+
+Hmm -- I still prefer to keep the alist functions in the general list lib.
+
+-------------------------------------------------------------------------------
+* FIND-TAIL applies pred to list cells or list elts?
+
+List cells:
+List elts: Olin, John David Stone &lt;stone@xxxxxxxxxxxxx&gt;
+
+No one supports list cells. Good. Let's consider this issue closed.
+
+-------------------------------------------------------------------------------
+* Are the right-duplicate deletion procedures worth inclusion?
+
+No: John David Stone &lt;stone@xxxxxxxxxxxxx&gt;
+Yes: Olin
+
+Do others have opinions?
+
+-------------------------------------------------------------------------------
+* lists-as-sets funs put in separate module?
+
+Together: Olin
+Separate: John David Stone &lt;stone@xxxxxxxxxxxxx&gt;
+
+stone:
+    &quot;It should be kept separate.  Again the crucial argument is that
+    sets are a different data type: EQUAL-AS-SETS? will not be the same as
+    EQUAL?, for instance.&quot;
+
+In my view, lists-as-sets aren't a different data type, they are a particular
+use of lists. These functions are sufficiently useful to warrant being
+included in the general list lib.
+
+The list-set functions are found in SRFI-3
+    <a  rel="nofollow" href="http://srfi.schemers.org/srfi-3/">http://srfi.schemers.org/srfi-3/</a>
+
+-------------------------------------------------------------------------------
+* Naming: REMOVE / DELETE conflicts
+
+John David Stone &lt;stone@xxxxxxxxxxxxx&gt;
+&quot;Sergei Egorov&quot; &lt;esl@xxxxxxxxxxxxxxx&gt;
+
+The issue is that some Schemes use DELETE to name the functions that delete
+elements from lists using equality tests, and some use REMOVE. SRFI-1 has gone
+with DELETE, and uses REMOVE to name the functions that filter lists with
+a predicate.
+
+There are conflicts no matter which one I choose, and solid precedent over part
+of the community with the current choice:
+    T, S48, MIT Scheme: delq/delv/delete/delq!/delv!/delete!
+    Bigloo, Chez, MzScheme: remq/remove/remove!
+
+CommonLisp has both REMOVE and DELETE -- the former being pure, and the
+latter being destructive. This is a terrible naming convention; Scheme
+has the bang suffix, which makes for a much clearer and tighter linkage.
+We get no guidance here. (And CL's naming is probably why Scheme
+implementations have diverged on this issue. Urk.)
+
+Unless I hear of a good alternative name for list-lib's REMOVE, I will
+keep with the current uses of DELETE and REMOVE and their derived names.
+What is needed is a name to replace REMOVE that fits in with this trio:
+    FILTER / PARTITION / ???
+REMOVE is the best, most natural simple root I could think of. FILTER-NOT or
+NKEEP or KEEP-NOT are awkward.  EXTIRPATE seems a little over-the-top.  I am
+not a fan of the -IF suffix. It looks awkward to my eye; I associate IF with
+conditional forms, not variables bound to procedures.
+
+-------------------------------------------------------------------------------
+* More careful specification of error cases
+
+Matthias Felleisen &lt;matthias@xxxxxxxxxxx&gt;
+    ...the specification for a procedure like TAKE should contain a sentence
+    like &quot;It is an error if &lt;i&gt; is larger than the length of &lt;list&gt;.&quot;
+
+    Furthermore, I believe that libraries should go even further and specify 
+    that 
+
+      &quot;it is an error if a procedure whose i-th parameter is specified to be a
+       &lt;list&gt; receives an i-th argument that does not belong to the collection of
+       &lt;lists&gt;.&quot;
+
+    Again, this gives the implementation the freedom to delay signaling an
+    error until the non-listness of the argument is discovered or not to signal
+    an error or to be preemptive in checking the nature of all arguments. Of
+    course, the statement should be generalized over &lt;list&gt; and &lt;lists&gt; as
+    appropriate. 
+
+A more careful specification of error cases is a good thing; I will work on
+this. I have already added a great deal of argument checking to the latest
+version of the reference implementation, per Matthias's prodding, and will
+make another pass over the spec.
+
+-------------------------------------------------------------------------------
+* Argument order for FOLDL and FOLDR
+
+John David Stone &lt;stone@xxxxxxxxxxxxx&gt; points out that the n-list case tends
+to suggest 
+    (f &lt;state-value&gt; &lt;elt1&gt; ... &lt;eltn&gt;)
+rather than  
+    (f &lt;elt1&gt; ... &lt;eltn&gt; &lt;state-value&gt;)
+
+Good point, but I want consistency between the two functions.
+
+state-value first: srfi-1, SML
+state-value last: Haskell
+
+-------------------------------------------------------------------------------
+* Naming: right &amp; left variants
+
+This is a *thorny* naming issue. Many of the procedures in this list lib, and
+also in the upcoming vector and string libs I will be proposing, come in
+left/right pairs. I have been using an L and R suffix to name these pairs,
+e.g. FOLDL and FOLDR, REDUCEL and REDUCER. This has the charm of being concise
+-- as should be obvious by now, I code in 80-column buffers and do not like to
+waste columns gratuitously. However, many people prefer longer names. Also,
+some of the resultant names are unfortunate -- the most glaringly awkward one
+is REDUCER, which really just means &quot;REDUCE from the Right.&quot;  So my L and R
+suffix convention is not without its downsides. But I like short. I like 
+simple. And FOLDL, in particular, is well-established in the FP world.
+
+As will be obvious below, this is a very important naming convention to get
+right, due to its pervasiveness across multiple libraries and many, many
+names. So it really takes some careful thought.
+
+I see three alternatives to consider:
+
+- use *no* suffix for the left operator, and a /R suffix for the right
+  operator. This is based on the idea that left-to-right is the &quot;natural&quot;
+  processing order for lists. This gives us the following list, vector and
+  string bindings (assuming we split the TAKE and DROP ops into left &amp; right
+  variants):
+
+    fold	fold/r		reduce	reduce/r
+    take	take/r    	take!	take!/r
+    drop	drop/r    	drop!	drop!/r
+    pair-fold	pair-fold/r
+
+    vector-take vector-take/r vector-take/shared vector-take/rshared
+    vector-drop vector-drop/r vector-drop/shared vector-drop/rshared
+    vector-find vector-find/r vector-skip vector-skip/r
+    vector-fold vector-fold/r vector-reduce vector-reduce/r 
+    vector-scan vector-scan/r
+
+    string-fold  string-fold/r
+    string-take string-take/r
+    string-drop string-drop/r
+    string-pad  string-pad/r
+    string-trim string-trim/r
+    string-index string-index/r
+    string-skip string-skip/r
+
+- use an /L suffix for the left operator, and an /R suffix for the right
+  operator. This gives us the following list, vector and string bindings:
+
+    fold/l	fold/r		reduce/l	reduce/r
+    take/l	take/r    	take!/l		take!/r
+    drop/l	drop/r    	drop!/l		drop!/r
+    pair-fold/l	pair-fold/r
+
+    vector-take/l vector-take/r vector-take/lshared vector-take/rshared
+    vector-drop/l vector-drop/r vector-drop/lshared vector-drop/rshared
+    vector-find/l vector-find/r vector-skip/l vector-skip/r
+    vector-fold/l vector-fold/r vector-reduce/l vector-reduce/r 
+    vector-scan/l vector-scan/r
+
+    string-fold/l  string-fold/r
+    string-take/l string-take/r
+    string-drop/l string-drop/r
+    string-pad/l  string-pad/r
+    string-trim/l string-trim/r
+    string-index/l string-index/r
+    string-skip/l string-skip/r
+
+- use a -left suffix for the left operator, and a -right suffix for the right
+  operator. This gives us the following list, vector and string bindings:
+
+    fold-left	fold-right	reduce-left	reduce-right
+    take-left	take-right    	take-left!	take-right!
+    drop-left	drop-right    	drop-left!	drop-right!
+    pair-fold-left		pair-fold-right
+
+    vector-take-left vector-take-right vector-take-left/shared vector-take-right/shared
+    vector-drop-left vector-drop-right vector-drop-left/shared vector-drop-right/shared
+    vector-find-left vector-find-right vector-skip-left vector-skip-right
+    vector-fold-left vector-fold-right vector-reduce-left vector-reduce-right 
+    vector-scan-left vector-scan-right
+
+    string-fold-left	string-fold-right
+    string-take-left	string-take-right
+    string-drop-left	string-drop-right
+    string-pad-left	string-pad-right
+    string-trim-left	string-trim-right
+    string-index-left	string-index-right
+    string-skip-left	string-skip-right
+
+  Ouch, I find these names painfully verbose for primitive, low-level
+  operations. It makes it hard to use functional composition -- 
+  (f (g (h x))) -- without drifting off the right side of the screen or
+  shifting over to awkward, multiline indenting styles. Also, the actual 
+  operation (fold, reduce, pad, trim) gets lost amidst all the tacked-on
+  modifiers.
+
+However, I listen attentively to the community voice.
+
+[Let's not worry about what exactly these &quot;vector shared&quot; ops are; that is
+a topic for another SRFI and another time. Let's focus on this issue of
+left and right variant names.]
+
+-------------------------------------------------------------------------------
+* Add UNZIP1 ?
+
+Egorov:
+    UNZIP1 is missing although it no less useful than other
+    procedures of the UNZIP family:
+        (unzip1 '((1) (2) (3))) =&gt; (1 2 3)
+
+This is just (MAP CAR list). But I will add the binding if there is demand for
+it; it seems like a reasonable thing to do simply for consistency, to avoid
+surprise. May I hear some opinions?
+
+-------------------------------------------------------------------------------
+* destructive/linear-update
+
+Sperber has checked in verbally supporting weakening the spec for the
+bang procedures to be linear-update.
+
+Clinger claims some people claim side-effects are needed.
+
+Lars says he himself needs guaranteed side-effects.  Lars supports having both
+linear-update and guaranteed side-effect bindings. Note that this doesn't
+complicate simple implementations as all -- it just means you implement the
+side-effect version, and bind it to both names.
+
+I'd like to hear more support for required-mutation.
+
+After *much* thought on this issue -- there are many possible directions
+one could choose, and all have advantages and disadvantages -- I have
+just recently arrived at the following proposal that will serve Lars'
+concerns, not bloat out the basic lib, and has what strikes me as a
+reasonably natural and concise naming convention.
+
+Let us proceed on the assumption that required-mutation is the rare case,
+albeit one we will support. We will use a *double* bang for these names --
+extra emphasis!! Really change the list!! We can then place these procedures
+in a separate library, list-lib!!. Here are the procedures we'd add
+   take!! drop!! 
+   append!! reverse-append!!
+   append-map!! map!!
+   filter!! partition!! remove!! 
+   del!! delq!! delv!! delete!!
+   delq-duplicates!! delv-duplicates!! delete-duplicates!! del-duplicates!!
+   alist-delete!! del-ass!! del-assq!! del-assv!! del-assoc!!
+   reverse!!
+(Again, note that in most cases, these names will be bound to the exact
+same procedures to which their single-bang cousins will be bound.)
+
+Now if someone like Lars writes code that *relies*, e.g., due to sharing, on
+really performing side-effects, instead of simply *permitting* side-effects as
+an optimisation, e.g., due to non-sharing, the double-bangs will draw the eye
+to these semantically effectful operations. (What we are doing here is
+separating side-effects as pragmatics from side-effects as semantics.)
+
+An alternate would be to use a + suffix to indicate linear-update, and
+reserve ! for required-side-effect. We could still move all the
+required-side-effect procs to a segregated library.
+
+-------------------------------------------------------------------------------
+* Naming: ACONS or ALIST-CONS?
+
+acons:
+alist-cons: Lars Thomas Hansen &lt;lth@xxxxxxxxxxx&gt;
+
+I am indifferent, and am happy to go with Lars' suggestion. Could we have some
+more votes?
+
+-------------------------------------------------------------------------------
+* Naming: PAIR-frob prefix vs frob-TAIL suffix 
+
+E.g., pair-for-each or for-each-tail? pair-fold or foldl-tail?
+
+jpiitula &amp; egorov
+
+egorov:
+    8) I prefer having TAIL- prefix for procedures working with
+    consecutive cdrs of a list; PAIR- prefix does not have this &quot;CDR&quot;
+    sound (PAIR-FOR-EACH may be a better name for tree browsing
+    procedure)
+
+These procedures work directly with the pairs or cons cells that compose the
+list, hence the PAIR- lexeme.  I don't like the TAIL- convention, as the
+function doesn't operate just on the tail of the argument list, but also on
+the list itself.  Also, these functions *don't* operate on the tail of the
+list that is the empty list () -- which is certainly a tail. However, my
+preference for PAIR- is not a strong one.
+
+I would like to hear other opinions on this name choice.
+
+-------------------------------------------------------------------------------
+* MAKE-LIST's default fill argument
+
+jpiitula:
+    I think that MAKE-LIST should not allow the 'fill'
+    argument to be left out; at least, the default value
+    should be unspecified as in MAKE-VECTOR and MAKE-STRING
+    (choice of #f seems a little random to me).
+
+I have changed MAKE-LIST's spec so that the default fill value is unspecified
+as suggested by jpiitula &amp; egorov.
+
+Dissenters should speak up; but I don't think there will be any.
+
+-------------------------------------------------------------------------------
+* Naming: CONS* or LIST*
+
+General consensus is that CONS* is a better name. I have changed the name
+accordingly.
+
+-------------------------------------------------------------------------------
+* Naming: APPEND-REVERSE{!} or REVERSE-APPEND{!}
+
+REVERSE-APPEND is the current name.
+T &amp; S48 use APPEND-REVERSE
+Common Lisp: REVAPPEND
+
+Egorov votes for APPEND-REVERSE, and points out it visually matches up
+with the definition (append (reverse x) y). It is also consistent with
+the current Scheme uses I've found (T &amp; Scheme 48). I will make the
+change.
+
+Are there any other runtimes or libs that export these procedures,
+and, if so, what are the chosen names?
+
+-------------------------------------------------------------------------------
+* Argument order of = equivalence predicates
+
+Egorov
+    I would also left unspecified the behavior of procedures accepting
+    equivalence predicates [=] when given non-commutative procedures; when in
+    doubt, one can always use -IF variants.
+
+This is an excellent point. However, I suggest it would be more useful to
+address this issue by specifying more precisely how the = predicate is used.
+Spelling out how the equivalence proc is applied seems more useful to me, and
+would cost nothing. How do others feel about this? I can add language to the
+definitions saying that the comparison is made in this form
+    (= key-param elet)
+Here's the extra language:
+
+For DEL, DEL!
+    The = procedure is an equality predicate that is used to compare
+    the elements Ei of LIST to the key X in this way:
+	(= X Ei)
+    The = predicate will be used to compare each element of LIST exactly
+    once; the order in which it is applied to the various Ei is not specified.
+    Thus, one can reliably remove all the numbers less than five from a list
+    with
+	(del &lt; 5 list)
+
+For DEL-DUPLICATES DEL-DUPLICATES!
+    The = procedure is an equality predicate that is used to compare
+    the elements of LIST. If X comes before Y in LIST, then the comparison
+    is performed 
+	(= X Y)
+    The = predicate will be used to compare each pair of elements in LIST
+    exactly once; the order in which it is applied to the various pairs is not
+    specified.
+
+For MEM
+    The = procedure is an equality predicate that is used to compare
+    the elements Ei of LIST to the key X in this way:
+	(= X Ei)
+    The = predicate will be used to compare each element of LIST no more
+    than once.
+
+For ASS
+    The = procedure is an equality predicate that is used to compare
+    the element keys Ki of ALIST's entries to the search-key X in this way:
+	(= X Ki)
+    The = predicate will be used to compare each key of ALIST no more
+    than once. Thus one can reliably find the first entry of ALIST whose
+    key is less than five with
+	(ass &lt; 5 ALIST)
+    
+For ALIST-DELETE DEL-ASS ALIST-DELETE! DEL-ASS!
+    The = procedure is an equality predicate that is used to compare
+    the elements keys Ki of ALIST's entries to the key X in this way:
+	(= X Ki)
+    The = predicate will be used to compare each element key of ALIST exactly
+    once; the order in which it is applied to the various Ki is not specified.
+    Thus, one can reliably remove all entries of ALIST whose key is less than
+    five with
+	(del &lt; 5 list)
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00034" href="msg00034.html">Re: SRFI-1 round 2 discussion</a></strong>
+<ul><li><em>From:</em> Doug Currie</li></ul></li>
+<li><strong><a name="00036" href="msg00036.html">SRFI-1 round 2 discussion</a></strong>
+<ul><li><em>From:</em> John Stone</li></ul></li>
+<li><strong><a name="00048" href="msg00048.html">Re: SRFI-1 round 2 discussion</a></strong>
+<ul><li><em>From:</em> Lars Thomas Hansen</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00032.html">Abbreviated names in SRFI-1</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00034.html">Re: SRFI-1 round 2 discussion</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00032.html">Abbreviated names in SRFI-1</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00034.html">Re: SRFI-1 round 2 discussion</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00033"><strong>Date</strong></a></li>
+<li><a href="threads.html#00033"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

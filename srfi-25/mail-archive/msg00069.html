@@ -1,0 +1,188 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Not quite enough abstraction -->
+<!--X-From-R13: byrtNcbobk.pbz -->
+<!--X-Date: Tue, 29 Jan 2002 06:07:51 +0100 (NFT) -->
+<!--X-Message-Id: 200201290510.VAA14208@adric.cs.nps.navy.mil -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Not quite enough abstraction</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00068.html">Date Prev</a>][<a href="msg00070.html">Date Next</a>][<a href="msg00071.html">Thread Prev</a>][<a href="msg00075.html">Thread Next</a>][<a href="maillist.html#00069">Date Index</a>][<a href="threads.html#00069">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Not quite enough abstraction</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-25@DOMAIN.HIDDEN">srfi-25@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Not quite enough abstraction</li>
+<li><em>From</em>: <a href="mailto:oleg@DOMAIN.HIDDEN">oleg@xxxxxxxxx</a></li>
+<li><em>Date</em>: Mon, 28 Jan 2002 21:10:10 -0800 (PST)</li>
+<li><em>Cc</em>: <a href="mailto:lucier@DOMAIN.HIDDEN">lucier@xxxxxxxxxxxxxxx</a>, <a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-25@DOMAIN.HIDDEN">srfi-25@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Reply-to</em>: <a href="mailto:oleg@DOMAIN.HIDDEN">oleg@xxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+Hello!
+
+	I'd like to point out a corroborating evidence in favor of
+abstract vectors. The evidence is from a different domain: procedural
+texture generation. A texture is a function on a matrix (pixelmap). A
+paper presented by Jerzy Karczmarczuk at PADL02 shows that even
+intricate and exquisite textures can be described declaratively
+(combinatorially) -- often by an order of magnitude shorter than in
+traditional, imperative, pixel-shoving approach. It has to be stressed
+that textures are expressed in a coordinate-free way. Therefore, the
+definition of a complex texture does not depend on storage and other
+details of the pixelmap.
+
+	A summary of Jerzy's talk is enclosed.
+
+	I'd like to make one remark though. The abstract vectors
+provide 'random' access to vector elements, so to speak. That is, an
+abstract vector is a function Int-&gt;Value (or, Range-&gt;Value or even
+Lattice-&gt;Value). The function yields the value of a vector element
+given an arbitrary, 'random' index within vector's domain. Sometimes,
+random access is overkill. Surprisingly many problems can be solved
+with only a sequential access to a vector or a matrix: with matrix
+streams. Purely functionally, sequential access is defined by
+fold-like combinators (accumulating traversals) and by 'subranging'
+(and perhaps, general domain transformer functions). For performance
+reasons, we may want to define mapping (i.e., a point-wise transform)
+and folding of an associative function. A program that uses these
+higher-order combinators can be subjected to automated deforestation,
+which fuses traversals where possible.
+
+* Functional Approach to Texture Generation
+Jerzy Karczmarczuk. PADL02, January 20, 2002.
+
+The talk describes 'Clastic', a system for generation of _procedural_
+textures.
+	  <a  rel="nofollow" href="http://users.info.unicaen.fr/~karczma/Work/Clastic_distr/clastic.html">http://users.info.unicaen.fr/~karczma/Work/Clastic_distr/clastic.html</a>
+The web site refers to a tutorial with many beautiful pictures.
+
+Raster graphics algorithms can be partitioned into &quot;active&quot; and
+&quot;passive&quot;. Active algorithms take a pixelmap and actively modify it:
+they traverse the pixelmap or a subset of it -- often in complex ways
+-- and examine and set pixel values. Bresenham line drawing and
+contour filling algorithms belong to that class. Passive algorithms on
+the other hand do not actively draw anything. The algorithm is
+expressed as a function f(x,y). A rendering engine passes the function
+coordinates of a point and expects in return the color value at that
+point. The values of x and y of two consecutive invocations of f(x,y)
+are generally unpredicable. The function f(x,y) does not have access
+to a pixelmap and can't examine pixel values. Texture mapping
+algorithms belong to the passive category. Such algorithms -- shaders
+-- are used in animation and ray tracing pipelines.
+
+Clastic is an exploratory tool for passive raster graphics. The tool
+can generate regular (geometric) or random textures _described_ as
+relationships between 2D points and their colors. In Clastic, a
+texture is a function R^2 -&gt; R^3, a function from points to RGB color
+vectors. The relationship is described purely declaratively.
+
+In Clastic, a texture function can be specified in a low-level way,
+for example
+    circle (x,y) = if x*x + y*y &lt;= 1.0 then tx (x,y) else rgb_white (x,y)
+which creates a circle filled with a texture tx(x,y) on a white
+foreground. However, if we define a texture combinator
+    fmask h f g = \x -&gt; if (h x == 0.0) then g x else f x
+and an overloaded function
+  step x | x &lt; zero = zero
+         | x &gt; zero = one
+         | otherwise = half
+then we can write 'circle' as
+     circle = fmask (\p -&gt; step (1.0 - norm2 p)) tx rgb_white
+or even
+    circle = fmask (step . (sone .- norm2)) tx rgb_white
+where
+    sone p = 1.0
+    norm2 (x,y) = x*x+y*y
+and .- is subtraction lifted to (Float,Float)-&gt;Float functions.
+
+What is remarkable about the latter definition of 'circle' is that
+point coordinates do not appear at all. The shader 'circle' is
+defined as a pure combination of primitive textures. This
+coordinate-free style of programming is strongly encouraged by Clastic
+[*]. In Clastic, we transform things rather than coordinates. The
+coordinates should be hidden inside higher-order operators such as
+translate, rotate, scale; inside primitive textures such as rgb_white;
+inside 'soft objects' Point-&gt;Float such as 'sone'; and inside blending
+combinators such as fmask and `over`.
+
+As the paper and the Clastic tutorial show, combining a few primitives
+yields surprisingly complex textures such as impressive geometric
+patterns, tesselations and wallpaper including Escher reptiles, and
+woven patterns.
+
+Clastic uses purely functional, stateless random number generators
+(advocated by Ward). The generators are pure functions Integer-&gt;Float
+with a property that function values do not visibly correlate even for
+neighboring arguments. The &quot;random noise&quot; generators let Clastic
+produce dithering, fractal patterns (e.g., clouds), turbulence, and
+more complex marble-like textures and bump-maps.
+
+Finally, Clastic can apply transformers to other transformers:
+deformers. Examples include warping, lenses and random displacement to
+generate irregular wooden grain. The problem of inverting a
+transformation is generally rather complex. Still Clastic can deal
+with it. As the paper stresses, warping and deformation can be used
+abstractly, can be used generically and can be composed. This may make
+the coding by an order of magnitude shorter and easier than in the
+imperative approach.
+
+[*] Clastic uses programming version of Clean for Windows OS. The
+examples above are paraphrased in Haskell.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00068.html">Re: Not quite enough abstraction</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00070.html">Re: Not quite enough abstraction</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00071.html">Re: Not quite enough abstraction</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00075.html">Re: Not quite enough abstraction</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00069"><strong>Date</strong></a></li>
+<li><a href="threads.html#00069"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

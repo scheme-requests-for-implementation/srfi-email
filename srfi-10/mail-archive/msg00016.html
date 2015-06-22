@@ -1,0 +1,198 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Splitting SRFI&#45;10 into three? -->
+<!--X-From-R13: byrtNcbobk.pbz -->
+<!--X-Date: Wed, 13 Oct 1999 14:59:59 &#45;0500 (CDT) -->
+<!--X-Message-Id: 199910131958.TAA03870@fnmoc.navy.mil -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Splitting SRFI-10 into three?</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00015.html">Date Prev</a>][<a href="msg00017.html">Date Next</a>][<a href="msg00015.html">Thread Prev</a>][<a href="msg00017.html">Thread Next</a>][<a href="maillist.html#00016">Date Index</a>][<a href="threads.html#00016">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Splitting SRFI-10 into three?</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:kelsey@DOMAIN.HIDDEN">kelsey@xxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Splitting SRFI-10 into three?</li>
+<li><em>From</em>: <a href="mailto:oleg@DOMAIN.HIDDEN">oleg@xxxxxxxxx</a></li>
+<li><em>Date</em>: Wed, 13 Oct 1999 19:58:16 GMT</li>
+<li><em>Cc</em>: <a href="mailto:srfi-10@DOMAIN.HIDDEN">srfi-10@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Reply-to</em>: <a href="mailto:oleg@DOMAIN.HIDDEN">oleg@xxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+	I indeed agree with what you said in the last two messages;
+yet I want to push a tad bit farther. 
+
+	Let me try to restate your suggestions, to make sure I know
+what you were saying.
+
+	Suppose a future SRFI proposes a new distinct type of Scheme
+values.  For example, it can introduce &quot;path values&quot; or a &quot;void
+value&quot; (which is implicitly present in many Scheme systems). It's nice
+to have an external representation for these datatypes, so they can be
+written and read. Therefore, the formal syntax of Scheme (&quot;Lexical
+structure&quot; and &quot;External representations&quot;, R5RS 7.1.1 and 7.1.2) has
+to be extended correspondingly. The most common way of such an
+extension is as 
+	&quot;#&quot; &lt;discriminator&gt; &lt;other-char&gt;*
+where &lt;discriminator&gt; is one character, which should be different from
+characters '(', '\', 'i', 'e', 'b', 'o', 'x', 'd' and possibly 'f',
+'!' and 't'. As we see there isn't too much choice for the
+&lt;discriminator&gt;, especially if we want to make it mnemonic.
+
+	SRFI-10 proposes another, formal and generic, way of extending
+external representations of scheme values, namely, via a #,(&lt;symbol&gt;
+&lt;datum&gt;*) form. A particular SRFI-X that introduces a new data type
+simply should pick up the appropriate &lt;symbol&gt; and decide upon
+&lt;datum&gt;-arguments. The SRFI-X does not need to extend the external
+syntax any more, nor does it need to fight for the remaining
+characters that may be used as the &lt;discriminator&gt;. Of course the
+implementation of SRFI-X should support writing of values of the new
+datatype in the #,() form, and reading it back. The exact way of doing
+that is up to SRFI-X or its implementation, it is not SRFI-10's
+concern. SRFI-10 shouldn't even care how exactly a particular
+#,(&lt;symbol&gt; &lt;datum&gt;*) form is interpreted.
+
+	Am I right it representing your position?
+
+	I contend however that the #,() notation is useful not only for
+new datatypes. Existing Scheme datatypes can benefit from
+#,() specification as well. For example, consider the following
+external forms:
+	#,(pi) #,(epsilon) #,(Infinity) #,(NaN)
+
+They all represent (inexact) numbers. They are quite useful for doing
+(IEEE floating point) arithmetics.
+
+	Furthermore, consider &quot;variable constants&quot;, for example,
+#,(os-type). When the reader scans the code, it replaces #,(os-type)
+with a literal symbol, e.g., Solaris, HP-UX. Because this &quot;binding&quot;
+occurs very early, the corresponding symbol can be analyzed in various
+macros, syntax and other special forms. Another useful notation of the
+same kind is #,(srfi-features), which can be replaced by the list of
+the feature identifiers the current implementation supports.
+
+	You're saying that SRFI-10 has nothing to implement. Yet it
+extends the syntax of Scheme, and thus requests that a Scheme reader
+at least recognize the #,() form. Currently it does not. 
+
+&gt; Every Scheme implementation already has this: it implements SRFI-10
+&gt; with an empty set of symbolic tags.
+
+I'm afraid I don't see this. When a non-SRFI-10 compliant reader comes
+across a #,(foo) form, it immediately throws an error. When a SRFI-10
+compliant reader sees the same form and does not know what to make of
+the 'foo' tag, the reader reports generally a different kind of
+error. Actually, the is no requirement to _report_ an error at
+all. The reader may simply replace the #,(foo) form with something
+(in)appropriate, for example, #f.
+
+	Speaking of errors, I think I have to make clearer what a
+reader should do when it encounters a #,(foo bar...) form with an
+unknown tag 'foo'. I think the reader should read this form as a list
+(foo bar ...) (as if the #, characters were not present). If the
+#,(foo bar...) was a part of Scheme code, then foo might be bound to a
+syntax rule, which thus gets activated. Or 'foo' may be bound to a
+procedure. In any case, the reader simply shifts the burden of dealing
+with an unknown #,() form to its caller.
+
+
+&gt; What is being proposed is that the following rule be added to the
+&gt; grammar for external representations (see section 7.1.2 in R5RS):
+&gt;  &lt;compound datum&gt;  --&gt;  #,(&lt;symbol&gt; &lt;datum&gt;*)
+
+As stated earlier, a #,() form may as well denote a simple &lt;datum&gt;.
+
+It appears therefore that the grammar for external representations
+should be changed as follows:
+
+&lt;datum&gt; ---&gt; &lt;simple datum&gt; | &lt;compound datum&gt; | &lt;hash-comma-datum&gt;
+
+&lt;hash-comma-datum&gt; ---&gt; &quot;#,(&quot; &lt;symbol&gt; &lt;datum&gt;* &quot;)&quot;
+
+Furthermore, the production for &lt;token&gt; in R5RS Sec. 7.1.1 should be
+extended to read
+	&lt;token&gt; ---&gt; &lt;identifier&gt; | ... | #,(
+
+The only problem with the above grammar is that it outlaws forms like
+#,(#,(foo) bar). Somehow I want to keep it. The only way to achieve
+that will be to define &lt;hash-comma-datum&gt; as
+	&lt;hash-comma-datum&gt; ---&gt; &quot;#,(&quot; &lt;datum&gt; &lt;datum&gt;* &quot;)&quot;
+
+A note has to be attached to this grammar stating that if a reader fails to
+make sense of &lt;hash-comma-datum&gt; (because the first datum after the
+&quot;#,(&quot; token is not a recognizable identifier), the reader should
+return &lt;hash-comma-datum&gt; as a compound datum (&lt;datum&gt; &lt;datum&gt;*)
+(that is, pretend that the &quot;#,(&quot; token was a &quot;(&quot; token).
+
+
+	I guess you were saying that SRFI-10 was way overloaded. It
+attempts to define a new extensible syntax, propose an implementation
+that uses this syntax for read-time-applications, and even mentions
+conditional compilation. It seems to make sense therefore to split
+SRFI-10 into three, for each of these subjects. The first one should
+be a meta-SRFI, S(RF)2I-0 in your notation. The read-time-application
+should be a SRFI-X that implements S(RF)2I-0 and proposes to interpret
+the #,() form as a read-time application. Every SRFI is required
+to have an implementation (thus an implementation of a meta-SRFI should
+be a regular SRFI). I wonder what SRFI editors may say to all this...
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00017" href="msg00017.html">Re: Splitting SRFI-10 into three?</a></strong>
+<ul><li><em>From:</em> Richard Kelsey</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00015.html">Re: SRFI-10 intent: new notation and _some_ guidelines of its interpretation</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00017.html">Re: Splitting SRFI-10 into three?</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00015.html">Re: SRFI-10 intent: new notation and _some_ guidelines of its interpretation</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00017.html">Re: Splitting SRFI-10 into three?</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00016"><strong>Date</strong></a></li>
+<li><a href="threads.html#00016"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

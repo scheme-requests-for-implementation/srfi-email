@@ -1,0 +1,159 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: arithmetic issues -->
+<!--X-From-R13: [nepva 'Cepmnx' Ybjnypmlx <depmnxNxaz.bet.cy> -->
+<!--X-Date: Fri, 21 Oct 2005 19:15:08 +0200 (MST) -->
+<!--X-Message-Id: 871x2elrl2.fsf@qrnik.zagroda -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20051021145326.816C11B77BB@home.voluntocracy.org -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: arithmetic issues</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00078.html">Date Prev</a>][<a href="msg00080.html">Date Next</a>][<a href="msg00333.html">Thread Prev</a>][<a href="msg00102.html">Thread Next</a>][<a href="maillist.html#00079">Date Index</a>][<a href="threads.html#00079">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: arithmetic issues</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: arithmetic issues</li>
+<li><em>From</em>: Marcin 'Qrczak' Kowalczyk &lt;<a href="mailto:qrczak@DOMAIN.HIDDEN">qrczak@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 21 Oct 2005 19:15:05 +0200</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20051021145326.816C11B77BB@DOMAIN.HIDDEN">20051021145326.816C11B77BB@xxxxxxxxxxxxxxxxxxxxx</a>&gt; (Aubrey Jaffer's message of &quot;Fri, 21 Oct 2005 10:53:26 -0400 (EDT)&quot;)</li>
+<li><em>Mail-followup-to</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>References</em>: &lt;<a href="mailto:20051021145326.816C11B77BB@DOMAIN.HIDDEN">20051021145326.816C11B77BB@xxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Sender</em>: Marcin 'Qrczak' Kowalczyk &lt;<a href="mailto:qrczak@DOMAIN.HIDDEN">qrczak@xxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Gnus/5.1006 (Gnus v5.10.6) Emacs/21.3 (gnu/linux)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Aubrey Jaffer &lt;agj@xxxxxxxxxxxx&gt; writes:
+
+&gt; Being error objects, syntax for NaNs should be unspecified.
+
+I disagree.
+
+Note that supporting special values (+inf.0, -inf.0, +nan.0, -0.0)
+needs at least functions to recognize them, in particular finite?
+(to go a fast path for non-pathological cases) and either negative-zero?
+or sign-bit? (the latter answering &quot;positive&quot; for 0.0 and &quot;negative&quot; for
+-0.0). Recognizing NaN is more clear with a distinguished predicate than
+with (= x x).
+
+&gt; None of the examples in SRFI-77 return -0.0 unless they are passed
+&gt; -0.0 as an argument.  Does -0.0 result only from a literal -0.0
+&gt; constant?
+
+For example (- 0.0), (/ -inf.0) and -1e-2000 yield -0.0,
+(* 0.0-i 0.0-i) yields (-1.0-0.0i).
+
+&gt; In an implementation with -0.0, what is the result of (* -5.0 0.0)?
+
+-0.0
+
+&gt; -0.0 is insufficiently specified by SRFI-77; it will be a portability
+&gt; killer.
+
+The relevant IEEE standard that everybody uses specifies it.
+Most processors support it natively.
+
+&gt; Mathematically, mixed exactness complex numbers makes no sense.
+
+Not true. For example 1.23 is a real number for sure, but its value
+could have been rounded. 1.23+0.0i and 1.23-0.0i signify that the true
+value might not be real.
+
+1.23+0i can be unified with 1.23 just like 123/1 is unified with 123.
+
+&gt; The procedures REAL-PART, IMAG-PART, and MAKE-RECTANGULAR already
+&gt; guarantee that the orthogonal representation is available.  The
+&gt; language should not constrain an internal representation which is
+&gt; transparent to the user.
+
+It's not transparent anyway if real-part and imag-part are reqired to
+return former arguments of make-rectangular (as long as they are real
+numbers) in the sense of eqv? or at least =. No implementation uses a
+different representation anyway, so constraining is theoretical.
+
+C++ made the mistake of not specifying the layout of complex numbers
+and having re() and im() as methods instead of fields. Every
+implementation does the same anyway, and not specifying this makes
+harder to interface to other languages.
+
+&gt;  | * Should `(floor +inf.0)' return +inf.0 or signal an error
+&gt;  |   instead?  (Similarly for ceiling, flfloor, infloor, etc.)
+&gt;
+&gt; Floor is specified to return an integer.  +inf.0 is not an integer.
+&gt; Thus it is an error.
+
+IMHO it's more useful to return +inf.0, because then the program
+doesn't have to treat the possibility of overflow at this point yet.
+IEEE, processors, and other languages which return an inexact number
+here, all return +inf.0 I think.
+
+-- 
+   __(&quot;&lt;         Marcin Kowalczyk
+   \__/       qrczak@xxxxxxxxxx
+    ^^     <a  rel="nofollow" href="http://qrnik.knm.org.pl/~qrczak/">http://qrnik.knm.org.pl/~qrczak/</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00102" href="msg00102.html">Re: arithmetic issues</a></strong>
+<ul><li><em>From:</em> Aubrey Jaffer</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00076" href="msg00076.html">arithmetic issues</a></strong>
+<ul><li><em>From:</em> Aubrey Jaffer</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00078.html">Re: arithmetic issues</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00080.html">Re: Exactness</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00333.html">Re: arithmetic issues</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00102.html">Re: arithmetic issues</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00079"><strong>Date</strong></a></li>
+<li><a href="threads.html#00079"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

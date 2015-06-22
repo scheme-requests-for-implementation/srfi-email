@@ -1,0 +1,304 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: SRFI&#45;13: late laundry list -->
+<!--X-From-R13: revx uvyfqnyr <ruvyfqnyNpf.vaqvnan.rqh> -->
+<!--X-Date: Wed, 17 Nov 1999 01:28:39 &#45;0600 (CST) -->
+<!--X-Message-Id: 199911170728.CAA01408@gont.cs.indiana.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>SRFI-13: late laundry list</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00018.html">Date Prev</a>][<a href="msg00020.html">Date Next</a>][<a href="msg00026.html">Thread Prev</a>][<a href="msg00022.html">Thread Next</a>][<a href="maillist.html#00019">Date Index</a>][<a href="threads.html#00019">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>SRFI-13: late laundry list</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-13@DOMAIN.HIDDEN">srfi-13@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: SRFI-13: late laundry list</li>
+<li><em>From</em>: erik hilsdale &lt;<a href="mailto:ehilsdal@DOMAIN.HIDDEN">ehilsdal@xxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 17 Nov 1999 02:28:40 -0500</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+Hi.  Sorry I'm late to the party.  
+
+I've organized this message somewhat strangely.  Rather than going
+through each individual procedure, I've tried to figure out the
+overarching design goals of the library and treat each in turn.  I've
+probably missed a few.  After doing this for awhile I'll get to some
+function-specific weirdnesses I noticed.
+
+I'm harping on consistency here because I'm one of those programmers
+Olin mentions who can't be bothered to remember all the procedures in
+a library, but rather reconstitute the name (and calling convention)
+when they need it.  So I'll favor a _consistent_ interface over a
+_concice_ interface (though I think the only times I found these to be
+in opposition is in string-&lt;index/skip&gt;-right, see below).
+
+---- Naming
+
+The procedure-names in the library obey a very nice naming convention:
+[sub]string-&lt;verb/noun&gt;[-ci][!] for the most part.  This is why I was
+surprised to see some breaking of these rules.  For consistency, I
+would strongly support renaming the following procedure:
+
+	join-strings       ==&gt; string-join
+
+I would also support renaming these two
+
+	capitalize-string  ==&gt; string-capitalize
+	capitalize-string! ==&gt; string-capitalize
+
+except that would cause a strange discontinuity with
+capitalize-words[!].  So I probably wouldn't rename these two unless I
+could convince everybody to drop capitalize-words[!] entirely, which
+I'll try to do below when I get to individual procedures. 
+
+---- Optional [start end] arguments for single-string procedures
+
+The rule that is almost always followed is that if there is a _single_
+string argument to a function, there will be optional start/end
+arguments for that string.  There are four exceptions to this rule:
+
+	string?	 
+	string-length
+	string-null?
+	string-&lt;take/drop&gt;[-right]
+
+Adding optional arguments to the first three is clearly goofy.
+However, although adding the optionals to string-&lt;take/drop&gt;[-right]
+seems goofy, I'll ask for it anyway.  
+
+Because my Scheme doesn't have shared substrings, when I start passing
+around start/end pairs to my functions, I do so for efficiency, and I
+really do treat the three arguments 's start end' as one:
+
+  (define foo 
+    (lambda (s start end) ;; one conceptual argument
+      ...stuff...))
+
+I don't like to think when I do this, so I'll almost certainly try to do:
+
+    (string-take s start end 10)
+
+As soon as I get the error message, I'll kick myself and rewrite it as
+one of the obvious
+
+    (substring s start (+ start 10))
+    (values s start (+ start 10))
+    (values s start (min (+ start 10) end))
+
+But I don't want to think.  I want string-take to accept my conceptual
+shared string that happens to be split up into three arguments.  
+
+---- Mandatory 'start2 end2' arguments for multi-string procedures
+
+All procedures that take more than one string, if they accept
+start/end pairs for those strings, _require_ all start/end pairs.
+That is, none of them is optional.  
+
+Except for string-replace, where [start2 end2] is optional. .  This is
+a bit strange.  Certainly, substring-compare[-ci] can't have optional
+[start2 end2] arguments, since the continuation arguments come last.
+But what would be wrong with
+
+    (substring= mystr mystr-start mystr-end &quot;foo&quot;)
+
+So it seems to me that the domains of 
+
+   substring[-ci]=
+   substring[-ci]&lt;&gt;
+   substring[-ci]&lt;
+   substring[-ci]&gt;
+   substring[-ci]&lt;=
+   substring[-ci]&gt;=
+   substring-&lt;prefix/suffix&gt;-length[-ci]
+   substring-&lt;prefix/suffix&gt;[-ci]?
+
+should be changed from
+
+   s1 start1 end1 s2 start2 end2
+
+to
+
+   s1 start1 end1 s2 [start2 end2]
+
+---- Optional [end start] arguments for index and skip
+
+Because the optional [start end] convention is so firmly established
+in the library, it hurts me dearly to see [end start] in the
+index-right and skip-right procedures.  Olin's defense that the start
+argument is almost never specified for these doesn't sway me, and the
+fact that I'll get a runtime error when I try it just irritates me.
+
+When I'm using the 's start end' convention to represent my strings,
+I'm not going to remember that these two arguments need to be reversed
+for these two procedures, and if I do I'll curse the fact that I've
+devoted brain cells to the exception.  
+
+When I'm not using this convention and just using the optional
+arguments 'casually', I at least would be happy to always write a zero
+for my start point whenever I want to specify my end point.
+
+---- Overflows
+
+Questions about some overflow cases:
+
+(string-take &quot;foo&quot; 5) ==&gt; &quot;foo&quot; or error?
+(string-drop &quot;foo&quot; 5) ==&gt; &quot;&quot; or error?
+
+(string-copy! &quot;xx&quot; 0 &quot;yyy&quot;) ==&gt; I assume an error, but am worried by
+			        the language 
+				'the copy is guaranteed to work'.  
+
+---- Sharing
+
+I'll cast my vote for the liberal camp.  However, I feel obligated to
+get a little wacky about it and ask why we're providing
+
+	string-append/shared
+	string-concatenate/shared
+	reverse-string-concatenate/shared
+
+If we're breaking R5RS's substring, I see no reason not to also break
+R5RS's string-append.  That is, by voting 'liberal' I believe that
+
+	(eq? foo (string-append &quot;&quot; foo))
+	(eq? foo (string-concatenate (list &quot;&quot; foo)))
+	(eq? foo (reverse-string-concatenate (list &quot;&quot; foo)))
+
+should all be allowed to be true.  The problem with my firm stance is
+that I have no idea what the 'non-shared' versions should be named.
+string-append/copy?  string-append/fresh?
+
+---- string-for-each, string-iterate
+
+I'm definitely with Lars Arvestad on this one.  String-for-each should
+require a left-to-right ordering.  I mainly argue this because I've
+now sent approximately five years-worth of undergraduates out into the
+world with the factoid that they should use 'for-each' when they care
+about evaluation order.  I'm willing to pay the price of an extra
+register-register comparison for that clarity.
+
+Well, I think I'm willing to do that, anyway.  I'd be happier if there
+were a good, non-'for-each' identifier that would connote
+unorderdness.  Sigh.
+
+---- string-null?
+
+I worry (probably needlessly) about people confusing the 'null' lexeme
+with the character with ascii value 0 that C programmers use to
+terminate their strings.  
+
+Or even worse, someone confusing it with the terminal value of a
+recursive datatype (grin).
+
+I was going to argue for 'empty-string?', but that would conflict with
+the 'string-first' naming convention.  How about 'string-empty?'?
+
+---- capitalize-string[!], capitalize-words[!]
+
+I just don't see a reason for having these procedures in this library,
+_especially_ capitalize-words.  They seem much more suited for a
+'natural language' sublibrary or the like.  I'm not sure I can argue
+cogently why they don't belong, but they stick out a bit to me, where
+string-upcase and string-downcase don't.  Capitalize-string[!] I can
+see as somewhat useful, but capitalize-words[!], for me, opens the
+same kind of bag of worms that string-split does.
+
+---- join-strings
+
+Why no 'prefix grammar?
+
+---- string-parse-start+end
+
+I didn't see anywhere in this spec where this procedure could be used.
+In every case where there is an optional [start end] argument pair,
+it's the last arguments of the function, and therefore
+sring-parse-final-start+end seems to be the only one of this pair that
+would be used.  
+
+Not that I particularly object to it being in the string-lib-internals
+module, I'm just not sure why it's there.  
+
+Also, you use the id 'rest' in the description of these two functions
+when you should probably use the id 'ARGS'. 
+
+---- Votes
+
+So I don't feel left out, here are my votes for the open (and closed)
+issues.
+
+STRING-APPEND accepts chars as well as strings?		-- no
+Comparison functions n-ary?				-- no
+Include STRING-TOKENIZE?				-- can't decide
+Include STRING-REDUCE and STRING-REDUCE-RIGHT ?		-- no
+SUBSTRING and copying/shared-text semantics:		-- liberal
+STRING-ITER vs STRING-ITERATE				-- iterate
+-COUNT versus -LENGTH					-- length
+
+--------------------------------------------------
+
+Thanks for taking the time to design this library, Olin.  The fact
+that I'm picking on little inconsistencies should reflect that the
+design shows such great consistency and elegance.  
+
+-erik
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00022" href="msg00022.html">Re: SRFI-13: late laundry list</a></strong>
+<ul><li><em>From:</em> Mikael Ståldal</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00018.html">New SRFI 13 draft available</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00020.html">Just a Few Comments</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00026.html">New SRFI 13 draft available</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00022.html">Re: SRFI-13: late laundry list</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00019"><strong>Date</strong></a></li>
+<li><a href="threads.html#00019"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

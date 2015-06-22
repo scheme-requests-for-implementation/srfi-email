@@ -1,0 +1,162 @@
+<!-- MHonArc v2.6.16 -->
+<!--X-Subject: lists in enclosed expression -->
+<!--X-From-R13: Bre Pbguare <creNobguare.pbz> -->
+<!--X-Date: Mon, 13 May 2013 22:19:46 +0200 (MST) -->
+<!--X-Message-Id: 51914AD3.1080405@bothner.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>lists in enclosed expression</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00063.html">Date Prev</a>][<a href="msg00065.html">Date Next</a>][<a href="msg00063.html">Thread Prev</a>][<a href="msg00065.html">Thread Next</a>][<a href="maillist.html#00064">Date Index</a>][<a href="threads.html#00064">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>lists in enclosed expression</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-108@DOMAIN.HIDDEN">srfi-108@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: lists in enclosed expression</li>
+<li><em>From</em>: Per Bothner &lt;<a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 13 May 2013 13:19:31 -0700</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-108@DOMAIN.HIDDEN">srfi-108@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Mozilla/5.0 (X11; Linux x86_64; rv:17.0) Gecko/20130402 Thunderbird/17.0.5</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+One issue that I think is worth raising before trying to wrap up
+SRFI-107/-108/-109 is how should one write an enclosed expression
+to yield all the elements of a list or vector.
+
+Assume vals is a 10-element vector, how would one express:
+
+&amp;foo{values: &amp;[(vector-ref vals 0) ... (vector-ref vals 9)]}
+
+The use-cases and issues are a little different for 107 vs 108 vs 109.
+
+For SRFI-107 (xml) one might want a list of subelements. For example:
+
+(define items (map (lambda (datum) #&lt;li&gt;&amp;[datum]&lt;/li&gt;) data))
+(define mylist #&lt;ol&gt;&amp;[items]&lt;/ol&gt;)
+
+In this case it seems reasonable to deal with an enclosed
+expression whose value a list of elements by just adding them
+all as children.  I.e. the list is implicitly flattened.
+
+For SRFI-109 (strings) one can always use a helper function
+that concatenates the values.  For example:
+
+#{values: &amp;[(apply string-append vals)]}
+
+Also, if the implementation support Common Lisp-style format
+specifiers, one can use the ~{...~} controls.  For example
+(and this works in Kawa):
+&amp;{values:&amp;~{ &amp;[vals]&amp;~}}
+This format each element of vals, with a prefix space.
+(Infix-only space can be done with the ~^ specifier.)
+
+For SRFI-108 (named constructors) it doesn't seem right to
+implicitly flatten the list.  An individual named constructor
+might do so, but the framework should not.  Which means it is
+desirable to have some kind of looping construct or syntax to
+perform explicit flattening.
+
+This could be the ... used in syntax-rules templates:
+
+&amp;foo{&amp;[vals ...]}
+
+However, this usage of ... doesn't quite match that used in
+syntax-rules, which depends on a kind of iteration valuable.
+
+Another idea is to use '@' as a slice operator, since
+it is already used as such as part of &quot;,@&quot; unquote-splicing:
+
+&amp;foo{&amp;[@vals]}
+
+In both cases '@' and '...' may be generally useful, not
+just for enclosed expressions.  For example:
+
+(apply proc a b c rest) === (proc a b c @rest)
+
+I'm exploring both of these ideas for Kawa, but they're
+far from fully baked, and I don't want to hold up SRFI-10[789]
+until they are.
+
+Not sure what the answer is, but I'm leaning towards the following:
+* Implicit flattening for SRFI-107.  (Modulo that John Cowan
+prefers SRFI-107 a pure reader form, without semantics.)
+* No implicit flattening for SRFI-108 or SRFI-109.
+* Individual named constructors (SRFI-108) may of course do
+implicit flattening.
+* Explicit flattening has to be done by the programmer, if
+desired.  For SRFI-109 ~{...~} format specifiers are an
+acceptable though cryptic (and non-required) solution.
+* Think more about more generally useful explicit
+flattening and operation operators for Kawa and maybe a SRFI.
+
+By the way, it worth pointing that if we had implicit
+flattening then we'd have a binding for the $&lt;&lt;$ and $&gt;&gt;$
+forms that is both portable and &quot;invisible&quot; (i.e. implicitly
+binds to no characters in the output):
+
+(define $&lt;&lt;$ (list &quot;&quot;))
+(define $&gt;&gt;$ (list &quot;&quot;))
+--
+	--Per Bothner
+per@xxxxxxxxxxx   <a  rel="nofollow" href="http://per.bothner.com/">http://per.bothner.com/</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00065" href="msg00065.html">Re: lists in enclosed expression</a></strong>
+<ul><li><em>From:</em> John Cowan</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00063.html">Re: SRFI-108 and SRFI-109 final candidates available</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00065.html">Re: lists in enclosed expression</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00063.html">Re: SRFI-108 and SRFI-109 final candidates available</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00065.html">Re: lists in enclosed expression</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00064"><strong>Date</strong></a></li>
+<li><a href="threads.html#00064"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,165 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: why generative? -->
+<!--X-From-R13: Euveb Ynjnv <fuvebNynin.arg> -->
+<!--X-Date: Thu,  3 Sep 2009 19:19:23 +0000 (UTC) -->
+<!--X-Message-Id: 20090903.091926.401732120522844114.shiro@lava.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 1881374.479241251990782943.JavaMail.root@zimbra -->
+<!--X-Reference: 24537952.481111251997839261.JavaMail.root@zimbra -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: why generative?</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00057.html">Date Prev</a>][<a href="msg00059.html">Date Next</a>][<a href="msg00059.html">Thread Prev</a>][<a href="msg00062.html">Thread Next</a>][<a href="maillist.html#00058">Date Index</a>][<a href="threads.html#00058">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: why generative?</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:will@DOMAIN.HIDDEN">will@xxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: why generative?</li>
+<li><em>From</em>: Shiro Kawai &lt;<a href="mailto:shiro@DOMAIN.HIDDEN">shiro@xxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 03 Sep 2009 09:19:26 -1000 (HST)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-99@DOMAIN.HIDDEN">srfi-99@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-99@DOMAIN.HIDDEN">srfi-99@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:24537952.481111251997839261.JavaMail.root@DOMAIN.HIDDEN"><a href="msg00056.html">24537952.481111251997839261.JavaMail.root@zimbra</a></a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:1881374.479241251990782943.JavaMail.root@DOMAIN.HIDDEN">1881374.479241251990782943.JavaMail.root@zimbra</a>&gt;	&lt;<a href="mailto:24537952.481111251997839261.JavaMail.root@DOMAIN.HIDDEN"><a href="msg00056.html">24537952.481111251997839261.JavaMail.root@zimbra</a></a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>From: William D Clinger &lt;will@xxxxxxxxxxx&gt;
+Subject: Re: why generative?
+Date: Thu, 3 Sep 2009 13:10:39 -0400 (EDT)
+
+&gt; Shiro Kawai wrote:
+&gt; &gt; Yeah, that was my mistake.  We don't even need to calculate
+&gt; &gt; a hash value.  Make-rtd can create a symbol that encodes the
+&gt; &gt; input values that matter (e.g. concatenating canonical
+&gt; &gt; representations of each value with a special separator).
+&gt; &gt; Such a symbol serves as a unique id.
+&gt; 
+&gt; Maybe, but I still don't see it.  What if one of the arguments
+&gt; to make-rtd is a mutable record?
+
+By making RTD &quot;functional&quot; I'm thinking that an RTD will never
+change its behavior as a type descriptor in any observable way
+after it is created.  (An implementation may add extra mutable
+information, e.g. debug log, but they shouldn't affect the
+behavior of the RTD as a type.)
+
+Current SRFI-99 make-rtd doesn't seem to be able to take
+mutable records.  The only aggregate types it can take are
+a vector as fieldspecs and an RTD as parent.  I believe
+the fieldspecs vector and its elements should be treated
+immutable semantically (i.e. RTD is defined by its content
+at the creation).  If the fieldspecs vector and its content
+are immutable, the parent RTD is also &quot;functional&quot;.
+
+My proposal allows uid to take a mutable record.  The sole
+purpose of passing mutable record as uid is, however, to
+guarantee uniqueness; the field is compared by eq? thus
+only their addresses matter.
+
+&gt; If that were all it required, I wouldn't care about that.
+&gt; I'm more concerned about the semantics and what seems to me
+&gt; to be an implied recursion that compares potentially circular
+&gt; and potentially mutable objects.
+
+If RTD's fieldspecs (including its elements) and parent are
+immutable, and we compare uid with eq?, we don't need to worry
+about these.
+
+&gt; &gt; I do see it a big disadvantage that R6RS-style nongenerative
+&gt; &gt; uid implies a separate global namespace *semantically*.
+&gt; &gt; We've been very careful introducing separate namespaces, and
+&gt; &gt; I don't feel like this uid namespace is justified well.
+&gt; &gt; Making rtd &quot;functional&quot; is one way to eliminate this separate
+&gt; &gt; global namespace.
+&gt; 
+&gt; One standard justification for using generative or nominal
+&gt; equality as the default instead of structural equality comes
+&gt; from records whose fields have implicit units.  Consider,
+&gt; for example, several record types that both contain immutable
+&gt; fields x and y.  Some represent points in polar coordinates,
+&gt; others in Cartesian; some use inches as the units, others use
+&gt; light-years; others don't represent points at all.
+&gt; 
+&gt; With your proposal, all those record types would be treated
+&gt; as the same unless the programmers remember to add a unique
+&gt; object that differentiates them.  The R6RS approach of using
+&gt; a uid when you want them to be the same feels less dangerous
+&gt; to me.
+
+In most programming languages programmers do give unique names
+to the different record types with same field specs.  I assume
+we can ask that much of work to the programmer's side if she
+wishes to have distinct types.
+
+Using the syntactic layer, a programmer gives a name to the
+record.  The syntactic layer may use that to create a unique id
+to distinguish types with the same fieldspecs.
+
+--shiro
+
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00062" href="msg00062.html">Re: why generative?</a></strong>
+<ul><li><em>From:</em> Thomas Bushnell BSG</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00056" href="msg00056.html">Re: why generative?</a></strong>
+<ul><li><em>From:</em> William D Clinger</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00057.html">Re: why generative?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00059.html">Re: why generative?</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00059.html">Re: why generative?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00062.html">Re: why generative?</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00058"><strong>Date</strong></a></li>
+<li><a href="threads.html#00058"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,182 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: How many arguments to a macro transformer? -->
+<!--X-From-R13: Yrvgu Ievtug <xjevtugNserr&#45;pbzc&#45;fubc.pbz> -->
+<!--X-Date: Tue,  9 Aug 2005 08:23:15 +0200 (DFT) -->
+<!--X-Message-Id: 200508090622.j796M1aJ003354@fcs12.free&#45;comp&#45;shop.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200508041346.j74Dkkec019512@later.het.brown.edu -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: How many arguments to a macro transformer?</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00019.html">Date Prev</a>][<a href="msg00021.html">Date Next</a>][<a href="msg00012.html">Thread Prev</a>][<a href="msg00021.html">Thread Next</a>][<a href="maillist.html#00020">Date Index</a>][<a href="threads.html#00020">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: How many arguments to a macro transformer?</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-72@DOMAIN.HIDDEN">srfi-72@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: How many arguments to a macro transformer?</li>
+<li><em>From</em>: Keith Wright &lt;<a href="mailto:kwright@DOMAIN.HIDDEN">kwright@xxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 9 Aug 2005 02:22:01 -0400</li>
+<li><em>Cc</em>: <a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-72@DOMAIN.HIDDEN">srfi-72@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:200508041346.j74Dkkec019512@DOMAIN.HIDDEN">200508041346.j74Dkkec019512@xxxxxxxxxxxxxxxxxxx</a>&gt; (message from	Andre van Tonder on Thu, 4 Aug 2005 09:46:46 -0400 (EDT))</li>
+<li><em>References</em>: &lt;<a href="mailto:200508041346.j74Dkkec019512@DOMAIN.HIDDEN">200508041346.j74Dkkec019512@xxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; From: Andre van Tonder &lt;andre@xxxxxxxxxxxxxxxxxxx&gt;
+&gt; 
+&gt;  No, it is broken on purpose.  The model changed a little from the
+&gt;  previous version.
+&gt;    
+&gt;  One could still make QUASISYNTAX macro-expressible by 
+&gt;  introducing a form, maybe called WITH-SINGLE-RENAMING-FUNCTION
+&gt;  (the opposite to WITH-FRESH-RENAMING-SCOPE of the previous version)
+&gt;  that overrides this default in the obvious way,
+&gt;   
+&gt;  I considered addihg such a form, but then realized that it is the
+&gt;  same as the trivial combination (quasisyntax (unquote ...)), i.e.,
+&gt;    
+&gt;  so one might as well introduce quasisyntax from the beginning and
+&gt;  avoid polluting the namespace with an extra form that would never be
+&gt;  used except for implementing quasisyntax.
+
+I read this with a sinking heart, thinking of arguments to prove
+that we need |quasisyntax| to be expressible purely in terms of
+|car|, |cdr|, |cons| and two symmetric scope/rename forms.
+
+But I thought for a few minutes and realized you had already
+thought of my arguments and gone one better.  This feels like
+an impovement now that I have had a chance to get used to it.
+
+&gt;  (An advantage of the current choice is that
+&gt;  with-fresh-renaming-scope is no longer necessary and has been
+&gt;  dropped).
+
+So symmetry is preserved by dumping both halves!  Sweet!
+
+Since we need to have some primitive scoping forms, they might
+as well be built into |quasisyntax| where they won't be obtrusive.
+It now seems obvious that #`(...) must do some things that are not
+just the same as `(...) or we wouldn't need both of them.  They
+are similar enough to give helpful analogies, but not redundant.
+
+This revision is more than a trival change.  It seems to me
+that it would be a good idea to extend the discussion period
+to give more time to think about it.  Don't let it go into
+final status before it is noticed, understood, and polished.
+We have waited ten years for the One True Macro System,
+it would be a shame to rush the last two months and then
+discover after it is finalized that something was overlooked.
+
+I would particularly like it if some gurus familiar with the
+various implementations would comment on whether there is
+anything in the SRFI that conflicts with their diverse macro
+systems.
+
+KW &gt; The appendix of R4RS says that it has been suggested
+KW &gt; (it doesn't say by whom) that #'&lt;datum&gt; and #`&lt;datum&gt;
+KW &gt; would be felicitous abbreviations for (syntax &lt;datum&gt;)
+KW &gt; and (quasisyntax &lt;datum&gt;).  Could this be added to the
+KW &gt; SRFI?
+
+It has come to my attention that MzScheme already does this.
+Macrology has been much elaborated while I was not paying
+attention.  Elaborated, but not clearly advanced.
+
+MzScheme also has two procedures called |datum-&gt;syntax-object|
+and |syntax-object-&gt;datum|.  These conflict with your newly
+renamed  |datum-&gt;syntax| and |syntax-&gt;datum|.  I don't know
+why you changed the names, but it is a conflict, not a
+compatibility, because the MzScheme syntax objects are not
+lists and can not be accessed with |car| and |cdr|.
+
+It seems unlikely that programs written to work with the
+MzScheme system that used these procedures could run unchanged
+on the SRFI system or vice-versa---the data types are completely
+different!
+
+To avoid confusion, and make it easier to write portable
+programs, it would be better to have distinct names for
+these two distinct pairs of procedures.  Then maybe one
+could be defined in terms of the other.  I don't know
+if this would be possible, it would probably be slow,
+but it is certainly more difficult if the two pairs of
+procedures have the same names!
+
+Since the defining characteristic of the SRFI system is that
+there are no special syntax objects, just lists of
+identifiers, they might be called |datum-&gt;syntax-list| and
+|syntax-list-&gt;datum|, or just go back to the original
+shorter names.
+
+-- 
+     -- Keith Wright
+
+Programmer in Chief, Free Computer Shop
+ ---  Food, Shelter, Source code.  ---
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00021" href="msg00021.html">Re: How many arguments to a macro transformer?</a></strong>
+<ul><li><em>From:</em> felix winkelmann</li></ul></li>
+<li><strong><a name="00024" href="msg00024.html">Re: How many arguments to a macro transformer?</a></strong>
+<ul><li><em>From:</em> Andre van Tonder</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00012" href="msg00012.html">Re: How many arguments to a macro transformer?</a></strong>
+<ul><li><em>From:</em> Andre van Tonder</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00019.html">Re: hygiene when using multiple instances of a macro..?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00021.html">Re: How many arguments to a macro transformer?</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00012.html">Re: How many arguments to a macro transformer?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00021.html">Re: How many arguments to a macro transformer?</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00020"><strong>Date</strong></a></li>
+<li><a href="threads.html#00020"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

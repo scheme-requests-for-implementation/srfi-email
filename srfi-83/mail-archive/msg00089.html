@@ -1,0 +1,160 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Reified modules, module = environment? -->
+<!--X-From-R13: orne <orneNfbavp.arg> -->
+<!--X-Date: Tue, 10 Jan 2006 20:21:42 +0100 (MET) -->
+<!--X-Message-Id: Pine.LNX.4.58.0601101108570.9937@bolt.sonic.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20060110160722.GB476@medborgon.saunalahti.fi -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Reified modules, module = environment?</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00088.html">Date Prev</a>][<a href="msg00090.html">Date Next</a>][<a href="msg00088.html">Thread Prev</a>][<a href="msg00090.html">Thread Next</a>][<a href="maillist.html#00089">Date Index</a>][<a href="threads.html#00089">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Reified modules, module = environment?</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:atehwa@DOMAIN.HIDDEN">atehwa@xxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Reified modules, module = environment?</li>
+<li><em>From</em>: bear &lt;<a href="mailto:bear@DOMAIN.HIDDEN">bear@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 10 Jan 2006 11:20:54 -0800 (PST)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-83@DOMAIN.HIDDEN">srfi-83@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-83@DOMAIN.HIDDEN">srfi-83@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20060110160722.GB476@DOMAIN.HIDDEN">20060110160722.GB476@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:20060110160722.GB476@DOMAIN.HIDDEN">20060110160722.GB476@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+On Tue, 10 Jan 2006 atehwa@xxxxxxxx wrote:
+
+&gt;I'm not sure what to think about this proposal.  On the one hand, it
+&gt;provides a long-yearned facility with a standard syntax, simple, easy to
+&gt;understand and relatively generic.  On the other hand, it is
+&gt;un-Scheme-like in many ways -- probably because many of the existing
+&gt;implementations, after which this SRFI has been modelled, are that too.
+&gt;Modules are not objects.  They are identified by strings, not even
+&gt;symbols.  The syntax doesn't seem to be very generic nor neutral about
+&gt;execution phases: it presupposes there to be two.  The library system is
+&gt;accessible to neither phase; both phases must operate &quot;within it&quot;.  The
+&gt;syntax is not integrated with the core language, but is an add-on.
+
+I have something of the same issue.  It seems strange and un-lispy to
+see such a strong type restrictions on things like module identifiers,
+and also strange and unschemely to be introducing new objects (modules)
+into the language without making them first-class (can be returned from
+functions, stored in structures, etc).  Opacity is directly at odds,
+from first principles, with the reflective and analytic and code-walking
+properties that have made lisps into such strong languages historically,
+and the module system syntax comes with many many restrictions that IMO
+do not belong in a language that tries so hard to remove such restrictions
+from all other expressions.
+
+&gt; What I find particularly problematic is that here _protocol_ is
+&gt; specified before _mechanism_.  First-class reified continuations were
+&gt; specified before exception and indeterminism facilities, because
+&gt; continuations are the mechanism, and exceptions are a protocol for using
+&gt; that mechanism.  Vectors were specified before records, because vectors
+&gt; are the mechanism and records are a protocol for using that mechanism.
+&gt; Admittedly, define-syntax (a protocol) was specified before specifying
+&gt; what syntax transformers are, but now we have Andre's simple, elegant
+&gt; and versatile macro mechanism that allows us to bring syntax and syntax
+&gt; transformers back into the realm of Scheme basic data types.
+
+It's a good and worthy thought.  But what simple and clean mechanism
+suffices for the implementation of modules as a protocol?  (I believe
+that first-class mutable environments, which are consistent with
+R5RS's requirements for environments, do suffice, btw...)
+
+&gt; Remember this sentence?  &quot;Programming languages should be designed not
+&gt; by piling feature on top of feature, but by removing the weaknesses and
+&gt; restrictions that make additional features appear necessary.&quot;  Scheme
+&gt; people should think as much as possible how to provide a powerful enough
+&gt; core that extensions can be made in Scheme.
+
+I think so.  But I also think that a particular protocol/implementation
+of modules should be provided and standardized on, simply for the sake
+of portable code.
+
+&gt; It happens that R5RS already has a facility that _almost_ implements
+&gt; modules.  This facility is called an &quot;environment&quot;.  Environments
+&gt; contain values for symbols, exactly like modules do.  They only lack a
+&gt; few properties to be used as full-fledged modules: the ability to create
+&gt; new, empty environments and the possibility to query an environment for
+&gt; the bindings it contains.  If we continue on the track now chosen, we
+&gt; will have a language full of half-fledged utilities, all somewhat
+&gt; similar, all restricted in different ways: environments, modules, hash
+&gt; tables, objects, and records.
+
+There is one additional, and very important, facility required of
+mutable environments if we intend to use them as a mechanism for
+implementing modules -- we need to be able to make syntactic bindings
+in our modules visible to code.
+
+&gt; That's not a nice state to be in.  How about specifying the mechanism in
+&gt; the report, and leave protocol to SRFI's?  It's slow, but that's the
+&gt; Scheme way, at least it has been.
+
+I think that SRFI's are probably the wrong venue for standardizing.  I
+would look to R6RS for a fundamental mechanism that *allows* the implementation
+of module systems, and also a standard or default module system.
+
+				Bear
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00088" href="msg00088.html">Reified modules, module = environment?</a></strong>
+<ul><li><em>From:</em> atehwa</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00088.html">Reified modules, module = environment?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00090.html">single vs. multi-sexp modules</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00088.html">Reified modules, module = environment?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00090.html">single vs. multi-sexp modules</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00089"><strong>Date</strong></a></li>
+<li><a href="threads.html#00089"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

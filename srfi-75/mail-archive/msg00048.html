@@ -1,0 +1,146 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: encoding strings in memory -->
+<!--X-From-R13: Bre Pbguare <creNobguare.pbz> -->
+<!--X-Date: Wed, 13 Jul 2005 18:22:01 +0200 (DFT) -->
+<!--X-Message-Id: 42D53F9D.100@bothner.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: OF88411C9D.3C2F72CF&#45;ON8525703C.005F138D&#45;0525703D.00507674@beckman.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: encoding strings in memory</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00047.html">Date Prev</a>][<a href="msg00049.html">Date Next</a>][<a href="msg00044.html">Thread Prev</a>][<a href="msg00050.html">Thread Next</a>][<a href="maillist.html#00048">Date Index</a>][<a href="threads.html#00048">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: encoding strings in memory</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:bburger@DOMAIN.HIDDEN">bburger@xxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: encoding strings in memory</li>
+<li><em>From</em>: Per Bothner &lt;<a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 13 Jul 2005 09:21:49 -0700</li>
+<li><em>Cc</em>: <a href="mailto:srfi-75@DOMAIN.HIDDEN">srfi-75@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-75@DOMAIN.HIDDEN">srfi-75@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:OF88411C9D.3C2F72CF-ON8525703C.005F138D-0525703D.00507674@DOMAIN.HIDDEN">OF88411C9D.3C2F72CF-ON8525703C.005F138D-0525703D.00507674@xxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:OF88411C9D.3C2F72CF-ON8525703C.005F138D-0525703D.00507674@DOMAIN.HIDDEN">OF88411C9D.3C2F72CF-ON8525703C.005F138D-0525703D.00507674@xxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mozilla Thunderbird 1.0.2-6 (X11/20050513)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+bburger@xxxxxxxxxxx wrote:
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><tt>1. Strings will almost certainly have to be represented as arrays of 
+</tt><tt>32-bit entities, since string-set! allows one to whack any character. 
+</tt><tt> This representation wastes memory, since the overwhelmingly common case 
+</tt><tt>is to use characters only from the Basic Multilingual Plane (0x0000 to 
+</tt><tt>0xFFFF).  For applications we write, the majority of characters are 
+</tt><tt>ASCII, even though our software is used around the world.  Consequently, 
+</tt><tt>we use UTF-8 for storing strings, even though we run on Microsoft 
+</tt><tt>Windows (UTF-16-LE).
+</tt></blockquote><pre style="margin: 0em;">
+
+</pre><tt>We have teh same problem in the Java world.  Native strings and 
+</tt><tt>characters are 16-bit Unicode.  This would fine 99% of the time. 
+</tt><tt>However, use of character above 0xFFFF requires using surrogate pairs.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>The problem is string-ref and string-set!.  Existing Java-String-based 
+</tt><tt>encodings have string-ref return *half* of a surrogate pair.  This is no 
+</tt><tt>problem for most applications, if you just want to print or copy 
+</tt><tt>strings.  It's not really a problem for intelligent code that deals with 
+</tt><tt>composed characters which needs to work with variable-length strings 
+</tt><tt>anyway.  It is a problem for intermediate code that does something with 
+</tt><tt>each individual character.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>Note that even these applications don't actually need a linear mapping 
+</tt><tt>from indexes to characters.  I.e. arithmetic on indexes in a string is 
+</tt><tt>never (well, hardly ever) useful or meaningful.  All we need is a 
+</tt><tt>&quot;position&quot; magic cookie, similar to stdio's fpos_t.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>One solution is to have multiple &quot;modes&quot;.  A string may start out in 
+</tt><tt>8-bit mode, and switch to 16-bit code when a 16-bit character is 
+</tt><tt>inserted, and then switch to 32-bit mode when a still larger character 
+</tt><tt>is inserted.  This means the entire string has to be copied when a 
+</tt><tt>single character is inserted, but the amortized cost per character is 
+</tt><tt>constant.  It also means that we need 32- bits per character for the 
+</tt><tt>entire string, even if there is only a single character &gt; 0xFFFF.
+</tt><pre style="margin: 0em;">
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><tt>2. Changing strings to use 32-bit characters will make foreign function 
+</tt><tt>interfaces difficult, since the major platforms use UTF-16-LE and UTF-8. 
+</tt><tt> It will also break all existing foreign-function code that relies on 
+</tt><tt>strings being 8-bit bytes.
+</tt></blockquote><pre style="margin: 0em;">
+
+</pre><tt>The &quot;mode-switching&quot; solution doesn't solve that problem - it makes it 
+</tt><tt>worse.
+</tt><pre style="margin: 0em;">
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><tt>It seems to me that keeping char 8-bit and string as an array of 8-bit 
+</tt><tt>bytes would be the least disruptive change. 
+</tt></blockquote><pre style="margin: 0em;">
+
+But what does char-ref return?
+
+I have an idea; see next message.
+--
+	--Per Bothner
+per@xxxxxxxxxxx   <a  rel="nofollow" href="http://per.bothner.com/">http://per.bothner.com/</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00044" href="msg00044.html">encoding strings in memory</a></strong>
+<ul><li><em>From:</em> bburger</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00047.html">Re: naming comments</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00049.html">Re: case mappings</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00044.html">encoding strings in memory</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00050.html">constant-time access to variable-width encodings</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00048"><strong>Date</strong></a></li>
+<li><a href="threads.html#00048"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

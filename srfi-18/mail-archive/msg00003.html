@@ -1,0 +1,134 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: continuations and threads -->
+<!--X-From-R13: Xvz Pynaql <wvzoNerq&#45;orna.pbz> -->
+<!--X-Date: Thu, 17 Feb 2000 18:40:00 &#45;0600 (CST) -->
+<!--X-Message-Id: 200002180039.TAA13065@savonarola.red&#45;bean.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>continuations and threads</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00002.html">Date Prev</a>][<a href="msg00004.html">Date Next</a>][<a href="msg00002.html">Thread Prev</a>][<a href="msg00004.html">Thread Next</a>][<a href="maillist.html#00003">Date Index</a>][<a href="threads.html#00003">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>continuations and threads</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-18@DOMAIN.HIDDEN">srfi-18@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: continuations and threads</li>
+<li><em>From</em>: Jim Blandy &lt;<a href="mailto:jimb@DOMAIN.HIDDEN">jimb@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 17 Feb 2000 19:39:58 -0500</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+I think it's worth noting that most implementations of threads have an
+unfortunate interaction with some implementations of continuations,
+notably that used in Guile and SCM.
+
+In this particular implementation, call/cc actually copies the C stack
+into the heap, and applying a continuation copies the saved stack from
+the heap back onto the C stack.  There are a number of tricks here:
+
+- We use the address of some local C variable in our `main' function
+  as the &quot;base&quot; of the stack.  It doesn't really matter where it is,
+  as long as it's below all the state we need to capture.  The C
+  function that does call/cc's dirty work uses the address of one of
+  its own local C variables as the other end of the stack.
+
+- The interpreter keeps the values of all Scheme variables in the
+  heap, never in local C variables.  This assures that the
+  continuation only carries references to variables, not variable
+  values itself, so continuations can share variables appropriately.
+
+- When we apply a continuation, the continuation's saved stack may be
+  larger than our current stack.  So we recurse until we've grown our
+  stack large enough to hold the continuation's saved data, copy the
+  continuation back over our stack, and then longjmp to it.
+
+I think this is pretty gross, but it does allow a natural
+correspondence between C function calls and Scheme function calls:
+continuations preserve active calls to C functions, as well as Scheme
+functions.  If it's important to your users to be able to write C
+functions that can call and be called by Scheme functions, I think
+this is a plausible implementation choice.  I'm not aware of any other
+implementation that does this while requiring so little distortion of
+your C code.  (But if you know of one, I'd love to hear about it!)
+
+It's also proven to be surprisingly portable.
+
+However, the hack only works because you copy the stack back to the
+same address it came from.  We can treat the stack as an opaque block
+of bytes, ignoring all the frame structure, intra-stack pointers,
+etc. exclusively because we use it only at the address where it was
+built.
+
+So, if each thread's stack lives at a different address, this means
+that continuations captured by one thread cannot be used by any other
+thread.  To do so would require using a copy of one thread's stack at
+another thread's stack address; we lack the information about the
+stack's real structure needed to relocate it for use at a new address.
+Each continuation can only be used by the thread that captured it.
+
+Certainly, it has never been The Scheme Way to cripple a nice
+interface to accomodate a particular implementation strategy ---
+especially one as twisted as this one --- so I'm not suggesting that
+Marc should change the SRFI.  However, I think this problem will be
+common to Scheme systems intended to work closely with C code, so I
+thought I'd mention it.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00004" href="msg00004.html">Re: continuations and threads</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00002.html">Re: Thoughts on Priorities and Quanta</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00004.html">Re: continuations and threads</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00002.html">Re: Thoughts on Priorities and Quanta</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00004.html">Re: continuations and threads</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00003"><strong>Date</strong></a></li>
+<li><a href="threads.html#00003"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

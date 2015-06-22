@@ -1,0 +1,234 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: numbers; efficiency -->
+<!--X-From-R13: Oyhzvahz Brgebsfxl <nyhzvahzNcrgebsfxl.bet> -->
+<!--X-Date: Wed, 18 Dec 2002 10:48:32 +0100 (NFT) -->
+<!--X-Message-Id: 200212180948.BAA03592@radish.petrofsky.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: Pine.LNX.4.40.0212171954550.26029&#45;100000@bolt.sonic.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>numbers; efficiency</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00019.html">Date Prev</a>][<a href="msg00021.html">Date Next</a>][<a href="msg00018.html">Thread Prev</a>][<a href="msg00022.html">Thread Next</a>][<a href="maillist.html#00020">Date Index</a>][<a href="threads.html#00020">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>numbers; efficiency</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-38@DOMAIN.HIDDEN">srfi-38@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: numbers; efficiency</li>
+<li><em>From</em>: Aluminum Petrofsky &lt;<a href="mailto:aluminum@DOMAIN.HIDDEN">aluminum@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 18 Dec 2002 01:48:25 -0800</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-38@DOMAIN.HIDDEN">srfi-38@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:Pine.LNX.4.40.0212171954550.26029-100000@DOMAIN.HIDDEN">Pine.LNX.4.40.0212171954550.26029-100000@xxxxxxxxxxxxxx</a>&gt;	(message from bear on Tue, 17 Dec 2002 21:31:18 -0800 (PST))</li>
+<li><em>References</em>: &lt;<a href="mailto:Pine.LNX.4.40.0212171954550.26029-100000@DOMAIN.HIDDEN">Pine.LNX.4.40.0212171954550.26029-100000@xxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; From: bear &lt;bear@xxxxxxxxx&gt;
+
+&gt; But at third glance, (eq?) objects behave just like (eqv?) objects in
+&gt; the absence of assignment - and there is no way in R5RS to assign to a
+&gt; number or a character without changing its identity and thereby
+&gt; terminating the (eq?) relationship -- without a side effect on
+&gt; whatever it formerly had an (eq?) relationship with.
+
+Uh, there is no way in r5rs to assign to a number or character at
+all.  You can assign a new value to a location that previously held a
+number, but that's neither here nor there.
+
+&gt; Well, my intent was to recover (eq?) relationships when reading
+&gt; anything that had been written.
+
+R5rs numerical eq?-ity is much too ephemeral to survive a write-read
+cycle.  Note this example from the standard:
+
+     (let ((n (+ 2 3))) (eq? n n))  =&gt;  unspecified
+
+It's also true that:
+
+     (let ((n 1)) (eq? (eq? n n) (eq? n n)))  =&gt;  unspecified
+
+I think what you really want is just for shared locations to be
+shared.  Other than procedures (for which external representation is
+quite problematic), the three types of r5rs data that represent
+locations are pairs, nonempty vectors, and nonempty strings.
+
+&gt; So it appears that there may be situations in which numbers may be
+&gt; (eqv?) without being (eq?) in some schemes.  (What scheme are you
+&gt; using, marc?  I've never had this happen and didn't know it was
+&gt; possible!)
+
+It happens frequently with bignums, and with floating-point if
+floating-point numbers don't fit in a word.
+
+  (define p (cons (expt 10 100) (expt 10 100)))
+
+  (eqv? (car p) (cdr p))  =&gt;  #t
+  (eq?  (car p) (cdr p))  =&gt;  unspecified, usually #f.
+
+&gt; From: Sven Hartrumpf &lt;Sven.Hartrumpf@xxxxxxxxxxxxxxxx&gt;
+&gt; 
+&gt; I would like to see the reference implementation to be improved for efficiency.
+&gt; Yes, I know that efficiency is not a requirement for SRFI reference
+&gt; implementions.  But many Scheme implementors just copy the reference
+&gt; implementation without modifications in order to save time - which is
+&gt; understandable but bad for many users.
+
+The big efficiency issue here is that any portable implementation will
+take quadratic time, but if you are the system implementor you should
+be able to provide an O(n log n) version.  If all the locations are
+mutable, you can write an O(n) version that destructively marks
+locations as it goes and then restores them all when done.  If
+locations are immutable, then there should be some fixed ordering of
+them that you can use to make an O(log n) lookup table, giving you an
+O(n log n) write-showing-shared.  R5rs does not give the programmer
+access to mutability information nor to comparison of constant data's
+addresses, but both of these are trivial operations if you have access
+to the system's internals.
+
+(Hmm, that destructive marking idea will actually only work for pairs
+and vectors, not strings ... but I think if you have access to the
+allocator it shouldn't be too hard to work something out.)
+
+We can certainly improve the portable implementation, however.  As
+Bear said, the code in the reference implementation was written to
+implement a different function -- one that was purely functional and
+returned a string.  It has to do extra work to accommodate the lack of
+write-to-string functions in r5rs.  To implement the imperative
+write-showing-shared procedure of the SRFI is more straightforward:
+
+  ;; Warning: only very lightly tested.
+  (define (write-showing-shared obj)
+    (define (acons key val alist)
+      (cons (cons key val) alist))
+    ;; We only track duplicates of pairs, vectors, and strings.  We
+    ;; ignore zero-length vectors and strings because r5rs doesn't
+    ;; guarantee that eq? treats them sanely (and they aren't very
+    ;; interesting anyway).
+    (define (interesting? obj)
+      (or (pair? obj)
+	  (and (vector? obj) (not (zero? (vector-length obj))))
+	  (and (string? obj) (not (zero? (string-length obj))))))
+    ;; (write-obj OBJ ALIST):
+    ;; ALIST has an entry for each interesting part of OBJ.  The
+    ;; associated value will be:
+    ;;  -- a number if the part has been given one,
+    ;;  -- #t if the part will need to be assigned a number but has not been yet,
+    ;;  -- #f if the part will not need a number.
+    ;; The cdr of ALIST's first element should be the most recently
+    ;; assigned number.
+    ;; Returns an alist with new shadowing entries for any parts that
+    ;; had numbers assigned.
+    (define (write-obj obj alist)
+      (define (write-interesting alist)
+	(cond ((pair? obj)
+	       (display &quot;(&quot;)
+	       (let write-cdr ((obj (cdr obj)) (alist (write-obj (car obj) alist)))
+		 (cond ((and (pair? obj) (not (cdr (assq obj alist))))
+			(display &quot; &quot;)
+			(write-cdr (cdr obj) (write-obj (car obj) alist)))
+		       ((null? obj)
+			(display &quot;)&quot;)
+			alist)
+		       (else
+			(display &quot; . &quot;)
+			(let ((alist (write-obj obj alist)))
+			  (display &quot;)&quot;)
+			  alist)))))
+	      ((vector? obj)
+	       (display &quot;#(&quot;)
+	       (let ((len (vector-length obj)))
+		 (let write-vec ((i 1) (alist (write-obj (vector-ref obj 0) alist)))
+		   (cond ((= i len) (display &quot;)&quot;) alist)
+			 (else (display &quot; &quot;)
+			       (write-vec (+ i 1)
+					  (write-obj (vector-ref obj i) alist)))))))
+	      ;; else it's a string
+	      (else (write obj) alist)))
+      (cond ((interesting? obj)
+	     (let ((val (cdr (assq obj alist))))
+	       (cond ((not val) (write-interesting alist))
+		     ((number? val) (display &quot;#&quot;) (write val) (display &quot;#&quot;) alist)
+		     (else
+		      (let ((n (+ 1 (cdar alist))))
+			(display &quot;#&quot;) (write n) (display &quot;=&quot;)
+			(write-interesting (acons obj n alist)))))))
+	    (else (write obj) alist)))
+    ;; Scan computes the initial value of the alist, which maps each
+    ;; interesting part of the object to #t if it occurs multiple times,
+    ;; #f if only once.
+    (define (scan obj alist)
+      (cond ((not (interesting? obj)) alist)
+	    ((assq obj alist)
+             =&gt; (lambda (p) (if (cdr p) alist (acons obj #t alist))))
+	    (else
+	     (let ((alist (acons obj #f alist)))
+	       (cond ((pair? obj) (scan (car obj) (scan (cdr obj) alist)))
+		     ((vector? obj)
+		      (let ((len (vector-length obj)))
+			(do ((i 0 (+ 1 i))
+			     (alist alist (scan (vector-ref obj i) alist)))
+			    ((= i len) alist))))
+		     (else alist))))))
+    (write-obj obj (acons 'dummy 0 (scan obj '())))
+    ;; We don't want to return the big alist that write-obj just returned.
+    (if #f #f))
+
+-al
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00018" href="msg00018.html">Re: new function or modify read</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00019.html">Re: new function or modify read</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00021.html">Re: new function or modify read</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00018.html">Re: new function or modify read</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00022.html">Re: new function or modify read</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00020"><strong>Date</strong></a></li>
+<li><a href="threads.html#00020"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

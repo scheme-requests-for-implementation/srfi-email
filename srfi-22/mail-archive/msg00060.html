@@ -1,0 +1,189 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Several comments -->
+<!--X-From-R13: [nep Trryrl <srryrlNWDA.G[bagerny.QO> -->
+<!--X-Date: Thu, 22 Mar 2001 07:05:08 &#45;0600 (CST) -->
+<!--X-Message-Id: 200103221304.f2MD4xg30955@trex.IRO.UMontreal.CA -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200103100257.VAA24520@mongkok.cc.gt.atl.ga.us -->
+<!--X-Reference: 200103201614.f2KGE5r25621@dino02.IRO.UMontreal.CA -->
+<!--X-Reference: y9ld7bcflik.fsf@sams.informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: 200103201711.f2KHBO525681@dino02.IRO.UMontreal.CA -->
+<!--X-Reference: y9llmpycinu.fsf@sams.informatik.uni&#45;tuebingen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Several comments</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00059.html">Date Prev</a>][<a href="msg00061.html">Date Next</a>][<a href="msg00059.html">Thread Prev</a>][<a href="msg00061.html">Thread Next</a>][<a href="maillist.html#00060">Date Index</a>][<a href="threads.html#00060">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Several comments</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Several comments</li>
+<li><em>From</em>: Marc Feeley &lt;<a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 22 Mar 2001 08:04:59 -0500</li>
+<li><em>Cc</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxxxxx</a>, <a href="mailto:srfi-22@DOMAIN.HIDDEN">srfi-22@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:y9llmpycinu.fsf@DOMAIN.HIDDEN">y9llmpycinu.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	(<a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>)</li>
+<li><em>References</em>: &lt;<a href="mailto:200103100257.VAA24520@DOMAIN.HIDDEN">200103100257.VAA24520@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:200103201614.f2KGE5r25621@DOMAIN.HIDDEN">200103201614.f2KGE5r25621@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:y9ld7bcflik.fsf@DOMAIN.HIDDEN">y9ld7bcflik.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:200103201711.f2KHBO525681@DOMAIN.HIDDEN">200103201711.f2KHBO525681@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:y9llmpycinu.fsf@DOMAIN.HIDDEN">y9llmpycinu.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; Marc&gt; Could you also respond to the rest of my comments, where I don't
+&gt; Marc&gt; see a need for an entry point?
+&gt; 
+&gt; Ermh, there's been a somewhat misleading heading called &quot;Implicit
+&gt; vs. Explicit Command-Line Parameter Access&quot; in the SRFI from day 1
+&gt; which still holds.
+
+Fine.  I reproduce it below.
+
+&gt; Implicit vs. Explicit Command-Line-Parameter Access
+&gt; 
+&gt; This SRFI specifies that the Scheme script interpreters will
+&gt; communicate the command-line arguments to the script as arguments to
+&gt; the procedur specified as the first command-line argument. Some Scheme
+&gt; implementations use a special global variable that holds the
+&gt; arguments. It is not clear that one alternative is inherently
+&gt; preferable to another. Neither is it clear whether a vector or a list
+&gt; is the more natural data structure.
+&gt; 
+&gt; However, explicitly specifying an entry point has the advantage that
+&gt; scripts are easier to debug with a REPL-type Scheme implementation -
+&gt; it is easily possible to call the script entry point explicitly from
+&gt; the REPL, demonstrably achieving the same effect as loading the script
+&gt; from the interpreter.
+
+So the main advantage is to simplify debugging the shell script
+interactively.  I can understand that.
+
+However, this comes at the expense of &quot;compilability&quot;, that is the
+compiler must parse the header to discover what the entry point
+procedure is and which command line arguments are to be passed to the
+entry point procedure.  This is difficult and fragile at best, because
+the compiler must know the shell parsing algorithm, and understand
+&quot;IFS=...&quot;, etc.  Moreover it means &quot;load&quot; ignores the entry point
+information when loading a source file (so you can debug), but does
+not ignore it when loading a &quot;fasl&quot; file.  This breaks the equivalence
+between &quot;interpreted&quot; and &quot;compiled&quot; code.  Finally, that extra entry
+point information eats at the 32 byte limit, when scheme-script is
+used as the scripts interpreter (i.e. after the &quot;#!&quot; on the first
+line).
+
+My approach, which eliminates the need for an entry point information,
+could be made to work for debugging if you make
+&quot;command-line-arguments&quot; a parameter (in the sense of Chez Scheme's
+and PLTScheme's &quot;make-parameter&quot;).  To debug a script &quot;S&quot; such as
+
+  #! /bin/sh
+  &quot;exec&quot; &quot;scheme-script&quot; &quot;$0&quot; &quot;$@&quot;
+  (define (main arg1 arg2)
+    (write (+ (string-&gt;number arg1) (string-&gt;number arg2))))
+  (apply main (command-line-arguments))
+
+and call it with arguments &quot;100&quot; and &quot;200&quot; you would do:
+
+  (parameterize ((command-line-arguments '(&quot;100&quot; &quot;200&quot;))) (load &quot;S&quot;))
+
+Alternatively the procedure &quot;script-arguments&quot; could be used instead
+of &quot;command-line-arguments&quot; like this
+
+  #! /bin/sh
+  &quot;exec&quot; &quot;scheme-script&quot; &quot;$0&quot; &quot;$@&quot;
+  (define (main arg1 arg2)
+    (write (+ (string-&gt;number arg1) (string-&gt;number arg2))))
+  (apply main (script-arguments))
+
+and have that procedure return the command line arguments only when it
+is loaded as a script, and signal an error otherwise.  So to debug the
+file you simply (load &quot;S&quot;) and the debugger gives an error saying
+something like &quot;Attempt to load a script in an inappropriate context&quot;,
+and then you can simply call &quot;main&quot; directly (I'm assuming the &quot;apply&quot;
+would be required to be the last line of the script).  This has the
+additional advantage that you can be warned of the missuse of a script
+as a plain source code file.
+
+A third alternative, which is my least favorite is to pin down the
+name of the entry point, for example &quot;script-main&quot;.  A script would
+look like this
+
+  #! /bin/sh
+  &quot;exec&quot; &quot;scheme-script&quot; &quot;$0&quot; &quot;$@&quot;
+  (define (script-main arg1 arg2)
+    (write (+ (string-&gt;number arg1) (string-&gt;number arg2))))
+
+and &quot;scheme-script&quot; would always invoke &quot;script-main&quot; after loading a
+script.
+
+Marc
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00061" href="msg00061.html">Re: Several comments</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr. Preprocessor]</li></ul></li>
+<li><strong><a name="00066" href="msg00066.html">Re: Several comments</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00014" href="msg00014.html">Several comments</a></strong>
+<ul><li><em>From:</em> shivers</li></ul></li>
+<li><strong><a name="00041" href="msg00041.html">Re: Several comments</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+<li><strong><a name="00042" href="msg00042.html">Re: Several comments</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr. Preprocessor]</li></ul></li>
+<li><strong><a name="00046" href="msg00046.html">Re: Several comments</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+<li><strong><a name="00059" href="msg00059.html">Re: Several comments</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr. Preprocessor]</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00059.html">Re: Several comments</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00061.html">Re: Several comments</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00059.html">Re: Several comments</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00061.html">Re: Several comments</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00060"><strong>Date</strong></a></li>
+<li><a href="threads.html#00060"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

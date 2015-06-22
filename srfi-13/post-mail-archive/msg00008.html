@@ -1,0 +1,127 @@
+<!-- MHonArc v2.6.16 -->
+<!--X-Subject: two bugs in reference implementation of SRFI 13 -->
+<!--X-From-R13: Xnzvfba Vbcr <weuNgurcgetebhc.pbz> -->
+<!--X-Date: Sat, 24 Dec 2011 19:48:11 +0000 (UTC) -->
+<!--X-Message-Id: y9lsjk94upx.fsf@deinprogramm.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>two bugs in reference implementation of SRFI 13</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00007.html">Date Prev</a>][<a href="msg00009.html">Date Next</a>][<a href="msg00007.html">Thread Prev</a>][<a href="msg00009.html">Thread Next</a>][<a href="maillist.html#00008">Date Index</a>][<a href="threads.html#00008">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>two bugs in reference implementation of SRFI 13</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-13@DOMAIN.HIDDEN">srfi-13@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: two bugs in reference implementation of SRFI 13</li>
+<li><em>From</em>: Jamison Hope &lt;<a href="mailto:jrh@DOMAIN.HIDDEN">jrh@xxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 24 Dec 2011 20:48:10 +0100</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-13@DOMAIN.HIDDEN">srfi-13@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Old-date</em>: Thu, 22 Dec 2011 15:38:43 -0500</li>
+<li><em>User-agent</em>: Gnus/5.110011 (No Gnus v0.11) XEmacs/21.5-b31 (darwin)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>A Kawa user just discovered a bug in string-contains, which I tracked
+down to the reference implementation of make-kmp-restart-vector.
+
+string-parse-start+end is documented to return three values:
+&quot;rest start end&quot;, but in make-kmp-restart-vector its result is bound
+to two variables (start end). I found the same issue in
+string-kmp-partial-search, which also attempts to capture only the
+&quot;start&quot; and &quot;end&quot; values.
+
+The fix in both places is to call string-parse-final-start+end instead,
+which strips off the first unwanted rest value from string-parse-start 
++end.
+
+
+--- srfi-13.scm	2006-11-21 16:18:11.000000000 -0500
++++ srfi-13-fixed.scm	2011-12-22 15:17:59.000000000 -0500
+@@ -1381,7 +1381,7 @@
+    (let-optionals* maybe-c=+start+end
+                    ((c= char=? (procedure? c=))
+  		   ((start end) (lambda (args)
+-				  (string-parse-start+end make-kmp-restart-vector
++				  (string-parse-final-start+end make-kmp-restart-vector
+  							  pattern args))))
+      (let* ((rvlen (- end start))
+  	   (rv (make-vector rvlen -1)))
+@@ -1450,7 +1450,7 @@
+  		  ((c=      char=? (procedure? c=))
+  		   (p-start 0 (and (integer? p-start) (exact? p-start) (&lt;= 0 p- 
+start)))
+  		   ((s-start s-end) (lambda (args)
+-				      (string-parse-start+end string-kmp-partial-search
++				      (string-parse-final-start+end string-kmp-partial-search
+  							      s args))))
+      (let ((patlen (vector-length rv)))
+        (check-arg (lambda (i) (and (integer? i) (exact? i) (&lt;= 0 i)  
+(&lt; i patlen)))
+
+
+
+--
+Jamison Hope
+The PTR Group
+www.theptrgroup.com
+
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00009" href="msg00009.html">Re: two bugs in reference implementation of SRFI 13</a></strong>
+<ul><li><em>From:</em> Taylor R Campbell</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00007.html">Bug in string-index-right and string-skip-right</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00009.html">Re: two bugs in reference implementation of SRFI 13</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00007.html">Bug in string-index-right and string-skip-right</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00009.html">Re: two bugs in reference implementation of SRFI 13</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00008"><strong>Date</strong></a></li>
+<li><a href="threads.html#00008"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,183 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: non&#45;local exits are icky -->
+<!--X-From-R13: Fbz Zbeq <ybeqNrzs.arg> -->
+<!--X-Date: Sun, 28 Dec 2003 18:36:01 +0100 (NFT) -->
+<!--X-Message-Id: 200312281800.KAA20450@morrowfield.regexps.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200312232331.PAA19112@morrowfield.regexps.com -->
+<!--X-Reference: y9l3cb7a8n0.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: 200312261838.KAA27859@morrowfield.regexps.com -->
+<!--X-Reference: y9lwu8j77pb.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: 200312261943.LAA28146@morrowfield.regexps.com -->
+<!--X-Reference: y9l65g22q4b.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: 200312271903.LAA16941@morrowfield.regexps.com -->
+<!--X-Reference: y9ln09em79n.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: 200312280236.SAA18212@morrowfield.regexps.com -->
+<!--X-Reference: y9loettjnih.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: non-local exits are icky</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00112.html">Date Prev</a>][<a href="msg00114.html">Date Next</a>][<a href="msg00109.html">Thread Prev</a>][<a href="msg00134.html">Thread Next</a>][<a href="maillist.html#00113">Date Index</a>][<a href="threads.html#00113">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: non-local exits are icky</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: non-local exits are icky</li>
+<li><em>From</em>: Tom Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 28 Dec 2003 10:00:44 -0800 (PST)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:y9loettjnih.fsf@DOMAIN.HIDDEN">y9loettjnih.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt; (message from	Michael Sperber on Sun, 28 Dec 2003 10:32:38 +0100)</li>
+<li><em>References</em>: &lt;<a href="mailto:200312232331.PAA19112@DOMAIN.HIDDEN">200312232331.PAA19112@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:y9l3cb7a8n0.fsf@DOMAIN.HIDDEN">y9l3cb7a8n0.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:200312261838.KAA27859@DOMAIN.HIDDEN">200312261838.KAA27859@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:y9lwu8j77pb.fsf@DOMAIN.HIDDEN">y9lwu8j77pb.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:200312261943.LAA28146@DOMAIN.HIDDEN">200312261943.LAA28146@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:y9l65g22q4b.fsf@DOMAIN.HIDDEN">y9l65g22q4b.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:200312271903.LAA16941@DOMAIN.HIDDEN">200312271903.LAA16941@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:y9ln09em79n.fsf@DOMAIN.HIDDEN">y9ln09em79n.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:200312280236.SAA18212@DOMAIN.HIDDEN">200312280236.SAA18212@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:y9loettjnih.fsf@DOMAIN.HIDDEN">y9loettjnih.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+Ok, I think I better understand your attitude about non-local exits
+and error signalling.
+
+To test my understanding, and before replying to the proposal further,
+let me just say back to you two things that I think you would agree
+with (and think are obviously true):
+
+1) Non-local exits to upward continuations currently afford no
+   general mechanism for cleanups in FFI-using C.
+
+   In particular, the &quot;GUI example&quot;:
+
+      call chain:
+
+	scheme code captures continuation K     
+        scheme code enters foreign binding for GUI library
+        GUI library invokes C callback function
+        C callback function calls out to scheme
+        scheme code invokes K
+
+   is not supported by SRFI-50.   Later SRFIs will have to add
+   additional mechanisms to the FFI to handle such situations.
+
+   (Of course, for a limited case of using just a fixed set of
+    FFI-using C libraries, problems like the GUI example can perhaps
+    be solved at the Scheme level, mostly likely by redefining
+    call-with-current-continuation.  The point here is just that there
+    is no mechanism for such problems that all FFI-using libraries can
+    be counted on to use -- two particular FFI-using libraries that
+    independently solve the problem at the Scheme level may be
+    difficult to combine in a single application as a result.)
+
+
+2) The specification of error signalling could be made clearer:
+
+   Currently it says:
+
+        The following macros explicitly signal certain errors, and
+        immediately return to Scheme. Signalling an error performs all
+        necessary clean-up actions to properly return to Scheme,
+        including adjusting the stack of protected variables. Besides
+        that, the actual effect of signalling an error is
+        undefined. (It is expected that a future SRFI will deal with
+        the issue of handling error situations resulting from bugs in
+        the program.
+
+   but is could say something more like:
+
+        The following macros explicitly signal certain errors.
+        If an error is signalled, either:
+
+          1) the computation must be terminated
+
+          2) the computation may be continued in part by invoking
+             a continuation which is upwards relative to the 
+             C call that triggered the error.  (see &quot;Calling Scheme
+             procedures from C&quot;.)
+
+        Other details of error signalling are unspecified by this
+        SRFI but are expected to be further specified in a later 
+        SRFI.
+
+Is that about right?
+
+-t
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00134" href="msg00134.html">Re: non-local exits are icky</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00041" href="msg00041.html">non-local exits are icky</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00073" href="msg00073.html">Re: non-local exits are icky</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+<li><strong><a name="00078" href="msg00078.html">Re: non-local exits are icky</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00079" href="msg00079.html">Re: non-local exits are icky</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+<li><strong><a name="00084" href="msg00084.html">Re: non-local exits are icky</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00090" href="msg00090.html">Re: non-local exits are icky</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+<li><strong><a name="00094" href="msg00094.html">Re: non-local exits are icky</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00095" href="msg00095.html">Re: non-local exits are icky</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+<li><strong><a name="00106" href="msg00106.html">Re: non-local exits are icky</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00109" href="msg00109.html">Re: non-local exits are icky</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00112.html">Re: no constants please</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00114.html">misc</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00109.html">Re: non-local exits are icky</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00134.html">Re: non-local exits are icky</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00113"><strong>Date</strong></a></li>
+<li><a href="threads.html#00113"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

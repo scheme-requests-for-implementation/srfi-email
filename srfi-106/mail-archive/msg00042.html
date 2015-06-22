@@ -1,0 +1,122 @@
+<!-- MHonArc v2.6.16 -->
+<!--X-Subject: Re: socket&#45;port -->
+<!--X-From-R13: Euveb Ynjnv <fuvebNynin.arg> -->
+<!--X-Date: Thu, 20 Jun 2013 19:30:38 +0200 (MST) -->
+<!--X-Message-Id: 20130620.073034.1021489438854267133.shiro@lava.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 51C0AEFC.6060308@ymail.com -->
+<!--X-Reference: 20130618.111128.299179801361656348.shiro@lava.net -->
+<!--X-Reference: 51C20E13.1090803@ymail.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: socket-port</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00041.html">Date Prev</a>][<a href="msg00043.html">Date Next</a>][<a href="msg00041.html">Thread Prev</a>][<a href="msg00033.html">Thread Next</a>][<a href="maillist.html#00042">Date Index</a>][<a href="threads.html#00042">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: socket-port</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:ktakashi@DOMAIN.HIDDEN">ktakashi@xxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: socket-port</li>
+<li><em>From</em>: Shiro Kawai &lt;<a href="mailto:shiro@DOMAIN.HIDDEN">shiro@xxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 20 Jun 2013 07:30:34 -1000 (HST)</li>
+<li><em>Cc</em>: <a href="mailto:cowan@DOMAIN.HIDDEN">cowan@xxxxxxxxxxxxxxxx</a>, <a href="mailto:hartrumpf@DOMAIN.HIDDEN">hartrumpf@xxxxxxx</a>, <a href="mailto:srfi-106@DOMAIN.HIDDEN">srfi-106@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-106@DOMAIN.HIDDEN">srfi-106@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:51C20E13.1090803@DOMAIN.HIDDEN">51C20E13.1090803@xxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:51C0AEFC.6060308@DOMAIN.HIDDEN">51C0AEFC.6060308@xxxxxxxxx</a>&gt;	&lt;<a href="mailto:20130618.111128.299179801361656348.shiro@DOMAIN.HIDDEN">20130618.111128.299179801361656348.shiro@xxxxxxxx</a>&gt;	&lt;<a href="mailto:51C20E13.1090803@DOMAIN.HIDDEN">51C20E13.1090803@xxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>From: Takashi Kato &lt;ktakashi@xxxxxxxxx&gt;
+Subject: Re: socket-port
+Date: Wed, 19 Jun 2013 22:01:23 +0200
+
+&gt; Now, think about multi process what should happen on GCing socket?
+&gt; (I'm not even sure how socket object can be passed to other process
+&gt; since the srfi doesn't have any way to create it passing fd though.)
+
+I think sharing socket fd happens more often when the process
+which opens the socket spawns a child process, rather than
+passing socket fd explicitly.  Either way, it's certainly
+out of scope of this srfi.  We just need not to interfere
+systems that's capable to share socket fds.
+
+&gt; To me, it's reasonable to cleanup since no srfi nor standards mentions
+&gt; multi process, or is it better to be unspecified so that
+&gt; implementations have space to expand?
+
+If GC doesn't shutdown the socket, there'll be a risk of resource
+leaks from a sloppy program; on the other hand, if GC does shutdown
+the socket, a sloppy parent program may cause sporadic and 
+hard-to-reproduce failures in child process, when the parent process
+GCs the socket that is still in use in the child.
+
+Either way is bad, so I suggest to make it clear that it's program's
+responsibility to close and/or shutdown the socket explicitly, and
+GC is there just for a safety net.  If the program wishes to keep
+the socket alive, just close it (GC shouldn't shutdown a socket that
+is closed state).   Whether GC shutdown a socket that's not closed,
+we can leave it to the implementation, since there's no correct choice.
+
+--shiro
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00036" href="msg00036.html">Re: socket-port</a></strong>
+<ul><li><em>From:</em> Takashi Kato</li></ul></li>
+<li><strong><a name="00038" href="msg00038.html">Re: socket-port</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+<li><strong><a name="00041" href="msg00041.html">Re: socket-port</a></strong>
+<ul><li><em>From:</em> Takashi Kato</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00041.html">Re: socket-port</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00043.html">Please update SRFI-106</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00041.html">Re: socket-port</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00033.html">R7RS-large and sockets</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00042"><strong>Date</strong></a></li>
+<li><a href="threads.html#00042"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,188 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: integer&#45;length and integer&#45;sqrt -->
+<!--X-From-R13: Penqyrl Zhpvre <yhpvreNzngu.cheqhr.rqh> -->
+<!--X-Date: Fri,  7 Oct 2005 12:47:16 +0200 (MST) -->
+<!--X-Message-Id: 21f37ac4cfb0944dc2cf71979165104b@math.purdue.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: integer-length and integer-sqrt</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00016.html">Date Prev</a>][<a href="msg00018.html">Date Next</a>][<a href="msg00007.html">Thread Prev</a>][<a href="msg00018.html">Thread Next</a>][<a href="maillist.html#00017">Date Index</a>][<a href="threads.html#00017">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: integer-length and integer-sqrt</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: integer-length and integer-sqrt</li>
+<li><em>From</em>: Bradley Lucier &lt;<a href="mailto:lucier@DOMAIN.HIDDEN">lucier@xxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 7 Oct 2005 12:47:01 +0200</li>
+<li><em>Cc</em>: Bradley Lucier &lt;<a href="mailto:lucier@DOMAIN.HIDDEN">lucier@xxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+Jens Axel S&#xF8;gaard writes:
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+I propose adding the following two operations on integers.
+
+
+The first is INTEGER-LENGTH from CLHS
+
+    &lt;<a  rel="nofollow" href="http://clhs.lisp.se/Body/f_intege.htm">http://clhs.lisp.se/Body/f_intege.htm</a>&gt;
+
+which returns the number of bits needed to represent a given
+integer in binary two's-complement format. Although it
+is possible to define INTEGER-LENGTH as a library function,
+it will be more efficient as a primitive, since it can
+exploit the internal representation of an integer.
+</pre></blockquote><pre style="margin: 0em;">
+
+Agree completely.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+The second is INTEGER-SQRT, which is discussed here:
+
+</pre><tt>&lt;<a  rel="nofollow" href="http://groups.google.com/group/comp.lang.scheme/browse_frm/thread/">http://groups.google.com/group/comp.lang.scheme/browse_frm/thread/</a> 
+</tt><tt>dc06e91e306cf488/a9cf92f425bb3db1?lnk=st&amp;q=lucier+integer- 
+</tt><tt>sqrt&amp;rnum=1&amp;hl=en#a9cf92f425bb3db1&gt;
+</tt><pre style="margin: 0em;">
+
+I consider INTEGER-SQRT just as natural an operation as GCD and LCM
+when it comes to number theoretical calculations.
+</pre></blockquote><pre style="margin: 0em;">
+
+Agree completely.
+
+</pre><tt>The following algorithm is better; it's about twice as fast and  
+</tt><tt>Zimmermann has published a proof of correctness:
+</tt><pre style="margin: 0em;">
+
+(define-prim (##exact-int.sqrt x)
+
+  ;; x is non-negative.  Returns (cons s r) where
+  ;; x = s^2+r, x &lt; (s+1)^2
+
+  ;; Derived from the paper &quot;Karatsuba Square Root&quot; by Paul Zimmermann,
+  ;; INRIA technical report RR-3805, 1999.  (Used in gmp 4.*)
+
+  ;; Note that the statement of the theorem requires that
+</pre><tt>  ;; b/4 &lt;= high-order digit of x &lt; b which can be impossible when b is  
+</tt><tt>a
+</tt><tt>  ;; power of 2; the paper later notes that it is the lower bound that  
+</tt><tt>is
+</tt><pre style="margin: 0em;">
+  ;; necessary, which we preserve.
+
+  (if (and (##fixnum? x)
+           ;; we require that
+           ;; (##&lt; (##flonum.sqrt (- (* y y) 1)) y) =&gt; #t
+           ;; whenever x=y^2 is in this range.  Here we assume that we
+</pre><tt>           ;; have at least as much precision as IEEE double precision  
+</tt><tt>and
+</tt><pre style="margin: 0em;">
+           ;; we round to nearest.
+           (or (##not (##fixnum? 4294967296))          ; 32-bit fixnums
+               (##fixnum.&lt;= x 4503599627370496)))      ; 2^52
+</pre><tt>      (let* ((s (##flonum.-&gt;fixnum (##flonum.sqrt (##flonum.&lt;-fixnum  
+</tt><tt>x))))
+</tt><pre style="margin: 0em;">
+             (r (##fixnum.- x (##fixnum.* s s))))
+        (##cons s r))
+      (let ((length/4
+             (##fixnum.arithmetic-shift-right
+              (##fixnum.+ (##integer-length x) 1)
+              2)))
+        (let* ((s-prime&amp;r-prime
+                (##exact-int.sqrt
+                 (##arithmetic-shift
+                  x
+</pre><tt>                  (##fixnum.- (##fixnum.arithmetic-shift-left length/4  
+</tt><tt>1)))))
+</tt><pre style="margin: 0em;">
+               (s-prime
+                (##car s-prime&amp;r-prime))
+               (r-prime
+                (##cdr s-prime&amp;r-prime)))
+          (let* ((qu
+                  (##exact-int.div
+                   (##+ (##arithmetic-shift r-prime length/4)
+                        (##extract-bit-field length/4 length/4 x))
+                   (##arithmetic-shift s-prime 1)))
+                 (q
+                  (##car qu))
+                 (u
+                  (##cdr qu)))
+            (let ((s
+                   (##+ (##arithmetic-shift s-prime length/4) q))
+                  (r
+                   (##- (##+ (##arithmetic-shift u length/4)
+                             (##extract-bit-field length/4 0 x))
+                        (##* q q))))
+              (if (##negative? r)
+                (##cons (##- s 1)
+                        (##+ r
+                             (##- (##arithmetic-shift s 1) 1)))
+                (##cons s
+                        r))))))))
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00018" href="msg00018.html">Integers as Bits [was Re: integer-length]</a></strong>
+<ul><li><em>From:</em> Aubrey Jaffer</li></ul></li>
+<li><strong><a name="00030" href="msg00030.html">Re: integer-length and integer-sqrt</a></strong>
+<ul><li><em>From:</em> Aubrey Jaffer</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00016.html">Re: meta-comment on typing</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00018.html">Integers as Bits [was Re: integer-length]</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00007.html">bitwise operations</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00018.html">Integers as Bits [was Re: integer-length]</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00017"><strong>Date</strong></a></li>
+<li><a href="threads.html#00017"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

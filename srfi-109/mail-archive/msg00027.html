@@ -1,0 +1,256 @@
+<!-- MHonArc v2.6.16 -->
+<!--X-Subject: Re: optional user&#45;specified end&#45;delimiters -->
+<!--X-From-R13: Bre Pbguare <creNobguare.pbz> -->
+<!--X-Date: Wed, 17 Apr 2013 01:25:35 +0200 (MST) -->
+<!--X-Message-Id: 516DDDE6.4010702@bothner.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 516DA727.109@bothner.com -->
+<!--X-Reference: 20130416214631.GA3672@mercury.ccil.org -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: optional user-specified end-delimiters</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00026.html">Date Prev</a>][<a href="msg00028.html">Date Next</a>][<a href="msg00026.html">Thread Prev</a>][<a href="msg00028.html">Thread Next</a>][<a href="maillist.html#00027">Date Index</a>][<a href="threads.html#00027">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: optional user-specified end-delimiters</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: John Cowan &lt;<a href="mailto:cowan@DOMAIN.HIDDEN">cowan@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: optional user-specified end-delimiters</li>
+<li><em>From</em>: Per Bothner &lt;<a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 16 Apr 2013 16:25:26 -0700</li>
+<li><em>Cc</em>: <a href="mailto:srfi-108@DOMAIN.HIDDEN">srfi-108@xxxxxxxxxxxxxxxxx</a>, <a href="mailto:srfi-109@DOMAIN.HIDDEN">srfi-109@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-109@DOMAIN.HIDDEN">srfi-109@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20130416214631.GA3672@DOMAIN.HIDDEN">20130416214631.GA3672@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:516DA727.109@DOMAIN.HIDDEN">516DA727.109@xxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20130416214631.GA3672@DOMAIN.HIDDEN">20130416214631.GA3672@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mozilla/5.0 (X11; Linux x86_64; rv:17.0) Gecko/20130402 Thunderbird/17.0.5</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+On 04/16/2013 02:46 PM, John Cowan wrote:
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Per Bothner scripsit:
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+It seems reasonable to allow an integer label, so we allow starting
+with a digit.  Thus for simplicity we also allow hyphen, underscore,
+or period.
+</pre></blockquote><pre style="margin: 0em;">
+
+I think starting with a digit is just an extra complication, and
+we shouldn't have it.  It's a special case that needs to be tested,
+documented, and learned separately.
+</pre></blockquote><pre style="margin: 0em;">
+
+I'm fine with that.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+extended-string-literal ::= &quot;&amp;&quot; string-starttag?
+    &quot;{&quot; initial-ignored? string-literal-part* &quot;}!&quot; string-endtag?
+string-starttag ::= &quot;!&quot; label
+string-endtag ::= &quot;!&quot; label
+
+The string-endtag is required if the string-starttag is specified,
+and of course the labels must match.
+</pre></blockquote><pre style="margin: 0em;">
+
+I think the string-endtag should be label followed by &quot;!&quot; instead.
+That way all the content, including both labels, is between &quot;!&quot; and &quot;!&quot;.
+</pre></blockquote><pre style="margin: 0em;">
+
+I assume you mean:
+  &amp;!END{content}END!
+
+See below why I think that is awkward.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Note this chance means that an extended-string-literal must be
+followed by a delimiter or end of input.
+
+For a named quasi-literal, we can use the constructor-name as an end-tag:
+
+&amp;example{
+   &amp;|line1
+   &amp;|line2
+}example
+</pre></blockquote><pre style="margin: 0em;">
+
+I am very much against this, for reasons given earlier:  &quot;}example&quot; should not
+be distinct from &quot;} example&quot;, since &quot;}&quot; is a delimiter.
+</pre></blockquote><pre style="margin: 0em;">
+
+Not sure I understand why.  (I don't remember seeing the earlier
+reasons.) I don't see &quot;}&quot; listed as a &lt;delimiter&gt; in either R6RS
+or R7RS draft 8.  Regardless, whether it is a &lt;delimiter&gt; is
+irrelevant - the question is what can follow the &quot;}&quot;.  Your
+suggested syntax does have &quot;}TAG!&quot; different from &quot;} TAG!&quot;.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+You can add an explicit label:
+</pre></blockquote><pre style="margin: 0em;">
+
+I think an explicit label is the way to go.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+&amp;example!23{
+   &amp;|line1
+   &amp;|line2
+}example!23
+</pre></blockquote><pre style="margin: 0em;">
+
+I'd change this to &quot;}23!&quot;, modulo not allowing digit-strings.
+</pre></blockquote><pre style="margin: 0em;">
+
+It would be nice to be able use &quot;example&quot; as an end-label, without
+having to explicitly declare it.  Many markup languages have this,
+though not optional as I'm suggesting:
+
+@example
+foo
+@end example
+
+or XML:
+
+&lt;example&gt;
+foo
+&lt;/example&gt;
+
+If you really dislike:
+
+&amp;example{
+  &amp;|line1
+  &amp;|line2
+}example
+
+Then we could require &quot;!&quot;:
+
+&amp;example{
+  &amp;|line1
+  &amp;|line2
+}example!
+
+With an explicit label either:
+
+&amp;example!n23{
+  &amp;|line1
+  &amp;|line2
+}example!n23!
+
+or
+
+&amp;example!n23{
+  &amp;|line1
+  &amp;|line2
+}!n23!
+
+This gets a little messy, I think, which is why I think what I
+proposed works better, IMO:
+
+&amp;!label{content}!label
+&amp;example{content}example
+&amp;example!label{content}!label
+&amp;example!label{content}example!label  ; probably less useful
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+If may occasionally be useful to make labels available for
+semantic information.  One  example is as implicit &quot;id&quot; attributes.
+</pre></blockquote><pre style="margin: 0em;">
+
+I think that is a very bad mistake.  The labels should be purely syntactic
+and discardable, like the numbers used in #2# and #2= datum labels; it's
+all the same if you write #2=(a . #2#) or #333=(a . #333#), and the Lisp
+system does not have to distinguish.
+</pre></blockquote><pre style="margin: 0em;">
+
+Given the lack of a strong use-case, I'm fine leaving this out.
+We can always add it later.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+There are some plausible alternatives.  For example we can put the
+end-tag just before the right brace.  For named constructors we
+could use:
+
+&amp;cname{
+line1
+line2
+&amp;cname}
+</pre></blockquote><pre style="margin: 0em;">
+
+That won't fly, because &quot;&amp;cname&quot; is a perfectly cromulent substring.
+</pre></blockquote><pre style="margin: 0em;">
+
+No, it's not, since &quot;&amp;&quot; is an escape character in &lt;content&gt;.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+I really dislike your other alternatives as well.
+</pre></blockquote><pre style="margin: 0em;">
+
+I agree - let's focus on the label *following* the &quot;}&quot;.
+--
+	--Per Bothner
+per@xxxxxxxxxxx   <a  rel="nofollow" href="http://per.bothner.com/">http://per.bothner.com/</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00028" href="msg00028.html">Re: optional user-specified end-delimiters</a></strong>
+<ul><li><em>From:</em> John Cowan</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00025" href="msg00025.html">optional user-specified end-delimiters</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+<li><strong><a name="00026" href="msg00026.html">Re: optional user-specified end-delimiters</a></strong>
+<ul><li><em>From:</em> John Cowan</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00026.html">Re: optional user-specified end-delimiters</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00028.html">Re: optional user-specified end-delimiters</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00026.html">Re: optional user-specified end-delimiters</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00028.html">Re: optional user-specified end-delimiters</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00027"><strong>Date</strong></a></li>
+<li><a href="threads.html#00027"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

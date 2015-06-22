@@ -1,0 +1,196 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Several issues -->
+<!--X-From-R13: Rnivq Hna Vbea <qinaubeaNpf.oenaqrvf.rqh> -->
+<!--X-Date: Mon, 18 Jul 2005 22:14:59 +0200 (DFT) -->
+<!--X-Message-Id: 42DC0A52.8020707@cs.brandeis.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Several issues</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00018.html">Date Prev</a>][<a href="msg00020.html">Date Next</a>][<a href="msg00018.html">Thread Prev</a>][<a href="msg00020.html">Thread Next</a>][<a href="maillist.html#00019">Date Index</a>][<a href="threads.html#00019">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Several issues</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-19@DOMAIN.HIDDEN">srfi-19@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Several issues</li>
+<li><em>From</em>: David Van Horn &lt;<a href="mailto:dvanhorn@DOMAIN.HIDDEN">dvanhorn@xxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 18 Jul 2005 16:00:18 -0400</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-19@DOMAIN.HIDDEN">srfi-19@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Mozilla/5.0 (X11; U; SunOS sun4u; en-US; rv:1.6b) Gecko/20031206 Thunderbird/0.4</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<tt>Below are several issues I've found with the current state of SRFI 19 that 
+</tt><tt>should be addressed.  There are several other open issues in the 
+</tt><tt>post-finalization discussion archive, too.
+</tt><pre style="margin: 0em;">
+
+====
+
+The SRFI document states the following:
+
+</pre><tt>Monontonic (sic) time, in this implementation, is the same as TAI time; 
+</tt><tt>differences between TAI and UTC are resolved through a leap second table. 
+</tt><tt>According to the International Earth Rotation Service, there will be no leap 
+</tt><tt>second in December, 2000. Thus, the leap second table is guaranteed to be 
+</tt><tt>correct through June, 2000.
+</tt><pre style="margin: 0em;">
+
+The documentation of the reference implementation states the following:
+
+TAI and UTC date converters no longer look at leap seconds, which was an error.
+
+Should this note in the document be removed?
+
+Also, the implementation of time-tai-&gt;date contains the following conditional:
+
+(if (tm:tai-before-leap-second? (time-second time)) ... ...)
+
+</pre><tt>This seems to violate the note that TAI date conversion no longer look at leap 
+</tt><tt>seconds, which is an error.  Is the implementation or documentation incorrect? 
+</tt><tt> Whichever it is should be changed.
+</tt><pre style="margin: 0em;">
+
+====
+
+</pre><tt>The issues section is supposed to be present only during the draft period 
+</tt><tt>(although this convention has not been following closely in the past).  Since 
+</tt><tt>the section is empty, I recommend removing it on the grounds of being a typo.
+</tt><pre style="margin: 0em;">
+
+====
+
+</pre><tt>I would expect the following to return true, but returns false in the current 
+</tt><tt>reference implementation.
+</tt><pre style="margin: 0em;">
+
+(time=? (make-time time-monotonic 0 1000000000)
+        (make-time time-monotonic 1 0))
+
+</pre><tt>There is no range specified on the nanosecond argument for the time 
+</tt><tt>constructor, so I assume this is a valid program.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>For the date constructor there is a range given on the nanosecond argument in 
+</tt><tt>the SRFI document, namely &quot;an integer between 0 and 9,999,999, inclusive.&quot;
+</tt><pre style="margin: 0em;">
+
+</pre><tt>There are 1,000,000,000 nanoseconds in a second.  Was this meant to be between 
+</tt><tt>0 and 999,999,999 inclusive?
+</tt><pre style="margin: 0em;">
+
+</pre><tt>I recommend changing the range on the date constructor, which appears to be a 
+</tt><tt>typo, and including the above expression in the test suite.
+</tt><pre style="margin: 0em;">
+
+====
+
+</pre><tt>The SRFI document makes no requirement that a constant such as time-monotonic 
+</tt><tt>is equal to the symbol 'time-monotonic, but rather requires only that 
+</tt><tt>time-monotonic be bound to a symbol representation.   However, the test suite 
+</tt><tt>is littered with expression such as (current-time 'time-tai), which may not 
+</tt><tt>work on implementations taking a different implementation strategy than the 
+</tt><tt>reference implementation takes.  I recommend all these quotes be removed from 
+</tt><tt>the test suite.
+</tt><pre style="margin: 0em;">
+
+====
+
+</pre><tt>There is a still a bug in the reference implementations handling of &quot;~f&quot; 
+</tt><tt>format strings in date-&gt;string.  (This bug was supposedly fixed by replacing 
+</tt><tt>split-real with tm:fractional-part).
+</tt><pre style="margin: 0em;">
+
+</pre><tt>In PLT Scheme, using the reference implementation and NOT the (lib &quot;19.ss&quot; 
+</tt><tt>&quot;srfi&quot;) module which has an alternate implementation, the following results in 
+</tt><tt>an error:
+</tt><pre style="margin: 0em;">
+
+(date-&gt;string (time-monotonic-&gt;date (make-time time-monotonic 1 0)) &quot;~f&quot;)
+=&gt; +: expects type &lt;number&gt; as 1st argument, given: #f; other arguments were: 1
+
+The bug is found in tm:fractional-part:
+
+(define (tm:fractional-part r)
+  (if (integer? r) &quot;0&quot;
+      (let ((str (number-&gt;string (exact-&gt;inexact r))))
+	(let ((ppos (tm:char-pos #\. str 0 (string-length str))))
+	  (substring str  (+ ppos 1) (string-length str))))))
+
+</pre><tt>This code makes the assumption that a decimal will be found in the string 
+</tt><tt>representation of an inexact number, which is not the case:
+</tt><pre style="margin: 0em;">
+
+(number-&gt;string (exact-&gt;inexact 1e-09)) =&gt; &quot;1e-09&quot;
+
+</pre><tt>Thus (tm:char-pos #\. &quot;1e-09&quot; 0 (string-length &quot;1e-09&quot;)) =&gt; #f and (+ #f 1) is 
+</tt><tt>a type error.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>I recommend looking at the procedure tm:decimal-expansion found in the PLT 
+</tt><tt>implementation for a way of correcting this.
+</tt><pre style="margin: 0em;">
+
+<a  rel="nofollow" href="http://svn.plt-scheme.org/plt/trunk/collects/srfi/19/time.ss">http://svn.plt-scheme.org/plt/trunk/collects/srfi/19/time.ss</a>
+
+
+David
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00020" href="msg00020.html">Re: Several issues</a></strong>
+<ul><li><em>From:</em> Will Fitzgerald</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00018.html">Bugs in string-&gt;date</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00020.html">Re: Several issues</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00018.html">Bugs in string-&gt;date</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00020.html">Re: Several issues</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00019"><strong>Date</strong></a></li>
+<li><a href="threads.html#00019"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,163 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Usability issue -->
+<!--X-From-R13: Oaqer ina Fbaqre <naqerNyngre.urg.oebja.rqh> -->
+<!--X-Date: Mon,  9 Aug 2004 16:05:25 +0200 (DFT) -->
+<!--X-Message-Id: 200408091405.i79E5Jqv001418@later.het.brown.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Usability issue</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00039.html">Date Prev</a>][Date Next][<a href="msg00039.html">Thread Prev</a>][Thread Next][<a href="maillist.html#00040">Date Index</a>][<a href="threads.html#00040">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Usability issue</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-53@DOMAIN.HIDDEN">srfi-53@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Usability issue</li>
+<li><em>From</em>: Andre van Tonder &lt;<a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 9 Aug 2004 10:05:19 -0400 (EDT)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-53@DOMAIN.HIDDEN">srfi-53@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Reply-to</em>: Andre van Tonder &lt;<a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+I have recently had the occasion to attempt to use a (refined) version of this
+SRFI to implement a nontrivial records proposal.  In the end I had to 
+abandon computation-rules and use a more primitive continuation-passing
+style instead
+ 
+  (see <a  rel="nofollow" href="http://groups.google.com/groups?selm=4112BD31.CA50FB3A%40het.brown.edu">http://groups.google.com/groups?selm=4112BD31.CA50FB3A%40het.brown.edu</a>) 
+
+because of the following important usability issue:
+
+The following common patterns in these kinds of macros do not 
+work:
+
+  (syntax-bind ((x (long-computation)))
+     (syntax-return 
+        (begin (define f ( ....... x ......))
+               (define g ( ....... x ......))
+               ...))))
+                        
+or 
+
+  (syntax-bind ((names (long-computation)))
+     (syntax-return (emit-definitions names)))
+               
+where 
+
+  (emit-definitions name ...) =
+     (begin (define name ..............)
+            ...))
+            
+The problem in both of these macros is that syntax-bind has to substitute 
+x or names in its body, for which it needs the following
+macro, which tests for bound equivalence of identifiers:
+
+(define-syntax bound=
+  (syntax-rules ()
+    ((bound= id b kt kf)
+      (letrec-syntax
+          ((id (syntax-rules ()
+                 ((id kt* kf*) kf*)))
+           (ok (syntax-rules ()
+                 ((ok kt* kf*) kt*)))
+           (test (syntax-rules ()
+                   ((_ b kt* kf*) (id kt* kf*))))
+        (test ok kt kf))))))
+          
+Because the continuations are expanded in the scope of the 
+letrec-syntax, some Schemes (e.g. MzScheme, but not Chez) 
+regard any definitions in the result as internal.  This is in my 
+opinion a conceptual error, but it is compatible with R5RS, which 
+does not fix the behavior.  
+
+Since the only way to portably define bound= is in terms of let-syntax,
+this problem, unless resolved, in my view severely restricts the usability 
+of this SRFI.
+ 
+The problem can be trivially fixed in MzScheme by defining bound= 
+as follows instead:
+
+(define-syntax bound=
+  (lambda (stx)
+    (syntax-case stx ()
+      ((_ id b kt kf)
+       (if (bound-identifier=? (syntax id) (syntax b))
+           (syntax kt)
+           (syntax kf))))))
+           
+but that conflicts with the aim of making this SRFI portable, as it 
+would require some implementor effort in Schemes that do not expose 
+an equivalent of bound-identifier=?   What is worse, we cannot specify
+the semantics of computation-rules on the basis of syntax-rules, which 
+was originally my aim.  It is also likely that future refinements of 
+R5RS will go the MzScheme way, which will indeed make it impossible
+to define a useful bound= in terms of syntax-rules (unless  
+bound= and free= are offered as primitives, which would be a simple 
+but useful extension of the standard).  
+
+I am therefore in a bit of a quandary.  I would like to be able to offer
+a nontrivial example (such as the records implementation referred to above)
+before completing this SRFI.  At present, this is impossible to do
+portably.  
+
+
+
+
+
+          
+          
+                        
+
+
+------------- End Forwarded Message -------------
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00039.html">Draft extension</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00039.html">Draft extension</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00040"><strong>Date</strong></a></li>
+<li><a href="threads.html#00040"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

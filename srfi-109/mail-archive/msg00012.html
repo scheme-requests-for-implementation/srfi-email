@@ -1,0 +1,170 @@
+<!-- MHonArc v2.6.16 -->
+<!--X-Subject: Re: Simplifying SRFI 109, part 1: entities -->
+<!--X-From-R13: Bre Pbguare <creNobguare.pbz> -->
+<!--X-Date: Tue, 26 Feb 2013 06:46:14 +0000 (UTC) -->
+<!--X-Message-Id: 512C5A2F.7010800@bothner.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20130210080446.GD19521@mercury.ccil.org -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Simplifying SRFI 109, part 1: entities</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00011.html">Date Prev</a>][<a href="msg00013.html">Date Next</a>][<a href="msg00007.html">Thread Prev</a>][<a href="msg00021.html">Thread Next</a>][<a href="maillist.html#00012">Date Index</a>][<a href="threads.html#00012">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Simplifying SRFI 109, part 1: entities</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: John Cowan &lt;<a href="mailto:cowan@DOMAIN.HIDDEN">cowan@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Simplifying SRFI 109, part 1: entities</li>
+<li><em>From</em>: Per Bothner &lt;<a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 25 Feb 2013 22:46:07 -0800</li>
+<li><em>Cc</em>: <a href="mailto:srfi-109@DOMAIN.HIDDEN">srfi-109@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-109@DOMAIN.HIDDEN">srfi-109@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20130210080446.GD19521@DOMAIN.HIDDEN">20130210080446.GD19521@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:20130210080446.GD19521@DOMAIN.HIDDEN">20130210080446.GD19521@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mozilla/5.0 (X11; Linux x86_64; rv:17.0) Gecko/20130219 Thunderbird/17.0.3</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+[Sorry for sitting on this one for a while.  I didn't forget, but
+I needed to get some other things out of the way first.]
+
+On 02/10/2013 12:04 AM, John Cowan wrote:
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+This is the first of two posts proposing simplifications (reductions in
+scope) for SRFI 109.  The idea is that by removing variable elements,
+this SRFI (unlike SRFIs 107 and 108) becomes purely lexical in scope:
+the output of the a SRFI-109-capable reader returns the same thing for
+a SRFI-109 string literal and a regular string, viz. an immutable Scheme
+string object.
+</pre></blockquote><pre style="margin: 0em;">
+
+See my reply to part 2: Enclosed expressions are IMO a prime
+feature of strings *quasi*-literals.  Thus in general the reader
+can't return a literal string.
+
+The reader *could* return a literal string in cases where
+there are no enclosed expressions, but I feel uncomfortable with
+that - it seems a bit hacky and inconsistent.  For read/write
+round-tripping we have the traditional string literals, so I
+think it is cleaner to have the &amp;{...} always return a ($string$ ...)
+form.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+In this first post, I argue against the provision of user-defined
+entity names.  Currently, when an entity reference appears in a SRFI
+109 string literal, it is expanded into the identifier $entity:&lt;name&gt;$,
+where &lt;name&gt; is the entity referred to.  Thus &amp;{Rom&amp;acirc;nia} expands
+to ($string$ &quot;Rom&quot; $entity:acirc$ &quot;nia&quot;).  In principle, this permits a
+user to rebind $entity:acirc$ to something else.  However, there seems no
+reason why this should be allowed; it is only productive of confusion.
+Such entity references should just expand directly to the character, so
+that &amp;{Rom&amp;acirc;nia} becomes ($string$ &quot;Rom&#xE2;nia&quot;), or just &quot;Rom&#xE2;nia&quot;.
+</pre></blockquote><pre style="margin: 0em;">
+
+If we accept that we always get a ($string$ ...) form, that much reduces
+the benefit of the reader expanding named characters.  And there are
+advantages to deferring it.
+
+Deferring character name lookup allows user-defined character names
+- or in general entity names (which can be longer strings).
+
+Not hard-wiring in entity names is especially important for STFI-107,
+since the XML/SGML model does allow user-defined entity names.
+Having these be hard-wired into the reader is not IMO in the spirit
+of XML.  Even if the reader uses a user-programmable table it would
+be information-losing for the reader to expand the entity names.
+Even then using using a programmable read-time lookup table is
+clearly less &quot;Schemey&quot; than using regular expand-time name-lookup.
+
+If we defer entity name lookup for SRFI-107 then I think we should
+do the same for SRFI-108 and SRFI-109, for simplicity.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Nor is it likely that anyone will need character entities past the 2237
+already provided by the standard W3C list.  It is already a requirement
+that systems not add names that conflict with any of these.  True, you
+cannot write (say) Hindi in the Devanagari script using character entity
+references only.  But if you are going to do that, you will probably
+want to use a UTF-8 compatible editor with appropriate fonts.
+
+I therefore believe that character entities should be expanded directly
+into characters by the implementation.  This eliminates one of the
+use cases for requiringing SRFI 109 string literals to expand into calls
+on $string$.
+</pre></blockquote><pre style="margin: 0em;">
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+I would also strengthen, from a MAY to a SHOULD, the
+recommendation to implement the whole standard list.
+</pre></blockquote><pre style="margin: 0em;">
+
+I did that in the new draft.  Let me know what you think of the change.
+(I've also implemented this for Kawa.)  I should probably also state
+that an implementation MUST support the standard Scheme character names.
+--
+	--Per Bothner
+per@xxxxxxxxxxx   <a  rel="nofollow" href="http://per.bothner.com/">http://per.bothner.com/</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00021" href="msg00021.html">Re: Simplifying SRFI 109, part 1: entities</a></strong>
+<ul><li><em>From:</em> John Cowan</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00007" href="msg00007.html">Simplifying SRFI 109, part 1: entities</a></strong>
+<ul><li><em>From:</em> John Cowan</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00011.html">Re: updated srfi-109 - cleaning up discussion items</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00013.html">Re: updated srfi-109 - cleaning up discussion items</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00007.html">Simplifying SRFI 109, part 1: entities</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00021.html">Re: Simplifying SRFI 109, part 1: entities</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00012"><strong>Date</strong></a></li>
+<li><a href="threads.html#00012"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

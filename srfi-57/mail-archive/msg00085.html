@@ -1,0 +1,634 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Syntax&#45;case implementation -->
+<!--X-From-R13: Oaqer ina Fbaqre <naqerNabj.urg.oebja.rqh> -->
+<!--X-Date: Wed, 23 Feb 2005 10:19:46 +0100 (NFT) -->
+<!--X-Message-Id: Pine.GSO.4.60.0502222137060.8336@now.het.brown.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Syntax-case implementation</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00084.html">Date Prev</a>][<a href="msg00086.html">Date Next</a>][<a href="msg00084.html">Thread Prev</a>][<a href="msg00086.html">Thread Next</a>][<a href="maillist.html#00085">Date Index</a>][<a href="threads.html#00085">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Syntax-case implementation</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-57@DOMAIN.HIDDEN">srfi-57@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Syntax-case implementation</li>
+<li><em>From</em>: Andre van Tonder &lt;<a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 22 Feb 2005 21:49:44 -0500 (EST)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-57@DOMAIN.HIDDEN">srfi-57@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+Below is a syntax-case implementation (MzScheme version) for comment.
+Apologies for the long text.
+
+Andre
+
+;===========================================================================================
+; Syntax-Case (MzScheme version) Implementation:
+;
+; Andre van Tonder, 2005.
+;
+;============================================================================================
+
+(module registry mzscheme
+
+  (provide register
+           make-entry
+           lookup-entry
+           lookup-scheme?
+           lookup-getter
+           lookup-setter
+           lookup-labels
+           lookup-supers
+           lookup-copier
+           lookup-predicate)
+
+  (require (prefix s1: (lib &quot;1.ss&quot; &quot;srfi&quot;)))
+
+  (define reg '())
+
+  (define (make-entry name
+                      is-scheme?
+                      predicate
+                      supers
+                      labels
+                      pos-labels
+                      fields
+                      copier)
+    (vector name
+            is-scheme?
+            predicate
+            supers
+            labels
+            pos-labels
+            fields
+            copier))
+
+  (define (entry.name entry)       (vector-ref entry 0))
+  (define (entry.is-scheme? entry) (vector-ref entry 1))
+  (define (entry.predicate entry)  (vector-ref entry 2))
+  (define (entry.supers entry)     (vector-ref entry 3))
+  (define (entry.labels entry)     (vector-ref entry 4))
+  (define (entry.pos-labels entry) (vector-ref entry 5))
+  (define (entry.fields entry)     (vector-ref entry 6))
+  (define (entry.copier entry)     (vector-ref entry 7))
+
+  (define (register name entry)
+    (cond ((s1:assoc name reg free-identifier=?)
+           =&gt; (lambda (pair)
+                (set-cdr! pair entry)))
+          (else
+           (set! reg (cons (cons name entry)
+                           reg)))))
+
+  (define (lookup-entry name)
+    (s1:assoc name reg free-identifier=?))
+
+  (define (lookup-getter name label)
+    (cond ((s1:assoc label
+                     (entry.fields (cdr (lookup-entry name)))
+                     free-identifier=?)
+           =&gt; cadr)
+          (else #f)))
+
+  (define (lookup-setter name label)
+    (cond ((s1:assoc label
+                     (entry.fields (cdr (lookup-entry name)))
+                     free-identifier=?)
+           =&gt; caddr)
+          (else #f)))
+
+  (define (lookup-scheme? name)   (entry.is-scheme? (cdr (lookup-entry name))))
+  (define (lookup-labels name)    (entry.labels     (cdr (lookup-entry name))))
+  (define (lookup-supers name)    (entry.supers     (cdr (lookup-entry name))))
+  (define (lookup-copier name)    (entry.copier     (cdr (lookup-entry name))))
+  (define (lookup-predicate name) (entry.predicate  (cdr (lookup-entry name))))
+
+  ) ; registry
+
+(module records mzscheme
+
+  (provide define-record-type
+           define-record-scheme
+           record-update
+           record-update!
+           record-compose
+           show)
+
+  (require            (prefix s9: (lib &quot;9.ss&quot; &quot;srfi&quot;)))
+  (require-for-syntax (prefix s1: (lib &quot;1.ss&quot; &quot;srfi&quot;)))
+
+  (require-for-syntax registry)
+
+  (define-syntax define-record-type
+    (syntax-rules ()
+      ((define-record-type . body)
+       (parse-declaration #f . body))))
+
+  (define-syntax define-record-scheme
+    (syntax-rules ()
+      ((define-record-scheme . body)
+       (parse-declaration #t . body))))
+
+  (define-syntax parse-declaration
+    (syntax-rules ()
+      ((parse-declaration is-scheme? (name super ...) (constructor pos-label ...) predicate field-clause ...)
+       (build-record (constructor pos-label ...)  #f (super ...) (field-clause ...) name predicate is-scheme?))
+      ((parse-declaration is-scheme? (name super ...) constructor predicate field-clause ...)
+       (build-record (constructor)  #t (super ...) (field-clause ...) name predicate is-scheme?))
+      ((parse-declaration is-scheme? (name super ...) constructor-clause)
+       (parse-declaration is-scheme? (name super ...) constructor-clause #f))
+      ((parse-declaration is-scheme? (name super ...))
+       (parse-declaration is-scheme? (name super ...) #f #f))
+      ((parse-declaration is-scheme? name . rest)
+       (parse-declaration is-scheme? (name) . rest))))
+
+  (define-syntax record-update!
+    (lambda (stx)
+      (syntax-case stx ()
+        ((_ record name (label exp) ...)
+         (with-syntax (((setter ...)
+                        (map (lambda (label)
+                               (lookup-setter #`name label))
+                             (syntax-&gt;list #`(label ...)))))
+           #`(let ((r record))
+               (setter r exp)
+               ...
+               r))))))
+
+  (define-syntax record-update
+    (lambda (stx)
+      (syntax-case stx ()
+        ((_ record name (label exp) ...)
+         (if (lookup-scheme? #`name)
+             (with-syntax ((copier (lookup-copier #`name)))
+               #`(let ((new (copier record)))
+                   (record-update! new name (label exp) ...)))
+             #`(record-compose (name record) (name (label exp) ...)))))))
+
+
+  (define-syntax record-compose
+    (lambda (stx)
+      (syntax-case stx ()
+        ((record-compose (export-name (label exp) ...))
+         #`(export-name (label exp) ...))
+        ((record-compose (import-name record) import ... (export-name (label exp) ...))
+         (with-syntax
+             (((copy-label ...)
+               (s1:lset-intersection free-identifier=?
+                                     (lookup-labels #`export-name)
+                                     (s1:lset-difference free-identifier=?
+                                                         (lookup-labels #`import-name)
+                                                         (syntax-&gt;list #`(label ...))))))
+           (with-syntax (((getter ...)
+                          (s1:map (lambda (label)
+                                    (lookup-getter #`import-name label))
+                                  (syntax-&gt;list #`(copy-label ...)))))
+             #`(let ((r record))
+                 (record-compose import ...
+                                 (export-name (copy-label (getter r))
+                                              ...
+                                              (label exp)
+                                              ...)))))))))
+
+  (define-syntax build-record
+    (let ()
+
+      (define (build-record stx)
+        (syntax-case stx ()
+          ((build-record (constructor pos-label ...)
+                         default-order?
+                         (super ...)
+                         ((field-label . accessors) ...)
+                         name
+                         predicate
+                         is-scheme?)
+           (with-syntax
+               (((label ...)
+                 (s1:delete-duplicates (s1:fold-right append
+                                                      (syntax-&gt;list #`(pos-label ... field-label ...))
+                                                      (map lookup-labels
+                                                           (syntax-&gt;list #`(super ...))))
+                                       free-identifier=?))
+                ((super ...)
+                 (s1:delete-duplicates (s1:fold-right append
+                                                      '()
+                                                      (map lookup-supers
+                                                           (syntax-&gt;list #`(super ...))))
+                                       free-identifier=?)))
+             (with-syntax
+                 (((pos-label ...)
+
+                   (if (syntax-e #`default-order?)
+                       #`(label ...)
+                       #`(pos-label ...)))
+
+                  (((field-label getter setter) ...)
+
+                   (append (map augment-field
+                                (syntax-&gt;list #`((field-label . accessors) ...)))
+                           (map (lambda (label)
+                                  (maybe-generate #`name `(,label getter setter)))
+                                (s1:lset-difference free-identifier=?
+                                                    (syntax-&gt;list #`(label ...))
+                                                    (syntax-&gt;list #`(field-label ...)))))))
+
+               (with-syntax ((supers         #`(super ...))
+                             ((pos-temp ...) (generate-temporaries #`(pos-label ...)))
+                             ((constructor predicate maker copier)
+                              (maybe-generate #`name `(,#`constructor ,#`predicate maker copier))))
+                 (begin
+                   (register #`name (make-entry #`name
+                                                (syntax-e #`is-scheme?)
+                                                #`predicate
+                                                (syntax-&gt;list #`(super ... name))
+                                                (syntax-&gt;list #`(label ...))
+                                                (syntax-&gt;list #`(pos-label ...))
+                                                (map syntax-&gt;list
+                                                     (syntax-&gt;list #`((field-label getter setter) ...)))
+                                                #`copier))
+
+                   (if (syntax-e #`is-scheme?)
+
+                       #`(begin
+                           (define-generic (predicate x) (lambda (x) #f))
+                           (define-generic (getter x))
+                           ...
+                           (define-generic (setter x v))
+                           ...
+                           (define-generic (copier x)))
+
+                       #`(begin
+                           (s9:define-record-type internal-name
+                                                  (maker field-label ...)
+                                                  predicate
+                                                  (field-label getter setter) ...)
+
+                           (define constructor
+                             (lambda (pos-temp ...)
+                               (populate maker (field-label ...) (pos-label pos-temp) ...)))
+
+                           (extend-predicates supers predicate)
+                           (extend-accessors supers field-label predicate getter setter)
+                           ...
+
+                           (define (copier x)
+                             (maker (getter x) ...))
+                           (extend-copiers supers copier predicate)
+
+                           (define-method (show (r predicate))
+                             (list 'name
+                                   (list 'field-label (getter r))
+                                   ...))
+
+                           (define-syntax name
+                             (syntax-rules ()
+                               ((name . bindings) (populate maker (field-label ...) . bindings))))
+
+                           ))))))))) ; build-record
+
+      (define (maybe-generate context maybe-identifiers)
+        (map (lambda (elem)
+               (if (identifier? elem)
+                   elem
+                   (datum-&gt;syntax-object context (if (symbol? elem)
+                                                     (gensym elem)
+                                                     (gensym)))))
+             maybe-identifiers))
+
+      (define (augment-field clause)
+        (syntax-case clause ()
+          ((label)               `(,#`label ,@(maybe-generate #`label `(   getter    setter))))
+          ((label getter)        `(,#`label ,@(maybe-generate #`label `(,#`getter    setter))))
+          ((label getter setter) `(,#`label ,@(maybe-generate #`label `(,#`getter ,#`setter))))))
+
+      build-record))
+
+  (define-syntax extend-predicates
+    (lambda (stx)
+      (syntax-case stx ()
+        ((extend-predicates (super ...) new-type)
+         (with-syntax (((predicate ...) (map lookup-predicate
+                                             (syntax-&gt;list #`(super ...)))))
+           #`(begin
+               (define-method predicate (new-type) (x) any?)
+               ...))))))
+
+  (define-syntax extend-copiers
+    (lambda (stx)
+      (syntax-case stx ()
+        ((extend-copiers (super ...) copy new-type)
+         (with-syntax (((copier ...) (map lookup-copier
+                                          (syntax-&gt;list #`(super ...)))))
+           #`(begin
+               (define-method copier (new-type) (x)  copy)
+               ...))))))
+
+  (define-syntax extend-accessors
+    (lambda (stx)
+      (syntax-case stx ()
+        ((extend-accessors (super ...) label new-type selector modifier)
+         (with-syntax (((getter ...) (s1:filter (lambda (id)
+                                                  (not (eqv? id #f)))
+                                                (map (lambda (super)
+                                                       (lookup-getter super #`label))
+                                                     (syntax-&gt;list #`(super ...)))))
+                       ((setter ...) (s1:filter (lambda (id)
+                                                  (not (eqv? id #f)))
+                                                (map (lambda (super)
+                                                       (lookup-setter super #`label))
+                                                     (syntax-&gt;list #`(super ...))))))
+           #`(begin
+               (define-method getter (new-type) (x) selector)
+               ...
+               (define-method setter (new-type any?) (x v) modifier)
+               ...))))))
+
+  (define-syntax populate
+    (lambda (stx)
+
+      (define (order ordering bindings default)
+        (if (null? (s1:lset-difference free-identifier=?
+                                       (map car bindings)
+                                       ordering))
+            (map (lambda (label)
+                   (cond ((s1:assoc label bindings free-identifier=?) =&gt; (lambda (x) x))
+                         (else `(,label ,default))))
+                 ordering)
+            (raise-syntax-error #f &quot;Illegal labels in&quot; stx)))
+
+      (syntax-case stx ()
+        ((populate maker labels . bindings)
+         (with-syntax ((((label exp) ...) (order (syntax-&gt;list #`labels)
+                                                 (map syntax-&gt;list
+                                                      (syntax-&gt;list #'bindings))
+                                                 #`'&lt;undefined&gt;)))
+           #`(maker exp ...))))))
+
+
+  ; Simple generic functions suitable for our disjoint base record types:
+
+  (define-syntax define-generic
+    (syntax-rules ()
+      ((define-generic (name arg ...))
+       (define-generic (name arg ...)
+         (lambda (arg ...) (error &quot;Inapplicable method:&quot; 'name
+                                  &quot;Arguments:&quot; (show arg) ... ))))
+      ((define-generic (name arg ...) proc)
+       (define name (make-generic (arg ...) proc)))))
+
+  (define-syntax define-method
+    (syntax-rules ()
+      ((define-method (generic (arg pred?) ...) . body)
+       (define-method generic (pred? ...) (arg ...) (lambda (arg ...) . body)))
+      ((define-method generic (pred? ...) (arg ...) procedure)
+       (let ((next ((generic) 'get-proc))
+             (proc procedure))
+         (((generic) 'set-proc)
+          (lambda (arg ...)
+            (if (and (pred? arg) ...)
+                (proc arg ...)
+                (next arg ...))))))))
+
+  (define-syntax make-generic
+    (syntax-rules ()
+      ((make-generic (arg arg+ ...) default-proc)
+       (let ((proc default-proc))
+         (case-lambda
+           ((arg arg+ ...)
+            (proc arg arg+ ...))
+           (()
+            (lambda (msg)
+              (case msg
+                ((get-proc) proc)
+                ((set-proc) (lambda (new)
+                              (set! proc new)))))))))))
+
+  (define-generic (show x)
+    (lambda (x) x))
+
+  (define (any? x) #t)
+
+) ; records
+
+
+
+;============================================================================================
+; Examples:
+
+(require records)
+
+; A simple record declaration:
+
+(define-record-type point (make-point x y) point?
+  (x point.x point.x-set!)
+  (y point.y point.y-set!))
+
+(define p (make-point 1 2))
+
+(point? p)             ;==&gt; #t
+(point.y p)            ;==&gt; 2
+(point.y-set! p 7)
+(point.y p)            ;==&gt; 7
+
+; Simple record schemes.
+; Record schemes don't have constructors.
+; The predicates and accessors are polymorphic.
+
+(define-record-scheme &lt;point #f &lt;point?
+  (x &lt;point.x)
+  (y &lt;point.y))
+
+(define-record-scheme &lt;color #f &lt;color?
+  (hue &lt;color.hue))
+
+; Concrete instances of the above schemes.
+; Constructors may be declared.
+; Predicates and accessors, when provided, are monomorphic.
+
+(define-record-type (point &lt;point) make-point point?
+  (x point.x)
+  (y point.y))
+
+(define-record-type (color &lt;color) make-color)
+
+(define-record-type (color-point &lt;color &lt;point) (make-color-point x y hue) color-point?
+  (extra color-point.extra))
+
+(define cp (make-color-point 1 2 'blue))
+
+(&lt;point? cp)            ;==&gt; #t
+(&lt;color? cp)            ;==&gt; #t
+(color-point? cp)       ;==&gt; #t
+;(point.x cp)           ;==&gt; error
+(&lt;point.y cp)           ;==&gt; 2
+(&lt;color.hue cp)         ;==&gt; blue
+(color-point.extra cp)  ;==&gt; &lt;undefined&gt;
+
+; Constructing records by field labels:
+
+(define p (point (x 1)
+                 (y 2)))
+(define cp (color-point (hue 'blue)
+                        (x 1)
+                        (y 2)))
+
+; Monomorphic functional update:
+
+(show
+ (record-update p point (x 7)))     ;==&gt; (point (x 7) (y 2))
+(show p)                            ;==&gt; (point (x 1) (y 2))   - original unaffected
+
+; Polymorphic functional update:
+
+(show
+ (record-update cp &lt;point (x 7)))   ;==&gt; (color-point (extra &lt;undefined&gt;) (hue blue) (x 7) (y 2))
+(show cp)                           ;==&gt; (color-point (extra &lt;undefined&gt;) (hue blue) (x 1) (y 2))
+
+; In-place update:
+
+(show
+ (record-update! cp &lt;point (x 7)))  ;==&gt; color-point (extra &lt;undefined&gt;) (hue blue) (x 7) (y 2))
+(show cp)                           ;==&gt; color-point (extra &lt;undefined&gt;) (hue blue) (x 7) (y 2))
+
+; Use record-compose for updates polymorphic in argument but monomorphic in result type:
+
+(show
+ (record-compose (&lt;point cp) (point (x 8))))  ;==&gt; (point (x 8) (y 2))
+(show cp)                                     ;==&gt; (color-point (extra &lt;undefined&gt;) (hue blue) (x 7) (y 2))
+
+; More general record composition example:
+
+(define cp (make-color-point 1 2 'green))
+(define c  (make-color 'blue))
+
+(show
+ (record-compose (&lt;point cp)                 ; polymorphic import - only fields x and y of cp taken
+                 (color c)                   ; monomorphic import
+                 (color-point (x 8)          ; override imported field
+                              (extra 'hi))))
+
+                                         ;==&gt; (color-point (extra hi) (hue blue) (x 8) (y 2))
+
+; Small module-functor example:
+
+(define-record-type monoid #f #f
+  (mult monoid.mult)
+  (one  monoid.one))
+
+(define-record-type abelian-group #f #f
+  (add  group.add)
+  (zero group.zero)
+  (sub  group.sub))
+
+(define-record-type ring #f #f
+  (mult ring.mult)
+  (one  ring.one)
+  (add  ring.add)
+  (zero ring.zero)
+  (sub  ring.sub))
+
+(define integer-monoid (monoid (mult *)
+                               (one  1)))
+
+(define integer-group (abelian-group (add  +)
+                                     (zero 0)
+                                     (sub  -)))
+
+(define (make-ring g m)          ; simple &quot;functor&quot;
+  (record-compose (monoid m)
+                  (abelian-group g)
+                  (ring)))
+
+(define integer-ring (make-ring integer-group
+                                integer-monoid))
+
+((ring.add integer-ring) 1 2)    ;==&gt; 3
+
+; Example of tree data type
+
+(define-record-scheme &lt;tree #f &lt;tree?)
+
+(define-record-type (node &lt;tree) make-node node?
+  (lhs node.lhs)
+  (rhs node.rhs))
+
+(define-record-type (leaf &lt;tree) make-leaf leaf?
+  (val leaf.val))
+
+(define (tree-&gt;list t)
+  (cond
+    ((leaf? t) (leaf.val t))
+    ((node? t) (cons (tree-&gt;list (node.lhs t))
+                     (tree-&gt;list (node.rhs t))))))
+
+(define t
+  (make-node (make-node (make-leaf 1)
+                        (make-leaf 2))
+             (make-leaf 3)))
+
+(&lt;tree? t)         ;==&gt; #t
+(tree-&gt;list t)     ;==&gt; ((1 . 2) . 3)
+
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00086" href="msg00086.html">Re: Syntax-case implementation</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00084.html">Label duplicates</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00086.html">Re: Syntax-case implementation</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00084.html">Label duplicates</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00086.html">Re: Syntax-case implementation</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00085"><strong>Date</strong></a></li>
+<li><a href="threads.html#00085"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

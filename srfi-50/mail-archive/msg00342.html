@@ -1,0 +1,987 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: strings draft -->
+<!--X-From-R13: Fbz Zbeq <ybeqNrzs.arg> -->
+<!--X-Date: Thu, 22 Jan 2004 05:58:26 +0100 (MET) -->
+<!--X-Message-Id: 200401220511.VAA18432@morrowfield.regexps.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>strings draft</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00341.html">Date Prev</a>][<a href="msg00343.html">Date Next</a>][<a href="msg00330.html">Thread Prev</a>][<a href="msg00343.html">Thread Next</a>][<a href="maillist.html#00342">Date Index</a>][<a href="threads.html#00342">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>strings draft</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: strings draft</li>
+<li><em>From</em>: Tom Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 21 Jan 2004 21:11:31 -0800 (PST)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+
+                     Unicode Meets Scheme Meets C
+                     ----------------------------
+
+  Specifying Unicode string and character support for Pika is an
+  exercise in language design (because standard Scheme needs to be
+  modified and extended), Scheme interface design, C interface
+  design, and implementation design.
+
+  Additionally, we would like a subset of the Pika C interface to
+  characters and strings to be something that _any_ C-compatible
+  Scheme implementation can provide (including Schemes that support
+  only ISO8859-* character sets or other subsets of Unicode).
+
+  Additionally, we would like the new and modified Scheme interfaces
+  to strings and characters to be such that other implementors may
+  choose to provide them and future revisions to the Scheme standard
+  may incorporate them.
+
+  This document provides some background on the problem, specifies the
+  three interfaces, identifies the (hopefully) portable subset of the
+  C interface, recommends changes to the Scheme standard, and finally,
+  describes how all of these will be implemented in Pika.
+
+  The reader is presumed to be somewhat familiar with the Unicode
+  standard.
+
+
+  Contents
+
+  * Scheme Characters Meet Unicode
+  * Scheme Strings Meet Unicode
+  * The Scheme Interface to Unicode Characters and Strings
+  * The Portable FFI Interface to Unicode Characters and Strings
+  * The Pika FFI Interface to Unicode Characters and Strings
+
+  Non-contents (unresolved issues)
+
+  * Unicode and Ports (what does READ-CHAR mean?)
+
+
+* Scheme Characters
+
+** Required and Expected Characters
+
+  R5RS requires that all members of the character set used to specify
+  the syntax of Scheme must be representable as Scheme characters.
+  These include various punctuation marks, space, newline, digits, and
+  the lowercase letters `a..z'.
+
+  The specifications of CHAR-UPCASE, CHAR-DOWNCASE, and
+  CHAR-ALPHABETIC?  strongly imply that `A..Z' must also be present.
+  The only way to not read this as a requirement is to imagine an
+  implementation in which, for example, `a' is not an alphabetic
+  character.  
+
+  By reasonable expectation, tab and form-feed should also be present.
+  Implementations are possible which do not provide these but would be
+  rather exceptional in that regard.
+
+  /=== R6RS Recommendation:
+
+   R6RS should explicitly require that tab, form-feed, and both `a..z'
+   and `A..Z' are present, that the letters are alphabetic characters,
+   and that they are case-mapped as expected.
+
+  |=== Portable FFI Recommendation:
+
+   A portable FFI should assume that that requirement is in place.
+
+  |=== Pika Design:
+
+   Pika assumes that that requirement is in place.
+
+  \========
+
+
+  Perhaps more controversially: all members of the character set
+  comprising the first half (U+0000..U+007F) of iso8859-1 should be
+  representable as Scheme characters.  These characters are found in
+  ASCII, all iso8859-* character sets, and Unicode itself.  They are
+  used almost universally and are likely to remain so indefinitely.
+
+  /=== R6RS Recommendation:
+
+   R6RS should explicitly and strongly encourage the presence of all
+   ASCII characters in the CHAR? type.
+
+  |=== Portable FFI Recommendation:
+
+   A portable FFI should require that all characters representable in
+   portable C as non-octal-escaped character constants are
+   representable in Scheme.   It should strongly encourage that all
+   ASCII characters are representable in Scheme.
+
+
+  |=== Pika Design:
+
+   The Pika CHAR? type will include representations for all of ASCII.
+
+  \========
+
+
+  By somewhat reasonable expectation, there must be at least 256
+  distinct Scheme characters and INTEGER-&gt;CHAR must be defined for all
+  integers in the range `0..255'.  There are many circumstances in
+  which conversions between octets and characters are desirable and
+  the requirements of this expectation say that such conversion is
+  always possible.  It is quite possible to imagine implementations in
+  which this is not the case: in which, for example, a (fully general)
+  octet stream can not be read and written using READ-CHAR and DISPLAY
+  (applied to characters).  Such an implementation might introduce
+  non-standard procedures for reading and writing octets and
+  representing arrays of octets.  While such non-standard extensions
+  may be desirable for independent reasons, I see no good reason not
+  to define at least a subset of Scheme characters which is mapped to
+  the set of octet values.  
+
+  /=== R6RS Recommendation:
+
+   R6RS should explicitly and strongly encourage the presence of 
+   at least 256 characters and that INTEGER-&gt;CHAR is defined for
+   the entire range 0..255 (at least).
+
+  |=== Portable FFI Recommendation:
+
+   A portable FFI should require that the intersection of the 
+   set of integers -128..127 and the set of values representable 
+   as a `char' value are representable in Scheme as CHAR? values.
+
+   The preferred 8-bit character representation in the FFI should be
+   `unsigned char' and the scheme representation (if any) for any
+   unsigned character `uc' should be the same as that for `(char)uc'.
+
+   Note: stating these requirements is greatly simplified if the FFI 
+   simply requires that `char' and `unsigned char' are 8-bit types.
+
+
+  |=== Pika Design:
+
+   Pika will satisfy the FFI requirement and require that `char' is an
+   8-bit integer.
+
+  \========
+
+
+*** Remaining Degrees of Freedom for the CHAR? Type
+
+  Scheme implementations consistent with our proposed requirements
+  so far are likely to partition into four broad classes:
+
+  ~ Those providing exactly 256 distinct (under CHAR=?) CHAR? values
+
+  ~ Those providing approximately 2^16 CHAR? values
+
+  ~ Those providing approximately 2^21 CHAR? values
+
+  ~ Those providing an infinite set of CHAR? values
+
+
+  /=== Pika Design:
+
+   Pika is of the &quot;approximately 2^21 characters&quot; variety.
+
+   Specifically, the Pika CHAR? type will in effect be a _superset_ of
+   the set of Unicode codepoints.   Each 21-bit codepoint will
+   correspond to a Pika character.   For each such character, there 
+   will be (2^4-1) (15) additional related characters representing the
+   basic code point modified by a combination of any of four
+   &quot;buckybits&quot;.
+
+   For example, the Unicode codepoint U+0041 can be written in Pika
+   as:
+
+	#\A
+
+   and by applying buckybits (shift, meta, alt, hyper) an additional
+  15 characters can be formed giving the total set of 16 &quot;A&quot;
+  characters:
+
+        #\A
+        #\S-A      #\M-A      #\H-A      #\A-A
+        #\S-M-A    #\S-H-A    #\S-A-A    #\M-H-A    #\M-A-A    #\H-A-A
+        #\S-M-H-A  #\S-M-A-A  #\S-H-A-A  #\M-H-A-A
+        #\S-M-H-A-A
+
+  \========
+
+
+** Case Mappings
+
+  Strictly speaking, R5RS does not require that the character set
+  contain any upper or lower case letters.  For example, it must
+  contain `a' but it does not require that CHAR-LOWER-CASE? of `a' is
+  true.   However, in an implementation in which `a' is not lower
+  case, `a' must also not be alphabetic.   
+
+  /=== R6RS Recommendation:
+
+   R6RS should explicitly require that `a..z' and `A..Z' are
+   alphabetic and cased in the expected way.
+
+  |=== Pika Design:
+
+   Pika will satisfy the proposed requirement.
+
+  \========
+
+
+  R5RS requires a partial ordering of characters in which upper and
+  lower case variants of &quot;the same character&quot; are treated as equal.
+
+  Most problematically: R5RS requires that every alphabetic character
+  have both an upper and lower case variant.  This is a problem
+  because Unicode defines abstract characters which, at least
+  intuitively, are alphabetic -- but which lack such case mappings.
+  We'll explore the topic further, later, but briefly: it does not
+  appear that &quot;good Unicode support&quot; and &quot;R5RS requirements for case
+  mappings&quot; are compatible -- at least not in a simple way.
+
+  /=== R6RS Recommendation:
+
+   R6RS should drop the requirement from the closing sentence of
+   section 6.3.4 which says:
+
+	In addition, if char is alphabetic, then the result of
+	char-upcase is upper case and the result of char-downcase is
+	lower case.
+
+   Instead, it should say:
+
+	There is no requirement that all alphabetic characters have
+        an upper and lowercase mappings and no requirement that all
+        alphabetic characters return true for one of CHAR-UPPER-CASE?
+        or CHAR-LOWER-CASE?.   There is no requirement that if a 
+        character is upper or lower case that it has a case mapping
+        which is itself a character.   However, it is required that
+	the characters `a..z' are lowercase, `A..Z' are uppercase, 
+        and that CHAR-UPCASE and CHAR-DOWNCASE converts between those
+	two ranges.
+
+   And:
+
+        The case mapping procedures and predicates _must_ be
+	consistent with the case mappings that determine equivalence
+        of identifiers and symbol names. In many environments
+	they are usable for case mappings in a broader linguistic
+	sense but programmers are cautioned that, in general, they are
+	not appropriate for such uses in portable applications: some
+        alphabets lack the concept of case entirely; others have the
+	concept of case but lack a 1:1 mapping between upper and
+	lowercase characters.  Different case mapping procedures
+        should be used in portable linguistically-oriented
+        applications.
+        
+
+  |=== Pika Design:
+
+   Pika will include CHAR? values such as Unicode's eszett
+   (U+00DF) with the properties that can't satisfy R5RS' requirements
+   as in the examples:
+
+	(char-alphabetic? eszett) =&gt; #t
+        (char-lower-case? eszett) =&gt; #t
+        (char-lower-case? (char-upcase eszett)) =&gt; #t
+        (char=? eszett (char-upcase eszett)) =&gt; #t
+
+  \========
+
+
+** Character Ordering and Enumeration
+
+  R5RS requires a bijective mapping between characters and a set of
+  integers (the CHAR-&gt;INTEGER and INTEGER-&gt;CHAR procedures).   Let's
+  call this mapping the &quot;enumeration of characters&quot;.
+
+  R5RS requires a total ordering of characters and requires that that
+  enumeration is isomorphic to the ordering of the enumeration.
+
+  R5RS underspecifies the total ordering of characters.  It requires
+  that alphabetic characters `a..z' and (if present) `A..Z' be
+  (respectively) lexically ordered.  It requires that decimal digits
+  be decimally ordered.  It requires that digits either all proceed or
+  all follow all uppercase letters.
+
+  The ordering requirements of R5RS are problematic for Unicode.
+  While iso8859-* digits `0..9' easily satisfy the requirement,
+  Unicode defines additional decimal digits which do not.
+  Intuitively, it seems that either CHAR-NUMERIC? must not behave as
+  one would like on some Unicode abstract characters or the ordering
+  requirement will have to change in R6RS.
+
+  /=== R6RS Recommendation:
+
+   R6RS should modify the requirement from section 6.3.4 which says:
+
+     These procedures impose a total ordering on the set of
+     characters. It is guaranteed that under this ordering:
+
+      * The upper case characters are in order. For example, 
+        (char&lt;? #\A #\B) returns #t.  
+
+      * The lower case characters are in order. For example, 
+        (char&lt;? #\a #\b) returns #t. 
+
+      * The digits are in order. For example, 
+        (char&lt;? #\0 #\9) returns #t. 
+
+      * Either all the digits precede all the upper case letters, 
+        or vice versa. 
+
+      * Either all the digits precede all the lower case letters, 
+         or vice versa. 
+
+
+   Instead, it should say:
+
+     These procedures impose a total ordering on the set of
+     characters. It is guaranteed that under this ordering:
+
+      * The characters `A..Z' are in order. For example, 
+        (char&lt;? #\A #\B) returns #t.  
+
+      * The characters `a..z' are in order. For example, 
+        (char&lt;? #\a #\b) returns #t. 
+
+      * The digits `0..9' are in order. For example, 
+        (char&lt;? #\0 #\9) returns #t. 
+
+     Programmers are cautioned that the ordering of characters
+     by these procedures is not expected to have linguistic 
+     significance suitable for portable applications.   At the
+     same time, implementors are strongly encouraged to define the
+     ordering in such a way that a list of strings, sorted lexically by
+     the character ordering, is at least likely to be in an order that 
+     is suitable for presentation to users -- even though the sorting
+     may not be culturally optimal.
+
+
+  |=== Pika Design:
+
+   Pika CHAR? values will map to their Unicode codepoint equivalents,
+   with bucky-bits added added as additional high-order bits.
+   This satisfies the proposed modified requirements and results in
+   a situation where, for example, all characters with the META bit
+   set will sort after all characters with no buckybits set.
+
+  \========
+
+
+** Character Classes
+
+  R5RS defines 5 classes of characters by introducing 5 predicates:
+
+  	char-alphabetic?
+  	char-numeric?
+  	char-whitespace?
+  	char-upper-case?
+  	char-lower-case?
+
+  In the context of Unicode, there is a three-way ambiguity between
+  linguistic categorization of characters, categorizations defined by
+  the Unicode standard, and categorizations as they apply to Scheme
+  syntax.  
+
+  /=== R6RS Recommendation:
+
+   Section 6.3.4 should be modified.  Instead of saying:
+
+     These procedures return #t if their arguments are alphabetic,
+     numeric, whitespace, upper case, or lower case characters,
+     respectively, otherwise they return #f.  The following remarks,
+     which are specific to the ASCII character set, are intended only
+     as a guide: The alphabetic characters are the 52 upper and lower
+     case letters. The numeric characters are the ten decimal
+     digits. The whitespace characters are space, tab, line feed, form
+     feed, and carriage return.
+
+   it should say:
+
+     These procedures return #t if their arguments are alphabetic,
+     numeric, whitespace, upper case, or lower case characters,
+     respectively, otherwise they return #f.   These procedures
+     _must_ be consistent with the procedure READ provided by the
+     implementation.   For example, if a character is
+     CHAR-ALPHABETIC?, then it must also be suitable for use as the
+     first character of an identifier.
+
+     `a..z' and `A..Z' _must_ be alphabetic and _must_ be respectively
+     lower and upper case.  
+
+     #\space, #\tab, and #\formfeed _must_ be CHAR-WHITESPACE?.
+
+     `0..9' _must_ be CHAR-NUMERIC?.
+
+     No character may cause more than one the procedures
+     CHAR-ALPHABETIC?, CHAR-NUMERIC? and CHAR-WHITESPACE? to return
+     #t.
+
+     No character may cause more than one of the procedures
+     CHAR-UPPER-CASE? and CHAR-LOWER-CASE? to return #t.
+
+     Programmer's are advised that these procedures are unlikely to be
+     suitable for linguistic programming in portable code while
+     implementors are strongly encouraged to define them in ways that
+     make them a reasonable approximation of their linguistic
+     counterparts.  
+
+  |=== Pika Design:
+
+     Pika will return #t from CHAR-NUMERIC? _only_ for `0..9'.
+
+     Pika will return #t from CHAR-WHITESPACE? _only_ for space, tab,
+     newline, carriage return, and formfeed.
+
+     The set of characters for which Pika will return #t from
+     CHAR-ALPHABETIC? is undetermined at this time.
+
+     Pika will return #t from CHAR-UPPER-CASE? for those which have
+     the Unicode general category property Lu or Lt; from
+     CHAR-LOWER-CASE? for those which have the general category
+     property Ll.
+
+
+  \========
+
+
+** What _is_ a Character, Anyway
+
+  We have observed the need for various changes to the Scheme
+  standard for the CHAR? type but have done so (deliberately) without 
+  &quot;nailing down&quot; exactly what a character is.
+
+  The good reason for preserving this ambiguity is that there are
+  several reasonable choices for the CHAR? type -- implementations
+  should not be required to all be the same in this regard.
+
+  In particular, these strategies seem to me to be the most viable:
+
+  ~ A CHAR? value roughly corresponds to a Unicode codepoint.
+
+  ~ A CHAR? value roughly corresponds to a member of exactly one of
+    the iso8859-* family of character sets.   (An implementation in
+    this class would not have full Unicode support, of course.
+    Nevertheless, the iso8859-* character sets are (abstractly, not 
+    by numeric character values) a subset of Unicode -- they are
+    consistent with Unicode.   It would seem gratuitous to rule an
+    implementation non-standard simply because it doesn't support a
+    huge character set.)
+
+  ~ A CHAR? value corresponds to an 8-bit integer, with characters
+    0..127 corresponding to ASCII characters, and the meaning of
+    characters 128..255 depending on the host environment (such as a
+    LOCALE setting).  (This is a second class of implementations
+    without full Unicode support but consistent with Unicode.
+    Implementations of this class would be consistent with a common
+    form of internationalization practices used in C programming.)
+
+  ~ A CHAR? value corresponds to a &quot;combining sequence&quot; of an
+    arbitrary number of Unicode codepoints.   (At this time, such
+    implementations are mostly theoretic.   This is the kind of 
+    implementation Ray Dillenger has been working on and he makes
+    an interesting case for it.)
+
+  Related to these possibilities is an important question of
+  _syntax_.  A Scheme program can contain a lexeme denoting a
+  character constant:
+
+	#\X
+
+  and the question is &quot;What can X be in a portable program?&quot;
+
+
+  /=== R6RS Recommendation:
+
+    R6RS should explicitly define a _portable_character_set_
+    containing the characters mentioned earlier:  `a..z', `A..Z', 
+    space, formfeed, newline, carriage return, and the punctuation
+    required by Scheme syntax.
+
+    Additionally, R6RS should define an _optional_ syntax for 
+    Unicode codepoints.   I propose:
+
+		#\U+XXXXX
+
+    and in strings:
+
+		\U+XXXXX.
+
+    where XXXXX is an (arbitrary length) string of hexadecimal digits.
+
+    There is some &quot;touchiness&quot; with this optional syntax.
+    Conceivably, for example, implementations may support Unicode to a
+    degree but not support codepoints which are not assigned
+    characters, or not support all possible codepoints, or not permit
+    strings which are not in one of the (several available)
+    canonical forms.  In my opinion, it is too early to try to
+    differentiate these various forms of optional conformance.  At
+    this stage in history, the optional syntaxes should be permitted
+    -- but applications providing them should not be constrained to
+    support arbitrary codepoint characters or arbitrary Unicode
+    strings.
+
+    
+
+  |=== Pika Design:
+
+    Pika's character set will include all Unicode codepoints with 
+    all combinations of buckybits.   Some characters will only be 
+    writable using hexadecimal escapes and/or buckybit prefixes.
+
+  \========
+
+
+* Scheme Strings Meet Unicode
+
+  R5RS defines Scheme strings as sequences of scheme characters.
+  They have a length measured in characters and may be indexed
+  (to retrieve or set a given character) by character offsets.
+
+  R5RS defines two lexical orderings of strings: once by the
+  definitions of the ordering of characters; again by the definitions
+  of the case-independent ordering of characters.
+
+  There is a strong expectation that strings are &quot;random access&quot; 
+  meaning that any character within them can be accessed or set in
+  O(1) time.   The _intuitive_ model of a Scheme string is a uniform
+  array of characters.
+
+  /=== R6RS Recommendation:
+
+    R6RS should strongly encourage implementations to make the
+    expected-case complexity of STRING-REF and STRING-SET! O(1).
+
+  \========
+
+
+  There is an additional problem when designing portable APIs: the
+  matter of string indexes.
+
+  Most of the possible answers to &quot;what is a Scheme character&quot; are
+  consistent with the view that characters correspond to (possibly a
+  subset of) Unicode codepoints.
+
+  One of the possible answers to that question has the CHAR? type
+  correspond to a _sequence_ of Unicode code points.
+
+  The difference between those two possibilities impacts on string
+  indexes.  An index to the beginning of some substring has one
+  numeric value if characters are codepoints, another if they are
+  combined sequences of codepoints.
+
+  That difference is, unfortunately, intolerable for portable code.
+  Consider, for example, a string constant written:
+
+	&quot;XYZ&quot;
+
+  where X, Y, and Z are arbitrary Unicode substrings.  What is the
+  index of the beginning of substring Y? The question becomes
+  especially pressing for portable programs that want to encode that
+  string index as an integer constant, for programs exchanging Scheme
+  data which includes string indexes with other Scheme
+  implementations, and for an FFI (in which FFI-using code may wish to
+  compute and return to Scheme a string index -- or to interpret a
+  string-index passed to C from Scheme).
+
+  So, an ambiguity about string indexes should not be allowed to
+  stand.
+
+
+  /=== R6RS Recommendation:
+
+   While R6RS should not require that CHAR? be a subset of Unicode,
+   it should specify the semantics of string indexes for strings
+   which _are_ subsets of Unicode.
+
+   Specifically, if a Scheme string consists of nothing but Unicode
+   codepoints (including substrings which form combining sequences),
+   string indexes _must_ be Unicode codepoint offsets.
+
+  \========
+
+
+  That proposed modification to R6RS presents a (hopefully small)
+  problem for Ray Dillinger.   He would like (for quite plausible
+  reasons) to have CHAR? values which correspond to a _sequence_ of
+  Unicode codepoints.   While I have some ideas about how to
+  _partially_ reconcile his ideas with this proposal, I'd like to hear
+  his thoughts on the matter.
+
+
+* The Scheme Interface to Unicode Characters and Strings
+
+  In the preceding, we have added no new procedures or types to
+  Scheme -- only modified the requirements for existing procedures.
+  We have added new syntax for characters and strings.
+
+  Certainly, further extensions to Scheme are desirable -- for
+  example, to provide linguistically sensitive string processing.
+  I suggest that such extensions are best regarded as a separate topic
+  -- to be taken up &quot;elsewhere&quot;.
+
+
+* The Portable FFI Interface to Unicode Characters and Strings
+
+  This section is written in the style of Pika naming and calling 
+  conventions.
+
+** Basic Types
+
+  ~ typedef &lt;unspecified unsigned integer type&gt; t_unicode;
+
+  An unsigned integer type sufficiently large to hold a Unicode
+  codepoint.
+
+
+  ~ enum uni_encoding_scheme;
+
+    Valid values include but are not limited to:
+
+	uni_utf8
+	uni_utf16
+	uni_utf16be
+	uni_utf16le
+	uni_utf32
+	uni_iso8859_1
+        ...
+	uni_iso8859_16
+	uni_ascii
+
+
+
+** Character Conversions
+
+  ~ t_scm_error scm_character_to_codepoint (t_unicode * answer,
+                                            t_scm_arena instance,
+                                            t_scm_word * chr)
+
+      Normally, return (via `*answer') the Unicode codepoint value
+      corresponding to Scheme value `*chr'.  Return 0.
+
+      If `*chr' is not a character or is not representable as a 
+      Unicode codepoint, set `*answer' to U+FFFD and return an
+      error code.
+
+
+  ~ t_scm_error scm_character_to_ascii (char * answer,
+                                        t_scm_arena instance,
+                                        t_scm_word * chr)
+
+      Normally, return (via `*answer') the ASCII codepoint value
+      corresponding to Scheme value `*chr'.  Return 0.
+
+      If `*chr' is not an ASCII character or is not representable as a 
+      Unicode codepoint, set `*answer' to 0 and return an
+      error code.
+
+
+  ~ t_scm_error scm_codepoint_to_character (t_scm_word * answer,
+                                            t_scm_arena instance,
+                                            t_unicode codepoint)
+
+      Normally, return (via `*answer') the Scheme character
+      corresponding to `codepoint' which must be in the range
+      0..(2^21-1).  Return 0.
+
+      If `codepoint' is not representable as a Scheme character,
+      set `*answer' to an unspecified Scheme value and return an
+      error code.
+
+
+  ~ void scm_ascii_to_character (t_scm_word * answer,
+                                 t_scm_arena instance,
+                                 char chr)
+
+      Return (via `*answer') the Scheme character corresponding 
+      to `chr' which must be representable as an ASCII character.
+
+
+** String Conversions
+
+  ~ t_scm_error scm_extract_string8 (t_uchar * answer,
+                                     size_t * answer_len,
+                                     enum uni_encoding_scheme enc,
+                                     t_scm_arena instance,
+                                     t_scm_word * str)
+
+    Normally, convert `str' to the indicated encoding (which must be
+    one of `uni_utf8', `uni_iso8859_*', or `uni_ascii') storing the
+    result in the memory addressed by `answer' and the number of 
+    bytes stored in `*answer_len'.  Return 0.
+
+    On input, `*answer_len' should indicate the amount of storage 
+    available at the address `answer'.  If there is insuffiencient 
+    memory available, `*answer_len' will be set to the number of bytes
+    needed and the value `scm_err_too_short' returned.
+
+
+  ~ t_scm_error scm_extract_string16 (t_uint16 * answer,
+                                      size_t * answer_len,
+                                      enum uni_encoding_scheme enc,
+                                      t_scm_arena instance,
+                                      t_scm_word * str)
+
+    Normally, convert `str' to the indicated encoding (which must be
+    one of `uni_utf16', `uni_utf16be', or `uni_utf16le') storing the
+    result in the memory addressed by `answer' and the number of 
+    16-bit values stored in `*answer_len'.  Return 0.
+
+    On input, `*answer_len' should indicate the amount of storage
+    available at the address `answer' (measured in 16-bit values).  If
+    there is insuffiencient memory available, `*answer_len' will be
+    set to the number of 16-bit values needed and the value
+    `scm_err_too_short' returned.
+
+
+  ~ t_scm_error scm_extract_string32 (t_uint32 * answer,
+                                      size_t * answer_len,
+                                      t_scm_arena instance,
+                                      t_scm_word * str)
+
+    Normally, convert `str' to UTF-32, storing the result in the
+    memory addressed by `answer' and the number of 32-bit values
+    stored in `*answer_len'.  Return 0.
+
+    On input, `*answer_len' should indicate the amount of storage
+    available at the address `answer' (measured in 32-bit values).  If
+    there is insuffiencient memory available, `*answer_len' will be
+    set to the number of 32-bit values needed and the value
+    `scm_err_too_short' returned.
+
+
+
+  ~ t_scm_error scm_make_string8_n (t_scm_word uchar * answer,
+                                    t_scm_arena instance,
+                                    t_uchar * str,
+                                    enum uni_encoding_scheme enc,
+                                    size_t str_len)
+
+    Convert `str' of length `str_len' and in encoding to `enc' to
+    a Scheme value (returned in `*answer') if possible, and return 0.
+
+    Otherwise, return an error code.
+
+
+  ~ t_scm_error scm_make_string16_n (t_scm_word uchar * answer,
+                                     t_scm_arena instance,
+                                     t_uint16 * str,
+                                     enum uni_encoding_scheme enc,
+                                     size_t str_len)
+
+    Convert `str' of length `str_len' and in encoding to `enc' to
+    a Scheme value (returned in `*answer') if possible, and return 0.
+
+    Otherwise, return an error code.
+
+
+  ~ t_scm_error scm_make_string32_n (t_scm_word uchar * answer,
+                                     t_scm_arena instance,
+                                     t_uint32 * str,
+                                     enum uni_encoding_scheme enc,
+                                     size_t str_len)
+
+    Convert `str' of length `str_len' and in encoding to `enc' to
+    a Scheme value (returned in `*answer') if possible, and return 0.
+
+    Otherwise, return an error code.
+
+
+
+** Other FFI Functions
+
+  Various standard Scheme procedures (e.g., `STRING-REF') ought to
+  be present in the FFI as well.   Their mappings into C are
+  straightforward given the proposed requirement that string indexes 
+  refer to codepoint offsets.
+
+
+* The Pika FFI Interface to Unicode Characters and Strings
+
+  The standard Scheme string procedures map into the native Pika FFI
+  in the expected way (their C function prototypes and semantics can
+  be inferred in a trivial way from their standard Scheme
+  specifications).   As such, they are not specified here.
+
+
+** Pika FFI Access to String Data
+
+  (Note: In earlier discussions with some people I had suggested
+   that Pika strings might be represented by a tree structure.  I
+   have since decided that that should not be the case:  I want Pika
+   to live up to the expectation that STRING? values are represented
+   as arrays.   The tree-structured-string-like type will be present
+   in Pika, but it will be distinct from STRING?.)
+
+  There is a touchy design issue regarding strings.   On the one hand,
+  for efficiency's sake, C code needs fairly direct access (for both
+  reading and writing) to string data.   On the other hand, that
+  necessarily means exposing to C the otherwise internal details of
+  value representation and of addressing the possibility of a
+  multi-threaded Pika.
+
+  ~ t_scm_error scm_lock_string_data (t_udstr * answer,
+                                      t_scm_arena instance,
+                                      t_scm_word * str)
+
+    Obtain the `t_udstr' (see libhackerlab) corresponding to `str'.
+    Return 0.   If `*str' is not a string, set `*answer' to 0 and 
+    return an error code.
+
+    A string obtained by this call must be released by
+    `scm_release_string_data' (see below).  
+
+    It is critical that between calls to `scm_lock_string_data' and 
+    `scm_release_string_data' no other calls to Pika FFI functions
+    be made, and that the number of instructions between those calls
+    is sharply bounded.
+
+
+  ~ t_scm_error scm_lock_string_data2 (t_udstr * answer1,
+                                       t_udstr * answer2,
+                                       t_scm_arena instance,
+                                       t_scm_word * str1
+                                       t_scm_word * str2)
+
+    Like `scm_lock_string_data' but return the `t_udstr's for two 
+    strings instead of one.
+
+
+
+  ~ t_scm_error scm_release_string_data (t_scm_arena instance
+                                         t_scm_word * str)
+
+    Release a string locked by `scm_lock_string_data'.
+
+
+  ~ t_scm_error scm_release_string_data (t_scm_arena instance
+                                         t_scm_word * str1
+                                         t_scm_word * str2)
+
+    Release strings locked by `scm_lock_string_data2'.
+
+
+** Pika String Internals
+
+  libhackerlab contains a string-like type, `t_udstr' defined
+  (internally) as a pointer to a structure of the form:
+
+    struct udstr_handle
+    {
+      enum uni_encoding_scheme enc;
+      size_t length;
+      uni_string data;
+
+      alloc_limits limits;
+      int refs;
+    };
+
+  The intention here is to represent a string in an aribitray 
+  Unicode encoding, with an explicitly recorded length measured in
+  coding units.
+
+  libhackerlab contains a (currently small but growing) number of
+  &quot;string primitives&quot; for operating on `t_udstr' values.  For example, 
+  one can concatenate two strings without regard to what encoding
+  scheme each is in.
+
+  In Pika, strings shall be represented as `t_udstr' values, pointed
+  to by an scm_vtable object.
+
+  Further restrictions apply, however:
+
+  Pika strings will have the property that:
+
+  ~ any string including a character in the range U+10000..U+1FFFFF
+    will be stored in a t_udstr using the uni_utf32 encoding.
+
+  ~ any other string including a character in the range U+0100..U+FFFF
+    will be stored in a t_udstr using the uni_utf16 encoding.
+
+  ~ all remaining strings will be stored in a t_udstr using
+    the uni_iso8859_1 encoding.
+
+  In that way, the length of the t_udstr (measured in encoding units)
+  will always be equal to the length of the Scheme string (measured
+  in codepoints).   Nearly all Scheme string operations involving
+  string indexes can find the referenced characters in O(1) time.
+  The primary exception is STRING-SET! if the character being stored
+  requires the string it is being stored into to change encoding.
+
+  At the same time, Scheme strings will have a space-efficient 
+  representation.
+
+
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00343" href="msg00343.html">Re: strings draft</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+<li><strong><a name="00345" href="msg00345.html">Re: strings draft</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+<li><strong><a name="00347" href="msg00347.html">Re: strings draft</a></strong>
+<ul><li><em>From:</em> Thomas Bushnell, BSG</li></ul></li>
+<li><strong><a name="00371" href="msg00371.html">Parsing Scheme [was Re: strings draft]</a></strong>
+<ul><li><em>From:</em> Ken Dickey</li></ul></li>
+<li><strong><a name="00405" href="msg00405.html">Re: strings draft</a></strong>
+<ul><li><em>From:</em> Matthew Dempsky</li></ul></li>
+<li><strong><a name="00421" href="msg00421.html">Re: strings draft</a></strong>
+<ul><li><em>From:</em> Matthew Dempsky</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00341.html">Re: Couple things...</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00343.html">Re: strings draft</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00330.html">kind request for a sync()</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00343.html">Re: strings draft</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00342"><strong>Date</strong></a></li>
+<li><a href="threads.html#00342"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,139 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: non critical&#45;section uses of mutexes -->
+<!--X-From-R13: byrtNcbobk.pbz -->
+<!--X-Date: Wed, 26 Apr 2000 17:00:37 &#45;0500 (CDT) -->
+<!--X-Message-Id: 200004262158.VAA07086@fnmoc.navy.mil -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: non critical-section uses of mutexes</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00062.html">Date Prev</a>][<a href="msg00064.html">Date Next</a>][<a href="msg00061.html">Thread Prev</a>][<a href="msg00064.html">Thread Next</a>][<a href="maillist.html#00063">Date Index</a>][<a href="threads.html#00063">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: non critical-section uses of mutexes</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-18@DOMAIN.HIDDEN">srfi-18@xxxxxxxxxxxxxxxxx</a>, <a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: non critical-section uses of mutexes</li>
+<li><em>From</em>: <a href="mailto:oleg@DOMAIN.HIDDEN">oleg@xxxxxxxxx</a></li>
+<li><em>Date</em>: Wed, 26 Apr 2000 21:58:42 GMT</li>
+<li><em>Reply-to</em>: <a href="mailto:oleg@DOMAIN.HIDDEN">oleg@xxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+Marc,
+
+	I'm afraid there is another problem with your mailbox
+solution. Consider the corrected code
+
+ (define (make-empty-mailbox)
+      (let ((put-mutex (make-mutex)) ; allow put! operation
+            (get-mutex (make-mutex (current-thread))) ; prevent get! operation
+            (cell #f))
+
+        (define (put! obj)
+          (mutex-lock-anonymously! put-mutex) ; prevent put! operation
+          (set! cell obj)
+          (mutex-unlock! get-mutex)) ; allow get! operation
+
+        (define (get!)
+          (mutex-lock-anonymously! get-mutex) ; wait until object in mailbox
+          (let ((result cell))
+            (set! cell #f) ; prevent space leaks
+            (mutex-unlock! put-mutex) ; allow put! operation
+            result))
+
+        (lambda (msg)
+          (case msg
+            ((put!) put!)
+            ((get!) get!)
+            (else (error &quot;unknown message&quot;))))))
+
+
+Let thread T1 execute
+	(set! global-mbox (make-empty-mailbox))
+
+and yield control to T2, which will do
+	((global-mbox 'get!))
+This will immediately block T2. The control reverts to T1. Suppose
+that T1 terminates right away. global-mbox::get-mutex was locked by T1
+upon mailbox creation.  After T1 is gone, the mutex becomes abandoned,
+so T2 all of the sudden gets &quot;abandoned mutex exception&quot;.
+
+
+	It gets worse. Suppose T1 runs
+        (set! global-mbox (make-empty-mailbox))
+	((global-mbox 'put!) 'value)
+	((global-mbox 'get!))
+However, in the middle of ((global-mbox 'get!)), right after
+executing (set! cell #f) but _before_ (mutex-unlock! put-mutex),
+thread T1 exhausts its quantum and is kicked off the CPU. Suppose
+thread T3 gets control, and forcibly terminates T1. T1 is not running,
+so it dies instantly. However, the global-mbox::get-mutex does not
+become abandoned, because it was locked anonymously. So,
+global-mbox::get-mutex remains locked, and so does
+global-mbox::put-mutex (because T1 lost CPU control before it could
+unlock the mutex). Thus both mailbox mutexes are locked, and no one
+can put to or take anything from the mailbox. If some threads were
+waiting on put!, they will wait forever. Wasn't mutex ownership
+introduced to specifically prevent this kind of problem?
+
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00064" href="msg00064.html">Re: non critical-section uses of mutexes</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00062.html">extensibility to real-time multithreading</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00064.html">Re: non critical-section uses of mutexes</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00061.html">non critical-section uses of mutexes</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00064.html">Re: non critical-section uses of mutexes</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00063"><strong>Date</strong></a></li>
+<li><a href="threads.html#00063"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

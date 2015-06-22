@@ -1,0 +1,153 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: wrapping procedures -->
+<!--X-From-R13: Ohoerl Xnssre <ntwNnyhz.zvg.rqh> -->
+<!--X-Date: Sat,  3 Dec 2005 18:51:04 +0100 (CET) -->
+<!--X-Message-Id: 20051203175028.4CAF11B77A7@home.voluntocracy.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20051202194325.1C0751B77A7@home.voluntocracy.org -->
+<!--X-Reference: y9lvey6f8vl.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: wrapping procedures</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00055.html">Date Prev</a>][<a href="msg00057.html">Date Next</a>][<a href="msg00050.html">Thread Prev</a>][<a href="msg00053.html">Thread Next</a>][<a href="maillist.html#00056">Date Index</a>][<a href="threads.html#00056">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: wrapping procedures</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:mflatt@DOMAIN.HIDDEN">mflatt@xxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: wrapping procedures</li>
+<li><em>From</em>: Aubrey Jaffer &lt;<a href="mailto:agj@DOMAIN.HIDDEN">agj@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat,  3 Dec 2005 12:50:28 -0500 (EST)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-83@DOMAIN.HIDDEN">srfi-83@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-83@DOMAIN.HIDDEN">srfi-83@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:y9lvey6f8vl.fsf@DOMAIN.HIDDEN">y9lvey6f8vl.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt; (message from	Matthew Flatt on Fri, 2 Dec 2005 21:58:24 -0700)</li>
+<li><em>References</em>: &lt;<a href="mailto:20051202194325.1C0751B77A7@DOMAIN.HIDDEN">20051202194325.1C0751B77A7@xxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:y9lvey6f8vl.fsf@DOMAIN.HIDDEN">y9lvey6f8vl.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre> | From: Matthew Flatt &lt;mflatt@xxxxxxxxxxx&gt;
+ | Date: Fri, 2 Dec 2005 21:58:24 -0700
+ | 
+ | At Fri,  2 Dec 2005 14:43:25 -0500 (EST), Aubrey Jaffer wrote:
+ | &gt; Does SRFI-83 allow some way for a module to import, wrap, then
+ | &gt; export an identifier?
+ | 
+ | Yes - renaming (either on import, export, or both) supports this
+ | kind of wrapping.  The only question is whether the exported name
+ | can be imported elsewhere without further renaming.
+ | 
+ | &gt; Does SRFI-83 allow redefinition and export of R5RS procedures?
+ | 
+ | Yes, as above.  However, no SRFI-83 library would be able to import
+ | the names without prefixing them or renaming, since every SRFI-83
+ | library imports &quot;scheme://r6rs&quot;.
+
+There are four language extensions in SLIB which redefine builtin R4RS
+procedures:
+
+  &quot;array.scm&quot;	equal?
+
+Even if no other procedures are affected, the introduction of a new
+type will often require changes to `equal?'.
+
+  &quot;cring.scm&quot;	+, *, /, -, zero?
+
+  &quot;dynwind.scm&quot;	call-with-current-continuation
+
+Because R5RS includes `dynamic-wind', this isn't a problem in
+practice.
+
+  &quot;record.scm&quot;	vector?, vector-ref?, vector-set!, vector-&gt;list,
+		vector-fill!, display, write
+
+If R6RS includes the record datatype, then this won't be an issue.
+
+I find five SRFIs which redefine builtin syntax:
+
+  srfi-5	let
+  srfi-17	set!
+  srfi-46	syntax-rules
+  srfi-61	cond
+  srfi-71	let, let*, letrec
+
+ | If we manage to at least agree on libraries that are all in the
+ | &quot;scheme://r6rs&quot; (e.g., this SRFI), then we may eventually be able
+ | to agree on ways to portably define new languages --- where a new
+ | language could provide alternate bindings for names exported by
+ | &quot;scheme://r6rs&quot;.  This SRFI, meanwhile, doesn't support it.
+ | 
+ | I forgot the simpler possibility, which is that we define
+ | additional pre-defined languages, including one that only binds
+ | `import', `export', and `indirect-export'.  This seems likely to
+ | me.
+
+So module extension of the language would be disallowed; one must
+create a new language for each extension, whether its procedures can
+be made R6RS backward-compatible or not!  That would mean that
+extended languages could not be combined without defining a
+combination language.
+
+I think that for practical purposes, R6RS would then have reserved
+identifiers; namely the builtin procedures and syntax.
+
+If that is the case, and given that &quot;no reserved identifiers&quot;
+motivated much of the macro system, this change should be explicitly
+stated.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00050" href="msg00050.html">Re: wrapping procedures</a></strong>
+<ul><li><em>From:</em> Matthew Flatt</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00055.html">Library semantics correction</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00057.html">Re: fundamental design issues (long message)</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00050.html">Re: wrapping procedures</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00053.html">Re: wrapping procedures</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00056"><strong>Date</strong></a></li>
+<li><a href="threads.html#00056"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

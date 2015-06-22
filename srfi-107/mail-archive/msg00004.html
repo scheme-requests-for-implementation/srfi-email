@@ -1,0 +1,172 @@
+<!-- MHonArc v2.6.16 -->
+<!--X-Subject: Re: Individual comments on SRFI 107 -->
+<!--X-From-R13: Bre Pbguare <creNobguare.pbz> -->
+<!--X-Date: Sun, 18 Nov 2012 20:17:40 +0000 (UTC) -->
+<!--X-Message-Id: 50A9424D.5010204@bothner.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20121118193656.GH30282@mercury.ccil.org -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Individual comments on SRFI 107</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00003.html">Date Prev</a>][<a href="msg00005.html">Date Next</a>][<a href="msg00001.html">Thread Prev</a>][<a href="msg00007.html">Thread Next</a>][<a href="maillist.html#00004">Date Index</a>][<a href="threads.html#00004">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Individual comments on SRFI 107</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-107@DOMAIN.HIDDEN">srfi-107@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Individual comments on SRFI 107</li>
+<li><em>From</em>: Per Bothner &lt;<a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 18 Nov 2012 12:17:17 -0800</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-107@DOMAIN.HIDDEN">srfi-107@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20121118193656.GH30282@DOMAIN.HIDDEN">20121118193656.GH30282@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:20121118193656.GH30282@DOMAIN.HIDDEN">20121118193656.GH30282@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mozilla/5.0 (X11; Linux x86_64; rv:16.0) Gecko/20121029 Thunderbird/16.0.2</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+On 11/18/2012 11:36 AM, John Cowan wrote:
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Here are the individual comments on SRFI 107 that have occurred to me
+so far:
+</pre></blockquote><pre style="margin: 0em;">
+
+Thanks for the feedback!
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+1) Attribute names and values cannot be replaced by enclosed expressions.
+That should be allowed.
+</pre></blockquote><pre style="margin: 0em;">
+
+They can, unless I'm missing your point:  The attribute name is
+given by an xml-name-form, which can be an xml-enclosed-expression.
+Likewise, xml-attribute-value can contain xml-escaped.
+
+What is not supported explicitly are attribute-valued expressions.
+One could extend xml-true-attribute to:
+
+xml-true-attribute ::=
+    xml-name-form=xml-attribute-value
+  | xml-enclosed-expression
+
+where xml-escaped would be an expression that evaluates to an
+attribute value.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+2) It should be made clear early that the lexical syntax does not allow
+whole XML documents to be inserted.  I'll send another email suggesting
+a way to represent whole documents.
+</pre></blockquote><pre style="margin: 0em;">
+
+Ok.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+3) It should also be made clear early that the lexical syntax is a
+superset of XML syntax.
+</pre></blockquote><pre style="margin: 0em;">
+
+I can change the abstract to:
+  We specify a reader extension that reads data in a superset of
+  XML/HTML format, and produces XML-node values.
+
+If we drop the semantics parts as you recommended earlier, then perhaps:
+
+  We specify a reader extension that reads data in a superset of
+  XML/HTML format, and produces conventional S-expressions.
+
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+4) I believe that the namespace mapping passed to $xml-element$ should be
+wrapped in (quote ...) in order to lift the restriction that $xml-element$
+needs to be a macro rather than a procedure.
+</pre></blockquote><pre style="margin: 0em;">
+
+I don't believe that works - at least it might cause major problems.
+The namespace mappings provide bindings that should be visible in
+</pre><tt>enclosed expressions.  So at least in the my use-case $xml-element$ has 
+</tt><tt>to be
+</tt><tt>a macro.  Though one could still wrap the namespace list in quotes to 
+</tt><tt>support
+</tt><tt>some use-cases that don't need that, and then applications that want to 
+</tt><tt>support
+</tt><pre style="margin: 0em;">
+true lexical namespace bindings can just strip the quotes in the macro.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+5) Change $resolve-qname$ and $entity-reference$ to $xml-resolve-qname$
+and $xml-entity-reference$ for uniformity.  I realize that in Kawa QNames
+have a wider scope than just XML, but that won't necessarily be true
+in other implementations of SRFI 107.  If these forms seem too verbose,
+$xml-qname$ and $xml-entity$ work for me.
+</pre></blockquote><pre style="margin: 0em;">
+
+In XML terminology, an &quot;entity&quot; is a &quot;piece of text&quot; - for example a file
+or a string.  An entity reference is an identifier that resolves to an
+entity.  So I'm not sure ($xml-entity$ NAME) would be a good idea.  I don't
+mind a slightly more verbose $xml-entity-reference$.
+--
+	--Per Bothner
+per@xxxxxxxxxxx   <a  rel="nofollow" href="http://per.bothner.com/">http://per.bothner.com/</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00007" href="msg00007.html">Re: Individual comments on SRFI 107</a></strong>
+<ul><li><em>From:</em> John Cowan</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00001" href="msg00001.html">Individual comments on SRFI 107</a></strong>
+<ul><li><em>From:</em> John Cowan</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00003.html">Representing whole XML documents</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00005.html">Re: Slimming down SRFI 107</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00001.html">Individual comments on SRFI 107</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00007.html">Re: Individual comments on SRFI 107</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00004"><strong>Date</strong></a></li>
+<li><a href="threads.html#00004"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

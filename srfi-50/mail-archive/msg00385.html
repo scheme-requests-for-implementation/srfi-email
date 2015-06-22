@@ -1,0 +1,186 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Parsing Scheme [was Re: strings draft] -->
+<!--X-From-R13: Fbz Zbeq <ybeqNrzs.arg> -->
+<!--X-Date: Fri, 23 Jan 2004 23:38:57 +0100 (MET) -->
+<!--X-Message-Id: 200401232252.OAA27834@morrowfield.regexps.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200401220511.VAA18432@morrowfield.regexps.com -->
+<!--X-Reference: 200401230907.27619.Ken.Dickey@allvantage.com -->
+<!--X-Reference: 200401232020.MAA26771@morrowfield.regexps.com -->
+<!--X-Reference: 87hdymz7fk.fsf@becket.becket.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Parsing Scheme [was Re: strings draft]</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00384.html">Date Prev</a>][<a href="msg00386.html">Date Next</a>][<a href="msg00381.html">Thread Prev</a>][<a href="msg00394.html">Thread Next</a>][<a href="maillist.html#00385">Date Index</a>][<a href="threads.html#00385">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Parsing Scheme [was Re: strings draft]</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:tb@DOMAIN.HIDDEN">tb@xxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Parsing Scheme [was Re: strings draft]</li>
+<li><em>From</em>: Tom Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 23 Jan 2004 14:52:27 -0800 (PST)</li>
+<li><em>Cc</em>: <a href="mailto:Ken.Dickey@DOMAIN.HIDDEN">Ken.Dickey@xxxxxxxxxxxxxx</a>, <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:87hdymz7fk.fsf@DOMAIN.HIDDEN">87hdymz7fk.fsf@xxxxxxxxxxxxxxxxx</a>&gt; (<a href="mailto:tb@DOMAIN.HIDDEN">tb@xxxxxxxxxx</a>)</li>
+<li><em>References</em>: &lt;<a href="mailto:200401220511.VAA18432@DOMAIN.HIDDEN">200401220511.VAA18432@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:200401230907.27619.Ken.Dickey@DOMAIN.HIDDEN">200401230907.27619.Ken.Dickey@xxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:200401232020.MAA26771@DOMAIN.HIDDEN">200401232020.MAA26771@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:87hdymz7fk.fsf@DOMAIN.HIDDEN">87hdymz7fk.fsf@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+    &gt; From: tb@xxxxxxxxxx (Thomas Bushnell, BSG)
+
+    &gt; Tom Lord &lt;lord@xxxxxxx&gt; writes:
+
+    &gt; &gt; On the other hand, if [a], [b], and [c] are all portable, equivalent,
+    &gt; &gt; standard Scheme programs -- then in Turkish implementations,
+    &gt; &gt; CHAR-UPCASE, CHAR-DOWNCASE and friends must behave in a linguistically
+    &gt; &gt; odd manner.  
+
+    &gt; Not true!  
+
+    &gt; You can make [a], [b], and [c] all do the Right Thing, and not even
+    &gt; *have* CHAR-UPCASE or CHAR-DOWNCASE at all!
+
+    &gt; What they require is string-ci=? to behave Properly, in the contexts
+    &gt; where the Scheme reader uses it.
+
+CHAR-UPCASE and CHAR-DOWNCASE are mandatory and STRING-CI=? is defined
+in terms of CHAR-CI=?
+
+If [a], [b], and [c] are all portable, equivalent, standard Scheme
+programs then this portable, standard program:
+
+
+    (let loop ((c (read-char)))
+      (if (not eof-object? c)
+          (begin
+            (display (char-downcase c))
+            (loop (read-char)))))
+
+must be able to read any one of them and write as output a scheme
+program with identical meaning, at _least_ if the resulting program is
+read by the same implementation running the conversion.
+
+There are two choices.   Either that program is permitted to convert
+[b] and [c] into something other than [a] (such as by including some
+dotless i's in the output) or it must convert [b] and [c] to [a].
+
+In the latter case, CHAR-DOWNCASE behaves in a linguistically odd for
+Turkish speakers because it either converts #\I to #\i or #\I to #\I.
+
+In the former case, the Turkish implementation must provide that:
+
+	(char-ci=? dotless-i #\i)
+
+which is again, linguistically odd.
+
+    &gt; The question the reader needs to ask is &quot;are these sequences of
+    &gt; characters the same identifier&quot;.  
+
+Yes, and in R5RS that means &quot;Are the constiuent characters of the identifier
+equal in a case independent sense?&quot;   The rest follows from that.
+
+You say R5RS should not define identifier equivalence that way:
+
+    &gt; &gt; I'm not so sure that that's terrible (and my proposals
+    &gt; &gt; for R6RS reflect that assessment): those procedures are doomed to
+    &gt; &gt; behave in a linguistically odd manner for a substantial number of
+    &gt; &gt; reasons, in many other contexts besides Turkish implementations.
+
+    &gt; So punt them.  CHAR-UPCASE and CHAR-DOWNCASE are entirely unnecessary,
+    &gt; and since they cannot be sensibly implemented, and are entirely
+    &gt; unneeded, drop them!
+
+The character casemappings would still need to be defined to specify
+Scheme.  Reifying that definition into Scheme in the form of those
+procedures is only natural.
+
+
+
+    &gt; &gt; Rather, I propose that the standard character procedures be explicitly
+    &gt; &gt; related to both the syntax of portable standard Scheme and the syntax
+    &gt; &gt; of particular implementations.  For example, R6RS should require that:
+
+    &gt; &gt; 	(char-downcase #\I) =&gt; #\i
+
+    &gt; Why?  R6RS should not have char-downcase at all.
+
+The standard would still need to specify CHAR-DOWNCASE.   It would
+still need to be possible to write portable CHAR-DOWNCASE with
+whatever machinery the standard did provide.   There is no good reason
+not to stick to the simple route of simply directly reifying
+CHAR-DOWNCASE into Scheme.   There is a very good reason to do so:  so
+that portable programs can accurately manipulate non-portable source texts.
+
+-t
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00394" href="msg00394.html">Re: Parsing Scheme [was Re: strings draft]</a></strong>
+<ul><li><em>From:</em> Thomas Bushnell, BSG</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00342" href="msg00342.html">strings draft</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00371" href="msg00371.html">Parsing Scheme [was Re: strings draft]</a></strong>
+<ul><li><em>From:</em> Ken Dickey</li></ul></li>
+<li><strong><a name="00378" href="msg00378.html">Re: Parsing Scheme [was Re: strings draft]</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00381" href="msg00381.html">Re: Parsing Scheme [was Re: strings draft]</a></strong>
+<ul><li><em>From:</em> Thomas Bushnell, BSG</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00384.html">Re: Parsing Scheme [was Re: strings draft]</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00386.html">Re: Parsing Scheme [was Re: strings draft]</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00381.html">Re: Parsing Scheme [was Re: strings draft]</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00394.html">Re: Parsing Scheme [was Re: strings draft]</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00385"><strong>Date</strong></a></li>
+<li><a href="threads.html#00385"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

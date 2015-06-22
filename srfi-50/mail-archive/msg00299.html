@@ -1,0 +1,327 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Comparing Pika&#45;syle and JNI&#45;style -->
+<!--X-From-R13: Xvz Pynaql <wvzoNerqung.pbz> -->
+<!--X-Date: Wed, 14 Jan 2004 20:53:28 +0100 (NFT) -->
+<!--X-Message-Id: vt2lloacno0.fsf@zenia.home -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: E1AfQRd&#45;0000Qa&#45;00@mail.mumble.net -->
+<!--X-Reference: vt2y8scua4h.fsf@zenia.home -->
+<!--X-Reference: 877jzwtzaz.fsf@becket.becket.net -->
+<!--X-Reference: vt2ptdn2bqq.fsf@zenia.home -->
+<!--X-Reference: vt2isje3nna.fsf_&#45;_@zenia.home -->
+<!--X-Reference: 200401141840.KAA07050@morrowfield.regexps.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Comparing Pika-syle and JNI-style</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00298.html">Date Prev</a>][<a href="msg00300.html">Date Next</a>][<a href="msg00296.html">Thread Prev</a>][<a href="msg00302.html">Thread Next</a>][<a href="maillist.html#00299">Date Index</a>][<a href="threads.html#00299">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Comparing Pika-syle and JNI-style</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Tom Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Comparing Pika-syle and JNI-style</li>
+<li><em>From</em>: Jim Blandy &lt;<a href="mailto:jimb@DOMAIN.HIDDEN">jimb@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: 14 Jan 2004 14:53:19 -0500</li>
+<li><em>Cc</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:200401141840.KAA07050@DOMAIN.HIDDEN">200401141840.KAA07050@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:E1AfQRd-0000Qa-00@DOMAIN.HIDDEN">E1AfQRd-0000Qa-00@xxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:vt2y8scua4h.fsf@DOMAIN.HIDDEN">vt2y8scua4h.fsf@xxxxxxxxxx</a>&gt;	&lt;<a href="mailto:877jzwtzaz.fsf@DOMAIN.HIDDEN">877jzwtzaz.fsf@xxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:vt2ptdn2bqq.fsf@DOMAIN.HIDDEN">vt2ptdn2bqq.fsf@xxxxxxxxxx</a>&gt;	&lt;<a href="mailto:vt2isje3nna.fsf_-_@DOMAIN.HIDDEN">vt2isje3nna.fsf_-_@xxxxxxxxxx</a>&gt;	&lt;<a href="mailto:200401141840.KAA07050@DOMAIN.HIDDEN">200401141840.KAA07050@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Sender</em>: <a href="mailto:jimb@DOMAIN.HIDDEN">jimb@xxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Gnus/5.09 (Gnus v5.9.0) Emacs/21.3</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+Tom Lord &lt;lord@xxxxxxx&gt; writes:
+&gt;     &gt; [cadr isn't very interesting, imho -- cadr example snipped]
+
+Could you humor me, and post the code anyway?  Of course, feel free to
+pose other problems.
+
+&gt;     &gt;     mn_ref *
+&gt;     &gt;     assq (mn_call *c, mn_ref *key, mn_ref *alist)
+&gt;     &gt;     {
+&gt;     &gt;       while (mn_pair_p (c, alist))
+&gt;     &gt;         {
+&gt;     &gt;           mn_ref *pair = mn_car (c, alist);
+&gt;     &gt;           mn_ref *pair_key = mn_car (c, pair);
+&gt;     &gt; 
+&gt;     &gt;           if (mn_ref_eq (c, key, pair_key))
+&gt;     &gt;             return pair;
+&gt;     &gt; 
+&gt;     &gt;           mn_free_local_ref (c, pair);
+&gt;     &gt;           mn_free_local_ref (c, pair_key);
+&gt;     &gt;           alist = mn_to_cdr (c, alist);
+&gt;     &gt;         }
+&gt;     &gt; 
+&gt;     &gt;       return mn_false (c);
+&gt;     &gt;     }
+&gt; 
+&gt; Note, by the way that while my assq is arguably uglier than yours,
+&gt; mine is O(1) space and yours is O(N) where N is the length of the
+&gt; alist.  (Does that count as a benefit of having more hair on my assq?
+&gt; (sorry :-)).
+
+Well, the code above is meant to be O(1).  Every reference allocated
+is freed by the next iteration.  Did I miss something?
+
+I think that's a very serious issue, and I tried to mention both
+halves of it in my point-by-point comparison.
+
+&gt;     &gt; 				[...] longjmp is even harder.
+&gt; 
+&gt; It's not that hard -- you just can't use &quot;naked&quot; longjmp to jump past
+&gt; protected frames (you would have to use a `scm_setjmp' / `scm_longjmp'
+&gt; pair.)
+
+Yes, that would work.
+
+&gt; I think it would unduly burden FFI implementors to permit naked
+&gt; longjmps past SCHEME frames.   Is that a controversial belief?
+&gt; In other words, suppose that we have a call-chain like:
+&gt; 
+&gt; 	3RD-PARTY	-- calls setjmp
+&gt;         SCHEME
+&gt;         3RD-PARTY	-- calls longjmp?
+&gt; 
+&gt; In that kind of call chain I think that the longjmp should be declared
+&gt; illegal by the FFI spec.
+
+You're declaring illegal behavior by code neither you or your users
+control.  But later you suggest a workaround...
+
+&gt; but that can be handled by a wrapper too:
+&gt; 
+&gt; 	WRAPPER		-- creates an auxiliary stack
+&gt;         3RD-PARTY	-- uses setjmp
+&gt;         FFI-USER*	-- stores frames that might be lost in
+&gt;                            a longjmp on the auxiliary stack
+&gt;         3RD-PARTY	-- uses longjmp
+&gt; 
+&gt; which is very similar to what I would expect a JNI/Minor-style
+&gt; implementation to do but only pays for the costs of the auxiliary
+&gt; stack when it is actually needed.  This approach is no different from
+&gt; the kind of thing you'd need to do if, for example, one of the
+&gt; intermediate FFI-USER* frames wanted to open a temp file that it might
+&gt; not otherwise get a chance to close.
+
+This description isn't clear, but by &quot;auxiliary stack&quot;, I assume you
+mean that the user would actually malloc his frame structures in the
+&quot;*&quot; frames.  This is, as you suggest, what JNI-style does all the
+time.
+
+The problem here is that you may not know what context code is going
+to be used in.  And whether a given function is going to get used in
+such a context is a non-local property.  Pika utility functions that
+want to make few assumptions about their context must always malloc
+their frames.
+
+&gt;     &gt; - Variable declarations are cluttered with enclosing structs and GCPRO
+&gt;     &gt;   / UNGCPRO calls.
+&gt; 
+&gt; Tastes vary.   In isolation, at least, that seems a weak reason to use
+&gt; a more costly approach.
+
+That's why it's last.  And the JNI-style list includes a &quot;clutter&quot;
+bullet, too.
+
+&gt;     &gt; - Functions may only return Scheme values by reference; they may not
+&gt;     &gt;   provide them as their (syntactic) return values.  Instead of writing
+&gt;     &gt;   &quot;f (g (x))&quot;, you must write:
+&gt; 
+&gt;     &gt;     g (&amp;frame.x, &amp;frame.temp);
+&gt;     &gt;     f (&amp;frame.temp, &amp;frame.temp2);
+&gt; 
+&gt;     &gt;   In other words, you must write your code as linear series of
+&gt;     &gt;   operations which work by side-effects.
+&gt; 
+&gt;     &gt; In JNI-style:
+&gt;     &gt; - Functions can return references directly, so code need not be
+&gt;     &gt;   linearized.  You can write &quot;f (call, g (call, x))&quot; --- if you know
+&gt;     &gt;   that &quot;call&quot; will return and free g's return value soon enough.
+&gt;     &gt; - Local references are freed automatically when the Scheme-&gt;C call to
+&gt;     &gt;   which they belong returns.  Leaks due to unfreed local references
+&gt;     &gt;   (which will probably be the most common sort of error) have a
+&gt;     &gt;   bounded and often (though not always) short lifetime.
+&gt; 
+&gt; 
+&gt; One thing that bothers me about the JNI-style:
+&gt; 
+&gt; 	f (g(x), h(y))
+&gt; 
+&gt; is the lifetime of the references returned from `g' and `h'.  If that
+&gt; call is in a loop, for example, two new references will be allocated
+&gt; on every iteration and, absent the programmer taking steps to
+&gt; explicitly manage them (sacrificing the gain of the function call
+&gt; syntax) all of those references remain live until C returns back to
+&gt; Scheme.
+
+That's right.  References must be explicitly freed; JNI can help you
+out in some cases, but you have to think about it.
+
+I think that JNI code will often be &quot;linear&quot;, in the SRFI-1 sense,
+with functions like 'f' that accept references being documented to
+free them.  The &quot;mn_to_car&quot; and &quot;mn_to_cdr&quot; functions are linear
+variants of &quot;mn_car&quot; and &quot;mn_cdr&quot;; we can add more of these as we find
+them useful.
+
+The nice thing about functions that handle references in a linear way
+is that they are actually faster than ordinary functions: since you're
+about to free the reference, you know it's not shared amongst any
+threads, so you can reuse it without memory synchronization.  Thus the
+implementation of mn_to_car:
+
+    /* Officially, the following functions deallocate one of the
+       references they're passed (call it REF), and return a new
+       reference.  But in fact, they just set REF-&gt;obj, and return REF
+       as the new reference.
+
+       This can be done without synchronization, even if REF is a
+       global reference, because:
+       - if anyone ever refers to REF assuming the old value, there
+         must be a race condition, because it's about to be freed, and
+       - nobody should refer to REF expecting the new value, unless
+         they received it in some properly-synchronized way, because
+         it's supposed to be an entirely new reference.  */
+
+    mn_ref *
+    mn_to_car (mn_call *call, mn_ref *ref)
+    {
+      mn__begin_incoherent (call);
+      {
+        ref-&gt;obj = check_pair (ref)-&gt;car;
+      }
+      mn__end_incoherent (call);
+
+      return ref;
+    }
+
+&gt; As a side effect of that, functions which should consume O(1) space
+&gt; will, in basic JNI-style, consume O(N) where N is the number of
+&gt; intermediate results they create during computation.
+
+Only if the code is written naively.  I suggested assq as an example
+for exactly this reason; my assq is O(1), unless I'm missing
+something.
+
+&gt; This also comes back to error handling.  We haven't talked about it
+&gt; much yet but my thinking is that nearly every FFI function should be
+&gt; able to return an error code and nearly every call to an FFI function
+&gt; should be checked.  For example, if `scm_car' is passed a non-pair
+&gt; argument, I think it should be able to return an error code.
+
+I started out that way, but then I got rid of it.  From minor/minor.h:
+
+   NOTE: Many of the functions in this interface will typically be
+   used in contexts where the caller &quot;knows&quot; that no error will occur.
+   Having to check each call to these functions for an exception
+   return value is a burden; people probably wouldn't do it, and
+   people's experiences with this interface would be unpleasant.
+
+   In the cases where we think this might happen, and where the user
+   could easily detect the error conditions themselves, we just have
+   the function abort, rather than returning an exception.  This will
+   allow errors to be caught earlier.
+
+Once I started writing code, I realized that having to check for an
+error return from every 'car' is going to be an immense amount of
+clutter.  I was barely willing to even bother, myself.
+
+&gt; 	err = g (&amp;frame.answer, instance, &amp;frame.x);
+&gt;         if (err)
+&gt;           {
+&gt;             ....;
+&gt;           }
+&gt;         err = f (&amp;frame.answer, instance, &amp;frame.answer);
+&gt;         if (err)
+&gt;           {
+&gt;             ...;
+&gt;           }
+
+Right: now imagine that g and f are 'car' and 'cdr'.  What should be
+'mn_to_cdr (c, mn_car (c, x))' has become eight lines of code.
+
+&gt;     &gt; - Variables are declared normally, and their values used directly.
+&gt; 
+&gt; Variables are declared normally in Pika, too.  I think you mean that
+&gt; JNI-style attempts to disguise handles as Scheme values.  It is
+&gt; because it can't pull off that illusion perfectly that I think it is a
+&gt; questionable choice.
+
+There's an illusion at work in Pika, JNI, and SRFI-50, and it oozes
+out and reveals itself in all three systems.  (SRFI-50's ooze is that
+it limits when GC can happen.)  What I'm asking is which people
+consider the least of three oozes.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00302" href="msg00302.html">Re: Comparing Pika-syle and JNI-style</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00262" href="msg00262.html">Re: when GC is permitted</a></strong>
+<ul><li><em>From:</em> Richard Kelsey</li></ul></li>
+<li><strong><a name="00283" href="msg00283.html">temporarily withdrawing SRFI-50</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+<li><strong><a name="00287" href="msg00287.html">Re: temporarily withdrawing SRFI-50</a></strong>
+<ul><li><em>From:</em> Thomas Bushnell, BSG</li></ul></li>
+<li><strong><a name="00294" href="msg00294.html">Re: temporarily withdrawing SRFI-50</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+<li><strong><a name="00295" href="msg00295.html">Comparing Pika-syle and JNI-style</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+<li><strong><a name="00296" href="msg00296.html">Re: Comparing Pika-syle and JNI-style</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00298.html">Re: Comparing Pika-syle and JNI-style</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00300.html">Re: Comparing Pika-syle and JNI-style</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00296.html">Re: Comparing Pika-syle and JNI-style</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00302.html">Re: Comparing Pika-syle and JNI-style</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00299"><strong>Date</strong></a></li>
+<li><a href="threads.html#00299"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

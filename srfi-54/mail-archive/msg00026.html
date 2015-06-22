@@ -1,0 +1,185 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: feedback -->
+<!--X-From-R13: Bnhy Epuyvr <fpuyvrNpbzpnfg.arg> -->
+<!--X-Date: Tue, 30 Mar 2004 16:32:32 +0200 (DFT) -->
+<!--X-Message-Id: BC8EEF25.AF04%schlie@comcast.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 87zn9ytyqy.fsf@tilde.co.kr -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: feedback</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00025.html">Date Prev</a>][<a href="msg00027.html">Date Next</a>][<a href="msg00025.html">Thread Prev</a>][<a href="msg00027.html">Thread Next</a>][<a href="maillist.html#00026">Date Index</a>][<a href="threads.html#00026">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: feedback</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &lt;<a href="mailto:srfi-54@DOMAIN.HIDDEN">srfi-54@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: feedback</li>
+<li><em>From</em>: Paul Schlie &lt;<a href="mailto:schlie@DOMAIN.HIDDEN">schlie@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 30 Mar 2004 09:32:21 -0500</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-54@DOMAIN.HIDDEN">srfi-54@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:87zn9ytyqy.fsf@DOMAIN.HIDDEN">87zn9ytyqy.fsf@xxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Microsoft-Entourage/10.1.4.030702.0</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Please consider:
+
+- personally believe fmt-xxx should produce a string (or lazy stream) where
+  a quoted scheme object, when displayed and then read back, would would be
+  equivalent, if not quoted, it's simply evaluated and then correspondingly
+  treated. which I suspect would be more generally useful and intuitive:
+
+- Per your example below:
+
+  (fmt-str a (fmt-num 12 -t s: '+ f: 3) &quot; &quot; #\a &quot; str &quot; '(3 #\s &quot;string&quot;))
+
+   =&gt; &quot;(10 3 +) #e+12.000 a str '(3 #\\s \&quot;string\&quot;)&quot;
+
+  note: where fmt parameters have the form of:
+        -X if parameter-less, i.e. -t for display type prefix
+        X: if parameterized, i.e. s: &lt;sign&gt; or f: &lt;fraction-digits&gt;
+
+- the value of fmt-xxx potentially yielding/consuming ports (or streams),
+  is that it enables lazily evaluated arbitrary length hierarchically
+  specified format specifications; which would likely be otherwise
+  potentially physically impractical to achieve.
+
+  (which format does not enable)
+
+Thanks, -paul-
+
+&gt; From: soo &lt;tilde@xxxxxxxxxxx&gt;
+&gt; ...
+&gt;  In SRFI-48 mailing list, Marc Feeley said:
+&gt;  ...
+&gt;  To make printing easier, a general purpose function called &quot;print&quot;
+&gt;  could be added with this definition:
+&gt;  (define (print . lst) (for-each display lst))
+&gt;  allowing
+&gt;  (print &quot;list: &quot; (field '(one &quot;two&quot; 3)))
+&gt;  ...
+&gt; 
+&gt; Likewise, we can make a procedure:
+&gt; (define (cat . objects)
+&gt; (get-output-string
+&gt;  (let ((string-port (open-output-string)))
+&gt;    (for-each (lambda (object)
+&gt; (display object string-port))
+&gt;       objects)
+&gt;    string-port)))
+&gt; 
+&gt; Examples:
+&gt; (cat 12 &quot; &quot; #\a &quot; str &quot; '(3 #\s &quot;string&quot;))
+&gt; (fmt 12 &quot; &quot; (fmt #\a) &quot; str &quot; (fmt '(3 #\s &quot;string&quot;)))
+&gt; =&gt; &quot;12 a str (3 s string)&quot;
+&gt; 
+&gt; (define a '(10 3 +))
+&gt; (cat a (fmt 12 10 3 '+) &quot; &quot; #\a &quot; str &quot; (fmt '(3 #\s &quot;string&quot;) write))
+&gt; (cat a (apply fmt 12 a) &quot; &quot; #\a &quot; str &quot; (fmt '(3 #\s &quot;string&quot;) write))
+&gt; (fmt a (fmt 12 10 3 '+) &quot; &quot; (fmt #\a) &quot; str &quot; (fmt '(3 #\s &quot;string&quot;) write))
+&gt; =&gt; &quot;(10 3 +) #e+12.000 a str (3 #\\s \&quot;string\&quot;)&quot;
+&gt;
+&gt; | - as observed in the earlier srfi-48 discussions, it may even be better
+&gt; | (both more general, and efficient) to define that resulting format functions
+&gt; | yield string-ports, rather than strings; which could then even be made more
+&gt; | general if formatting functions themselves were able to accept string-ports,
+&gt; | such that more complex hierarchically defined formats may be defined as
+&gt; | desired.
+&gt; 
+&gt; FMT manipulates not string ports but strings.
+&gt; 
+&gt; If we have a procedure like `open-output-string?', we can make FMT to append
+&gt; the strings in the string ports to the resulting string like &lt;string&gt;
+&gt; parameter.
+&gt; 
+&gt; Additionally, even though FMT is not fully extensible, If &lt;output-port&gt;
+&gt; parameter is added to FMT, it can print the resulting string like FORMAT, and
+&gt; If &lt;input-port&gt; parameter is added, `file-&gt;string' function can be added, and
+&gt; If &lt;separator&gt; parameter is added like '(#\, 3), comma separator function can
+&gt; be added.
+&gt; 
+&gt; | - lastly, although personally I too would like format specifications to be
+&gt; | as succinct as possible, I suspect that all format specifications containing
+&gt; | more than a single specifier should be tagged with at least a single letter
+&gt; | semi-descriptive symbol to both give a hint as to what the specified
+&gt; | controls, and to enable them to be only defined as required in arbitrary
+&gt; | ordered lists as convenient to the author, and/or to enable their more
+&gt; | flexible construction.
+&gt; 
+&gt; I'll consider it, if conflicts occur among the format specifications.
+&gt; Anyway, I think it leaves some room for consideration.
+&gt; 
+&gt; | With a little luck, the above is hopefully also be consistent with your
+&gt; | goals for this srfi as well?
+&gt; 
+&gt; | -paul-
+&gt; 
+&gt; Thanks.
+&gt; 
+&gt; -- 
+&gt; INITERM
+&gt; 
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00027" href="msg00027.html">Re: feedback</a></strong>
+<ul><li><em>From:</em> Paul Schlie</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00025" href="msg00025.html">Re: feedback</a></strong>
+<ul><li><em>From:</em> soo</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00025.html">Re: feedback</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00027.html">Re: feedback</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00025.html">Re: feedback</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00027.html">Re: feedback</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00026"><strong>Date</strong></a></li>
+<li><a href="threads.html#00026"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

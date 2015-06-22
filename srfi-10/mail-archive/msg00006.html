@@ -1,0 +1,203 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: define&#45;reader&#45;ctor is merely an implementation hint -->
+<!--X-From-R13: byrtNcbobk.pbz -->
+<!--X-Date: Tue, 5 Oct 1999 13:44:36 &#45;0500 (CDT) -->
+<!--X-Message-Id: 199910051842.SAA08135@fnmoc.navy.mil -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>define-reader-ctor is merely an implementation hint</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00005.html">Date Prev</a>][<a href="msg00007.html">Date Next</a>][<a href="msg00005.html">Thread Prev</a>][<a href="msg00007.html">Thread Next</a>][<a href="maillist.html#00006">Date Index</a>][<a href="threads.html#00006">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>define-reader-ctor is merely an implementation hint</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:kelsey@DOMAIN.HIDDEN">kelsey@xxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: define-reader-ctor is merely an implementation hint</li>
+<li><em>From</em>: <a href="mailto:oleg@DOMAIN.HIDDEN">oleg@xxxxxxxxx</a></li>
+<li><em>Date</em>: Tue, 5 Oct 1999 18:42:45 GMT</li>
+<li><em>Cc</em>: <a href="mailto:srfi-10@DOMAIN.HIDDEN">srfi-10@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Reply-to</em>: <a href="mailto:oleg@DOMAIN.HIDDEN">oleg@xxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+&gt; The only way to supply contructor functions in SRFI-10 is by doing
+&gt; (define-reader-ctor &lt;symbol&gt; &lt;proc&gt;).
+
+No. The only requirement SRFI-10 mandates is that &quot;There must be a way
+to declare an association between a symbolic tag and the corresponding
+constructor-procedure.&quot; SRFI-10 goes on to _suggest_ that an
+implementation may want to implement a define-reader-ctor function for
+that purpose. SRFI-10 does not say that define-reader-ctor is the
+required method to build tag-constructor associations, let alone that
+it is the only method (see also below).
+
+
+&gt; The reader is used in two different ways: it is used to read
+&gt; the original program and it is used when that program calls
+&gt; `read'.  But how can a program modify the reader that was used
+&gt; to read it?
+
+&lt;blockquote cite=&quot;SRFI-10#last-but-two-paragraph&quot;&gt;
+The remaining question is how and when to define
+reader-constructors. If define-reader-ctor is a regular function,
+declaration of a new reader-constructor will affect the Scheme reader
+only when the code has been completely read, (byte)compiled and is
+being executed. We would like to be able to extend the Scheme reader
+while it still reads the code. Fortunately, there are several ways to
+affect a compiler/interpreter while it scans the code. For example,
+define-macro or define-syntax &quot;extend&quot; a Scheme compiler at compile
+time. So do command-line switches and pragmas, which are present in
+many systems. In addition, Scheme implementations often permit
+customization via profile forms, which may also be specified on
+command line.
+&lt;/blockquote&gt;
+
+Here is one example how this can be accomplished. Let's assume we have
+a Scheme-to-C compiler scc, which supports R5RS and SRFI-10. Let's
+assume that this compiler is extensible: it is capable of loading
+&quot;shared objects&quot;. Let us assume that srfi-4.so is a shared object that
+implements uniform vectors; among other procedures, it defines
+f32vector constructor, and adds association between 'f32 and this
+constructor. This shared object also defines a &quot;feature&quot; srfi-4 (per
+SRFI-0). If I have a Scheme source code file containing
+
+(define (temp-proc)
+     (let ((v '#,(f32 1.0 2.0 3.0))) (f32vector-ref v 1)))
+
+I can compile it as
+	scc -e srfi-4.so filename.scm
+
+srfi-4.so may originally be written in Scheme, C, assembly etc.
+The source language for f32vector constructor is irrelevant, as long
+as it can take Scheme values and return a Scheme value, in a manner
+consistent with the rest of the compiler.
+
+This scenario isn't that hypothetical as it sounds. Gambit Scheme
+Compiler and interpreter permit a user specify pieces of code to be
+executed at compiler's start-up time. These pieces can be given in
+various profile files, or on the command line. The following excerpt
+from
+	<a  rel="nofollow" href="http://pobox.com/~oleg/ftp/Scheme/vcond-expand.scm">http://pobox.com/~oleg/ftp/Scheme/vcond-expand.scm</a>
+shows how to modify a Gambit Scheme interpreter before it started
+evaluating user's code. The modification includes enabling SRFI-10,
+SRFI-0, and building a list of features.
+
+                ; Interpret file file-name given feature-list
+(define (with-features feature-list file-name)
+  (cerr &quot;\n\twhen features &quot; feature-list &quot; are defined: &quot;)
+  (OS:system &quot;gsi -e '(##include \&quot;cond-expand.scm\&quot;)' &quot;
+    &quot;-e \&quot;(define ALL-FEATURES '&quot;
+    (with-output-to-string (lambda () (write feature-list)))
+    &quot;)\&quot; &quot; file-name))
+
+BTW, the Gambit Scheme system also permits loading of shared objects,
+for example, at start-up time. Making a shared object is such a hassle
+however.
+
+	I admit SRFI-10's normative silence about precise ways to
+define reader-constructor associations may sound like a cop-out. Yet
+is is intentional: the purpose of SRFI-10 is to extend the _protocol_
+by which a Scheme system communicates with an external world. If my
+and your applications run by a SRFI-10-compliant system, and I send
+you a string
+	&quot;#,(f32 1.0 2.0 3.0)&quot;
+then you know what I am trying to say. What you're going to do about
+this -- reject or accept my request for constructing a value -- is
+another matter entirely.
+
+	I don't think SRFI-10 is way out of the line in this
+respect. For example, SRFI-0 talks about feature identifiers -- yet it
+gives no details how an implementation happens to have these
+identifiers defined, and how a user may extend the system with more
+identifiers (if he can at all).
+
+
+&gt;  (make-reader)   -&gt; &lt;reader&gt;
+&gt;  (extend-reader &lt;reader&gt; &lt;symbol&gt; &lt;proc&gt;) -&gt; &lt;reader&gt;
+&gt; A &lt;reader&gt; is function of one argument, an input port, that
+&gt; reads and returns the next s-expression from the port.
+&gt;  (&lt;reader&gt; &lt;input-port&gt;) -&gt; &lt;s-expression&gt;
+&gt; `Make-reader' returns a reader that parses the R5RS external
+&gt; syntax.  `Extend-reader' returns a new reader that is the same
+&gt; as its first argument except that it uses &lt;proc&gt; as a constructor
+&gt; when it finds #,(&lt;symbol&gt; . &lt;args&gt;) in the input, as is done
+&gt; in SRFI-10.
+
+And thus you have outlined another implementation of SRFI-10. BTW, the
+reference implementation is not that different. Gambit's reader is
+written in R4RS Scheme. I extend it _slightly_ to handle a #,() form.
+Instead of (make-reader) procedure I rely on a _readtable_ (which
+Gambit supports). Readtables also offer modularity, and a possibility
+to have multiple different readers in a program. Again, the reader and
+my extension are written entirely in R4RS, and support a superset of
+R4RS (including SRFI-10).
+
+&gt; It has the added advantages of being modular ... and being easy to
+&gt; implement in R5RS.
+
+I'm afraid I'm a bit confused by mentioning of ease of implementation
+in R5RS. A R5RS-compliant system can certainly be implemented in R4RS
+Scheme. That does not mean that R5RS is somehow redundant.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00007" href="msg00007.html">Re: define-reader-ctor is merely an implementation hint</a></strong>
+<ul><li><em>From:</em> Richard Kelsey</li></ul></li>
+<li><strong><a name="00008" href="msg00008.html">Re: define-reader-ctor is merely an implementation hint</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00005.html">Re: Countering the counter-proposal</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00007.html">Re: define-reader-ctor is merely an implementation hint</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00005.html">Re: Countering the counter-proposal</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00007.html">Re: define-reader-ctor is merely an implementation hint</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00006"><strong>Date</strong></a></li>
+<li><a href="threads.html#00006"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

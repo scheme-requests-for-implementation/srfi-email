@@ -1,0 +1,160 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Opaque syntax objects -->
+<!--X-From-R13: =?WEA&#45;8859&#45;1?C?Xraf_Okry_E=T8tnneq?= <wrafnkryNfbrtnneq.arg> -->
+<!--X-Date: Mon, 15 Aug 2005 01:23:48 +0200 (DFT) -->
+<!--X-Message-Id: 42FFD26F.4000504@soegaard.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200508142204.j7EM4mec024553@later.het.brown.edu -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Opaque syntax objects</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00059.html">Date Prev</a>][<a href="msg00061.html">Date Next</a>][<a href="msg00059.html">Thread Prev</a>][<a href="msg00062.html">Thread Next</a>][<a href="maillist.html#00060">Date Index</a>][<a href="threads.html#00060">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Opaque syntax objects</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>Subject</em>: Re: Opaque syntax objects</li>
+<li><em>From</em>: Jens Axel S&#xF8;gaard &lt;<a href="mailto:jensaxel@DOMAIN.HIDDEN">jensaxel@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 15 Aug 2005 01:23:27 +0200</li>
+<li><em>Cc</em>: <a href="mailto:srfi-72@DOMAIN.HIDDEN">srfi-72@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-72@DOMAIN.HIDDEN">srfi-72@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:200508142204.j7EM4mec024553@DOMAIN.HIDDEN">200508142204.j7EM4mec024553@xxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:200508142204.j7EM4mec024553@DOMAIN.HIDDEN">200508142204.j7EM4mec024553@xxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mozilla Thunderbird 1.0.2 (Windows/20050317)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+Andre van Tonder wrote:
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+ &gt; From: Jens Axel S&#xF8;gaard &lt;jensaxel@xxxxxxxxxxxx&gt;
+</pre><tt> 
+</tt><tt> &gt; So identifiers are represented as a special type. How about atoms?
+</tt><pre style="margin: 0em;">
+ &gt; Can I annotate a piece of syntax representing, say, a number?
+</pre><tt> 
+</tt><tt> That is the one thing that I can see as being precluded by the current 
+</tt><tt> specification.  They would indeed need to be wrapped to give them 
+</tt><tt> separate identities, instead of being bare, as they currently are.  
+</tt><tt> 
+</tt><tt> Wrapping constants would be a useful change for the next revision.  
+</tt><tt> I think all the primitives for handling them are already there.  
+</tt><tt> Given a piece of syntax, one can define:
+</tt><tt> 
+</tt><tt>   (constant? stx) == (and (not (pair? stx)
+</tt><pre style="margin: 0em;">
+                           (not (vector? stx)
+                           (not (identifier? stx))
+                           (not (null? stx)))
+</pre><tt> 
+</tt><tt> and one may use datum-&gt;syntax-object and syntax-object-&gt;datum to go 
+</tt><tt> back and forth between constants and syntax representing constants.  
+</tt></blockquote><pre style="margin: 0em;">
+
+If it is neccessary to wrap atoms, vectors, the empty list etc. then
+the only data structure left, that isn't represented by a special
+type is lists. Wouldn't it be simpler to demand all syntax to
+be represented as a separate type?
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+ &gt; Andre wrote:
+ &gt;
+</pre><tt> &gt; &gt; it is unlikely that most implementations would keep the location of the 
+</tt><tt> &gt; &gt; input subnode ((i e) ...) in the result.
+</tt></blockquote><pre style="margin: 0em;">
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+ What I meant is that the node  ((i e) ...)
+</pre><tt> in the result discards the original position.  
+</tt></blockquote><pre style="margin: 0em;">
+
+Ah! Agree.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+ Writing the macro procedurally using car, cadr, ..., one is actually more
+ likely to duplicate the functionality of let3 by default, for example
+</pre><tt> 
+</tt><tt>   (define-syntax (let4 bindings . body)
+</tt><pre style="margin: 0em;">
+     (check-bindings bindings)
+     (check-body body)
+     (quasisyntax (let ,bindings ,@body))
+</pre><tt> 
+</tt><tt> preserves more information than the pattern matching let2, since
+</tt><tt> the pair |bindings| keeps its identity.  
+</tt><tt> 
+</tt><tt> Anyway, this is not important at all.  I'm certainly not advocating against
+</tt><pre style="margin: 0em;">
+ syntax-case, which is a really, really useful invention.  I was just noting
+ that it is not necessarily superior to the procedural interface for
+</pre><tt> accurate source tracking.  
+</tt></blockquote><pre style="margin: 0em;">
+
+It wasn't as much the pattern-matching I was concerned about, but the
+ability to associate information with all types of pieces of syntax.
+
+--
+Jens Axel S&#xF8;gaard
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00062" href="msg00062.html">Re: Opaque syntax objects</a></strong>
+<ul><li><em>From:</em> Andre van Tonder</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00059" href="msg00059.html">Re: Opaque syntax objects</a></strong>
+<ul><li><em>From:</em> Andre van Tonder</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00059.html">Re: Opaque syntax objects</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00061.html">Re: Namespaces</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00059.html">Re: Opaque syntax objects</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00062.html">Re: Opaque syntax objects</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00060"><strong>Date</strong></a></li>
+<li><a href="threads.html#00060"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

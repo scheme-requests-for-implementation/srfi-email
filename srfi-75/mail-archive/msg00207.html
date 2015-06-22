@@ -1,0 +1,179 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: the "Unicode Background" section -->
+<!--X-From-R13: Euveb Ynjnv <fuvebNynin.arg> -->
+<!--X-Date: Sat, 23 Jul 2005 01:32:08 +0200 (DFT) -->
+<!--X-Message-Id: 20050722.133202.892294261.shiro@lava.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 1122059863.4478.77.camel@dev1.seyza.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: the &quot;Unicode Background&quot; section</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00206.html">Date Prev</a>][<a href="msg00208.html">Date Next</a>][<a href="msg00208.html">Thread Prev</a>][<a href="msg00202.html">Thread Next</a>][<a href="maillist.html#00207">Date Index</a>][<a href="threads.html#00207">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: the &quot;Unicode Background&quot; section</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-75@DOMAIN.HIDDEN">srfi-75@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: the &quot;Unicode Background&quot; section</li>
+<li><em>From</em>: Shiro Kawai &lt;<a href="mailto:shiro@DOMAIN.HIDDEN">shiro@xxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 22 Jul 2005 13:32:02 -1000 (HST)</li>
+<li><em>Cc</em>: <a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-75@DOMAIN.HIDDEN">srfi-75@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:1122059863.4478.77.camel@DOMAIN.HIDDEN">1122059863.4478.77.camel@xxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:1122059863.4478.77.camel@DOMAIN.HIDDEN">1122059863.4478.77.camel@xxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>From: Thomas Lord &lt;lord@xxxxxxx&gt;
+Subject: Re: the &quot;Unicode Background&quot; section
+Date: Fri, 22 Jul 2005 12:17:43 -0700
+
+&gt; I think it might be realistic to label ports not with
+&gt; the encoding scheme they want, but with the set of 
+&gt; code-values they can transmit -- in other words
+&gt; with their framing constraints.   In other words -- 
+&gt; a &quot;UTF-8 port&quot; (no such thing, really) and an &quot;ASCII port&quot;
+&gt; (no such thing, again) are *really* just &quot;8-bit ports&quot;.
+&gt; A &quot;UTF-16 port&quot; is *really* just a &quot;16-bit port&quot;.
+
+Then you'll have difficulty to read a character from such ports.
+
+Let's not mix CCS and CES.
+
+Each CES covers one or more CCS.  All Unicode CESs (utf-8, utf-16le,
+etc...) covers Unicode CCS.  EUC-JP covers ASCII, JISX0201 GR area,
+and JISX0213.  Shift_JIS covers JISX0201, and JISX0213 (but not ASCII).
+
+A Scheme implemenation choose one (or some) CCS as the character
+set it supports.  It may be Unicode CCS, or subset of it, or
+supertset of it.  The implementation uses its internal CES to
+represent characters on memory.  The outside world uses 
+some external CES.  The interface between them (it can be a port
+or something else, I'll discuss it below) converts internal
+CES and external CES back and forth.
+
+The important point is that we can standardize behavior of
+strings and characters on CCS level, and leave CES to the
+implementation.
+
+The CES-conversion mechanism may reside either in ports (or a
+lower-layer of ports, as srfi-68 suggests), or it may be
+a function that converts strings and binary verctors back and
+forth.   Both are handy in practice, but either one can be
+implemented in terms of another anyway.  (If you wish to generate
+unpaired surrogates, it's the task of this layer).
+
+The problem arises when the coverage of internal CES and
+the one of external CES doesn't match.  There are some options
+the conversion mechanism can take, every of which I see a
+practical value: It can signal an error, it can ignore invalid
+character, or it can replace the invalid character with
+alternative ones (*1).   These are what the implementator should
+think, and may be standardized by port srfi or something, but
+that's out of scope of this srfi.
+
+Now, (integer-&gt;char #xd800) is not in Unicode CCS.  If srfi-75
+is about Unicode strings, it can leave the behavior undefined.
+An implementation may extend CCS to support such a 'character'
+and give its own meaning.  Then the implementation also define
+its CES-conversion behavior when the external CES expects Unicode
+CCS and internal CES has #\ud800.  It _might_ also have its port
+expect this Extended CCS by default, so that if input port
+encounters unpaired surrogate, read-char returns #\ud800.
+
+Or other implementaiton may support Konjaku Mojikyo as its CCS
+( <a  rel="nofollow" href="http://www.mojikyo.org/html/abroad/abroad_top.html">http://www.mojikyo.org/html/abroad/abroad_top.html</a> ) so it
+may define over #\U0010ffff for its extended CCS.  Again, if
+the implementation elects to do so, it should also provide
+a reasonable semantics on CES-conversion mechanism with Unicode
+CESs.
+
+It is a matter of implementation's choice, and I don't think
+this srfi have something to say about it, except it may be
+explicit to allow such extention and leave the behavior undefined
+in the standard.
+
+
+Footnote:
+
+(*1): I did encounter practical needs for at least two of the cases.
+
+- Raising an error: when I want to guarantee what I'm writing
+    to the port is acutally written in the file, I wish I can
+    guarantee this.   It's also handy if you don't know the document's
+    CES beforehand, and want to try to read it in one canididate CES,
+    and wants to fallback another if it fails.
+
+- Replacing to alternative char: I was gathering statistics from
+    huge e-mail archives and there are tons of invalid characters
+    (e.g. it declares its charset is US-ASCII in its header but
+    it actually contains non-ASCII ISO8859 character).  For the
+    purpose of the application (which is a spam filter), I don't
+    want to be signalled errors for these cases, but just altering
+    those invalid characters were suffice.
+
+
+--shiro
+
+
+
+
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00201" href="msg00201.html">Re: the &quot;Unicode Background&quot; section</a></strong>
+<ul><li><em>From:</em> Thomas Lord</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00206.html">Re: the &quot;Unicode Background&quot; section</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00208.html">Re: the &quot;Unicode Background&quot; section</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00208.html">Re: the &quot;Unicode Background&quot; section</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00202.html">Re: the &quot;Unicode Background&quot; section</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00207"><strong>Date</strong></a></li>
+<li><a href="threads.html#00207"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

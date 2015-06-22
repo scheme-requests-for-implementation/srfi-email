@@ -1,0 +1,311 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: strings draft -->
+<!--X-From-R13: Fbz Zbeq <ybeqNrzs.arg> -->
+<!--X-Date: Fri, 23 Jan 2004 02:53:25 +0100 (MET) -->
+<!--X-Message-Id: 200401230206.SAA23673@morrowfield.regexps.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200401220511.VAA18432@morrowfield.regexps.com -->
+<!--X-Reference: Pine.LNX.4.58.0401220953470.29732@bolt.sonic.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: strings draft</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00345.html">Date Prev</a>][<a href="msg00347.html">Date Next</a>][<a href="msg00345.html">Thread Prev</a>][<a href="msg00366.html">Thread Next</a>][<a href="maillist.html#00346">Date Index</a>][<a href="threads.html#00346">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: strings draft</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:bear@DOMAIN.HIDDEN">bear@xxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: strings draft</li>
+<li><em>From</em>: Tom Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 22 Jan 2004 18:06:24 -0800 (PST)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:Pine.LNX.4.58.0401220953470.29732@DOMAIN.HIDDEN">Pine.LNX.4.58.0401220953470.29732@xxxxxxxxxxxxxx</a>&gt; (message from	bear on Thu, 22 Jan 2004 11:05:49 -0800 (PST))</li>
+<li><em>References</em>: &lt;<a href="mailto:200401220511.VAA18432@DOMAIN.HIDDEN">200401220511.VAA18432@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:Pine.LNX.4.58.0401220953470.29732@DOMAIN.HIDDEN">Pine.LNX.4.58.0401220953470.29732@xxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+
+    &gt; From: bear &lt;bear@xxxxxxxxx&gt;
+
+    &gt; On Wed, 21 Jan 2004, Tom Lord wrote:
+
+    &gt; &gt;  By somewhat reasonable expectation, there must be at least 256
+    &gt; &gt;  distinct Scheme characters and INTEGER-&gt;CHAR must be defined for all
+    &gt; &gt;  integers in the range `0..255'.  There are many circumstances in
+    &gt; &gt;  which conversions between octets and characters are desirable and
+    &gt; &gt;  the requirements of this expectation say that such conversion is
+    &gt; &gt;  always possible.  It is quite possible to imagine implementations in
+    &gt; &gt;  which this is not the case: in which, for example, a (fully general)
+    &gt; &gt;  octet stream can not be read and written using READ-CHAR and DISPLAY
+    &gt; &gt;  (applied to characters).  Such an implementation might introduce
+    &gt; &gt;  non-standard procedures for reading and writing octets and
+    &gt; &gt;  representing arrays of octets.  While such non-standard extensions
+    &gt; &gt;  may be desirable for independent reasons, I see no good reason not
+    &gt; &gt;  to define at least a subset of Scheme characters which is mapped to
+    &gt; &gt;  the set of octet values.
+
+    &gt; I think that this is a problem.  We need a portable method of
+    &gt; reading/writing an arbitrary octet stream, full stop.  As
+    &gt; characters become more complicated than octets, the two concepts
+    &gt; must be divorced from each other; otherwise there will be endless
+    &gt; hair as this exception or that rears its ugly head.
+
+    &gt; So I'd propose READ-CHAR and DISPLAY which read or write &quot;a
+    &gt; character&quot; abstracting away issues of encoding, multibyte character
+    &gt; sets, endianness, etc. according to either application defaults or
+    &gt; port properties, and two new routines, READ-OCTET and WRITE-OCTET,
+    &gt; which read and write binary values exactly eight bits wide and take
+    &gt; or return exact integers in the 0..255 range.
+
+    &gt; In fact, READ-OCTET and WRITE-OCTET would in that case become primitive,
+    &gt; since READ-CHAR and DISPLAY could be implemented in terms of them but
+    &gt; the reverse would not be true.
+
+    &gt; This neatly sidesteps the issue of needing character mappings for
+    &gt; every member of the range 128-255, and separates the ideas of octet
+    &gt; and character at the lowest level.
+
+Hmm.  Well, an example of what it fails to sidestep is the issue of
+making the values representable by the C `char' type a subset of CHAR?
+It's also a fairly sorry approach to take for implementing many
+network protocols in a way that is simple, direct, &quot;tolerant of what
+it receives&quot;.
+
+In the name of intellectual honesty I have to admit that the various
+places where the 256-chars requirement shows up in the recommendations
+for R6RS and a portable FFI are pretty separable to everything else.
+I could &quot;lose this fight&quot;, so to speak, and it wouldn't have much
+impact on the proposals.  But I will continue to argue that we
+shouldn't go down that route.
+
+
+    &gt; &gt;  R5RS requires a partial ordering of characters in which upper and
+    &gt; &gt;  lower case variants of &quot;the same character&quot; are treated as equal.
+
+    &gt; &gt;  Most problematically: R5RS requires that every alphabetic character
+    &gt; &gt;  have both an upper and lower case variant.  This is a problem
+    &gt; &gt;  because Unicode defines abstract characters which, at least
+    &gt; &gt;  intuitively, are alphabetic -- but which lack such case mappings.
+
+    &gt; This problem goes away in the infinite-character-set universe.
+
+I don't think so.  You may minimize it -- perhaps even reduce it to a
+single character (at the cost of insisting on some canonicalization
+forms rather than others, as I recall) -- but the problem doesn't
+entirely go away.
+
+As you admit:
+
+    &gt; If we restrict discussion to the characters that can appear in
+    &gt; canonical string representation (meaning no ligatures)
+
+Which is fine for certain implementations but not for the standard.
+
+    &gt; Every
+    &gt; cased character in unicode, with the single exception of eszett,
+    &gt; has a lower-case and an upper-case; 
+
+A single exception is an exception nonetheless.   I think that what we
+should take from such exceptions is not their singularity (who knows
+what tomorrow may bring) but rather the &quot;in general&quot; programmatic
+structure that they require.
+
+    &gt; the catch is that the
+    &gt; uppercase and lowercase versions of it may require different
+    &gt; numbers of combining codepoints to represent.
+
+Yeah, I think you ought to alpha-rename STRING-REF and STRING-SET! and
+various other procedures in your code.  I think you want
+COMBINING-SEQUENCE? not CHAR? for this infinite set you have in mind.
+
+
+    &gt; Eszett is in a class by itself, being a canonical lowercase character
+    &gt; and having an uppercase form which is, linguistically, a different
+    &gt; number of characters, as well as being a different number of codepoints.
+    &gt; I was initially driven to the multi-codepoint representation by the
+    &gt; attempt to solve this particular problem in reconciling the unicode
+    &gt; standard with R5RS, and I wound up with a 99.999% solution.
+
+Hmm.  Well, of course it's not a very scientific statement -- but I
+think my proposals lead to a 100% solution.   Neither of us work for
+Jack Welsh, as far as I know so we aren't constrained by his 9-nines
+compromise :-)
+
+
+    &gt; &gt;    and in strings:
+    &gt; &gt;
+    &gt; &gt;		\U+XXXXX.
+    &gt; &gt;
+    &gt; &gt;    where XXXXX is an (arbitrary length) string of hexadecimal digits.
+
+    &gt; It's important to note the terminating '.' in the representation
+    &gt; for use in strings.  Otherwise there is an ambiguity introduced.
+
+I wish I'd typed &quot;;&quot; instead of &quot;.&quot; but -- yeah.
+
+    &gt; I would say that if the character set is not restricted to a known
+    &gt; width, I think it's handier with codepoint separators, especially
+    &gt; since most characters are in the 0...255 or 0..65535 range.
+
+    &gt; Instead of writing #\U+C32000000AF for a combining sequence
+
+I don't think you get to do that.   I don't think combining sequences
+can be CHAR?.  Sorry.   Useful data type -- yes.  CHAR? -- no.
+
+    &gt; &gt;* Scheme Strings Meet Unicode
+
+    &gt; &gt;  /=== R6RS Recommendation:
+
+    &gt; &gt;    R6RS should strongly encourage implementations to make the
+    &gt; &gt;    expected-case complexity of STRING-REF and STRING-SET! O(1).
+
+    &gt; &gt;  \========
+
+    &gt; I'd fail this. My strings are O(Log N) access where N is the length
+    &gt; of the string. All told, I'd say this is in fact a performance win
+    &gt; since it means I can do copy-on-write tricks with small substrings
+    &gt; (strands) of the string rather than copy the whole string every time
+    &gt; somebody wants to save both the original version and a slightly-
+    &gt; changed version of it (which happens a lot when people are editing
+    &gt; a multi-megabyte document and there's an undo stack).
+
+Really?  You'd fail?   On small strings you almost certainly wouldn't,
+just because they're small.   If your trees are at all balanced, you
+probably wouldn't fail on &quot;medium&quot; strings either.   And meanwhile, I
+think you should look at some form of self-balancing tree -- then you
+won't fail at all.  (Assuming, that is, that you don't come away from
+&quot;STRING? is a tree&quot; as I think you probably should --- the tree is
+something else, not STRING?.)
+
+(Total off-topic aside: for various reasons, I think you want your
+trees in C.   My libhackerlab is starting to implement this.   Maybe
+we should collaborate.)
+
+
+    &gt; &gt;  Most of the possible answers to &quot;what is a Scheme character&quot; are
+    &gt; &gt;  consistent with the view that characters correspond to (possibly a
+    &gt; &gt;  subset of) Unicode codepoints.
+
+    &gt; &gt;  One of the possible answers to that question has the CHAR? type
+    &gt; &gt;  correspond to a _sequence_ of Unicode code points.
+    &gt; &gt;
+    &gt; &gt;  /=== R6RS Recommendation:
+    &gt; &gt;
+    &gt; &gt;   While R6RS should not require that CHAR? be a subset of Unicode,
+    &gt; &gt;   it should specify the semantics of string indexes for strings
+    &gt; &gt;   which _are_ subsets of Unicode.
+    &gt; &gt;
+    &gt; &gt;   Specifically, if a Scheme string consists of nothing but Unicode
+    &gt; &gt;   codepoints (including substrings which form combining sequences),
+    &gt; &gt;   string indexes _must_ be Unicode codepoint offsets.
+    &gt; &gt;
+    &gt; &gt;  \========
+    &gt; &gt;
+    &gt; &gt;
+    &gt; &gt;  That proposed modification to R6RS presents a (hopefully small)
+    &gt; &gt;  problem for Ray Dillinger.   He would like (for quite plausible
+    &gt; &gt;  reasons) to have CHAR? values which correspond to a _sequence_ of
+    &gt; &gt;  Unicode codepoints.   While I have some ideas about how to
+    &gt; &gt;  _partially_ reconcile his ideas with this proposal, I'd like to hear
+    &gt; &gt;  his thoughts on the matter.
+
+    &gt; Computing the codepoint-index on demand would require a traversal
+    &gt; of the string, an O(N) operation, using my current representation.
+    &gt; That's clearly intolerable. But in the same tree structure where I
+    &gt; now just keep character indexes, I can add additional fields for
+    &gt; codepoint indexes as well, making it an O(log N) operation.  
+
+And if you were to use self-balancing trees, it would be an
+expected-case O(1) operation.
+
+    &gt; This would add a constant factor to the processing times for my
+    &gt; string operations, since I'd have to update two different sets
+    &gt; of indexes instead of one on a write, but it's feasible and it
+    &gt; would add other useful capabilities which would manifest on the
+    &gt; scheme side, where I'd be introducing new functions based on
+    &gt; codepoint indexes, in addition to the existing functions based
+    &gt; on character indexes.
+
+    &gt; However, I do strongly feel that these additional routines should
+    &gt; be just that - additional.  They do not deal with &quot;characters&quot; per
+    &gt; se, but specifically with a single method of representing
+    &gt; characters.
+
+Only because you are in a mindset where you want CHAR? to be a
+combining char sequence.  There are so many problems with permitting
+that as a conformant Scheme that I think it has to be rejected.  You
+need to pick a different type for what you currently call CHAR?.
+
+-t
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00366" href="msg00366.html">READ-OCTET (Re: strings draft)</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+<li><strong><a name="00367" href="msg00367.html">Re: strings draft</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+<li><strong><a name="00373" href="msg00373.html">Re: strings draft</a></strong>
+<ul><li><em>From:</em> Thomas Bushnell, BSG</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00342" href="msg00342.html">strings draft</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00345" href="msg00345.html">Re: strings draft</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00345.html">Re: strings draft</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00347.html">Re: strings draft</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00345.html">Re: strings draft</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00366.html">READ-OCTET (Re: strings draft)</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00346"><strong>Date</strong></a></li>
+<li><a href="threads.html#00346"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

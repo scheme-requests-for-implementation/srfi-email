@@ -1,0 +1,264 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Corrected reference implementation -->
+<!--X-From-R13: Oaqer ina Fbaqre <naqerNabj.urg.oebja.rqh> -->
+<!--X-Date: Sun, 27 Feb 2005 15:01:43 +0100 (NFT) -->
+<!--X-Message-Id: Pine.GSO.4.60.0502270847320.22593@now.het.brown.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Corrected reference implementation</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00008.html">Date Prev</a>][<a href="msg00010.html">Date Next</a>][<a href="msg00006.html">Thread Prev</a>][<a href="msg00010.html">Thread Next</a>][<a href="maillist.html#00009">Date Index</a>][<a href="threads.html#00009">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Corrected reference implementation</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-40@DOMAIN.HIDDEN">srfi-40@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Corrected reference implementation</li>
+<li><em>From</em>: Andre van Tonder &lt;<a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 27 Feb 2005 09:01:37 -0500 (EST)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-40@DOMAIN.HIDDEN">srfi-40@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<tt>Below is a corrected reference implementation (the one currently in the 
+</tt><tt>document has type errors).
+</tt><pre style="margin: 0em;">
+
+Andre van Tonder
+
+  ;;; PROMISES A LA SRFI-45:
+
+  ;;; A separate implementation is necessary to
+  ;;; have promises that answer #t to stream?
+  ;;; This requires lots of complicated type conversions.
+
+  (define-record-type s:promise (make-s:promise kind content) s:promise?
+    (kind    s:promise-kind    set-s:promise-kind!)
+    (content s:promise-content set-s:promise-content!))
+
+  (define-record-type box (make-box x) box?
+    (x unbox set-box!))
+
+  (define-syntax srfi-40:lazy
+     (syntax-rules ()
+       ((lazy exp)
+        (make-box (make-s:promise 'lazy (lambda () exp))))))
+
+  (define (srfi-40:eager x)
+    (make-stream (make-box (make-s:promise 'eager x))))
+
+  (define-syntax srfi-40:delay
+    (syntax-rules ()
+      ((srfi-40:delay exp) (srfi-40:lazy (srfi-40:eager exp)))))
+
+  (define (srfi-40:force promise)
+    (let ((content (unbox promise)))
+      (case (s:promise-kind content)
+        ((eager) (s:promise-content content))
+        ((lazy)
+         (let* ((promise* (stream-promise ((s:promise-content content))))
+                (content  (unbox promise)))
+           (if (not (eqv? 'eager (s:promise-kind content)))
+               (begin
+                 (set-s:promise-kind! content (s:promise-kind (unbox promise*)))
+                 (set-s:promise-content! content (s:promise-content (unbox promise*)))
+                 (set-box! promise* content)))
+           (srfi-40:force promise))))))
+
+
+  ;;; STREAM -- LIBRARY OF SYNTAX AND FUNCTIONS TO MANIPULATE STREAMS
+
+  ;;; A stream is a new data type, disjoint from all other data types, that
+  ;;; contains a promise that, when forced, is either nil (a single object
+  ;;; distinguishable from all other objects) or consists of an object (the
+  ;;; stream element) followed by a stream.  Each stream element is evaluated
+  ;;; exactly once, when it is first retrieved (not when it is created); once
+  ;;; evaluated its value is saved to be returned by subsequent retrievals
+  ;;; without being evaluated again.
+
+  ;; STREAM-TYPE -- type of streams
+  ;; STREAM? object -- #t if object is a stream, #f otherwise
+  (define-record-type stream-type
+    (make-stream promise)
+    stream?
+    (promise stream-promise))
+
+  ;;; UTILITY FUNCTIONS
+
+  ;; STREAM-ERROR message -- print message then abort execution
+  ;  replace this with a call to the native error handler
+  ;  if stream-error returns, so will the stream library function that called it
+  (define stream-error error)
+
+  ;;; STREAM SYNTAX AND FUNCTIONS
+
+  ;; STREAM-NULL -- the distinguished nil stream
+  (define stream-null (make-stream (srfi-40:delay '())))
+
+  ;; STREAM-CONS object stream -- primitive constructor of streams
+  (define-syntax stream-cons
+    (syntax-rules ()
+      ((stream-cons obj strm)
+       (make-stream
+        (srfi-40:delay
+         (if (not (stream? strm))
+             (stream-error &quot;attempt to stream-cons onto non-stream&quot;)
+             (cons obj strm)))))))
+
+  ;; STREAM-NULL? object -- #t if object is the null stream, #f otherwise
+  (define (stream-null? obj)
+    (and (stream? obj) (null? (srfi-40:force (stream-promise obj)))))
+
+  ;; STREAM-PAIR? object -- #t if object is a non-null stream, #f otherwise
+  (define (stream-pair? obj)
+    (and (stream? obj) (not (null? (srfi-40:force (stream-promise obj))))))
+
+  ;; STREAM-CAR stream -- first element of stream
+  (define (stream-car strm)
+    (cond ((not (stream? strm)) (stream-error &quot;attempt to take stream-car of non-stream&quot;))
+          ((stream-null? strm)  (stream-error &quot;attempt to take stream-car of null stream&quot;))
+          (else (car (srfi-40:force (stream-promise strm))))))
+
+  ;; STREAM-CDR stream -- remaining elements of stream after first
+  (define (stream-cdr strm)
+    (cond ((not (stream? strm)) (stream-error &quot;attempt to take stream-cdr of non-stream&quot;))
+          ((stream-null? strm)  (stream-error &quot;attempt to take stream-cdr of null stream&quot;))
+          (else (cdr (srfi-40:force (stream-promise strm))))))
+
+  ;; STREAM-DELAY object -- the essential stream mechanism
+  (define-syntax stream-delay
+    (syntax-rules ()
+      ((stream-delay expr)
+       (make-stream
+        (srfi-40:lazy expr)))))
+
+  ;; STREAM object ... -- new stream whose elements are object ...
+  (define (stream . objs)
+    (let loop ((objs objs))
+      (stream-delay
+       (if (null? objs)
+           stream-null
+           (stream-cons (car objs) (loop (cdr objs)))))))
+
+  ;; STREAM-UNFOLDN generator seed n -- n+1 streams from (generator seed)
+  (define (stream-unfoldn gen seed n)
+    (define (unfold-result-stream gen seed)
+      (let loop ((seed seed))
+        (stream-delay
+         (call-with-values
+          (lambda () (gen seed))
+          (lambda (next . results)
+            (stream-cons results (loop next)))))))
+    (define (result-stream-&gt;output-stream result-stream i)
+      (stream-delay
+       (let ((result (list-ref (stream-car result-stream) i)))
+         (cond ((pair? result)
+                (stream-cons (car result)
+                             (result-stream-&gt;output-stream
+                              (stream-cdr result-stream) i)))
+               ((not result)
+                (result-stream-&gt;output-stream (stream-cdr result-stream) i))
+               ((null? result) stream-null)
+               (else (stream-error &quot;can't happen&quot;))))))
+    (define (result-stream-&gt;output-streams result-stream n)
+      (let loop ((i 0) (outputs '()))
+        (if (= i n)
+            (apply values (reverse outputs))
+            (loop (+ i 1)
+                  (cons (result-stream-&gt;output-stream result-stream i)
+                        outputs)))))
+    (result-stream-&gt;output-streams (unfold-result-stream gen seed) n))
+
+  ;; STREAM-MAP func stream ... -- stream produced by applying func element-wise
+  (define (stream-map func . strms)
+    (cond ((not (procedure? func)) (stream-error &quot;non-functional argument to stream-map&quot;))
+          ((null? strms) (stream-error &quot;no stream arguments to stream-map&quot;))
+          ((not (every stream? strms)) (stream-error &quot;non-stream argument to stream-map&quot;))
+          (else (let loop ((strms strms))
+                  (stream-delay
+                   (if (any stream-null? strms)
+                       stream-null
+                       (stream-cons (apply func (map stream-car strms))
+                                    (loop (map stream-cdr strms)))))))))
+
+  ;; STREAM-FOR-EACH proc stream ... -- apply proc element-wise for side-effects
+  (define (stream-for-each proc . strms)
+    (cond ((not (procedure? proc)) (stream-error &quot;non-functional argument to stream-for-each&quot;))
+          ((null? strms) (stream-error &quot;no stream arguments to stream-for-each&quot;))
+          ((not (every stream? strms)) (stream-error &quot;non-stream argument to stream-for-each&quot;))
+          (else (let loop ((strms strms))
+                  (if (not (any stream-null? strms))
+                      (begin (apply proc (map stream-car strms))
+                             (loop (map stream-cdr strms))))))))
+
+  ;; STREAM-FILTER pred? stream -- new stream including only items passing pred?
+  (define (stream-filter pred? strm)
+    (cond ((not (procedure? pred?)) (stream-error &quot;non-functional argument to stream-filter&quot;))
+          ((not (stream? strm)) (stream-error &quot;attempt to apply stream-filter to non-stream&quot;))
+          (else (stream-unfoldn
+                 (lambda (s)
+                   (values
+                    (stream-cdr s)
+                    (cond ((stream-null? s) '())
+                          ((pred? (stream-car s)) (list (stream-car s)))
+                          (else #f))))
+                 strm
+                 1))))
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00010" href="msg00010.html">Re: Corrected reference implementation</a></strong>
+<ul><li><em>From:</em> David Van Horn</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00008.html">Re: Problems with SRFI document</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00010.html">Re: Corrected reference implementation</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00006.html">Library of functions for manipulating streams</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00010.html">Re: Corrected reference implementation</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00009"><strong>Date</strong></a></li>
+<li><a href="threads.html#00009"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

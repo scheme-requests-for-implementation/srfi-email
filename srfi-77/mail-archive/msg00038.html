@@ -1,0 +1,264 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Arithmetic issues -->
+<!--X-From-R13: "Xbua.Qbjna" <wpbjnaNerhgrefurnygu.pbz> -->
+<!--X-Date: Tue, 18 Oct 2005 19:36:46 +0200 (MST) -->
+<!--X-Message-Id: 20051018173639.GC13524@NYCMJCOWA2 -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: y9lzmp775oz.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Arithmetic issues</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00037.html">Date Prev</a>][<a href="msg00039.html">Date Next</a>][<a href="msg00036.html">Thread Prev</a>][<a href="msg00053.html">Thread Next</a>][<a href="maillist.html#00038">Date Index</a>][<a href="threads.html#00038">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Arithmetic issues</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Michael Sperber &lt;<a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Arithmetic issues</li>
+<li><em>From</em>: &quot;John.Cowan&quot; &lt;<a href="mailto:jcowan@DOMAIN.HIDDEN">jcowan@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 18 Oct 2005 13:36:39 -0400</li>
+<li><em>Cc</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:y9lzmp775oz.fsf@DOMAIN.HIDDEN">y9lzmp775oz.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:y9lzmp775oz.fsf@DOMAIN.HIDDEN">y9lzmp775oz.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mutt/1.4.2.1i</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Michael Sperber scripsit:
+
+&gt; Now, the Issues section in the SRFI is pretty long.  We were hoping to
+&gt; get some feedback on where people stand on these issues, so it'd be
+&gt; great if you could see it as some kind of questionnaire and just fire
+&gt; off your position on the issues where you have one.  
+
+Aaaaaaas you wiiiiiish.
+
+&gt; Instead of requiring the full numeric tower, R6RS could require
+&gt; only the fixnum/flonum base, and make the full tower available as
+&gt; modules in the standard library.
+
+I agree with this.
+
+&gt; The main problem with banishing the full tower to a library is
+&gt; that read, write, and several other procedures must know about
+&gt; the external representations of all numbers.
+
+I don't see this as a significant problem.  Chicken, for example, works
+exactly this way: by default you get only fixnums and flonums, and
+inputs that can't be interpreted as one or the other signal an error.
+If you (use number), you get the full tower; this redefines only the
+predicates of R5RS section 2.2 plus eqv? and equal?.  Read and write
+are written to make use of the numeric procedures as appropriate.
+
+&gt; Should a minimum precision be required for fixnums or flonums?
+
+I think that it would be safe and suitable to require the largest
+fixnum to be at least 2^23 - 1 and the most negative fixnum to be at
+most -(2^23).  Flonums should be allowed to follow the hardware architecture,
+with appropriate standard procedures provided to determine what that
+architecture may be.
+
+&gt; Should the range of a fixnum be restricted to a power of two? To
+&gt; a two's complement range?
+
+Yes.  All other machine architectures are dead.
+
+&gt; The fixnum operations provide efficient fixnums that &quot;wrap.&quot; However,
+&gt; they do not give efficient access to the hardware facilities for carry
+&gt; and overflow. This would be desirable to implement efficient generic
+&gt; arithmetic on fixnums portably. On the other hand, there isn't much
+&gt; experience with formulating a portable interface to these facilities.
+
+I'm neutral on this point.
+
+&gt; The fixnum operators wrap on overflow, i.e., they perform modular
+&gt; arithmetic. For many purposes, it would be better for them to signal
+&gt; an error in safe mode.  [...]
+
+They should signal an error rather than wrap; wrapping is not useful in
+portable code.
+
+&gt; Should the binary fixnum/flonum operations allow other than two
+&gt; arguments?
+
+No.  Since neither fixnum nor flonum operations are associative, we shouldn't
+pretend that they are by enforcing left-associativity.
+
+&gt; What are the semantics of &quot;safe mode&quot; and &quot;unsafe mode&quot;? (This is
+&gt; a much larger question that R6RS should address.)
+
+I agree with other posters that a global mode is a bad idea.
+
+&gt; Should R6RS allow other inexact reals beside the flonums? This
+&gt; draft does allow them, at the cost of some complications and
+&gt; additions such as real-&gt;flonum. (See the Design Rationale.)
+
+Yes.  IEEE is in the process of defining representations and operations
+on arbitrary-precision base-10 floating-point numbers.  Scheme should not
+exclude them, particularly if they are someday provided in hardware as IEEE
+fixed-precision floats now are.
+
+&gt; Should the R5RS procedures for generic arithmetic (e.g. +) remain
+&gt; in R6RS? Here are five possible answers, phrased in terms of the
+&gt; + procedure:
+&gt; 
+&gt;     1. + is not defined in R6RS.
+&gt;     2. + is defined to be a synonym for the ex+, so its domain is
+&gt;         restricted to exact arguments, and always returns an exact result.
+&gt;     3. + is defined as the union of the ex+ and in+ procedures, so
+&gt;         all of its arguments are required to have the same exactness,
+&gt;         and the exactness of its result is the same as the exactness of
+&gt;         its arguments.
+&gt;     4. + is defined as in R5RS, but with the increased portability
+&gt;         provided by requiring the full numeric tower. This alternative is
+&gt;         described in the section R5RS-style Generic Arithmetic.
+&gt;     5. + is defined to return an exact result in all cases, even if one
+&gt;         or more of its arguments is inexact. This alternative is described
+&gt;         in the section Generic Exact Arithmetic.
+&gt; Will Clinger prefers the 4th possibility, Mike Sperber the 5th.
+
+I don't see how we can split the difference between contagious inexactness
+(option 4) and contagious exactness (option 5).  Both lead to unexpected
+results on occasion.  I therefore favor option 3.
+
+&gt; If R6RS does not adopt a R5RS-style model for the generic arithmetic,
+&gt; should it still provide more R5RS-compatible generic arithmetic as
+&gt; a library?
+
+Maybe.
+
+&gt; The external representations of 0.0, -0.0, infinities and NaNs must be
+&gt; specified. The notations used here are used by several other languages,
+&gt; and have been adopted by several implementations of Scheme, but other
+&gt; notations are possible.
+
+I'm happy with them.
+
+&gt; The fixnum, flonum, and inexact arithmetic come with a full deck of
+&gt; operations, including some that are defined in terms of integers (such
+&gt; as quotient+remainder, gcd and lcm), and others that are easily abused
+&gt; (such as fxabs). Should these be pruned?
+
+Yes, absolutely.  (I'm not clear what the problem with fxabs might be.)
+
+&gt;      Given that this SRFI suggests requiring all implementations to
+&gt;      support the general complex numbers, should abs (and exabs and
+&gt;      inabs) be removed?
+
+At least abs should be retained for backward compatibility.
+
+&gt; The real?, rational?, and integer? predicates must return false
+&gt; for complex numbers with an imaginary part of inexact zero, as
+&gt; non-realness is now contagious. This causes possibly unexpected
+&gt; behavior: `(zero? 0+0.0i)' returns true despite `(integer? 0+0.0i)'
+&gt; returning false. Possibly, new predicates realistic?, rationalistic?,
+&gt; and integral? should be added to say that a number can be coerced to
+&gt; the specified type (and back) without loss. (See the Design Rationale.)
+
+Does this problem go away if complex numbers of mixed exactness are disallowed?
+I think that in effect a mixed-exactness complex number is inexact, and so
+0+0.0i should be treated as a synonym for 0.0+0.0i.
+
+&gt; Most Scheme implementations represent an inexact complex number as a
+&gt; pair of two inexact reals, representing the real and imaginary parts
+&gt; of the number, respectively. Should R6RS mandate the presence of such a
+&gt; representation (while allowing additional alternative representations),
+&gt; thus allowing it to more meaningfully discuss semantic issues such as
+&gt; branch cuts?
+
+I don't see a need to mandate the representation; R6RS can talk *as if* such
+a representation existed, while allowing other representations if they
+do not affect the user-visible behavior (other than performance) of any
+standard procedures.
+
+I think we should adopt the CL branch cuts as-is.  They may not be perfect,
+but there are no obvious competitors.
+
+&gt; Should `(floor +inf.0)' return +inf.0 or signal an error
+&gt; instead? (Similarly for ceiling, flfloor, infloor, etc.)
+
+I'm neutral on this one.
+
+&gt; The bitwise operations operate on exact integers only. Should they live
+&gt; in the section on exact arithmetic? Should they carry ex prefixes? Or
+&gt; should they be extended to work on inexact integers as well?
+
+They should live in the section on exact arithmetic; no prefixes are required;
+they should *not* be extended to inexact integers.
+
+&gt; The division between regular procedures and library procedures is
+&gt; somewhat arbitrary.
+
+It is no worse than R5RS on that score.
+
+-- 
+Mark Twain on Cecil Rhodes:                     John Cowan
+I admire him, I freely admit it,               <a  rel="nofollow" href="http://www.ccil.org/~cowan">http://www.ccil.org/~cowan</a>
+and when his time comes I shall                <a  rel="nofollow" href="http://www.reutershealth.com">http://www.reutershealth.com</a>
+buy a piece of the rope for a keepsake.        jcowan@xxxxxxxxxxxxxxxxx
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00053" href="msg00053.html">Re: Arithmetic issues</a></strong>
+<ul><li><em>From:</em> Aubrey Jaffer</li></ul></li>
+<li><strong><a name="00283" href="msg00283.html">Re: Arithmetic issues</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00035" href="msg00035.html">Arithmetic issues</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00037.html">Re: Arithmetic issues - feedback</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00039.html">Re: Arithmetic issues - feedback</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00036.html">Re: Arithmetic issues</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00053.html">Re: Arithmetic issues</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00038"><strong>Date</strong></a></li>
+<li><a href="threads.html#00038"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

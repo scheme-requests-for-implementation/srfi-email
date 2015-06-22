@@ -1,0 +1,135 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Corrected reference implementation -->
+<!--X-From-R13: Oaqer ina Fbaqre <naqerNabj.urg.oebja.rqh> -->
+<!--X-Date: Fri, 22 Apr 2005 15:22:16 +0200 (MST) -->
+<!--X-Message-Id: Pine.GSO.4.60.0504220909470.12133@now.het.brown.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: y9lekd3ji8g.fsf@sams.informatik.uni&#45;tuebingen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Corrected reference implementation</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00011.html">Date Prev</a>][<a href="msg00013.html">Date Next</a>][<a href="msg00011.html">Thread Prev</a>][<a href="msg00013.html">Thread Next</a>][<a href="maillist.html#00012">Date Index</a>][<a href="threads.html#00012">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Corrected reference implementation</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Matthew D Swank &lt;<a href="mailto:akopa@DOMAIN.HIDDEN">akopa@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Corrected reference implementation</li>
+<li><em>From</em>: Andre van Tonder &lt;<a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 22 Apr 2005 09:21:59 -0400 (EDT)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-40@DOMAIN.HIDDEN">srfi-40@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-40@DOMAIN.HIDDEN">srfi-40@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:y9lekd3ji8g.fsf@DOMAIN.HIDDEN">y9lekd3ji8g.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:y9lekd3ji8g.fsf@DOMAIN.HIDDEN">y9lekd3ji8g.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+On Fri, 22 Apr 2005, Matthew D Swank wrote:
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+...
+there is the following construct:
+
+1. (let* ((promise* (stream-promise ((s:promise-content content))))
+                   (content  (unbox promise)))
+
+however, since 'content' is being bound to (unbox promise), and not
+(unbox promise*),
+the 'let*' in 1. is superfluous.
+</pre></blockquote><pre style="margin: 0em;">
+
+</pre><tt>No, because the evaluation of ((s:promise-content content)) may have a side 
+</tt><tt>effect that changes the original promise.  I believe this also answers your 
+</tt><tt>subsequent questions.  All this is explained in the SRFI-45 &quot;Primitives for 
+</tt><tt>Expressing Iterative Lazy Algorithms&quot; document.  In particular, the following
+</tt><pre style="margin: 0em;">
+code there should have the indicated behaviour:
+
+(define q
+  (let ((count 5))
+    (define (get-count) count)
+    (define p (delay (if (&lt;= count 0)
+                         count
+                         (begin (set! count (- count 1))
+                                (force p)
+                                (set! count (+ count 2))
+                                count))))
+    (list get-count p)))
+(define get-count (car q))
+(define p (cadr q))
+
+(get-count)  ; =&gt;   5
+(force p)    ; =&gt;   0
+(get-count)  ; =&gt;   10
+
+The alternative you suggest was in fact
+</pre><tt>what appeared in initial versions of SRFI-45, found to be incorrect, and 
+</tt><tt>corrected.
+</tt><pre style="margin: 0em;">
+
+Regards
+Andre van Tonder
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00013" href="msg00013.html">Re: Corrected reference implementation</a></strong>
+<ul><li><em>From:</em> Matthew D Swank</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00011" href="msg00011.html">Re: Corrected reference implementation</a></strong>
+<ul><li><em>From:</em> Matthew D Swank</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00011.html">Re: Corrected reference implementation</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00013.html">Re: Corrected reference implementation</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00011.html">Re: Corrected reference implementation</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00013.html">Re: Corrected reference implementation</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00012"><strong>Date</strong></a></li>
+<li><a href="threads.html#00012"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

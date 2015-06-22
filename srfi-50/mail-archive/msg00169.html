@@ -1,0 +1,155 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Pika&#45;style from first principles -->
+<!--X-From-R13: Fbz Zbeq <ybeqNrzs.arg> -->
+<!--X-Date: Mon,  5 Jan 2004 22:49:31 +0100 (NFT) -->
+<!--X-Message-Id: 200401052214.OAA25274@morrowfield.regexps.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Pika-style from first principles</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00168.html">Date Prev</a>][<a href="msg00170.html">Date Next</a>][<a href="msg00156.html">Thread Prev</a>][<a href="msg00204.html">Thread Next</a>][<a href="maillist.html#00169">Date Index</a>][<a href="threads.html#00169">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Pika-style from first principles</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:kelsey@DOMAIN.HIDDEN">kelsey@xxxxxxx</a>, <a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Pika-style from first principles</li>
+<li><em>From</em>: Tom Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 5 Jan 2004 14:14:51 -0800 (PST)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+In some sense, we're pointlessly dancing around the core issues by
+bantering back and forth about this or that GC strategy.   In doing
+so, we're trapping ourselves into &quot;subjective judgments&quot; about what
+strategies are likely or unlikely, &quot;pissing contests&quot; about who can
+think of counterexamples faster than whom, and so forth.
+
+What if, instead, we could decide the issue more directly?   Without
+reference to any particular scheme implementation strategy?   With
+reference only to the formal semantics of Scheme?
+
+We can motivate Pika-style conventions, and reject the draft's
+conventions, from first principles:
+
+The universe of Scheme datums in an instance constitutes, in effect,
+one big data structure.  Looked at coarsely, it has locations and values,
+some values notably being procedures.
+
+The primitive operations on this data structure involve moving values
+between locations and storing in a location the value(s) of a
+procedure operating on other values stored in various locations.
+
+That's about all there is to the scheme world of data.
+
+A good FFI will treat that data structure as an astract data type.  It
+will leave all data representations and all implementations of the
+primitive operations up to the implementation of the FFI.
+
+A good FFI will have to reify references to Scheme locations from C in
+a form that permits both stack-based and alloc/free style extent
+management (of the references).
+
+The draft fails to be a good FFI because it violates the abstraction
+barrier.  In particular, it:
+
+  1) requires that Scheme values be representable as C rvalues
+
+  2) requires that the contents of some Scheme locations be
+     referencable as the value of a C lvalue expression
+
+  3) requires that the contents of some Scheme locations be mutable
+     using the C assignment operator -- that the location be 
+     repersentable as an lvalue, that the value to be stored be
+     representable as an rvalue, and that the compiler is free to
+     implement the mutation in the manner of a C assignment operation.
+
+
+A fully abstract interface to the universe of Scheme data can be
+provided by defining an FFI which is syntactically compatible with
+making a fully procedural interface to the world of Scheme data.  
+
+In other words -- FFI implementations should be granted complete
+liberty for implementing the primitive operations on the big data
+structure that is the universe of Scheme data.  The interfaces to
+assignment, reference, and procedural transformation should all grant
+the FFI implementor complete opportunity to seize the flow of control,
+subject only to the constraint that that flow is sanely returned to C
+once the operation is committed.
+
+Moreover, the FFI should be a procedural interface which makes no
+presumptions at all about the representation of Scheme values or of
+Scheme locations -- it need only, and therefore should only, impose
+constraints on the C reification of references to Scheme locations.
+
+Pika and JNI/minor satisfy these abstraction requirements.  Pika does
+so with less overhead and overhead at least comperable to the draft.
+The draft soundly fails to satisfy these abstraction requirements for
+reasons listed above.
+
+Later, I think we can make similar evaluations of the requirements for
+abstracting over Scheme's flow of control.
+
+-t
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00204" href="msg00204.html">Re: Pika-style from first principles</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00168.html">Re: Couple things...</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00170.html">Re: Couple things...</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00156.html">Re: null-terminated strings vs. strings with length</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00204.html">Re: Pika-style from first principles</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00169"><strong>Date</strong></a></li>
+<li><a href="threads.html#00169"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

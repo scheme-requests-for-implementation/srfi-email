@@ -1,0 +1,168 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Octet vs Char (Re: strings draft) -->
+<!--X-From-R13: orne <orneNfbavp.arg> -->
+<!--X-Date: Tue, 27 Jan 2004 20:06:29 +0100 (MET) -->
+<!--X-Message-Id: Pine.LNX.4.58.0401271000530.12886@bolt.sonic.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20040122.190329.579644543.shiro@lava.net -->
+<!--X-Reference: 200401262040.44715.Ken.Dickey@allvantage.com -->
+<!--X-Reference: Pine.LNX.4.58.0401262337510.12070@bolt.sonic.net -->
+<!--X-Reference: 200401270750.16634.Ken.Dickey@allvantage.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Octet vs Char (Re: strings draft)</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00430.html">Date Prev</a>][<a href="msg00432.html">Date Next</a>][<a href="msg00430.html">Thread Prev</a>][<a href="msg00420.html">Thread Next</a>][<a href="maillist.html#00431">Date Index</a>][<a href="threads.html#00431">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Octet vs Char (Re: strings draft)</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Ken Dickey &lt;<a href="mailto:Ken.Dickey@DOMAIN.HIDDEN">Ken.Dickey@xxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Octet vs Char (Re: strings draft)</li>
+<li><em>From</em>: bear &lt;<a href="mailto:bear@DOMAIN.HIDDEN">bear@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 27 Jan 2004 11:06:20 -0800 (PST)</li>
+<li><em>Cc</em>: Matthew Dempsky &lt;<a href="mailto:jivera@DOMAIN.HIDDEN">jivera@xxxxxxxxx</a>&gt;, Shiro Kawai &lt;<a href="mailto:shiro@DOMAIN.HIDDEN">shiro@xxxxxxxx</a>&gt;,	<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>, <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:200401270750.16634.Ken.Dickey@DOMAIN.HIDDEN">200401270750.16634.Ken.Dickey@xxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:20040122.190329.579644543.shiro@DOMAIN.HIDDEN">20040122.190329.579644543.shiro@xxxxxxxx</a>&gt; &lt;<a href="mailto:200401262040.44715.Ken.Dickey@DOMAIN.HIDDEN">200401262040.44715.Ken.Dickey@xxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:Pine.LNX.4.58.0401262337510.12070@DOMAIN.HIDDEN">Pine.LNX.4.58.0401262337510.12070@xxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:200401270750.16634.Ken.Dickey@DOMAIN.HIDDEN">200401270750.16634.Ken.Dickey@xxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+On Tue, 27 Jan 2004, Ken Dickey wrote:
+
+&gt;On Tuesday 27 January 2004 09:32 am, bear wrote:
+&gt;&gt; On Mon, 26 Jan 2004, Ken Dickey wrote:
+&gt;&gt; &gt;Well color me dumb, but I don't see why getting O(1) is such a big deal.
+&gt;...
+&gt;&gt; O(1) reference or character setting comes at the expense of O(n)
+&gt;&gt; insertions, deletions, and non-identical-sized replacements.
+&gt;&gt;
+&gt;&gt; EG, if I change &quot;the&quot; to &quot;a&quot; at the beginning of a long string, and
+&gt;&gt; I've represented it as a vector to get O(1) reference time, the rest of
+&gt;&gt; the string has to be copied to move it two character spaces in memory.
+
+&gt;I was puzzled by the ropes discussion here because it seemed to be orthogonal
+&gt;to the  Unicode discussion.  I now see that its because it _is_ orthogonal to
+&gt;the Unicode discussion.
+
+The only thing that unicode has to do with it is that unicode
+makes non-identical sized replacements more likely, and makes
+it more likely that the programmer will not realize that a given
+operation involves non-identical sized replacements.  Replacing
+one codepoint with another may wind up being a replacement of a
+character that takes 1 octet of UTF-8 to express with a character
+that takes 3 octets of UTF-8 to express, or vice versa.  This sort
+of thing is amenable to your proposed approach of indexed fallback
+into another vector.
+
+But replacing a character with a combining sequence of multiple
+codepoints, or vice versa, is also likely; in fact the Unicode
+Consortium's canonicalization algorithms do this all the time.
+In this case you're looking at things like replacing
+
+U+212B ANGSTROM SIGN
+with
+U+41 LATIN CAPITAL LETTER A , U+30A COMBINING RING ABOVE
+
+and if your implementation treats the former as one character
+and the latter as two characters, which most do, you wind up
+with the same need to copy the rest of the string that changing
+&quot;a&quot; to &quot;the&quot; caused in ASCII strings.  This is not amenable to
+your proposed approach of indexed fallback into another vector.
+
+What this means is that, while on an absolute level Unicode and
+rope representation are orthogonal issues, Unicode has patterns
+of likely use that rely heavily on the most expensive operations
+of vector representations.
+
+And of course both came up here because the first draft of the
+FFI SRFI wanted a C pointer to a mutable memory area containing
+the internal representation of a scheme string, and has to know
+this kind of &quot;detail&quot; to even make sense of what it finds there.
+
+As a result of the discussions here, I'm now considering
+adding more types of string values, each with its own read
+syntax and conversions:  For example,
+
+#,(Latin-1-vector &quot;hello world&quot;)
+ would be an octet vector where each octet is a latin-1
+ character.  This would make binary I/O using string-like
+ constructions possible and give C programs the kind of
+ FFI value they wanted. No characters outside Latin-1
+ would be allowed, of course.
+
+#,(UTF32-vector &quot;hello world&quot;)
+ would be a &quot;string&quot; indexed by unicode codepoint rather
+ than by character.  Handy for FFI, and also allows people
+ to create invalid or non-canonical combining sequences,
+ assign values that aren't even mapped codepoints to arbitrary
+ locations, or do other linguistically wrong operations.
+ However, converting it to a regular string would canonicalize
+ it, and would fail if it contained non-characters.
+
+				Bear
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00365" href="msg00365.html">Re: strings draft</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+<li><strong><a name="00425" href="msg00425.html">Re: Octet vs Char (Re: strings draft)</a></strong>
+<ul><li><em>From:</em> Ken Dickey</li></ul></li>
+<li><strong><a name="00428" href="msg00428.html">Re: Octet vs Char (Re: strings draft)</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+<li><strong><a name="00430" href="msg00430.html">Re: Octet vs Char (Re: strings draft)</a></strong>
+<ul><li><em>From:</em> Ken Dickey</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00430.html">Re: Octet vs Char (Re: strings draft)</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00432.html">Strings, one last detail.</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00430.html">Re: Octet vs Char (Re: strings draft)</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00420.html">Re: Octet vs Char</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00431"><strong>Date</strong></a></li>
+<li><a href="threads.html#00431"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

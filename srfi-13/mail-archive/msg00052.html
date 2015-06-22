@@ -1,0 +1,124 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: char/char&#45;set/pred -->
+<!--X-From-R13: fuvirefNnv.zvg.rqh -->
+<!--X-Date: Mon, 24 Jan 2000 19:02:34 &#45;0600 (CST) -->
+<!--X-Message-Id: 200001250102.UAA10410@mongkok.smartleaf.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>char/char-set/pred</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00051.html">Date Prev</a>][<a href="msg00053.html">Date Next</a>][<a href="msg00064.html">Thread Prev</a>][<a href="msg00059.html">Thread Next</a>][<a href="maillist.html#00052">Date Index</a>][<a href="threads.html#00052">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>char/char-set/pred</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-13@DOMAIN.HIDDEN">srfi-13@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: char/char-set/pred</li>
+<li><em>From</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxx</a></li>
+<li><em>Date</em>: Mon, 24 Jan 2000 20:02:31 -0500</li>
+<li><em>Reply-to</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>   From: David Rush &lt;drush@xxxxxxxxxxxx&gt;
+   - char-set params; wrap 'em up in your own lambda, please. Is
+     it really more efficient to do this in the library, when
+     R5RS doesn't support the data type anyway?
+
+    From: &quot;Sergei Egorov&quot; &lt;esl@xxxxxxxxxxxxxxx&gt;
+    ;;; CHAR/CHAR-SET/PRED parameters:
+    In my opinion, this is an example of ad-hoc genericity:
+    the choice of variants is more or less arbitrary (why
+    STRING or CHAR-LIST are missing? How can I specify 
+    -ci search for a char?) The whole idea does not fail 
+    only because strings cannot contain char-sets or 
+    procedures (this trick doesn't work with lists or
+    vectors). I agree that something should be done 
+    to stop the namespace pollution, but there are other
+    ways: regular higher-order procedures. Besides,
+    the CHAR/CHAR-SET/PRED approach is another slippery slope: 
+    why don't we just define generic sequence procedures?
+
+Not slippery at all. CHAR is the one squirrely case; I threw it in
+because it is an important common case. You really have two general
+ways to specify an arbitrary set of characters: as a predicate, and
+as a character set. So these should be supported.
+
+Let me also make a general point about char-sets. It's an important and
+valuable property that membership testing with them is known to be fast &amp; free
+of side-effects. Consider, for example, STRING-FILTER. It needs to allocate a
+target string in which to store the results. How long should this string be?
+No problem: make one pass over the source string and just count the hits, then
+allocate the string, then make another pass and install the hits.
+
+Now let's consider using general Scheme lambdas -- predicates. You *cannot*
+write the code this way. You must instead allocate a list or save the
+results on the stack, because you may not apply the testing predicate
+multiple times. It might have side effects. Or it might take five minutes
+to run on every application, so doubling the number of calls is a terrible
+idea. You just don't know.
+
+This means that predicate-based filtering can allocate a lot of garbage just
+to do its work. Imagine filtering a megabyte string -- you could end up
+allocating 8Mb or 12Mb of list storage. Bogus!
+
+Now, while the efficiency advantages of char-sets are clear, we nonetheless
+want to support predicates in the general case, because this is Scheme, and
+predicates as selectors is an important paradigm to support.
+
+So there you have it. Chars, char-sets, and predicates -- it was very
+carefully limited to exactly those three.
+    -Olin
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00051.html">shared-text substrings, start/end indices, xs&gt;&lt;, etc.</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00053.html">Re: text processes vs. string procedures</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00064.html">Re: shared-text substrings, start/end indices, xs&gt;&lt;, etc.</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00059.html">RE: text processes vs. string procedures</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00052"><strong>Date</strong></a></li>
+<li><a href="threads.html#00052"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,150 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Arithmetic issues -->
+<!--X-From-R13: Penqyrl Zhpvre <yhpvreNzngu.cheqhr.rqh> -->
+<!--X-Date: Fri, 28 Oct 2005 23:22:30 +0200 (MST) -->
+<!--X-Message-Id: AC698494&#45;051F&#45;4CDC&#45;93A4&#45;44968ACC71D9@math.purdue.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: y9lzmp775oz.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: 20051018173639.GC13524@NYCMJCOWA2 -->
+<!--X-Reference: 43626CE4.4060703@bothner.com -->
+<!--X-Reference: 43627DA5.1000708@astrosmo.unam.mx -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Arithmetic issues</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00284.html">Date Prev</a>][<a href="msg00286.html">Date Next</a>][<a href="msg00284.html">Thread Prev</a>][<a href="msg00286.html">Thread Next</a>][<a href="maillist.html#00285">Date Index</a>][<a href="threads.html#00285">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Arithmetic issues</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Alan Watson &lt;<a href="mailto:a.watson@DOMAIN.HIDDEN">a.watson@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Arithmetic issues</li>
+<li><em>From</em>: Bradley Lucier &lt;<a href="mailto:lucier@DOMAIN.HIDDEN">lucier@xxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 28 Oct 2005 16:22:30 -0500</li>
+<li><em>Cc</em>: Bradley Lucier &lt;<a href="mailto:lucier@DOMAIN.HIDDEN">lucier@xxxxxxxxxxxxxxx</a>&gt;,	<a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:43627DA5.1000708@DOMAIN.HIDDEN">43627DA5.1000708@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:y9lzmp775oz.fsf@DOMAIN.HIDDEN">y9lzmp775oz.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20051018173639.GC13524@DOMAIN.HIDDEN"><a href="msg00038.html">20051018173639.GC13524@NYCMJCOWA2</a></a>&gt; &lt;<a href="mailto:43626CE4.4060703@DOMAIN.HIDDEN">43626CE4.4060703@xxxxxxxxxxx</a>&gt; &lt;<a href="mailto:43627DA5.1000708@DOMAIN.HIDDEN">43627DA5.1000708@xxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+
+On Oct 28, 2005, at 2:36 PM, Alan Watson wrote:
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+* Should a minimum precision be required for fixnums or flonums?
+
+</pre><tt>In an implementation written in C (i.e., without access to the  
+</tt><tt>carry flag) running on a 32-bit processor, it might make sense to  
+</tt><tt>use 16-bit fixnums to make it easy to check for overflow and the  
+</tt><tt>need for bignums.
+</tt></blockquote><pre style="margin: 0em;">
+
+</pre><tt>This is not really necessary.  See &quot;Hacker's Delight&quot; by Henry S.  
+</tt><tt>Warren, who gives algorithms for checking for overflow in the basic  
+</tt><tt>arithmetic operations for signed and unsigned arithmetic.  In fact,  
+</tt><tt>this information is in chapter 2, which is online at
+</tt><pre style="margin: 0em;">
+
+<a  rel="nofollow" href="http://www.hackersdelight.org/">http://www.hackersdelight.org/</a>
+
+</pre><tt>I encourage anyone who has ever needed to twiddle a bit or two to  
+</tt><tt>consider buying the book.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>One caveat about the algorithms for signed overflow:  In C, unsigned  
+</tt><tt>integer arithmetic that overflows is defined to be calculated modulo  
+</tt><tt>two to some power; the behavior of signed integer arithmetic overflow  
+</tt><tt>is undefined.  (At the same time, all the computer architectures that  
+</tt><tt>I know of use the same instructions for signed and unsigned  
+</tt><tt>arithmetic, so in *fact* signed arithmetic overflow is well-defined  
+</tt><tt>to do what you think it does.)  Some compilers make use of the fact  
+</tt><tt>that signed integer overflow is undefined to enable certain  
+</tt><tt>optimizations.  This is certainly true for gcc 4.0 and higher, for  
+</tt><tt>which you should give the -fwrapv flag to say that signed overflow  
+</tt><tt>does the right thing.  The algorithms in &quot;Hacker's Delight&quot; assume  
+</tt><tt>that signed integer overflow does the right thing.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>The latest Gambit-C 4.0 beta generates safe inline fixnum operations  
+</tt><tt>using these algorithms to detect fixnum overflow.
+</tt><pre style="margin: 0em;">
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><tt>Of course, in a sense, you have access to the carry flag because  
+</tt><tt>&quot;long long&quot; is at least 64-bits.
+</tt></blockquote><pre style="margin: 0em;">
+
+</pre><tt>I'm no C expert, but somehow I doubt that this is true.  (I first  
+</tt><tt>wrote &quot;strictly true&quot;, but I guess it's either true or false.)
+</tt><pre style="margin: 0em;">
+
+Brad
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00286" href="msg00286.html">Re: Arithmetic issues</a></strong>
+<ul><li><em>From:</em> Alan Watson</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00035" href="msg00035.html">Arithmetic issues</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+<li><strong><a name="00038" href="msg00038.html">Re: Arithmetic issues</a></strong>
+<ul><li><em>From:</em> John.Cowan</li></ul></li>
+<li><strong><a name="00283" href="msg00283.html">Re: Arithmetic issues</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+<li><strong><a name="00284" href="msg00284.html">Re: Arithmetic issues</a></strong>
+<ul><li><em>From:</em> Alan Watson</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00284.html">Re: Arithmetic issues</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00286.html">Re: Arithmetic issues</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00284.html">Re: Arithmetic issues</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00286.html">Re: Arithmetic issues</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00285"><strong>Date</strong></a></li>
+<li><a href="threads.html#00285"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

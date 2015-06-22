@@ -1,0 +1,163 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: How many arguments to a macro transformer? -->
+<!--X-From-R13: Oaqer ina Fbaqre <naqerNabj.urg.oebja.rqh> -->
+<!--X-Date: Tue,  9 Aug 2005 15:39:08 +0200 (DFT) -->
+<!--X-Message-Id: Pine.GSO.4.60.0508090858410.8828@now.het.brown.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200508041346.j74Dkkec019512@later.het.brown.edu -->
+<!--X-Reference: 200508090622.j796M1aJ003354@fcs12.free&#45;comp&#45;shop.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: How many arguments to a macro transformer?</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00023.html">Date Prev</a>][<a href="msg00025.html">Date Next</a>][<a href="msg00021.html">Thread Prev</a>][<a href="msg00008.html">Thread Next</a>][<a href="maillist.html#00024">Date Index</a>][<a href="threads.html#00024">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: How many arguments to a macro transformer?</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Keith Wright &lt;<a href="mailto:kwright@DOMAIN.HIDDEN">kwright@xxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: How many arguments to a macro transformer?</li>
+<li><em>From</em>: Andre van Tonder &lt;<a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 9 Aug 2005 09:38:39 -0400 (EDT)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-72@DOMAIN.HIDDEN">srfi-72@xxxxxxxxxxxxxxxxx</a>, <a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-72@DOMAIN.HIDDEN">srfi-72@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:200508090622.j796M1aJ003354@DOMAIN.HIDDEN">200508090622.j796M1aJ003354@xxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:200508041346.j74Dkkec019512@DOMAIN.HIDDEN">200508041346.j74Dkkec019512@xxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:200508090622.j796M1aJ003354@DOMAIN.HIDDEN">200508090622.j796M1aJ003354@xxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+On Tue, 9 Aug 2005, Keith Wright wrote:
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+This revision is more than a trival change.  It seems to me
+that it would be a good idea to extend the discussion period
+to give more time to think about it.
+</pre></blockquote><pre style="margin: 0em;">
+
+</pre><tt>I certainly agree that discussion is not finished and I will request an 
+</tt><tt>extension from the editor.
+</tt><pre style="margin: 0em;">
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+MzScheme also has two procedures called |datum-&gt;syntax-object|
+and |syntax-object-&gt;datum|.  These conflict with your newly
+renamed  |datum-&gt;syntax| and |syntax-&gt;datum|.  I don't know
+why you changed the names, but it is a conflict, not a
+compatibility, because the MzScheme syntax objects are not
+lists and can not be accessed with |car| and |cdr|.
+
+It seems unlikely that programs written to work with the
+MzScheme system that used these procedures could run unchanged
+on the SRFI system or vice-versa---the data types are completely
+different!
+</pre></blockquote><pre style="margin: 0em;">
+
+</pre><tt>Although, as long as you don't use |car|, |cdr|, etc., and just use 
+</tt><tt>syntax-case with the pattern matching idiom described in the syntax-case 
+</tt><tt>papers, you can ignore the difference.  One may therefore, if one wishes, 
+</tt><tt>regard the fact that syntax objects are lists as an irrelevant implementation 
+</tt><tt>detail, and stick with a purely portable programming style, which the shorter 
+</tt><tt>names datum-&gt;syntax would prevent.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>I must say that I personally also like the shorter datum-&gt;syntax better. 
+</tt><tt>However, with the longer version, /pure/ &quot;portable syntax-case&quot; macros will be 
+</tt><tt>portable between the canonical Chez implementation and the system described 
+</tt><tt>here.  For example, the macros |loop| and |include| on
+</tt><pre style="margin: 0em;">
+
+ <a  rel="nofollow" href="http://www.scheme.com/csug/syntax.html#g2138">http://www.scheme.com/csug/syntax.html#g2138</a>
+
+</pre><tt>will work unmodified with this SRFI.  I believe that they will also work 
+</tt><tt>unmodified on MzScheme.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>As an aside, the canonical Chez implementation does allow |car| and |cdr| in 
+</tt><tt>some situations.  See, on the above page, the uses of (car cmore) and (cdr 
+</tt><tt>cmore) and also (null? cmore):
+</tt><pre style="margin: 0em;">
+
+(define-syntax cond
+  (lambda (x)
+    (syntax-case x ()
+      ((_ c1 c2 ...)
+       (let f ((c1 (syntax c1)) (cmore (syntax (c2 ...))))
+         (if (null? cmore)
+             (syntax-case c1 (else =&gt;)
+               ((else e1 e2 ...) (syntax (begin e1 e2 ...)))
+               ((e0) (syntax (let ((t e0)) (if t t))))
+               ((e0 =&gt; e1) (syntax (let ((t e0)) (if t (e1 t)))))
+               ((e0 e1 e2 ...) (syntax (if e0 (begin e1 e2 ...)))))
+             (with-syntax ((rest (f (car cmore) (cdr cmore))))
+               (syntax-case c1 (=&gt;)
+                 ((e0) (syntax (let ((t e0)) (if t t rest))))
+                 ((e0 =&gt; e1) (syntax (let ((t e0)) (if t (e1 t) rest))))
+                 ((e0 e1 e2 ...)
+                  (syntax (if e0 (begin e1 e2 ...) rest)))))))))))
+
+</pre><tt>(However, Chez does not allow this on all syntax objects, which is confusing. 
+</tt><tt>Also, this macro will not work on MzScheme.)
+</tt><pre style="margin: 0em;">
+
+Cheers
+Andre
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00012" href="msg00012.html">Re: How many arguments to a macro transformer?</a></strong>
+<ul><li><em>From:</em> Andre van Tonder</li></ul></li>
+<li><strong><a name="00020" href="msg00020.html">Re: How many arguments to a macro transformer?</a></strong>
+<ul><li><em>From:</em> Keith Wright</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00023.html">Re: hygiene when using multiple instances of a macro..?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00025.html">Re: hygiene when using multiple instances of a macro..?</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00021.html">Re: How many arguments to a macro transformer?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00008.html">Chicken language extension for SRFI-72</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00024"><strong>Date</strong></a></li>
+<li><a href="threads.html#00024"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

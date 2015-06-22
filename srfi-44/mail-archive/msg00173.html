@@ -1,0 +1,296 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: [oleg@pobox.com: Interface view of dictionaries] -->
+<!--X-From-R13: orne <orneNfbavp.arg> -->
+<!--X-Date: Tue, 28 Oct 2003 18:05:35 +0100 (NFT) -->
+<!--X-Message-Id: Pine.LNX.4.58.0310280823500.8507@bolt.sonic.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20031028012813.GB12968@freenetproject.org -->
+<!--X-Reference: 20031028042549.GA10098@loki.vpn.szonye.com -->
+<!--X-Reference: 20031028045401.GB16906@freenetproject.org -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: [oleg@xxxxxxxxx: Interface view of dictionaries]</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00172.html">Date Prev</a>][<a href="msg00174.html">Date Next</a>][<a href="msg00186.html">Thread Prev</a>][<a href="msg00174.html">Thread Next</a>][<a href="maillist.html#00173">Date Index</a>][<a href="threads.html#00173">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: [oleg@xxxxxxxxx: Interface view of dictionaries]</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:scgmille@DOMAIN.HIDDEN">scgmille@xxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: <a href="mailto:%5Boleg@DOMAIN.HIDDEN">[oleg@xxxxxxxxx</a>: Interface view of dictionaries]</li>
+<li><em>From</em>: bear &lt;<a href="mailto:bear@DOMAIN.HIDDEN">bear@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 28 Oct 2003 09:05:20 -0800 (PST)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20031028045401.GB16906@DOMAIN.HIDDEN">20031028045401.GB16906@xxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:20031028012813.GB12968@DOMAIN.HIDDEN">20031028012813.GB12968@xxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20031028042549.GA10098@DOMAIN.HIDDEN">20031028042549.GA10098@xxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20031028045401.GB16906@DOMAIN.HIDDEN">20031028045401.GB16906@xxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+On Mon, 27 Oct 2003 scgmille@xxxxxxxxxxxxxxxxxx wrote:
+
+&gt;On Mon, Oct 27, 2003 at 08:25:49PM -0800, Bradd W. Szonye wrote:
+
+&gt;&gt; Thing is, there are a few functions like this which have superior
+&gt;&gt; performance characteristics for *many* collections, if you limit the
+&gt;&gt; interface somewhat. As you say, there are trade-offs between performance
+&gt;&gt; and generality. However, there's a significant class of collections --
+&gt;&gt; any tree-based dictionary, for example -- where you can improve from
+&gt;&gt; O(N) performance to O(lg N + K) performance for sequential access to
+&gt;&gt; keys. That's both efficient and generic.
+&gt;
+&gt;I agree, and I expect a tree implementation of dictionaries to specify
+&gt;exactly those operators.  But they don't necessarily extend to
+&gt;hashtables, disk file databases, or any number of other dictionary
+&gt;mappable datastructures... a set which is larger than the set of Tree
+&gt;dictionaries.
+
+Okay, here's where our thought diverges.
+
+Some collections and dictionaries, as you point out, are going to
+have structures that imply that the implementation of these things
+is no more efficient than it can be made with the SRFI-44
+primitives.
+
+My experience though with people providing &quot;uniform APIs&quot; is that
+it creates a strong temptation to regard the underlying data
+structures as interchangeable modules, without regard to the
+efficiency of operations in those structures.  This becomes a
+design requirement, and then people restrict their use of primitives
+to just those primitives available in *all* of the potential modules.
+
+So, even where fetching a range of mappings from a dictionary would
+be more efficient using an operation that's defined on trees and olists,
+people are forbidden to use that named operation and instead implement
+it using the restricted set of common primitives because their code
+has to be &quot;generic&quot;.  This code then becomes fantastically stupid
+and fails to realize the available benefits of the data structure
+when the underlying dictionary actually *is* a tree or an olist.
+
+If the &quot;common&quot; functions include any common pattern of use that can
+be more efficiently implemented in *some* dictionary than it can be
+implemented using the SRFI-44 proposed primitives, then generic code
+realizes benefits.
+
+These allow the programmer to say what s/he means, and the code will
+realize the benefits of efficiency where it's available.  It won't
+have to be written stupid unable to take advantage of available
+efficiencies, it won't have to be rewritten stupid when someone
+changes to a different dictionary structure that doesn't support
+the exact same set of operations efficiently, and it won't then
+stay stupid when they switch back.
+
+If the SRFI-44 primitives are what's standardized, then people will
+be forced to implement these common patterns of use in the worst
+possible way in order to create &quot;generic&quot; code even where, on most
+dictionaries, better ways are available.
+
+				Bear
+
+
+
+
+
+
+
+
+
+
+&gt;
+&gt;&gt;
+&gt;&gt; &gt; If I read the intent of SRFI-44 correctly, its goal is not to provide
+&gt;&gt; &gt; all things for all people. Rather, the goal is to define the framework
+&gt;&gt; &gt; and to describe a _minimal_ set of core functions plus a _limited_ set
+&gt;&gt; &gt; of very common extensions.
+&gt;&gt;
+&gt;&gt; And Bear is trying to establish that some of these functions are not
+&gt;&gt; only common but important extensions. For most dictionary-type
+&gt;&gt; collections, primitives aren't sufficient. There's a convenience
+&gt;&gt; argument *and* a performance argument for extending the set.
+&gt;
+&gt;But only if those operators generalize to all dictionaries.  Otherwise
+&gt;they impair the elegance and utility of the API that is general to all
+&gt;dictionaries.  We're not outright disagreeing, these operators just need
+&gt;to be defined in the SRFI that specifies tree or even just &quot;log n
+&gt;efficient indexed dictionaries&quot;.
+&gt;
+&gt;&gt;
+&gt;&gt; &gt; The intent is not to make it unnecessary to add more API in future
+&gt;&gt; &gt; SRFIs. Rather, the intent is to make it unnecessary to remove SRFI-44
+&gt;&gt; &gt; features in future SRFIs.
+&gt;&gt;
+&gt;&gt; Why would you need to remove a function that is more convenient and more
+&gt;&gt; efficient?
+&gt;Because they may not apply to a hypothetical collection.
+&gt;
+&gt;&gt; Also, speaking of things which might need to be removed, I'm concerned
+&gt;&gt; about the object-oriented nature of the containers. Polymorphism is
+&gt;&gt; good, but I suspect that the SRFI's design may be tied too closely to
+&gt;&gt; the specific object system used in the reference implementation. For
+&gt;&gt; example, the hierarchy looks like it's based on a traditional &quot;objects
+&gt;&gt; as references&quot; class-based system, when an &quot;objects as values&quot;
+&gt;&gt; prototype-based system may fit better into Scheme. (Especially given the
+&gt;&gt; way such a system incorporates primitive data structures according to
+&gt;&gt; content rather than type).
+&gt;
+&gt;Hardly.  The SRFI was defined before there was even an object system
+&gt;selected for the reference implementation.  We were very careful not to
+&gt;evey specify polymorphism.  The SRFI only requires that the more general
+&gt;functions work for the 'subtypes' of the SRFI.  It never says that the
+&gt;collections actually be subtypes in some object system, its just a
+&gt;useful metaphor.
+&gt;
+&gt;&gt; inconsistent with the core language they're supposed to extend.
+&gt;&gt;
+&gt;&gt; &gt; About experience using SRFI-44. I can see how to change my
+&gt;&gt; &gt; implementation of treaps to fit SRFI-44.
+&gt;&gt;
+&gt;&gt; That's good. Present the implementations as support for the design. The
+&gt;&gt; author hasn't done so, however -- indeed, he keeps making excuses for
+&gt;&gt; why he shouldn't have to. That reduces my confidence in the proposal.
+&gt;&gt; Furthermore, the SRFI Process Document recommends against exactly that
+&gt;&gt; kind of thing.
+&gt;&gt;
+&gt;You seem to portray this as if I'm hiding some dark secret about
+&gt;limitations to the API.  I'm quite confident in the API in fact, and
+&gt;just don't believe that I need 'prove' its good to you by writing a
+&gt;bunch of code that won't wind up in the SRFI.  I have limited time for
+&gt;this SRFI among many many projects, so this is strictly pragmatic.
+&gt;
+&gt;&gt;
+&gt;&gt; &gt; About fold-right. I'd rather wish to see fold-right gone ....
+&gt;&gt; &gt; Reversible collections is another thing that I'm uneasy about. A
+&gt;&gt; &gt; concept of views has received quite a lot of attention recently.
+&gt;&gt;
+&gt;&gt; I was thinking the same thing -- container views and enumeration
+&gt;&gt; adapters would be a much better way to provide some of this stuff. I
+&gt;&gt; think I mentioned it earlier in the discussion, but I dropped it because
+&gt;&gt; of the attitude that it's best not to change the SRFI at this point.
+&gt;
+&gt;Fortunately, collection-fold-right could (if I'm not mistaken) be
+&gt;implemented in terms of collection-fold-left and container views.  So
+&gt;we're not losing too much by leaving it in.
+&gt;
+&gt;&gt; &gt; Bradd W. Szonye wrote:
+&gt;&gt; &gt;&gt; And, most importantly, can you show how to implement a
+&gt;&gt; &gt;&gt; multiple-collection fold without cursors?
+&gt;&gt; &gt;&gt;
+&gt;&gt; &gt;&gt;     (nfold f seed c1 c2 c3 ...)
+&gt;&gt;
+&gt;&gt; &gt; First of all, who said that we should ban cursors completely?
+&gt;&gt;
+&gt;&gt; Have you read the author's replies to our review comments? He dismisses
+&gt;&gt; them immediately, with a handwave in the general direction of your
+&gt;&gt; earlier article.
+&gt;
+&gt;Absolutely not.  I dismissed cursors because I knew they were derivable
+&gt;from enumeration.  I said this at least twice and then pointed you to
+&gt;the document Oleg initially cited.
+&gt;
+&gt;&gt; enumerator,&quot; a coroutine designed to traverse the collection efficiently
+&gt;&gt; (and without any special coding! just a straightforward traversal that
+&gt;&gt; supplies every value with YIELD). The main FOLD function creates the
+&gt;&gt; coroutines, grabs a value from each, and calls the folding-function.
+&gt;&gt; I've already got this implemented. It was almost trivial, once I
+&gt;&gt; understood how coroutines work.
+&gt;
+&gt;&gt; Yes, a stable API would be good. My objection is that the SRFI is not a
+&gt;&gt; stable API. Parts of it are unimplemented, and major sections have
+&gt;&gt; changed recently. And what's there doesn't take advantage of prior art
+&gt;&gt; like SRFI-1 and SRFI-13 very well; it reinvents the wheel too much IMO.
+&gt;&gt; Some elements it did take from SRFI (like linear update functions) are a
+&gt;&gt; bit controversial -- see the beginner's discussion on c.l.s.
+&gt;
+&gt;We've already established disagreement on the stability and
+&gt;implementation arguments.  Linear update procedures aren't
+&gt;controversial.  Whats confusing to new users (but not so much to
+&gt;experienced ones) is the naming collision between linear update and
+&gt;purely mutable update functions.  Sound familiar?  This is why we had a
+&gt;! and !! distinction in the first place.
+&gt;
+&gt;&gt; So while I agree that there is value in a stable API, I don't think
+&gt;&gt; there's any value in rushing an immature API to finalization just so
+&gt;&gt; that we can call it &quot;stable.&quot; It'd be much better to propose a concrete
+&gt;&gt; collection or three, get some experience with their use, and it they're
+&gt;&gt; successful, factor out the interface and publish that as a SRFI.
+&gt;
+&gt;This is arguably bad design.  Writing many collections and then culling
+&gt;the common operators is a great way to wind up with a poorly thought out
+&gt;system.  Especially when the stated goal here is to create a general,
+&gt;*interoperable* framework for collections.
+&gt;
+&gt;
+&gt;&gt; Actually, if they're successful, there's less need to publish the
+&gt;&gt; interface separately. Future developers will imitate it like they
+&gt;&gt; already imitate SRFI-1. That's a much more desirable outcome: We get
+&gt;&gt; useful collection types *and* a de facto standard interface that way.
+&gt;Name one language with a useful generic collections library that got it
+&gt;this way?  Java had to competely rewrite its collections library at 1.2
+&gt;in order to get a general framework, because the former approach didn't
+&gt;work.
+&gt;
+&gt;	Scott
+&gt;
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00165" href="msg00165.html">[oleg@xxxxxxxxx: Interface view of dictionaries]</a></strong>
+<ul><li><em>From:</em> scgmille</li></ul></li>
+<li><strong><a name="00167" href="msg00167.html">Re: [oleg@xxxxxxxxx: Interface view of dictionaries]</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+<li><strong><a name="00169" href="msg00169.html">Re: [oleg@xxxxxxxxx: Interface view of dictionaries]</a></strong>
+<ul><li><em>From:</em> scgmille</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00172.html">Re: [oleg@xxxxxxxxx: Interface view of dictionaries]</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00174.html">Re: [oleg@xxxxxxxxx: Interface view of dictionaries]</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00186.html">Re: [oleg@xxxxxxxxx: Interface view of dictionaries]</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00174.html">Re: [oleg@xxxxxxxxx: Interface view of dictionaries]</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00173"><strong>Date</strong></a></li>
+<li><a href="threads.html#00173"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

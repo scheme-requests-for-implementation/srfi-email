@@ -1,0 +1,151 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Comments on SRFI&#45;39 -->
+<!--X-From-R13: [nep Trryrl <srryrlNWDA.G[bagerny.QO> -->
+<!--X-Date: Thu, 13 Feb 2003 02:38:23 +0100 (NFT) -->
+<!--X-Message-Id: 200302130137.h1D1bhn31107@dino00.iro.umontreal.ca -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: E18icmR&#45;0004II&#45;00@rosebud -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Comments on SRFI-39</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00027.html">Date Prev</a>][<a href="msg00029.html">Date Next</a>][<a href="msg00027.html">Thread Prev</a>][<a href="msg00029.html">Thread Next</a>][<a href="maillist.html#00028">Date Index</a>][<a href="threads.html#00028">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Comments on SRFI-39</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:kelsey@DOMAIN.HIDDEN">kelsey@xxxxxxx</a></li>
+<li><em>Subject</em>: Re: Comments on SRFI-39</li>
+<li><em>From</em>: Marc Feeley &lt;<a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 12 Feb 2003 20:37:43 -0500</li>
+<li><em>Cc</em>: <a href="mailto:srfi-39@DOMAIN.HIDDEN">srfi-39@xxxxxxxxxxxxxxxxx</a>, <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-39@DOMAIN.HIDDEN">srfi-39@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:E18icmR-0004II-00@DOMAIN.HIDDEN"><a href="msg00025.html">E18icmR-0004II-00@rosebud</a></a>&gt; (message from Richard Kelsey on Tue,	11 Feb 2003 10:57:07 -0500)</li>
+<li><em>References</em>: &lt;<a href="mailto:E18icmR-0004II-00@DOMAIN.HIDDEN"><a href="msg00025.html">E18icmR-0004II-00@rosebud</a></a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; Olin wrote:
+&gt; 
+&gt;   Spawning a thread, calling a function -- it's a dynamic nesting. 
+&gt; 
+&gt; The whole point to spawning a thread is that it isn't a dynamic
+&gt; nesting.  If you wanted dynamic nesting you wouldn't spawn a thread,
+&gt; you would just call the thunk.  The new thread's execution may happen
+&gt; before the spawning call returns or it may happen after the spawning
+&gt; thread has finished or the two may be interleaved.  Where's the
+&gt; nesting?
+
+Like Olin I think there is nesting.  It is not a nesting of control
+but rather a nesting of dynamic context.  So in code like this
+
+        (list
+          (thread-join! (thread-start! (make-thread (lambda () (f)))))
+          (g))
+
+I expect both (f) and (g) to see the same dynamic environment.  In
+fact that code is (essentially) equivalent to
+
+        (list
+          (f)
+          (g))
+
+In a previous message Michael Sperber pointed out that the effect of
+DELAY on the dynamic environment is not specified by the SRFI.  This
+is an oversight.  For consistency with make-thread, the body of the
+DELAY must also inherit the dynamic environment of DELAY's
+continuation.  So code like this (where f is a function with no
+side-effect that terminates and which accesses parameter param1)
+
+        (let ((x (f)))
+          (parameterize ((param1 ...))
+            (+ x (g))))
+
+yields the same result as
+
+        (let ((x (delay (f))))
+          (parameterize ((param1 ...))
+            (+ (force x) (g))))
+
+This makes sense if you view the DELAY form as an annotation
+indicating only that the computation is to be delayed.  You don't want
+the computation to be different, you simply want to displace it in
+time.
+
+A similar thing can be said of the FUTURE form of Multilisp.  It can
+be viewed as an annotation that indicates that the computation of the
+body is to be done concurrently.  This view leads to the Katz-Weise
+semantics for continuations (see: Morry Katz and Daniel
+Weise. Continuing Into the Future: On the Interaction of Futures and
+First-Class Continuations. In Proceedings of the 1990 ACM Conference
+on Lisp and Functional Programming, pages 176-184, June 1990.) which I
+implemented in my PhD thesis.
+
+Given the obvious link between threads and FUTUREs, I think
+this semantics should also apply to threads.
+
+Marc
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00029" href="msg00029.html">Re: Comments on SRFI-39</a></strong>
+<ul><li><em>From:</em> Richard Kelsey</li></ul></li>
+<li><strong><a name="00030" href="msg00030.html">Re: Comments on SRFI-39</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr.  Preprocessor]</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00025" href="msg00025.html">Re: Comments on SRFI-39</a></strong>
+<ul><li><em>From:</em> Richard Kelsey</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00027.html">Re: Comments on SRFI-39</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00029.html">Re: Comments on SRFI-39</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00027.html">Re: Comments on SRFI-39</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00029.html">Re: Comments on SRFI-39</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00028"><strong>Date</strong></a></li>
+<li><a href="threads.html#00028"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

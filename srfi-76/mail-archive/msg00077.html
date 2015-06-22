@@ -1,0 +1,163 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Some BNF, multiple values -->
+<!--X-From-R13: Oaqer ina Fbaqre <naqerNyngre.urg.oebja.rqh> -->
+<!--X-Date: Sat, 22 Oct 2005 17:25:33 +0200 (MST) -->
+<!--X-Message-Id: 200510221525.j9MFPHjA021854@later.het.brown.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Some BNF, multiple values</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00076.html">Date Prev</a>][<a href="msg00078.html">Date Next</a>][<a href="msg00078.html">Thread Prev</a>][<a href="msg00079.html">Thread Next</a>][<a href="maillist.html#00077">Date Index</a>][<a href="threads.html#00077">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Some BNF, multiple values</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-76@DOMAIN.HIDDEN">srfi-76@xxxxxxxxxxxxxxxxx</a>, <a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Some BNF, multiple values</li>
+<li><em>From</em>: Andre van Tonder &lt;<a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 22 Oct 2005 11:25:17 -0400 (EDT)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-76@DOMAIN.HIDDEN">srfi-76@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Reply-to</em>: Andre van Tonder &lt;<a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>I have taken the liberty of writing out a suggestion for a 
+slight alteration of the SRFI's LET syntax in a way that I find
+more readable and perhaps less potentially confusing:
+ 
+(define-type &lt;name-spec&gt; &lt;formals&gt; &lt;record clause&gt;*)
+
+&lt;record clause&gt; --&gt; &lt;layout&gt;
+                  | &lt;sealed&gt;
+                  | &lt;opaque&gt;
+                  | &lt;nondegenerative&gt;
+                  | &lt;init!&gt;
+
+&lt;layout&gt; --&gt; &lt;layout clause&gt;*
+           | (let           (&lt;binding spec&gt;*) &lt;layout&gt;)
+           | (let*          (&lt;binding spec&gt;*) &lt;layout&gt;)
+           | (letrec        (&lt;binding spec&gt;*) &lt;layout&gt;)
+           | (let-values    (&lt;binding spec&gt;*) &lt;layout&gt;)
+           | (let*-values   (&lt;binding spec&gt;*) &lt;layout&gt;)
+           | (letrec-values (&lt;binding spec&gt;*) &lt;layout&gt;)
+
+&lt;layout clause&gt; --&gt; &lt;parent clause&gt;
+                  | &lt;fields clause&gt;
+                  
+
+Rationale:
+==========
+
+- Expressions in &lt;parent clause&gt; and &lt;fields clause&gt; are clearly inside the LET.
+- Expressions in &lt;init!&gt;, &lt;sealed&gt; and &lt;opaque&gt; are clearly outside the LET. 
+- Nested LETs are now explicitly nested.  
+- References cannot precede bindings as they could in the SRFI.  
+- Multiple values supported.
+- Multiple &lt;binding spec&gt;s per LET allowed.
+- There is now only one &lt;layout&gt;, as opposed to the multiple
+  LET clauses allowed by the SRFI.  
+
+Simplifying multiple values:
+============================
+
+The following message has IMO the most beautiful suggestion for absorbing 
+LET[...]-VALUES into LET[...]:
+
+  <a  rel="nofollow" href="http://srfi.schemers.org/srfi-71/mail-archive/msg00012.html">http://srfi.schemers.org/srfi-71/mail-archive/msg00012.html</a>
+
+OCaml:
+======
+  
+By the way, I noticed that OCAML uses (nestable) LET-clauses as part 
+of their class syntax in almost exactly this way for object initialization.  
+See the BNF in 6.9.2 at:
+
+  <a  rel="nofollow" href="http://pauillac.inria.fr/ocaml/htmlman/manual017.html">http://pauillac.inria.fr/ocaml/htmlman/manual017.html</a>
+
+Examples:
+=========
+
+(define x 10)
+
+(define-type foo ()
+  (let ((x 1)                      ; more than one &lt;binding spec&gt; possible
+        (y 2))
+    (let ((z (+ x y)))             ; nesting clearly reflects x and y bindings
+      (parent bar x y)            
+      (fields (a mutable x)        ; nesting clearly reflects x = 1 binding
+              (b mutable y)
+              (c mutable z))))
+  (init! (r) 
+    (display x))))                 ; clearly refers to *toplevel* x = 10
+
+
+(define-type rational (x y)
+  (let-values (((n d)              ; multiple values 
+                (if (= y 0)
+                    (values 1 0)   
+                    (let ((common (gcd x y)))
+                      (values (/ x common)
+                              (/ y common))))))
+    (parent number)
+    (fields (num   immutable n)
+            (denom immutable d)))
+  (init! (r) (register! r)))
+  
+
+Cheers
+Andre
+
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00076.html">Re: Comments on LET and constructors</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00078.html">Re: Revision of SRFI 76 available - questions and comments</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00078.html">Re: Revision of SRFI 76 available - questions and comments</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00079.html">Is a syntax such as (update my-record-type my-record (x 3) (y 4)) possible?</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00077"><strong>Date</strong></a></li>
+<li><a href="threads.html#00077"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

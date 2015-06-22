@@ -1,0 +1,194 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Compromise proposal for dotted&#45;list functionality -->
+<!--X-From-R13: Ayva Euviref <fuvirefNfuviref.ar.zrqvnbar.arg> -->
+<!--X-Date: Tue, 29 Jun 1999 10:35:38 &#45;0500 (CDT) -->
+<!--X-Message-Id: 199906291541.LAA02851@shivers.ne.mediaone.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Compromise proposal for dotted-list functionality</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00057.html">Date Prev</a>][<a href="msg00059.html">Date Next</a>][<a href="msg00056.html">Thread Prev</a>][<a href="msg00060.html">Thread Next</a>][<a href="maillist.html#00058">Date Index</a>][<a href="threads.html#00058">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Compromise proposal for dotted-list functionality</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-1@DOMAIN.HIDDEN">srfi-1@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Compromise proposal for dotted-list functionality</li>
+<li><em>From</em>: Olin Shivers &lt;<a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 29 Jun 1999 11:41:24 -0400</li>
+<li><em>Reply-to</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>OK, sentiment is clearly against considering everything to be a list.  I
+thought it was really simple and clean; but there you go.  Most arguments
+against it are usually of the form &quot;people never use non-nil atoms as
+lists, so list-processing functions should warn them by raising an error when
+they do so by accident.&quot; I can see the point of this.
+
+As my last shot in that argument, I will simply say that while it does
+seem ridiculous to ever want to apply REVERSE to 7, I think it is very
+important to handle boundary cases in a manner which is *consistent* with
+the non-boundary cases. OK, now I will shut up.
+
+Let me present a compromise that I think will preserve maximum ability to use
+dotted lists when so desired and still catch errors due to programmers
+inadvertently switching atoms and lists. It is essentially what Common Lisp
+does.
+
+Common Lisp handles this tension by defining dotted lists, but in a slightly
+odd way.  In Common Lisp, dotted lists are defined to rule out non-nil atoms.
+That is, these are dotted lists
+    (a b c . d)
+    (b c . d)
+    (c . d)
+But this is not
+    d
+In other words, *there are no zero-length dotted lists in Common Lisp*.
+
+Doing so rules out all the non-intuitive boundary cases for list-processing
+that everyone has been so freaked out about. Unfortunately, you can get a
+measure for what a kludge this is by trying to construct a grammar that
+defines the Common Lisp dotted list.
+
+What we will do is allow dotted lists, but explicitly rule out the
+non-nil atoms. So you can apply FIND or FILTER to
+    (a b c . 3)
+if you really want to, but not
+    3
+
+Below, I have a careful taxonomy of all the functions in the lib with this
+new design criteria. Many functions continue to replicate the terminating
+value of their input list, but they now will not accept non-nil atoms as
+parameters. People who never, ever use dotted lists now will not get bitten
+by goofing up argument order or other such errors that the earlier definitions
+would have silently accepted. People who do use dotted lists, still can.
+
+How do people feel about this?
+    -Olin
+
+-------------------------------------------------------------------------------
+For every procedure, we must specify
+- What it accepts
+- What it produces (if it accepts dotted lists, does it produce them?)
+
+Replicates the argument's terminating value; non-nil atoms not allowed:
+    list-copy [e.g., (list-copy '(a b . c)) =&gt; (a b . c)]
+    filter  partition  remove
+    filter! partition! remove! 
+    del  delq  delv  delete 
+    del! delq! delv! delete!
+    alist-copy 
+    delq-duplicates  delv-duplicates  delete-duplicates  del-duplicates 
+    delq-duplicates! delv-duplicates! delete-duplicates! del-duplicates!
+    alist-delete  del-ass  del-assq  del-assv  del-assoc
+    alist-delete! del-ass! del-assq! del-assv! del-assoc!
+    take-right drop
+    mem member memq memv  ass assoc assq assv
+    map filter-map map-in-order map! zip
+        -- These n-ary funcs use the terminator from left-most shortest list
+        arg. Simple to implement, and produces the desired result in the
+        single-list map case. Example:
+	    (map + '(1 2 3 4 . a) '(1 0 1 . b) '(0 1 0 . c)) =&gt;
+                (2 3 4 . b)
+    unzip2 unzip3 unzip4 unzip5 
+    find-tail
+
+Termination of result not specified (may either replicate or nil-terminate); 
+non-nil atoms not allowed:
+    reverse! 
+
+Produces nil-terminated result; non-nil atoms not allowed:
+    take take!
+    drop-right drop-right!
+    reverse
+
+Handles improper lists; non-nil atoms not allowed:
+   for-each pair-for-each
+   length length+
+   fold fold-right pair-fold pair-fold-right reduce reduce-right
+   find any every list-index
+
+Issue of nil-termination does not apply:
+    make-list list-tabulate list list* 
+    circular-list iota 
+    null? pair? cons
+    unfold unfold/tail
+    car cdr ... cdddar cddddr set-car! set-cdr!
+    xcons tree-copy
+    alist-cons
+
+Handles improper-list args; non-empty lists of any kind not allowed:
+   first second third fourth fifth sixth seventh eighth ninth tenth
+   list-ref last last-pair
+
+Append:
+    append append! reverse-append reverse-append!
+        Final argument may be anything.
+        Initial arguments may be improper lists; non-nil atoms not allowed.
+
+Append-map:
+    append-map append-map! 
+	These accept and produce exactly what 
+	    (apply append  (apply map F LISTS))
+	    (apply append! (apply map F LISTS))
+	produce.
+
+The crux of the biscuit:
+    proper-list? dotted-list? circular-list? 
+	General predicates -- may be applied to any value.
+        DOTTED-LIST? returns true on any non-pair. That is,
+        these three functions partition the entire value space.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00057.html">Re: Improper lists</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00059.html">Re: Improper lists</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00056.html">Re: Improper lists</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00060.html">Re: Compromise proposal for dotted-list functionality</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00058"><strong>Date</strong></a></li>
+<li><a href="threads.html#00058"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

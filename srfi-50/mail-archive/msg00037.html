@@ -1,0 +1,167 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: GC safety and return values -->
+<!--X-From-R13: Fbz Zbeq <ybeqNrzs.arg> -->
+<!--X-Date: Tue, 23 Dec 2003 23:42:09 +0100 (NFT) -->
+<!--X-Message-Id: 200312232304.PAA18640@morrowfield.regexps.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200312222122.NAA06270@morrowfield.regexps.com -->
+<!--X-Reference: vt2d6agcztq.fsf@zenia.home -->
+<!--X-Reference: 200312222210.OAA06590@morrowfield.regexps.com -->
+<!--X-Reference: vt2smjcbidh.fsf@zenia.home -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: GC safety and return values</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00036.html">Date Prev</a>][<a href="msg00038.html">Date Next</a>][<a href="msg00014.html">Thread Prev</a>][<a href="msg00050.html">Thread Next</a>][<a href="maillist.html#00037">Date Index</a>][<a href="threads.html#00037">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: GC safety and return values</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:jimb@DOMAIN.HIDDEN">jimb@xxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: GC safety and return values</li>
+<li><em>From</em>: Tom Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 23 Dec 2003 15:04:59 -0800 (PST)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:vt2smjcbidh.fsf@DOMAIN.HIDDEN">vt2smjcbidh.fsf@xxxxxxxxxx</a>&gt; (message from Jim Blandy on 22 Dec	2003 17:24:58 -0500)</li>
+<li><em>References</em>: &lt;<a href="mailto:200312222122.NAA06270@DOMAIN.HIDDEN">200312222122.NAA06270@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:vt2d6agcztq.fsf@DOMAIN.HIDDEN">vt2d6agcztq.fsf@xxxxxxxxxx</a>&gt;	&lt;<a href="mailto:200312222210.OAA06590@DOMAIN.HIDDEN">200312222210.OAA06590@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:vt2smjcbidh.fsf@DOMAIN.HIDDEN">vt2smjcbidh.fsf@xxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+
+    &gt; From: Jim Blandy &lt;jimb@xxxxxxxxxx&gt;
+
+    &gt; The points I made in the very first post to this SRFI's
+    &gt; discussion list still apply, though --- GCPRO cannot be made to
+    &gt; work in multi-threaded contexts.
+
+
+I think that that's overstated.
+
+SRFI-50 does need some work (perhaps nothing more than more precise
+specification) to support threads, and does need some work on the GC
+interface, but a GCPRO-technique can still work and is arguably
+preferable to a JNI-style reference-object technique.
+
+You expressed concern about the GC relocating objects addressed by
+pointers returned from SCHEME_EXTRACT_VALUE_POINTER and
+SCHEME_EXTRACT_STRING.  These issues are solvable by any of a variety
+of means, including:
+
+
+1) add a notion of &quot;critical sections&quot; during which GC is excluded
+
+   Those pointers can remain valid within an (explicitly declared)
+   critical section and not otherwise.  Other functions in the FFI
+   must then be labled with &quot;use only in a critical section&quot;, &quot;never
+   use in a critical section&quot;, and &quot;use anywhere&quot;.
+
+
+2) Make those particular pointer values immobile (by GC, at least).
+
+   Probably a non-starter because it does impose a restriction on 
+   implementation techniques.   I mention it because I happen to think 
+   it's not an unreasonable restriction (but I doubt that a consensus 
+   would be easy to form around that).
+
+
+3) Change the Semantics
+
+   Instead of EXTRACT we might want ALLOCATE_COPY_OF.
+
+
+4) Promise only that the pointers returned are for read-only purposes.
+
+   The EXTRACT routines can allocate one or more stable copies of the 
+   object in question between GCs, freeing those on GCs.
+
+
+Of those, I recommend (1) for the simple reason that if, for example,
+the FFI were extended with finalizers for boxed values otherwise
+managed by C code, the lack of support for GC-excluding critical
+sections will be sorely felt, even in single-threaded systems.
+(Basically, programmers need to be able to say not only &quot;I'm holding
+the address of some Scheme object's representation&quot; but also &quot;Between
+HERE and THERE the state of the heap is inconsistent as far as the GC
+is concerned.&quot;)
+
+Meanwhile, I don't see how JNI-style refs actually solve this problem
+anyway.  So, fine: I have a &quot;reference object&quot; to a Scheme string.  I
+want to operate on a &quot;char *&quot; pointing to its data -- not a ref to
+that &quot;char *&quot; -- because I want to pass it to some libc function.  The
+mere introduction of the reference object doesn't preclude the GC from
+invalidating my &quot;char *&quot;.
+
+-t
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00050" href="msg00050.html">Re: GC safety and return values</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+<li><strong><a name="00055" href="msg00055.html">Re: GC safety and return values</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00006" href="msg00006.html">GC safety and return values</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00007" href="msg00007.html">Re: GC safety and return values</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+<li><strong><a name="00008" href="msg00008.html">Re: GC safety and return values</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00014" href="msg00014.html">Re: GC safety and return values</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00036.html">Re: Strings/chars</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00038.html">more on GC issues</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00014.html">Re: GC safety and return values</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00050.html">Re: GC safety and return values</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00037"><strong>Date</strong></a></li>
+<li><a href="threads.html#00037"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,212 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Couple things... -->
+<!--X-From-R13: sryvk <sryvkNpnyy&#45;jvgu&#45;pheerag&#45;pbagvahngvba.bet> -->
+<!--X-Date: Mon, 22 Dec 2003 18:51:24 +0100 (NFT) -->
+<!--X-Message-Id: opr0lf0hi7w2xcd0@mx.freenet.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Couple things...</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00003.html">Date Prev</a>][<a href="msg00005.html">Date Next</a>][<a href="msg00028.html">Thread Prev</a>][<a href="msg00009.html">Thread Next</a>][<a href="maillist.html#00004">Date Index</a>][<a href="threads.html#00004">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Couple things...</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Couple things...</li>
+<li><em>From</em>: felix &lt;<a href="mailto:felix@DOMAIN.HIDDEN">felix@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 22 Dec 2003 18:54:07 +0100</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Opera7.11/Linux M2 build 406</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+Hi!
+
+As the document correctly points out, calls from Scheme to C can be a lot
+more efficient, if it is known that callbacks into Scheme do not occur.
+This applies to Chicken (for example), where all sorts of weird things
+</pre><tt>happen in such a case. So, here I'm down on my knees, *begging* for 
+</tt><tt>separate
+</tt><pre style="margin: 0em;">
+forms of Scheme-&gt;C calls that forbid callbacks. This also simplifies the
+case when threads are involved (if thread-switches can only occur in Scheme
+</pre><tt>code). Note that Scheme-&gt;C calls outnumber Scheme-&gt;C-&gt;Scheme ones usually 
+</tt><tt>by
+</tt><pre style="margin: 0em;">
+a large amount.
+
+It's absolutely unnecessary to specify which C-level forms are macros,
+or which are functions. Leave that to the implementors, and allow all
+the forms to be macros instead. Whether SCHEME_EXPORT_FUNCTION expands
+</pre><tt>into &quot;scheme_define_exported_binding&quot; or into something different is 
+</tt><tt>relatively
+</tt><pre style="margin: 0em;">
+unimportant. Moreover, it might be helpful to change the references
+</pre><tt>of &quot;scheme_define_exported_binding&quot; and &quot;scheme_enter_pointer&quot; to 
+</tt><tt>uppercase,
+</tt><tt>since obviously the macro-versions are meant here. Look how the (case- 
+</tt><tt>dependent)
+</tt><tt>distinction between functions and macros already produced some confusion! 
+</tt><tt>;-)
+</tt><pre style="margin: 0em;">
+
+Defining bindings from C is allowed, and the SRFI-document specifically
+points out the C init-code may run before Scheme init-code. Yet,
+</pre><tt>SCHEME_DEFINE_EXPORTED_BINDING may GC, even before Scheme init-code has 
+</tt><tt>run?
+</tt><pre style="margin: 0em;">
+Weird. Or does &quot;Scheme initialization code&quot; not include the basic setup of
+the Scheme system - if not, please state so explicitly.
+
+I find it a bit tricky to exactly specify what may GC and what not.
+For example: mutations (a la &quot;SCHEME_RECORD_SET&quot;) may very well allocate
+</pre><tt>storage (if the write-barrier involves allocating something on the heap, 
+</tt><tt>that describes the mutated slot). The life-time of data on the heap
+</tt><tt>may be extremely short - what happens if GC or finalizers run in a 
+</tt><tt>different
+</tt><pre style="margin: 0em;">
+OS-level thread?
+</pre><tt>The authors would do good by not assuming every Scheme implementation does 
+</tt><tt>it like S48 or PLT.
+</tt><pre style="margin: 0em;">
+
+Alternative approaches would be:
+
+1) Selectively switch GC on/off in sections of C code (just like critical
+ sections, really).
+2) Allocate *once* a complete chunk that will be able to hold all
+ data needed subsequently without triggering a GC.
+
+Numeric types: complex numbers are not required by R5RS. I would propose
+making accessors and constructors for extended number types optional.
+
+</pre><tt>SCHEME_CALL: &quot;For example, suppose Scheme procedure s0 captures 
+</tt><tt>continuation a and then calls C procedure c0, which in turn calls Scheme 
+</tt><tt>procedure s1. Procedure s1 can safely call the continuation a, because that 
+</tt><tt>is a downward use. When a is called Scheme will remove the portion of the C 
+</tt><tt>stack used by the call to c0.&quot;
+</tt><pre style="margin: 0em;">
+
+</pre><tt>How do you know that? Why do you specify this? Does this mean a is a 
+</tt><tt>special
+</tt><tt>kind of continuation, one that uses longjmp()? What if continuations are 
+</tt><tt>explicit
+</tt><pre style="margin: 0em;">
+(in a CPS manner)?
+</pre><tt>&quot;On the other hand, if s1 captures a continuation, that continuation 
+</tt><tt>cannot be used from s0, because by the time control returns to s0 the C 
+</tt><tt>stack used by c0 will no longer be valid. An attempt to invoke an upward 
+</tt><tt>continuation that is closed over a portion of the C stack will raise an 
+</tt><tt>exception.&quot;
+</tt><pre style="margin: 0em;">
+
+</pre><tt>Why should it raise an exception? We are interfacing Scheme with C, so 
+</tt><tt>probably
+</tt><pre style="margin: 0em;">
+speed is the matter. Since C is an unsafe language, I propose to remove all
+superfluous safety-checks. If I want to write safe code, I use Scheme.
+
+The lack of specification about how exactly foreign code is brought into
+the Scheme system is understandable but unfortunate. Although this might
+be material for a future SRFI, I would recommend to put a little bit more
+thought into this.
+
+I consider an FFI SRFI like this one extremely important, since it may well
+be the first step towards a platform-and implementation-independent library
+of useful code for Scheme, so I acknowledge the effort put into SRFI-50 by
+the authors. Unfortunately it appears to me that this is just a polished
+</pre><tt>up version of the S48 FFI, dragging in a lot of unnecessary (and 
+</tt><tt>implementation-
+</tt><pre style="margin: 0em;">
+dependent) details which may or may not fit other implementations.
+
+</pre><tt>Why have countless macros that access and create Scheme data? Some basic 
+</tt><tt>forms
+</tt><pre style="margin: 0em;">
+for defining code callable from Scheme (and vice versa) would be more than
+enough, together with a simple system of specifying Scheme-&gt;C-&gt;Scheme type
+mappings. This would also remove the GC-related problems (mostly).
+
+</pre><tt>There are many different strategies of implementing a Scheme memory- 
+</tt><tt>management-
+</tt><tt>and execution model, so it would be much more worthwhile (and in the end 
+</tt><tt>also
+</tt><tt>more efficient) to provide a simplified method of simply running chunks of 
+</tt><tt>C code:
+</tt><pre style="margin: 0em;">
+Scheme data -&gt; C code -&gt; Result value(s). That's it.
+
+</pre><tt>Wait, it could be made even more interesting: specify a mapping of Scheme 
+</tt><tt>types to abstract foreign types, then add type-mappings for different 
+</tt><tt>languages (C, Java, etc.),
+</tt><tt>and a simple interface for invoking blocks of foreign code and returning 
+</tt><tt>from it...
+</tt><pre style="margin: 0em;">
+
+
+cheers,
+felix
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00009" href="msg00009.html">Strings/chars</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+<li><strong><a name="00025" href="msg00025.html">Re: Couple things...</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+<li><strong><a name="00035" href="msg00035.html">Re: Couple things...</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00003.html">Re: character strings versus byte strings</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00005.html">Re: character strings versus byte strings</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00028.html">Re: character strings versus byte strings</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00009.html">Strings/chars</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00004"><strong>Date</strong></a></li>
+<li><a href="threads.html#00004"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

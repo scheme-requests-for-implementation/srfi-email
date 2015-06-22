@@ -1,0 +1,219 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: "Test results" -->
+<!--X-From-R13: Rbabina Ybyoyl <qbabinaNefpurzr.bet> -->
+<!--X-Date: Tue, 16 Aug 2005 20:10:43 +0200 (DFT) -->
+<!--X-Message-Id: Pine.LNX.4.63.0508161156250.14845@tsunami.kolbly.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 4300FDA6.1080501@bothner.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: &quot;Test results&quot;</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00039.html">Date Prev</a>][<a href="msg00041.html">Date Next</a>][<a href="msg00039.html">Thread Prev</a>][<a href="msg00044.html">Thread Next</a>][<a href="maillist.html#00040">Date Index</a>][<a href="threads.html#00040">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: &quot;Test results&quot;</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Per Bothner &lt;<a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: &quot;Test results&quot;</li>
+<li><em>From</em>: Donovan Kolbly &lt;<a href="mailto:donovan@DOMAIN.HIDDEN">donovan@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 16 Aug 2005 13:10:15 -0500 (CDT)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-64@DOMAIN.HIDDEN">srfi-64@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-64@DOMAIN.HIDDEN">srfi-64@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:4300FDA6.1080501@DOMAIN.HIDDEN">4300FDA6.1080501@xxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:4300FDA6.1080501@DOMAIN.HIDDEN">4300FDA6.1080501@xxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+On Mon, 15 Aug 2005, Per Bothner wrote:
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+But first I'd like some feedback on an API for &quot;test results&quot;:
+
+A test runner maintains a set of &quot;result properties&quot; associated with
+the current or most recent test.  (I.e. the properties of the
+most recent test are available as long as a new test hasn't started.)
+
+Each property has a name (a symbol) and a value (any value).
+Some properties are standard or set by the implementation.
+</pre></blockquote><pre style="margin: 0em;">
+
+This seems like a good general idea.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+
+(test-result-ref [runner] 'pname [default])
+</pre></blockquote><pre style="margin: 0em;">
+
+</pre><tt>Hmm.  I think statically ambiguous interfaces are confusing.  If you see 
+</tt><tt>the following (admittedly poorly written) code fragment:
+</tt><pre style="margin: 0em;">
+
+   (test-result-ref x y)
+
+</pre><tt>you will need much more information (perhaps located arbitrarily far away 
+</tt><tt>in the program) to understand what is actually being done.  Is the 
+</tt><tt>property denoted by y of runner x being accessed, or is property x of the 
+</tt><tt>current runner being accessed, with a default value of y?
+</tt><pre style="margin: 0em;">
+
+</pre><tt>And, of course, the compiler has to defer the disambiguation to runtime as 
+</tt><tt>well.
+</tt><pre style="margin: 0em;">
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Returns the property value associated with the pname property name.
+If there is no value assocate with 'pname return default,
+or #t if default isn't specified.
+</pre></blockquote><pre style="margin: 0em;">
+
+</pre><tt>Why #t?  I would think that #f, as the Most Distinguished Value, is a more 
+</tt><tt>useful default default.
+</tt><pre style="margin: 0em;">
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+
+(test-result-set! [runner] 'pname value)
+Sets the property value associated with the pname property name to value.
+
+(test-result-clear [runner] ['pname])
+</pre></blockquote><pre style="margin: 0em;">
+
+Same ambiguity problem as mentioned above.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+If 'pname is specified, remove the property with the name 'pname.
+If 'pname is not specified, remove all result properties.
+The implementation automatically calls test-result-clear
+at the start of a test-assert and similar procedures.
+</pre></blockquote><pre style="margin: 0em;">
+
+</pre><tt>Do we need to say anything about when the standard properties might be 
+</tt><tt>&quot;added&quot;?  My own implementation will not explicitly store standard 
+</tt><tt>properties, so in effect they'll (mostly) always be present.
+</tt><pre style="margin: 0em;">
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+
+(test-result-alist [runner])
+Returns an association list of the current result properties.
+It is unspecified if the result shares state with the test-runner.
+The result should not be modified; on the other hand the result
+may be inclicitly modified by future test-result-set! or
+test-result-clear calls, with one exception: A test-result-clear
+without a 'pname doesn't not modify the returned alist.  Thus you
+can &quot;archive&quot; result objects from previous runs.
+Issue: Or should we just say that test-result-alist returns a
+fresh alist?
+</pre></blockquote><pre style="margin: 0em;">
+
+</pre><tt>I like archiving, but requiring a fresh alist is overly constraining. 
+</tt><tt>What if my implementation can share structure where possible (sort of a 
+</tt><tt>copy-on-write thing)?  I'd hate to always have to clone the alist...
+</tt><pre style="margin: 0em;">
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+
+We also need a list of standard properties:
+'kind
+ One of 'pass, 'xpass, 'fail, 'xfail, 'skip
+
+'source-file
+'source-line
+Location of test-assert etc in test suite source code.
+</pre></blockquote><pre style="margin: 0em;">
+
++                  if meaningful/available
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+
+'source-form
+The source form, if meaningful/available.
+
+'expected-result
+The expected result, if meaningful/available.
+
+'actual-result
+The actual result, if meaningful/available.
+</pre></blockquote><pre style="margin: 0em;">
+
+</pre><tt>I suggest the addition of (possibly optional) timestamps, including the 
+</tt><tt>execution time duration and the absolute start time.
+</tt><pre style="margin: 0em;">
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+The test-runner call-back functions (such as that bound using
+test-runner-on-test) is modified to only take a test-runner,
+rather than also take an explicit test-result, since the latter
+is now part of the former.
+</pre></blockquote><pre style="margin: 0em;">
+
+</pre><tt>I'll try tweaking my meta-test suite to take these new concepts into 
+</tt><tt>account...
+</tt><pre style="margin: 0em;">
+
+-- Donovan Kolbly                    (  d.kolbly@xxxxxxxxxxx
+				     (  <a  rel="nofollow" href="http://www.rscheme.org/~donovan/">http://www.rscheme.org/~donovan/</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00044" href="msg00044.html">Re: &quot;Test results&quot;</a></strong>
+<ul><li><em>From:</em> Alex Shinn</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00039" href="msg00039.html">Re: &quot;Test results&quot;</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00039.html">Re: &quot;Test results&quot;</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00041.html">Re: &quot;Test results&quot;</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00039.html">Re: &quot;Test results&quot;</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00044.html">Re: &quot;Test results&quot;</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00040"><strong>Date</strong></a></li>
+<li><a href="threads.html#00040"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

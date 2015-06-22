@@ -1,0 +1,211 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Comparing Pika&#45;syle and JNI&#45;style -->
+<!--X-From-R13: Xvz Pynaql <wvzoNerqung.pbz> -->
+<!--X-Date: Wed, 14 Jan 2004 10:06:28 +0100 (NFT) -->
+<!--X-Message-Id: vt2isje3nna.fsf_&#45;_@zenia.home -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: E1AfQRd&#45;0000Qa&#45;00@mail.mumble.net -->
+<!--X-Reference: vt2y8scua4h.fsf@zenia.home -->
+<!--X-Reference: 877jzwtzaz.fsf@becket.becket.net -->
+<!--X-Reference: vt2ptdn2bqq.fsf@zenia.home -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Comparing Pika-syle and JNI-style</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00294.html">Date Prev</a>][<a href="msg00296.html">Date Next</a>][<a href="msg00294.html">Thread Prev</a>][<a href="msg00296.html">Thread Next</a>][<a href="maillist.html#00295">Date Index</a>][<a href="threads.html#00295">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Comparing Pika-syle and JNI-style</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Comparing Pika-syle and JNI-style</li>
+<li><em>From</em>: Jim Blandy &lt;<a href="mailto:jimb@DOMAIN.HIDDEN">jimb@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: 14 Jan 2004 04:06:17 -0500</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:vt2ptdn2bqq.fsf@DOMAIN.HIDDEN">vt2ptdn2bqq.fsf@xxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:E1AfQRd-0000Qa-00@DOMAIN.HIDDEN">E1AfQRd-0000Qa-00@xxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:vt2y8scua4h.fsf@DOMAIN.HIDDEN">vt2y8scua4h.fsf@xxxxxxxxxx</a>&gt;	&lt;<a href="mailto:877jzwtzaz.fsf@DOMAIN.HIDDEN">877jzwtzaz.fsf@xxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:vt2ptdn2bqq.fsf@DOMAIN.HIDDEN">vt2ptdn2bqq.fsf@xxxxxxxxxx</a>&gt;</li>
+<li><em>Sender</em>: <a href="mailto:jimb@DOMAIN.HIDDEN">jimb@xxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Gnus/5.09 (Gnus v5.9.0) Emacs/21.3</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+Jim Blandy &lt;jimb@xxxxxxxxxx&gt; writes:
+&gt; Well, if SRFI-50 turned out not to be what I was hoping, and I didn't
+&gt; come to my senses quickly enough, I was going to turn &lt;minor/minor.h&gt;,
+&gt; into a .texi file, start a SRFI from that, and see what people said.
+
+In light of that, I'm curious to know how people generally feel about
+the Pika vs. JNI issue.  If there's a near consensus on one or the
+other, then that could save a lot of trouble.
+
+
+Here are links to the specs:
+Pika:  <a  rel="nofollow" href="http://arch.quackerhead.com/~lord/releases/pika">http://arch.quackerhead.com/~lord/releases/pika</a>
+       <a  rel="nofollow" href="http://regexps.srparish.net/src/pika/">http://regexps.srparish.net/src/pika/</a>
+Minor: <a  rel="nofollow" href="http://svn.red-bean.com/repos/minor/trunk/include/minor/minor.h">http://svn.red-bean.com/repos/minor/trunk/include/minor/minor.h</a>
+
+
+Here's how I see it:
+
+Commonalities:
+- Both work by having C code manipulate only references to Scheme
+  values, not Scheme values themselves.
+- Both impose few restrictions on the representation of Scheme objects.
+- Both allow GC to occur at any time.
+- Both can be implemented in a way that interacts nicely with threads.
+
+
+In Pika:
+- Leaks are impossible, since references are stack-allocated.
+- References are freed upon exit from the lexical block that owns
+  them --- finer-grained than JNI-style.
+- Probably less overhead than JNI-style.
+
+But:
+- Forgetting an UNGCPRO corrupts the GC's data structures, and may
+  fail only intermittently.  Irregular exits (return; goto; break;
+  continue) require attention.  longjmp is even harder.
+- Functions may only return Scheme values by reference; they may not
+  provide them as their (syntactic) return values.  Instead of writing
+  &quot;f (g (x))&quot;, you must write:
+
+    g (&amp;frame.x, &amp;frame.temp);
+    f (&amp;frame.temp, &amp;frame.temp2);
+
+  In other words, you must write your code as linear series of
+  operations which work by side-effects.
+- Since the API functions all expect pointers to t_scm_word values,
+  this discourages people from passing them around directly, but it
+  can still be done --- e.g. &quot;frame.x = frame.y;&quot; --- and doing so
+  will usually work.  But doing so is a bug.
+- Variable declarations are cluttered with enclosing structs and GCPRO
+  / UNGCPRO calls.
+
+
+In JNI-style:
+- Functions can return references directly, so code need not be
+  linearized.  You can write &quot;f (call, g (call, x))&quot; --- if you know
+  that &quot;call&quot; will return and free g's return value soon enough.
+- Local references are freed automatically when the Scheme-&gt;C call to
+  which they belong returns.  Leaks due to unfreed local references
+  (which will probably be the most common sort of error) have a
+  bounded and often (though not always) short lifetime.
+- No GC data structures live on the C stack, so careless control flow
+  and longjmps will not corrupt the GC's data structures.
+- The &quot;explicit free&quot; model is familiar to C programmers.
+- Variables are declared normally, and their values used directly.
+- Since mn_ref is an incomplete type, it can't be dereferenced, so 
+  people can't be sloppy and operate on the heap values directly.
+
+But:
+- The &quot;explicit free&quot; model is still error-prone.  The fact that leaks
+  are bounded by their owning call's lifetime may not always help.
+- Probably more overhead than Pika-style.
+- Code will be cluttered with explicit-free crap.
+
+
+Is this fair?  What have I missed?  What do people think?
+
+It would be nice to see sample code in each style.  C implementations
+of &quot;cadr&quot; and &quot;assq&quot; would be nice.  As far as I know, error checking
+is similar under both interfaces, so that can be left out.
+
+
+    mn_ref *
+    cadr (mn_call *c, mn_ref *obj)
+    {
+      return mn_car (c, mn_cdr (c, obj));
+    }
+
+
+    mn_ref *
+    assq (mn_call *c, mn_ref *key, mn_ref *alist)
+    {
+      while (mn_pair_p (c, alist))
+        {
+          mn_ref *pair = mn_car (c, alist);
+          mn_ref *pair_key = mn_car (c, pair);
+
+          if (mn_ref_eq (c, key, pair_key))
+            return pair;
+
+          mn_free_local_ref (c, pair);
+          mn_free_local_ref (c, pair_key);
+          alist = mn_to_cdr (c, alist);
+        }
+
+      return mn_false (c);
+    }
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00296" href="msg00296.html">Re: Comparing Pika-syle and JNI-style</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00297" href="msg00297.html">Re: Comparing Pika-syle and JNI-style</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00298" href="msg00298.html">Re: Comparing Pika-syle and JNI-style</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00262" href="msg00262.html">Re: when GC is permitted</a></strong>
+<ul><li><em>From:</em> Richard Kelsey</li></ul></li>
+<li><strong><a name="00283" href="msg00283.html">temporarily withdrawing SRFI-50</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+<li><strong><a name="00287" href="msg00287.html">Re: temporarily withdrawing SRFI-50</a></strong>
+<ul><li><em>From:</em> Thomas Bushnell, BSG</li></ul></li>
+<li><strong><a name="00294" href="msg00294.html">Re: temporarily withdrawing SRFI-50</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00294.html">Re: temporarily withdrawing SRFI-50</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00296.html">Re: Comparing Pika-syle and JNI-style</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00294.html">Re: temporarily withdrawing SRFI-50</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00296.html">Re: Comparing Pika-syle and JNI-style</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00295"><strong>Date</strong></a></li>
+<li><a href="threads.html#00295"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

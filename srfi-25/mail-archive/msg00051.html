@@ -1,0 +1,391 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Access time of elements Re: Bad things [] -->
+<!--X-From-R13: Xhffv Bvvghynvara <wcvvghynNyvat.uryfvaxv.sv> -->
+<!--X-Date: Tue, 27 Nov 2001 11:59:09 +0100 (MET) -->
+<!--X-Message-Id: qotbshowkcx.fsf_&#45;_@donner.ling.helsinki.fi -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: okfwv0korh0.fsf@bellsouth.net -->
+<!--X-Reference: qotvgg3ub13.fsf@donner.ling.helsinki.fi -->
+<!--X-Reference: okfg076pz1b.fsf@netscape.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Access time of elements Re: Bad things []</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00050.html">Date Prev</a>][<a href="msg00052.html">Date Next</a>][<a href="msg00050.html">Thread Prev</a>][<a href="msg00052.html">Thread Next</a>][<a href="maillist.html#00051">Date Index</a>][<a href="threads.html#00051">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Access time of elements Re: Bad things []</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-25@DOMAIN.HIDDEN">srfi-25@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Access time of elements Re: Bad things []</li>
+<li><em>From</em>: Jussi Piitulainen &lt;<a href="mailto:jpiitula@DOMAIN.HIDDEN">jpiitula@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: 27 Nov 2001 12:58:54 +0200</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-25@DOMAIN.HIDDEN">srfi-25@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>References</em>: &lt;<a href="mailto:okfwv0korh0.fsf@DOMAIN.HIDDEN">okfwv0korh0.fsf@xxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:qotvgg3ub13.fsf@DOMAIN.HIDDEN">qotvgg3ub13.fsf@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:okfg076pz1b.fsf@DOMAIN.HIDDEN">okfg076pz1b.fsf@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Sender</em>: <a href="mailto:jpiitula@DOMAIN.HIDDEN">jpiitula@xxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>David Rush writes:
+
+[array-set! should have its index sequence as a single argument for
+efficiency; I pointed out that that sequence needs to be allocated
+then, instead of many arguments]
+
+&gt; Except that once you've created an indexing object you can also
+&gt; modify it. Since much array access follows predictable patterns this
+&gt; agains provides opportunities for significant speed-ups. To
+&gt; summarize: package once, iterate many. You'll still have the
+&gt; assignments from loop indicies (unles you macrologize them away with
+&gt; iteration combinators), but I would be surprised if that took more
+&gt; time than repeated packaging.
+
+I did some quick timings on Petite Chez interpreter. It seems you are
+right not only in cases that really favour such reuse of the index
+objects but also in cases that don't. An optimizing compiler might
+change things. The code is in the end of this message in the hope that
+somebody with a compiler at hand might educate me on the results.
+
+Here are my timings: min, median and max milliseconds cpu time of
+three runs, number of collections, and median times relative to the
+least and most favourable case of the &quot;fast&quot; interface; &quot;what&quot; is an
+implementation of the present, &quot;slow&quot; interface.
+
+slow   2290 2290 2300  72  1.33  1.16
+slow!  2350 2350 2360  59  1.37  1.18
+fast0  1990 2000 2010  50  1.16  1.00
+fast1  1840 1850 1860  43  1.08  0.93
+fast!  1710 1720 1720  29  1.00  0.86
+what   2520 2530 2530  82  1.47  1.27
+
+The current (array-set! a k1 k2 k3 k4 o) interface does not seem to
+lend itself to the reuse of an index object. (The only motivation to
+do that would be efficiency, and it is not achieved.)
+
+Even the simplest use of the current interface loses measurably to the
+simplest case of the alternative interface. This is &quot;slow&quot; against
+&quot;fast0&quot;:
+
+ (array-set! a k1 k2 k3 k4 (array-ref a k1 k2 k3 k4))
+ (array-set! a (vector k1 k2 k3 k4) (array-ref a (vector k1 k2 k3 k4)))
+
+And &quot;fast1&quot; does
+
+ (let ((ix (vector k1 k2 k3 k4)))
+    (array-set! a ix (array-ref a ix)))
+
+and &quot;slow!&quot; and &quot;fast!&quot; allocate boxes for the index once mutating
+them at the appropriate levels of iteration.
+
+Shall we switch, and is a vector good enough for an index object? (I
+believe somebody asked for such packaging even apart from efficiency.)
+
+Only the code follows.
+
+;;; The task is to increase, m times, the contents of each cell in a
+;;; four dimensional array of 10 * 100 * 10 * 10 elements, initially
+;;; all containing o, so all elements end up containing o + m.
+
+;;; The timings to run, with _check_ #f, are
+;;; (time (slow  m 0 10 100 10 10 o))
+;;; (time (slow! m 0 10 100 10 10 o))
+;;; (time (fast0 m 0 10 100 10 10 o))
+;;; (time (fast1 m 0 10 100 10 10 o))
+;;; (time (fast! m 0 10 100 10 10 o)
+;;; (time (what  m 0 10 100 10 10 o))
+;;; but hide the constants from the compiler lest it decides to
+;;; execute the whole loop at compile time.
+
+;;; Straightforward use of current interface.
+
+(define (slow m n0 n1 n2 n3 n4 o)
+  (let ((a (make-slow n0 n1 n2 n3 n4 o)))
+    (do ((t 0 (+ t 1)))
+	((= t m))
+      (do ((k1 0 (+ k1 1)))
+	  ((= k1 n1))
+	(do ((k2 0 (+ k2 1)))
+	    ((= k2 n2))
+	  (do ((k3 0 (+ k3 1)))
+	      ((= k3 n3))
+	    (do ((k4 0 (+ k4 1)))
+		((= k4 n4))
+	      (slow-set! a k1 k2 k3 k4 (+ (slow-ref a k1 k2 k3 k4) 1)))))))
+    (if _check_ (check (vector-ref a 0)))))
+
+;;; Devious use of current interface: reuse package.
+
+(define (slow! m n0 n1 n2 n3 n4 o)
+  (let ((a (make-slow n0 n1 n2 n3 n4 o)))
+    (let* ((b1 (list 0 0 0 0 0))  (p1 (list 0 0 0 0))
+	   (b2 (cdr b1))          (p2 (cdr p1))       
+	   (b3 (cdr b2))          (p3 (cdr p2))
+	   (b4 (cdr b3))          (p4 (cdr p3))
+	   (b5 (cdr b4)))
+      (do ((t 0 (+ t 1)))
+	  ((= t m))
+	(do ((k1 0 (+ k1 1)))
+	    ((= k1 n1))
+	  (set-car! b1 k1)
+	  (set-car! p1 k1)
+	  (do ((k2 0 (+ k2 1)))
+	      ((= k2 n2))
+	    (set-car! b2 k2)
+	    (set-car! p2 k2)
+	    (do ((k3 0 (+ k3 1)))
+		((= k3 n3))
+	      (set-car! b3 k3)
+	      (set-car! p3 k3)
+	      (do ((k4 0 (+ k4 1)))
+		  ((= k4 n4))
+		(set-car! b4 k4)
+		(set-car! p4 k4)
+		(set-car! b5 (+ (apply slow-ref a p1) 1))
+		(apply slow-set! a b1))))))
+	(if _check_ (check (vector-ref a 0))))))
+
+;;; Straightforward uses of proposed interface; fast0 allocates the
+;;; index object twice; fast1 takes advantage of the fact that it is
+;;; the same both times, as it here is.
+
+(define (fast0 m n0 n1 n2 n3 n4 o)
+  (let ((a (make-fast n0 n1 n2 n3 n4 o)))
+    (do ((t 0 (+ t 1)))
+	((= t m))
+      (do ((k1 0 (+ k1 1)))
+	  ((= k1 n1))
+	(do ((k2 0 (+ k2 1)))
+	    ((= k2 n2))
+	  (do ((k3 0 (+ k3 1)))
+	      ((= k3 n3))
+	    (do ((k4 0 (+ k4 1)))
+		((= k4 n4))
+	      (fast-set! a
+			 (vector k1 k2 k3 k4)
+			 (+ (fast-ref a (vector k1 k2 k3 k4))
+			    1)))))))
+    (if _check_ (check (vector-ref a 0)))))
+
+(define (fast1 m n0 n1 n2 n3 n4 o)
+  (let ((a (make-fast n0 n1 n2 n3 n4 o)))
+    (do ((t 0 (+ t 1)))
+	((= t m))
+      (do ((k1 0 (+ k1 1)))
+	  ((= k1 n1))
+	(do ((k2 0 (+ k2 1)))
+	    ((= k2 n2))
+	  (do ((k3 0 (+ k3 1)))
+	      ((= k3 n3))
+	    (do ((k4 0 (+ k4 1)))
+		((= k4 n4))
+	      (let ((ix (vector k1 k2 k3 k4)))
+		(fast-set! a ix (+ (fast-ref a ix) 1))))))))
+    (if _check_ (check (vector-ref a 0)))))
+
+;;; Devious use of proposed interface: reuse package.
+
+(define (fast! m n0 n1 n2 n3 n4 o)
+  (let ((a (make-fast n0 n1 n2 n3 n4 o)))
+    (let* ((bs (vector 0 0 0 0)))
+      (do ((t 0 (+ t 1)))
+	  ((= t m))
+	(do ((k1 0 (+ k1 1)))
+	    ((= k1 n1))
+	  (vector-set! bs 0 k1)
+	  (do ((k2 0 (+ k2 1)))
+	      ((= k2 n2))
+	    (vector-set! bs 1 k2)
+	    (do ((k3 0 (+ k3 1)))
+		((= k3 n3))
+	      (vector-set! bs 2 k3)
+	      (do ((k4 0 (+ k4 1)))
+		  ((= k4 n4))
+		(vector-set! bs 3 k4)
+		(fast-set! a bs (+ (fast-ref a bs) 1))))))))
+    (if _check_ (check (vector-ref a 0)))))
+
+;;; Another implementation of current interface.
+
+(define (what m n0 n1 n2 n3 n4 o)
+  (let ((a (make-slow n0 n1 n2 n3 n4 o)))
+    (do ((t 0 (+ t 1)))
+	((= t m))
+      (do ((k1 0 (+ k1 1)))
+	  ((= k1 n1))
+	(do ((k2 0 (+ k2 1)))
+	    ((= k2 n2))
+	  (do ((k3 0 (+ k3 1)))
+	      ((= k3 n3))
+	    (do ((k4 0 (+ k4 1)))
+		((= k4 n4))
+	      (what-set! a k1 k2 k3 k4 (+ (what-ref a k1 k2 k3 k4) 1)))))))
+    (if _check_ (check (vector-ref a 0)))))
+
+;;; In the &quot;slow&quot; representation, array-ref and array-set! are of
+;;; variable arity. Arrays contain both getter and setter that in low
+;;; dimensional cases are of fixed arity: each index is an argument.
+
+(define (make-slow n0 n1 n2 n3 n4 o)
+  (let ((vr (make-vector (* n1 n2 n3 n4) o))
+	(n1 (* n2 n3 n4))
+	(n2 (* n3 n4))
+	(n3 (* n4))
+	(n4 (*)))
+    (vector vr
+	    (lambda (b k1 k2 k3 k4)
+	      (vector-ref b
+			  (+ n0 (* n1 k1) (* n2 k2) (* n3 k3) (* n4 k4))))
+	    (lambda (b k1 k2 k3 k4 o)
+	      (vector-set! b
+			   (+ n0 (* n1 k1) (* n2 k2) (* n3 k3) (* n4 k4))
+			   o)))))
+
+(define (slow-ref a . ks)
+  (apply (vector-ref a 1) (vector-ref a 0) ks))
+
+(define (slow-set! a . kso)
+  (apply (vector-ref a 2) (vector-ref a 0) kso))
+
+;;; In the &quot;fast&quot; representations, array-ref and array-set! are of
+;;; fixed arity: the index sequence is packaged in a data structure.
+;;; The idea is that the package is allocated once and mutated in a
+;;; loop to contain appropriate index sequences.
+
+;;; The index data structure here is a vector. The indexer knows its
+;;; length and the coefficients.
+
+(define (make-fast n0 n1 n2 n3 n4 o)
+  (vector (make-vector (* n1 n2 n3 n4) o)
+	  (let ((n1 (* n2 n3 n4))
+		(n2 (* n3 n4))
+		(n3 (* n4))
+		(n4 (*)))
+	    (lambda (ks)
+	      (+ n0
+		 (* n1 (vector-ref ks 0))
+		 (* n2 (vector-ref ks 1))
+		 (* n3 (vector-ref ks 2))
+		 (* n4 (vector-ref ks 3)))))))
+
+(define (fast-ref a ks)
+  (vector-ref (vector-ref a 0)
+	      ((vector-ref a 1) ks)))
+
+(define (fast-set! a ks o)
+  (vector-set! (vector-ref a 0)
+	       ((vector-ref a 1) ks)
+	       o))
+
+;;; There is yet another version: case-lambda, properly implemented,
+;;; allows a variable arity interface where arguments need not be
+;;; packaged at all for any number of cases. So array-ref and
+;;; array-set! are in a sense not of variable arity for four
+;;; dimensions, yet they accept each index as a separate arguments.
+
+;;; We can use make-slow as is.
+
+(define what-ref
+  (case-lambda
+   ;; if uncommented, says incorrect number of arguments
+   ;; ((a) ((vector-ref a 1) (vector-ref a 0)))
+   ((a k1) ((vector-ref a 1) (vector-ref a 0) k1))
+   ((a k1 k2) ((vector-ref a 1) (vector-ref a 0) k1 k2))
+   ((a k1 k2 k3) ((vector-ref a 1) (vector-ref a 0) k1 k2 k3))
+   ((a k1 k2 k3 k4) ((vector-ref a 1) (vector-ref a 0) k1 k2 k3 k4))
+   ((a k1 k2 k3 k4 arg . args)
+    (apply (vector-ref a 1) (vector-ref a 0) k1 k2 k3 k4 arg args))))
+
+(define what-set!
+  (case-lambda
+   ((a o) ((vector-ref a 2) (vector-ref a 0) o))
+   ((a k1 o) ((vector-ref a 2) (vector-ref a 0) k1 o))
+   ((a k1 k2 o) ((vector-ref a 2) (vector-ref a 0) k1 k2 o))
+   ((a k1 k2 k3 o) ((vector-ref a 2) (vector-ref a 0) k1 k2 k3 o))
+   ((a k1 k2 k3 k4 o) ((vector-ref a 2) (vector-ref a 0) k1 k2 k3 k4 o))
+   ((a k1 k2 k3 k4 k5 arg . args)
+    (apply (vector-ref a 2) (vector-ref a 0) k1 k2 k3 k4 k5 arg args))))
+
+;;; (fluid-let ((_check_ #t)) (slow 2 0 10 100 10 10 0))
+;;; returns (10000 2 2), that is, length and min and max.
+
+(define _check_ #f)
+
+(define (check v)
+  (list (vector-length v)
+	(do ((k 0 (+ k 1))
+	     (m (vector-ref v 0) (min m (vector-ref v k))))
+	    ((= k (vector-length v))
+	     m))
+	(do ((k 0 (+ k 1))
+	     (m (vector-ref v 0) (max m (vector-ref v k))))
+	    ((= k (vector-length v))
+	     m))))
+
+-- 
+Jussi 
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00052" href="msg00052.html">Re: Access time of elements Re: Bad things []</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00047" href="msg00047.html">Some thoughts...</a></strong>
+<ul><li><em>From:</em> David Rush</li></ul></li>
+<li><strong><a name="00049" href="msg00049.html">Bad things Re: Some thoughts...</a></strong>
+<ul><li><em>From:</em> Jussi Piitulainen</li></ul></li>
+<li><strong><a name="00050" href="msg00050.html">Re: Bad things Re: Some thoughts...</a></strong>
+<ul><li><em>From:</em> David Rush</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00050.html">Re: Bad things Re: Some thoughts...</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00052.html">Re: Access time of elements Re: Bad things []</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00050.html">Re: Bad things Re: Some thoughts...</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00052.html">Re: Access time of elements Re: Bad things []</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00051"><strong>Date</strong></a></li>
+<li><a href="threads.html#00051"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

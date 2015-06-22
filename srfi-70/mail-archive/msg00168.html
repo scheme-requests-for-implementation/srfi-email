@@ -1,0 +1,190 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: inexactness vs. exactness -->
+<!--X-From-R13: Ivyyvnz R Qyvatre <jvyyNppf.arh.rqh> -->
+<!--X-Date: Wed, 27 Jul 2005 08:48:42 +0200 (DFT) -->
+<!--X-Message-Id: y9ly87s4ud7.fsf@sams.informatik.uni&#45;tuebingen.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: inexactness vs. exactness</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00167.html">Date Prev</a>][<a href="msg00169.html">Date Next</a>][<a href="msg00167.html">Thread Prev</a>][<a href="msg00169.html">Thread Next</a>][<a href="maillist.html#00168">Date Index</a>][<a href="threads.html#00168">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: inexactness vs. exactness</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-70@DOMAIN.HIDDEN">srfi-70@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: inexactness vs. exactness</li>
+<li><em>From</em>: William D Clinger &lt;<a href="mailto:will@DOMAIN.HIDDEN">will@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 27 Jul 2005 08:48:36 +0200</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-70@DOMAIN.HIDDEN">srfi-70@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Gnus/5.110003 (No Gnus v0.3) XEmacs/21.5-b20 (berkeley-unix)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Aubrey Jaffer wrote:
+&gt; But if we consider memory limitations for this system, then there are
+&gt; many mathematical numbers between any two representable inexacts whose
+&gt; storage requirements are too large to be represented on a particular
+&gt; physical computer.
+
+This is true of exact rationals as well.  It is the programmer's
+responsibility to limit the precision of the program's numbers
+so the computer doesn't run out of memory.  One of the advantages
+of floating point representations for inexact numbers is that
+they do this automatically; one of the disadvantages of R5RS
+inexact arithmetic is that it doesn't guarantee such limited
+precision.
+
+&gt; So, does R5RS permit an inexact number which only one mathematical
+&gt; number rounds to?
+
+Yes, certainly.  Below I will describe two implementations of
+R5RS inexact arithmetic that have this property: the computable
+reals, and the inexact rationals with exact i/o.
+
+(Under the unfortunate influence of a flawed paper that was
+presented at the 2004 Scheme Workshop, several Scheme programmers
+have been incanting that it is not Scheme's inexact numbers that
+are inexact, but certain arithmetic operations that are inexact.
+There is a grain of truth in that slogan, but it seems to have led
+some people to an incorrect conclusion: that they can identify the
+inexact operations.  With R5RS arithmetic, *which* operations
+are inexact is determined by the implementation, not by the R5RS
+or by the programmers.  The computable reals are an important
+example of this fact.)
+
+                                * * *
+
+The computable reals.
+
+The R5RS permits an implementation to represent an inexact complex
+number x as a specially tagged procedure that, given any positive
+exact rational epsilon, returns an approximation to x that is
+within epsilon of the true value.  With this representation, all
+of the standard arithmetic operations are exact on inexact as well
+as on exact complex numbers.  Indeed, this is one of the standard
+ways in which operations on the real numbers are defined in
+mathematics.
+
+Division by zero is an error, of course---and this cannot be
+strengthened to signal an error, on pain of non-computability.
+Even so, the / procedure can be made to run in constant time,
+even when its second argument is zero.
+
+The STRING-&gt;NUMBER procedure is trivial with this representation,
+and is perfectly exact.
+
+The problems arise with the comparison predicates (which are
+defined only on reals) and with the NUMBER-&gt;STRING procedure.
+Part of the problem is that we have to know whether the
+imaginary part of an inexact number is zero before we can tell
+whether the number is real, and testing for zero is undecidable
+in general.  One solution to that is to interpret &quot;real&quot; as
+having an *exact* zero as the imaginary part, which Bradley Lucier
+recommended to us way back in 1998.
+
+To implement the comparison predicates, one might extend the
+domain of the specially tagged procedures that represent inexact
+reals to include a special flag, say an exact 0, that causes the
+procedure to return +1 if the number it represents is positive,
+-1 if the number it represents is negative, and to return 0 or
+never return if the number it represents is zero.  It is then
+the programmer's responsibility to avoid testing the sign of zero,
+just as it is to avoid division by zero.
+
+Another approach, which is probably more practical, is to make the
+comparison predicates inexact: instead of always returning the
+correct boolean value when they return, but sometimes failing to
+return, they could compute an approximation and compare the
+approximations.  This won't always return the correct answer, but
+that flakiness is explicitly allowed by the following R5RS note:
+&quot;While it is not an error to compare inexact numbers using these
+predicates, the results may be unreliable because a small inaccuracy
+may affect the result; this is especially true of = and zero?.  When
+in doubt, consult a numerical analyst.&quot;
+
+This sort of thing has been implemented, e.g. by Hans Boehm, and
+is considerably more efficient than you might think.
+
+                                * * *
+
+Inexact rationals with exact i/o.
+
+The R5RS permits an implementation in which all inexact reals
+are represented by specially tagged exact rationals.  Then the
+string-&gt;number and number-&gt;string procedures can be exact.  The
+rational arithmetic operations (+, -, *, /) could also be exact
+on rational numbers, so only the irrational operations (sqrt etc)
+would be inexact.
+
+Another possibility is to make the rational arithmetic operations
+inexact by limiting the precision of the result to the precision
+of the most precise argument.  This makes the conversion operations
+exact, but the arithmetic operations inexact.
+
+                                * * *
+
+I think the implementations described above are good ones to keep
+in mind when discussing the semantics of R5RS arithmetic.
+
+Will
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00169" href="msg00169.html">Re: inexactness vs. exactness</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+<li><strong><a name="00177" href="msg00177.html">Re: inexactness vs. exactness</a></strong>
+<ul><li><em>From:</em> Aubrey Jaffer</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00167.html">Re: inexactness vs. exactness</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00169.html">Re: inexactness vs. exactness</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00167.html">Re: inexactness vs. exactness</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00169.html">Re: inexactness vs. exactness</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00168"><strong>Date</strong></a></li>
+<li><a href="threads.html#00168"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

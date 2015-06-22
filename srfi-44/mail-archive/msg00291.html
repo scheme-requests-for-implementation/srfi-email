@@ -1,0 +1,186 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: A possible solution? -->
+<!--X-From-R13: orne <orneNfbavp.arg> -->
+<!--X-Date: Wed, 29 Oct 2003 23:59:44 +0100 (NFT) -->
+<!--X-Message-Id: Pine.LNX.4.58.0310291354050.8320@bolt.sonic.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 6F15F131&#45;0A58&#45;11D8&#45;8E6E&#45;000A95CCCEE4@evdev.ath.cx -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>A possible solution?</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00290.html">Date Prev</a>][<a href="msg00292.html">Date Next</a>][<a href="msg00288.html">Thread Prev</a>][<a href="msg00307.html">Thread Next</a>][<a href="maillist.html#00291">Date Index</a>][<a href="threads.html#00291">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>A possible solution?</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Taylor Campbell &lt;<a href="mailto:campbell@DOMAIN.HIDDEN">campbell@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: A possible solution?</li>
+<li><em>From</em>: bear &lt;<a href="mailto:bear@DOMAIN.HIDDEN">bear@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 29 Oct 2003 14:59:35 -0800 (PST)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:6F15F131-0A58-11D8-8E6E-000A95CCCEE4@DOMAIN.HIDDEN">6F15F131-0A58-11D8-8E6E-000A95CCCEE4@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:6F15F131-0A58-11D8-8E6E-000A95CCCEE4@DOMAIN.HIDDEN">6F15F131-0A58-11D8-8E6E-000A95CCCEE4@xxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+I've been thinking about this; yesterday I quit brooding about
+how much the situation annoys me and started trying to think
+constructively.  So...  I've got a suggestion.  I'm going to
+propose a change that might meet your goals here without running
+afoul of the issues that seem to be making problems.
+
+I do dispatch and OO programming all the time in scheme, and I don't
+use any of the popular &quot;OO&quot; frameworks because it's so simple to do
+OO programming that there's really no need for them.  SRFI-44 does
+not need to depend on any OO framework or library to get dynamic
+dispatch based on the collection type.
+
+If it is desired to have a &quot;generic&quot; interface that can work on
+collections yet to be defined, then we have to specify how those
+collections can assume a form that will make sense to that interface.
+And that doesn't necessarily mean function names, it just means
+ways to find the functions themselves programmatically.  In scheme,
+that's easy; we can store functions in local variables or structures,
+just like anything else.
+
+Therefore consider as a possibility, a vector a few dozen elements
+long.  Let the first element, at index zero, contain a symbol that
+gives the type of the collection.  Let the element at index 1 contain
+a pointer to the actual data of the collection, whether it's a hash
+table or a btree or an association list or whatever.  Let the element
+at index 2 contain whichever procedure can be used to insert! an
+element into the collection.
+
+Then you have the possibility of a generic interface for  collections
+of the form,
+
+(define coll-insert!
+  (lambda (coll addition)
+    ((vector-ref coll 2)(vector-ref coll 1) addition)))
+
+(define coll-type
+   (lambda (coll)
+     (vector-ref coll 0)))
+
+and so on...
+
+You wouldn't really write raw index numbers; this would happen
+inside a let-syntax that associated nice symbolic names with
+index numbers to simplify maintenance.
+
+And any future collection author, if they provide the same
+vector of functions and the same initial pointer to the data
+structure, can provide a collection that uses coll-insert!
+and coll-type.
+
+This wipes out your name and argument conflicts; you don't need
+individual names for all the functions on all the collection
+types, you just need a few dozen names, all of the form &quot;coll-*&quot;
+or &quot;dict-*&quot;, that nobody else is using.  Future collection
+and dictionary authors will need to use one name only, a name
+of the form &quot;make-*-collection&quot; or &quot;make-*-dictionary,&quot; that
+returns a collection or dictionary &quot;object&quot; (which is just
+a vector of data and functions).
+
+The mechanism is extensible; you may develop only 20-30 &quot;generic&quot;
+functions and then let future SRFI authors add more as needs are
+discovered.
+
+For performance reasons, let there always be a constant vector
+index at compile time, so the function lookups can always be
+O(1) - even inlined if the compiler is smart - and then maybe
+bitgrinders like me won't be too disgusted with its efficiency
+to use it.  This avoids type-checking overhead for sequential
+checks against various collection types entirely, replacing all
+of them with a single O(1) vector lookup.
+
+The mechanism allows default implementations for &quot;efficiency&quot;
+functions (functions that can be implemented more efficiently
+on some structures than your generic few operators allow):
+They can be coded using the generic operators and provided
+by a make-collection function.  Then the implementor of, say,
+make-olist-collection will start with the vector returned from
+make-collection and, if she doesn't override whichever functions
+are profoundly stupid for olists, then she &quot;inherits&quot; generic
+versions of them from the collection SRFI that will work anyway,
+however slowly. In fact he could just copy the minimal form he
+gets back from make-collection into a longer vector and
+define a few new &quot;coll-*&quot; or &quot;dict-*&quot; functions himself if
+there wasn't any place for his new stuff in the vector you
+defined.
+
+It becomes the responsibility of the implementors of future
+collections to provide at least the few generic functions that
+will make the &quot;generics&quot; work, but they could still override
+any stupidities in a very well-defined way without breaking the
+structure of the collection interface.
+
+And it'll work.  Immediately.  And it'll be totally clear to
+everybody how to write collections that this interface can use.
+
+				Bear
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00307" href="msg00307.html">RE: A possible solution?</a></strong>
+<ul><li><em>From:</em> Anton van Straaten</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00288" href="msg00288.html">Re: API conflicts (Was: Re: Reasons for withdrawal)</a></strong>
+<ul><li><em>From:</em> Taylor Campbell</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00290.html">Re: API conflicts</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00292.html">Re: API conflicts</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00288.html">Re: API conflicts (Was: Re: Reasons for withdrawal)</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00307.html">RE: A possible solution?</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00291"><strong>Date</strong></a></li>
+<li><a href="threads.html#00291"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,150 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Re: [srfi&#45;70] Limit -->
+<!--X-From-R13: "Qubatxnv Luh" <zngurzngvpnNpvgvm.arg> -->
+<!--X-Date: Wed, 15 Jun 2005 06:26:19 +0200 (DFT) -->
+<!--X-Message-Id: 20050615042546.24839136@mx1.informatik.uni&#45;tuebingen.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Re: [srfi-70] Limit</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00066.html">Date Prev</a>][<a href="msg00068.html">Date Next</a>][<a href="msg00075.html">Thread Prev</a>][<a href="msg00069.html">Thread Next</a>][<a href="maillist.html#00067">Date Index</a>][<a href="threads.html#00067">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Re: [srfi-70] Limit</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &quot;Aubrey Jaffer&quot; &lt;<a href="mailto:agj@DOMAIN.HIDDEN">agj@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Re: [srfi-70] Limit</li>
+<li><em>From</em>: &quot;Chongkai Zhu&quot; &lt;<a href="mailto:mathematica@DOMAIN.HIDDEN">mathematica@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 15 Jun 2005 12:25:24 +0800</li>
+<li><em>Cc</em>: &quot;srfi-70&quot; &lt;<a href="mailto:srfi-70@DOMAIN.HIDDEN">srfi-70@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-70@DOMAIN.HIDDEN">srfi-70@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>  
+======= At 2005-06-14, 03:33:33 Aubrey Jaffer wrote: =======
+
+&gt;That bug has been corrected:
+&gt;
+&gt;&gt; (limit (lambda (x) (* -1 x (log x))) 0 1e-9)
+&gt;102.70578127633066e-12
+&gt;&gt; (limit (lambda (x) (* -1 x (log x))) 0 1e-222)
+&gt;0.0
+&gt;
+&gt;<a  rel="nofollow" href="http://savannah.gnu.org/cgi-bin/viewcvs/scm/scm/Transcen.scm?rev=HEAD&amp;content-type=text/vnd.viewcvs-markup">http://savannah.gnu.org/cgi-bin/viewcvs/scm/scm/Transcen.scm?rev=HEAD&amp;content-type=text/vnd.viewcvs-markup</a>
+&gt;has the new limit code.
+&gt;
+&gt;<a  rel="nofollow" href="http://swiss.csail.mit.edu/~jaffer/III/Limit.html">http://swiss.csail.mit.edu/~jaffer/III/Limit.html</a>
+&gt;explains the mathematics and algorithm.
+&gt;
+&gt;The documentation for the new limit procedure is appended.
+&gt;
+&gt; | When you try to fix the reference implementation, you will find that
+&gt; | it cannot be fixed because it comes from the &quot;black box&quot; procedure:
+&gt;
+&gt;It took some hard work, but the new limit procedure does treat its
+&gt;procedure argument as a black box, never calling it at the limit
+&gt;point.  It essentially detects whether the function is convex or
+&gt;concave near the limit point and uses polynomial extrapolation, either
+&gt;from the function or its inverse, to estimate the limit value.  The
+&gt;inverse function extrapolation is currently limited to quadratic;
+&gt;higher order fitting can certainly be done, but the equations get big.
+&gt;
+&gt; | Bottom line: In the end, LIMIT might do more harm than it is worth.
+&gt; | You might want to reconsider if it is a feature that is essential for
+&gt; | the Scheme programming language itself.
+&gt;
+&gt;The new limit procedure works better than I had expected; even
+&gt;handling a nasty example from an old Macsyma manual (see appended
+&gt;examples).  Arguments that limits are too esoteric or new
+&gt;counterexamples may yet scuttle them from srfi-70.
+&gt;
+
+A counterexample:
+
+&gt; (limit (lambda (x) (exp (expt x -2))) 0.1 0.2)
++1/0
+&gt; (exp (expt 0.1 -2))
+2.6881171418161084e+043
+&gt; (limit (lambda (x) (exp (expt x -2))) 0.1 0.1000001)
++1/0
+&gt; (limit (lambda (x) (exp (expt x -2))) 0.1 0.1000000001)
++1/0
+
+As I understand the problem, a 'limit that treats the procedure as 
+a &quot;black box&quot; is unsolvable. Even if you fix this particular 
+counterexample, the new 'limit will have other counterexamples. 
+Something similar to the halting-problem.
+
+The additional argument k itself shows that the 'limit seems 
+un-Scheme-ish. Could you tell another Scheme procedrue (either 
+from R?RS or some other SRFI) that has a similar additional 
+argument?
+
+For Computer Algebra Systems, procedures such as 'limit are only
+supposed to &quot;do right&quot; for daily inputs. But Scheme is requested
+to be &quot;well-defined&quot; &quot;unambiguous, aesthetically appealing, and 
+consistent specications&quot;. Copying something from CASs into Scheme 
+is is both overly ambitious and unnecessary.
+
+-
+Chongkai Zhu
+The right idea was actually had very early, but somehow didn't win for a long time.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00069" href="msg00069.html">Re: [srfi-70] Limit</a></strong>
+<ul><li><em>From:</em> Aubrey Jaffer</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00066.html">Re: [srfi-70] Limit</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00068.html">Revision of SRFI 70 available</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00075.html">LIMIT recommendations</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00069.html">Re: [srfi-70] Limit</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00067"><strong>Date</strong></a></li>
+<li><a href="threads.html#00067"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

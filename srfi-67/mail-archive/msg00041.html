@@ -1,0 +1,163 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: vector compare -->
+<!--X-From-R13: =?WEA&#45;8859&#45;1?C?Xraf_Okry_E=T8tnneq?= <wrafnkryNfbrtnneq.arg> -->
+<!--X-Date: Thu,  9 Jun 2005 17:45:36 +0200 (DFT) -->
+<!--X-Message-Id: 42A86397.7040806@soegaard.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: OF7B1F9CDE.F4ED119E&#45;ONC125701B.0027F89A&#45;C125701B.002840B7@philips.com -->
+<!--X-Reference: 42A7F6CF.2090106@bothner.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: vector compare</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00040.html">Date Prev</a>][<a href="msg00042.html">Date Next</a>][<a href="msg00038.html">Thread Prev</a>][<a href="msg00042.html">Thread Next</a>][<a href="maillist.html#00041">Date Index</a>][<a href="threads.html#00041">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: vector compare</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>Subject</em>: Re: vector compare</li>
+<li><em>From</em>: Jens Axel S&#xF8;gaard &lt;<a href="mailto:jensaxel@DOMAIN.HIDDEN">jensaxel@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 09 Jun 2005 17:43:19 +0200</li>
+<li><em>Cc</em>: <a href="mailto:srfi-67@DOMAIN.HIDDEN">srfi-67@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-67@DOMAIN.HIDDEN">srfi-67@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:42A7F6CF.2090106@DOMAIN.HIDDEN">42A7F6CF.2090106@xxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:OF7B1F9CDE.F4ED119E-ONC125701B.0027F89A-C125701B.002840B7@DOMAIN.HIDDEN">OF7B1F9CDE.F4ED119E-ONC125701B.0027F89A-C125701B.002840B7@xxxxxxxxxxx</a>&gt; &lt;<a href="mailto:42A7F6CF.2090106@DOMAIN.HIDDEN">42A7F6CF.2090106@xxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mozilla Thunderbird 1.0.2 (Windows/20050317)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+Per Bothner wrote:
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Sebastian Egner wrote:
+</pre></blockquote><pre style="margin: 0em;">
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+ &gt; The default compare for vectors is unusual, and more critically it is
+ &gt; incompatible with the default compare for lists and strings.
+ &gt; The latter are both lexicographic compare.
+
+Correct. In this SRFI, vectors are compared first by length and then
+lexicographically by default.
+</pre></blockquote></blockquote><pre style="margin: 0em;">
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Do you have any examples or use cases or algorithms that are simpler
+when using this &quot;natural order&quot;?  What prior art is there for
+using this order?
+</pre></blockquote><pre style="margin: 0em;">
+
+As Sebastian argues, there not 1 natural order of vectors, but the
+ordering in the srfi is /a/ natural order. A concrete
+example is the sorting of polynomials:
+
+     x^3 &gt; x^2 + 1 &gt; x^2 &gt; 42
+
+A concrete representation in terms of vectors yields:
+
+  #(3 0 0 0) &gt; #(2 0 1) &gt; #(2 0 0) &gt; #(42)
+
+
+
+The choice of default order should also be seen in the light of:
+
+  &quot;The purpose of default-compare is providing some well-defined way
+  of comparing two arbitrary Scheme values. This can be used in all
+  situations in which the user is unwilling to define a compare
+  procedure explicitly, for example because the actual details of
+  the total order do not really matter.&quot;
+
+Consider now the case where you have a list of vectors of numbers,
+and wants to convert it to a set of of vectors of numbers. An
+obvious plan is to sort the list, and then make a single traversal
+of the sorted list skipping duplicates. In this scenario the
+actual order is unimportant.
+
+Suppose now that we have the following list:
+
+  (list #10000(0 ... 0 1)
+        #10001(0 ... 0 2)
+        #10002(0 ... 0 3)
+        #10003(0 ... 0 4))
+
+In this scenerio the order used in the srfi is better
+efficiencywise than the lexicographical order -- and not
+only by a constant factor.
+
+It is also possible to find a list where the srfi-ordering
+is slower than the lexicograpic, but the slow down
+will be bounded by a small constant factor. E.g.
+
+  (list #10000(0 ... 0 1)
+        #10000(0 ... 0 2)
+        #10000(0 ... 0 3)
+        #10000(0 ... 0 4))
+
+--
+Jens Axel S&#xF8;gaard
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00042" href="msg00042.html">Re: vector compare</a></strong>
+<ul><li><em>From:</em> Donovan Kolbly</li></ul></li>
+<li><strong><a name="00043" href="msg00043.html">Re: vector compare</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00037" href="msg00037.html">Re: vector compare</a></strong>
+<ul><li><em>From:</em> Sebastian Egner</li></ul></li>
+<li><strong><a name="00038" href="msg00038.html">Re: vector compare</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00040.html">Re: vector compare</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00042.html">Re: vector compare</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00038.html">Re: vector compare</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00042.html">Re: vector compare</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00041"><strong>Date</strong></a></li>
+<li><a href="threads.html#00041"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

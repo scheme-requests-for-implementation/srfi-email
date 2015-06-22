@@ -1,0 +1,154 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: More JNI vs. Pika comparison -->
+<!--X-From-R13: Xvz Pynaql <wvzoNerqung.pbz> -->
+<!--X-Date: Wed, 25 Feb 2004 00:23:50 +0100 (NFT) -->
+<!--X-Message-Id: vt2smh0m5bs.fsf@zenia.home -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: vt2d68dgulx.fsf@zenia.home -->
+<!--X-Reference: 200402201751.JAA02622@morrowfield.regexps.com -->
+<!--X-Reference: vt2d684nn61.fsf@zenia.home -->
+<!--X-Reference: 200402242251.OAA01791@morrowfield.regexps.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: More JNI vs. Pika comparison</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00467.html">Date Prev</a>][<a href="msg00469.html">Date Next</a>][<a href="msg00467.html">Thread Prev</a>][<a href="msg00469.html">Thread Next</a>][<a href="maillist.html#00468">Date Index</a>][<a href="threads.html#00468">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: More JNI vs. Pika comparison</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Tom Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: More JNI vs. Pika comparison</li>
+<li><em>From</em>: Jim Blandy &lt;<a href="mailto:jimb@DOMAIN.HIDDEN">jimb@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: 24 Feb 2004 18:21:43 -0500</li>
+<li><em>Cc</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:200402242251.OAA01791@DOMAIN.HIDDEN">200402242251.OAA01791@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:vt2d68dgulx.fsf@DOMAIN.HIDDEN">vt2d68dgulx.fsf@xxxxxxxxxx</a>&gt;	&lt;<a href="mailto:200402201751.JAA02622@DOMAIN.HIDDEN">200402201751.JAA02622@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:vt2d684nn61.fsf@DOMAIN.HIDDEN">vt2d684nn61.fsf@xxxxxxxxxx</a>&gt;	&lt;<a href="mailto:200402242251.OAA01791@DOMAIN.HIDDEN">200402242251.OAA01791@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Sender</em>: <a href="mailto:jimb@DOMAIN.HIDDEN">jimb@xxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Gnus/5.09 (Gnus v5.9.0) Emacs/21.3</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+Tom Lord &lt;lord@xxxxxxx&gt; writes:
+&gt;     &gt; Where did reference counting come from?  I don't think I've ever
+&gt;     &gt; mentioned it.  
+&gt; 
+&gt; My faulty memory, apparently.   I'm surprised you wouldn't have
+&gt; specified it that way in the first place.
+
+Maybe I should have...
+
+&gt;     &gt; The Minor interface doesn't include any, nor does the
+&gt;     &gt; actual JNI, as far as I know.  Is there some use case where simply
+&gt;     &gt; duplicating references won't work just as well?
+&gt; 
+&gt; Obviously.   Anytime you want a location shared by multiple data
+&gt; structures whose lifetimes are independent of one another.
+
+I guess I'm having a hard time imagining when that's necessary.  Minor
+references aren't mutable, so there's no question of allowing one data
+structure to &quot;see&quot; changes made by another one.  It seems like you can
+replace scm_location_unref with mn_free_reference, scm_location_ref
+with mn_make_local_ref, and '==' on 't_scm_word *' values with
+'mn_ref_eq', and you must be done.  What am I missing?
+
+
+&gt; It's a question of locality of changes.   In my code, with the
+&gt; explicit UNREFS, if I need to add an additional use of $1 and $2 I
+&gt; just insert code before the unrefs.   In your code, with the semantics
+&gt; of &quot;_to_cons&quot;, I need (1) change the _to_cons call to something else;
+&gt; (2) insert the new code; (3) append the explicit deallocations.
+
+How is this different from what you have to do when you discover you
+need a Pika value after the point where it's currently freed?  You
+have to:
+
+1) delete the extant scm_location_unref call,
+2) add your new use of the location, and then
+3) add a new scm_location_unref call at an appropriate place.
+
+In the Minor interface, the original 'free' is harder to spot, because
+it's folded into the name of a function whose primary job is something
+else (consing).  In the Pika interface, the original free is easy to
+spot, but it's an extra line of code that must appear whether you
+actually need it to be distinct or not.
+
+I think this is a disagreement about whether it's helpful to introduce
+abbreviations that must be un-abbreviated when they no longer apply;
+reasonable people's tastes can differ.  But neither proposal for this
+Bison scenario escapes the need for careful reading --- explicit free
+is a pain in the butt in both cases.
+
+Regardless of whether Minor's legibility is legit or not, we agree
+that explicitly-freed references, much like Minor's, are also
+necessary in Pika --- that's what's important to me.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00469" href="msg00469.html">Re: More JNI vs. Pika comparison</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00461" href="msg00461.html">More JNI vs. Pika comparison</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+<li><strong><a name="00465" href="msg00465.html">Re: More JNI vs. Pika comparison</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00466" href="msg00466.html">Re: More JNI vs. Pika comparison</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+<li><strong><a name="00467" href="msg00467.html">Re: More JNI vs. Pika comparison</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00467.html">Re: More JNI vs. Pika comparison</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00469.html">Re: More JNI vs. Pika comparison</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00467.html">Re: More JNI vs. Pika comparison</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00469.html">Re: More JNI vs. Pika comparison</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00468"><strong>Date</strong></a></li>
+<li><a href="threads.html#00468"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,243 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Traits, dictionaries -->
+<!--X-From-R13: fptzvyyrNserrargcebwrpg.bet -->
+<!--X-Date: Mon, 20 Oct 2003 20:57:14 +0200 (DFT) -->
+<!--X-Message-Id: 20031020185704.GB26827@freenetproject.org -->
+<!--X-Content-Type: multipart/signed -->
+<!--X-Reference: 20031016105959.GG8421@loki.vpn.szonye.com -->
+<!--X-Reference: 20031016170717.GA9033@freenetproject.org -->
+<!--X-Reference: 20031016192923.GC2858@ogre.szonye.com -->
+<!--X-Derived: pgpTm9qgPyJ5C.pgp -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Traits, dictionaries</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00093.html">Date Prev</a>][<a href="msg00095.html">Date Next</a>][<a href="msg00090.html">Thread Prev</a>][<a href="msg00096.html">Thread Next</a>][<a href="maillist.html#00094">Date Index</a>][<a href="threads.html#00094">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Traits, dictionaries</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Traits, dictionaries</li>
+<li><em>From</em>: <a href="mailto:scgmille@DOMAIN.HIDDEN">scgmille@xxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Date</em>: Mon, 20 Oct 2003 13:57:04 -0500</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20031016192923.GC2858@DOMAIN.HIDDEN">20031016192923.GC2858@xxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Mail-followup-to</em>: <a href="mailto:scgmille@DOMAIN.HIDDEN">scgmille@xxxxxxxxxxxxxxxxx</a>,	<a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>References</em>: &lt;<a href="mailto:20031016105959.GG8421@DOMAIN.HIDDEN">20031016105959.GG8421@xxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20031016170717.GA9033@DOMAIN.HIDDEN">20031016170717.GA9033@xxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20031016192923.GC2858@DOMAIN.HIDDEN">20031016192923.GC2858@xxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mutt/1.5.4i</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; I think the SRFI is only missing two important feature traits:
+&gt; 
+&gt;     reversible-collection?      supports collection-reverse-fold
+&gt;     finite-collection?          collection-fold will halt on its own
+
+finite-collection? is arguably the same as (not (collection-size 
+collection)).  Infinite collections *must* return #f from that function.
+
+Others are permitted to do so if they cannot determine their own size 
+efficiently.
+
+I've added the reversible collection attribute to the SRFI and updated 
+at <a  rel="nofollow" href="http://sgmiller.org/code/srfi-44.html">http://sgmiller.org/code/srfi-44.html</a>.  
+
+&gt; This sort of thing is also handy for collections like circular lists,
+&gt; wrap-around vectors, and similar collections.
+Maybe, maybe not.  The semantics of collection-fold are such that
+an enumeration over a collection should enumerate once over all the 
+values in the collection unless halted by the folding function.
+
+Circular lists and simliar collections can be created using the 
+negative index trick hinted at by the SRFI, but I'm unsure whether 
+folds should proceed indefinitely over finite collections.  Other 
+thoughts?
+
+&gt; The mutable-collection? trait is essentially a performance trait. It
+&gt; tells you to prefer the *-proc!! interfaces over the functional
+&gt; interfaces. (By the way, I agree with Matthias Radestock: The ! and !!
+&gt; procedures seem redundant. Do you know of any case where it's important
+&gt; to actually distinguish between the two? It seems to me that you could
+&gt; always trivially implement ! by returning the result of !!.) It's also a
+&gt; feature trait, because it tells you about the interface, even if you
+&gt; merge ! and !!: It tells you that you're allowed to ignore the returned
+&gt; value of the mutable methods, because it's always eq? to the input
+&gt; collection.
+
+The !/!! distinction is to aid in the readability of code primarily.  
+Its unclear looking at the following code what will be returned if 
+! were the same as !! without a test for mutable-collection?:
+
+(let ([c (make-foo-collection)])
+  (foo-add! c 3)
+  (foo-add! c 4)
+  (foo-add! c 5))
+
+Thats a weak example, here's a better one.  Imagine this following piece
+of code occurs in a program:
+
+(define (add-two collection a b)
+  (bag-add! collection a)
+  (bag-add! collection b))
+
+If ! is the same as !!, this code may break in a bizarre way if the 
+input collection is changed at some point from a mutable to non-mutable
+collection.  If it were bag-add!! instead, a clear error about the 
+operation being undefined should be raised instead.
+
+
+&gt; 
+&gt; 1. The reversible-collection? and finite-collection? feature traits are
+&gt;    NECESSARY to implement several desirable collections.
+finite-collection? may not be necessary.  Reversible is in.
+
+&gt; 
+&gt; 2. The bidirectional-collection? and random-access-collection?
+&gt;    performance traits would be HELPFUL for generic programming.
+I'd prefer that be left to another SRFI.
+
+&gt; 
+&gt; 3. I recommend merging the ! and !! procedures unless there's a strong
+&gt;    argument not to.
+See above.
+
+&gt; &gt;&gt; 2. Equivalence of dictionaries
+&gt; 
+&gt; &gt; This is a weakness in the wording I imagine.  Dictionaries compare
+&gt; &gt; keys and values using the same equivalence function, which takes two
+&gt; &gt; values at a time, not key/value pairs.  The equivalence function would
+&gt; &gt; be applied to two keys, one from each dictionary, then two the two
+&gt; &gt; values from each dictionary mapping.
+&gt; 
+&gt; That's a reasonable default, but it must not be a requirement, because
+&gt; it makes some dictionaries impossible to implement!
+&gt; 
+&gt; For example, consider a dictionary that maps case-insensitive user IDs
+&gt; to case-sensitive user names. There's no straightforward way to
+&gt; implement this. You could do it by encapsulating the keys or values in
+&gt; some other data structure, but why? That's just a hack to accommodate an
+&gt; inflexible interface.
+&gt; 
+&gt; It would be better to have separate equivalence predicates for the keys
+&gt; and the values (if necessary). Here's how I'd spec the constructor:
+&gt; 
+&gt;     (unordered-dictionary [key-eqv? [val-eqv?]] pair ...)
+&gt;     (ordered-dictionary [less?] [val-eqv?] pair ...)
+&gt; 
+&gt; For unordered dictionaries, key-eqv? and val-eqv? both default to eqv?.
+&gt; Ordered dictionaries are similar, except that they can derive key-eqv?
+&gt; from less?, as long as it's a strict weak order (which includes &lt; but
+&gt; not partial orders like &lt;=).
+
+I almost agree.  I'd prefer the value equivalence function be the 
+default, as it fits with the rest of the SRFI that values, not keys, are
+the default visible element of a dictionary when used ignorantly.
+
+&gt; 
+&gt; This complicates *-equivalence-function, since there's now more than one
+&gt; of them. I can think of three ways to deal with that:
+&gt; 
+&gt; &quot;default&quot; equivalence function operates on keys. I can think of two ways
+&gt; to fix *that*:
+&gt; 
+&gt; 2a. As above, but *-equivalence-function =&gt; *-value-equivalence-function.
+&gt; 
+&gt; Bad idea, because the equivalence function is supposed to &quot;return true
+&gt; if they should be considered equivalent for the purposes of contains?,
+&gt; value insertion, removal, and key lookup.&quot;
+
+I prefer making *-equivalence-function return the value equivalence 
+function as above, but change the wording of the above sentence to 
+match.
+
+&gt; 
+&gt; 1. Dictionaries MUST have separate key-eqv? and val-eqv? predicates.
+Sure.
+
+&gt; 
+&gt; 2. Ordered dictionaries SHOULD derive key-eqv? from the ordering
+&gt;    predicate whenever possible. Specifically, they should encourage
+&gt;    strict weak orders and discourage partial orders, which makes the
+&gt;    less-&gt;eqv? conversion possible.
+Sure.
+
+&gt; 3. A dictionary's *-equivalence-function SHOULD return the key
+&gt;    comparator. Dictionaries should have at least one additional accessor
+&gt;    to obtain the value comparator.
+I argue it should return the value comparator, 
+*-key-equivalence-function returns the key comparator, and specifying 
+only one equivalence function causes both key and value to use said 
+function.
+
+	Scott
+</pre><p><strong>Attachment:
+<a href="pgpTm9qgPyJ5C.pgp" ><tt>pgpTm9qgPyJ5C.pgp</tt></a></strong><br>
+<em>Description:</em> PGP signature</p>
+
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00096" href="msg00096.html">Re: Traits, dictionaries</a></strong>
+<ul><li><em>From:</em> scgmille</li></ul></li>
+<li><strong><a name="00098" href="msg00098.html">Re: Traits, dictionaries</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00083" href="msg00083.html">Bidirectionality and other comments</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+<li><strong><a name="00086" href="msg00086.html">Re: Bidirectionality and other comments</a></strong>
+<ul><li><em>From:</em> scgmille</li></ul></li>
+<li><strong><a name="00090" href="msg00090.html">Traits, dictionaries</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00093.html">Re: s/-LEFT//g?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00095.html">Re: s/-LEFT//g?</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00090.html">Traits, dictionaries</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00096.html">Re: Traits, dictionaries</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00094"><strong>Date</strong></a></li>
+<li><a href="threads.html#00094"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

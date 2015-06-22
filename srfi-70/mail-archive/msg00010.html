@@ -1,0 +1,195 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: My suggestions to the R6RS committee about numerics -->
+<!--X-From-R13: Ohoerl Xnssre <ntwNnyhz.zvg.rqh> -->
+<!--X-Date: Fri, 20 May 2005 21:13:09 +0200 (DFT) -->
+<!--X-Message-Id: 20050520191313.4B90C1B77B4@voluntocracy.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: y9ly8acfewc.fsf@sams.informatik.uni&#45;tuebingen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: My suggestions to the R6RS committee about numerics</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00009.html">Date Prev</a>][<a href="msg00011.html">Date Next</a>][<a href="msg00003.html">Thread Prev</a>][<a href="msg00016.html">Thread Next</a>][<a href="maillist.html#00010">Date Index</a>][<a href="threads.html#00010">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: My suggestions to the R6RS committee about numerics</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:lucier@DOMAIN.HIDDEN">lucier@xxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: My suggestions to the R6RS committee about numerics</li>
+<li><em>From</em>: Aubrey Jaffer &lt;<a href="mailto:agj@DOMAIN.HIDDEN">agj@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 20 May 2005 15:13:13 -0400 (EDT)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-70@DOMAIN.HIDDEN">srfi-70@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-70@DOMAIN.HIDDEN">srfi-70@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:y9ly8acfewc.fsf@DOMAIN.HIDDEN">y9ly8acfewc.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt; (message from	Bradley Lucier on Wed, 18 May 2005 22:38:43 +0200)</li>
+<li><em>References</em>: &lt;<a href="mailto:y9ly8acfewc.fsf@DOMAIN.HIDDEN">y9ly8acfewc.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre> | From: Bradley Lucier &lt;lucier@xxxxxxxxxxxxxxx&gt;
+ | Date: Wed, 18 May 2005 22:38:43 +0200
+ | 
+ | .., I sent document about proposed changes to numerics to
+ | Marc Feeley last March to forward to the committee.  Since then my
+ | thinking has evolved a bit, but I thought I would just include my
+ | comments verbatim here.
+ | 
+ | Brad
+ | 
+ | The first part deals with IEEE 754/854 arithmetic.  If you don't
+ | support this arithmetic, then things are still up in the air.
+ | 
+ | 6.1 Equivalence predicates
+ | ...
+ |     Note: This section does not state under which conditions eqv?
+ |     returns #t or #f for inexact numbers that are not in IEEE 754/854
+ |     format.  We recommend that numbers not in IEEE 754/854 format for
+ |     which a base, sign, number of exponent digits, exponent bias,
+ |     biased exponent, number of significand digits, and significand can
+ |     be defined follow the same rules as above.
+
+Why are you restricting the specification of inexacts to IEEE-754/854
+arthmetic?
+
+ | 6.2.5. Numerical operations
+ | 
+ | (number? obj )                           procedure
+ | (complex? obj )                          procedure
+ | (real? obj )                             procedure
+ | (rational? obj )                         procedure
+ | (integer? obj )                          procedure
+...
+ | 			      &lt;add this&gt;
+ | If an implementation uses IEEE 754/854 format for inexact numbers then:
+ | 
+ | * If z is an inexact complex number, then (real? z) is true if and
+ |   only if both (exact? (imag-part z)) and (zero? (imag-part z)) are
+ |   true.
+...
+ | For implementations that allow (real z) and (imag z) to have different
+ | exactness, then (exact? z) returns #t if and only if both (exact?
+ | (real z)) and (exact? (imag z)) return #t.
+ | 			  &lt;end of addition&gt;
+
+A number is either exact or inexact; and a complex number (like a
+rational number) is one number, not two.  Exactness thus applies to
+the whole complex number, not to its components.
+
+ | 		  &lt;change the following predicates&gt;
+ | (zero? z) library procedure
+ | (positive? x) library procedure
+ | (negative? x) library procedure
+ | (odd? n) library procedure
+ | (even? n) library procedure
+ | These numerical predicates test a number for a particular
+ | property, returning #t or #f.
+ | 
+ | If an implementation uses IEEE 754/854 format for its inexact numbers,
+ | then zero?, positive?, and negative? return #f if called with a NaN
+ | argument.
+
+The names of the arguments already restrict positive?, negative?, odd?
+and even? to argument types to which NaN does not belong.  Passing NaN
+to them is an error.
+
+ | 		  &lt;change the following procedures&gt;
+ | 
+ | (max x1 x2 : : : ) library procedure
+ | (min x1 x2 : : : ) library procedure
+ | 
+ | These procedures return the maximum or minimum of their arguments.
+ | 
+ | (max 3 4) =) 4 ; exact
+ | (max 3.9 4) =) 4.0 ; inexact
+ | 
+ | If an implementation uses IEEE 754/854 format for its inexact numbers,
+ | and any of the arguments to max and min are NaNs, then max and min
+ | returns one of the NaN arguments as its result.
+
+IEEE NaN is not real, having no position in the well-ordered
+real-numbers.  It is thus an illegal argument to MAX, MIN, &lt;, &lt;=, &gt;,
+and &gt;=.
+
+ | 		  &lt;change the following procedures&gt;
+ | (+ z1 : : : ) procedure
+ | (* z1 : : : ) procedure
+ | 
+ | These procedures return the sum or product of their arguments.
+ | 
+ | (+ 3 4) =) 7
+ | (+ 3) =) 3
+ | (+) =) 0
+ | (* 4) =) 4
+ | (*) =) 1
+ | 
+ |     Note: We recommend that (+ 0 z) =&gt; z, (* 1 z) =&gt; z, and (* 0 z) =&gt;
+ |     0 for all z.  This simplifies some rules for addition and
+ |     multiplication for complex and inexact numbers if an
+ |     implementation uses IEEE 754/854 format for its inexact
+ |     arithmetic.
+
+Processors have either hardware to manipulate floating-point numbers,
+or library routines to emulate the hardware.  Changing the IEEE-754
+rules (so that 0 * NaN --&gt; 0) will complicate, not simplify the
+implementation of numerics.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00017" href="msg00017.html">Re: My suggestions to the R6RS committee about numerics</a></strong>
+<ul><li><em>From:</em> Bradley Lucier</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00001" href="msg00001.html">My suggestions to the R6RS committee about numerics</a></strong>
+<ul><li><em>From:</em> Bradley Lucier</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00009.html">Re: is NaN a number?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00011.html">Re: FP Hardware</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00003.html">Re: My suggestions to the R6RS committee about numerics</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00016.html">Re: My suggestions to the R6RS committee about numerics</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00010"><strong>Date</strong></a></li>
+<li><a href="threads.html#00010"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

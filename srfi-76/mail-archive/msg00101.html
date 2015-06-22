@@ -1,0 +1,222 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Eq? issue -->
+<!--X-From-R13: [nepva 'Cepmnx' Ybjnypmlx <depmnxNxaz.bet.cy> -->
+<!--X-Date: Sat,  7 Jan 2006 01:12:12 +0100 (MET) -->
+<!--X-Message-Id: 87k6dcdhh9.fsf@qrnik.zagroda -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: Pine.GSO.4.60.0601040239320.562@now.het.brown.edu -->
+<!--X-Reference: y9lbqyqy0kd.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: Pine.GSO.4.60.0601060942210.5508@now.het.brown.edu -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Eq? issue</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00100.html">Date Prev</a>][<a href="msg00102.html">Date Next</a>][<a href="msg00100.html">Thread Prev</a>][<a href="msg00102.html">Thread Next</a>][<a href="maillist.html#00101">Date Index</a>][<a href="threads.html#00101">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Eq? issue</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-76@DOMAIN.HIDDEN">srfi-76@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Eq? issue</li>
+<li><em>From</em>: Marcin 'Qrczak' Kowalczyk &lt;<a href="mailto:qrczak@DOMAIN.HIDDEN">qrczak@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 07 Jan 2006 01:11:46 +0100</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-76@DOMAIN.HIDDEN">srfi-76@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:Pine.GSO.4.60.0601060942210.5508@DOMAIN.HIDDEN">Pine.GSO.4.60.0601060942210.5508@xxxxxxxxxxxxxxxxx</a>&gt; (Andre van Tonder's message of &quot;Fri, 6 Jan 2006 10:13:07 -0500 (EST)&quot;)</li>
+<li><em>Mail-followup-to</em>: <a href="mailto:srfi-76@DOMAIN.HIDDEN">srfi-76@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>References</em>: &lt;<a href="mailto:Pine.GSO.4.60.0601040239320.562@DOMAIN.HIDDEN">Pine.GSO.4.60.0601040239320.562@xxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:y9lbqyqy0kd.fsf@DOMAIN.HIDDEN">y9lbqyqy0kd.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:Pine.GSO.4.60.0601060942210.5508@DOMAIN.HIDDEN">Pine.GSO.4.60.0601060942210.5508@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Sender</em>: Marcin 'Qrczak' Kowalczyk &lt;<a href="mailto:qrczak@DOMAIN.HIDDEN">qrczak@xxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Gnus/5.1006 (Gnus v5.10.6) Emacs/21.4 (gnu/linux)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Andre van Tonder &lt;andre@xxxxxxxxxxxxxxxxx&gt; writes:
+
+&gt; Understood.  Is there a good reason to conflate eq?-behaviour with
+&gt; field mutability, though.
+
+For comparison let me describe the design of type definitions in my
+language Kogut. I feel it's a bit similar to SRFI-76, considering that
+it was developed completely independently.
+
+The common form of a type definition is:
+
+   type &lt;type-name&gt; = &lt;constructor-name&gt; &lt;parameters&gt; {
+      &lt;definitions&gt;
+   };
+
+Parameters are patterns (similarly to ML and Haskell, i.e.
+an identifier matches any value and binds it to a constant).
+Definitions are arbitrary local definitions: constants, functions,
+mutable variables, lazy variables, dynamically scoped variables,
+references with custom behavior, expressions executed for side
+effects etc.
+
+The constructor is a regular function. When it's invoked, it matches
+arguments to parameters and executes definitions in the resulting
+environment. Definitions are scoped like proposed LETREC* in Scheme.
+
+The constructor returns an object with the given type tag, and
+which makes available to the outside names bound by parameters and
+definitions.
+
+A pattern of the form 'var &lt;name&gt;' matches any value and creates a
+mutable variable initialized to this value.
+
+A pattern of the form 'private &lt;pattern&gt;' is like '&lt;pattern&gt;', except
+that the names bound by the pattern are bound only in the appropriate
+lexical environment, they're not made available outside the object.
+
+A definition of the form 'private {&lt;definitions&gt;}' or 'private =&gt;
+&lt;definitions&gt;' splices the given definitions and similarly makes
+names they introduce private. There is also 'public'.
+
+A sequence of patterns may include '&lt;pattern&gt;...' once. The list
+of the rest of arguments is matched against this pattern.
+
+If the '{&lt;definitions&gt;}' part of the type definition is omitted,
+it's equivalent to '{}'.
+
+If the '{&lt;definitions&gt;}' part of the type definition is omitted
+and all parameters are identifiers, the type is called a record type.
+This has the following consequences:
+
+* RECORD is added as a supertype.
+
+* Generic functions for introspection are defined for this type:
+  getting the constructor function from the object and getting the
+  list of field names of the object. (Given an object and a field
+  name, one can access the field.)
+
+* The default equality is not reference equality but the equality
+  induced by the equality of the corresponding fields. This is done
+  by having a specialization of equality for two objects of type
+  RECORD. The type may still define its own equality in any case.
+
+* Similarly for hashing and showing as a string.
+
+* The function Change is made available for this type. It takes an
+  object and a sequence of 'name, value' pairs, and returns a new
+  object of the same type, with the given fields of given values,
+  and other fields taken from the object. It's implemented once for
+  RECORD.
+
+* There is a shortcut for making the type serializable.
+
+If the '{&lt;definitions&gt;}' part of the type definition is omitted and
+parameters are omitted, the type is a singleton type. The constructor
+is not a function but a constant. Also:
+
+* SINGLETON is added as a supertype.
+
+* A generic function for introspection gives the name of the
+  singleton. It's used by showing as a string.
+
+* There is a shortcut for making the type serializable.
+
+After the type name, one can specify supertypes. They are used only by
+the dispatch of generic functions. It's the programmer's responsibility
+to ensure that they make sense, they don't influence the representation
+or behavior of the object.
+
+A group of definitions may include 'extend &lt;expression&gt;' once. The
+expression is evaluated. When accessing fields of the object being
+constructed, any field not mentioned explicitly among parameters and
+definitions is taken from this base object.
+
+The private name 'this' is defined implicitly in the scope of the
+definitions. It denotes the object being constructed. While the object
+is under construction, it signals an error when one tries to access
+its fields (definitions might not have fully executed yet).
+
+If the object extends another object, the private name 'base' is
+defined implicitly in the scope of the definitions, and it denotes
+the object being extended.
+
+There can be several cases of '&lt;parameters&gt; {&lt;definitions&gt;}' where the
+structure of the object depends on parameters. This is rarely used,
+it's mostly for completeness with multiple cases of a function.
+
+There are facilities for composing an object from reusable pieces
+instead of extending a complete object, which allows &quot;methods&quot; to call
+other &quot;methods&quot; on 'this' polymorphically, but I won't describe them
+here: they are too far from this SRFI.
+
+A symbol which begins with an underscore is local to a module.
+It allows to make fields which are available in functions external
+to the object but not to anybody which has access to the object.
+
+I tend to put only state variables among definitions, and any
+functions operating on the record are external instead. A more
+Smalltalkish style would define functions inside objects; note
+that they would be physically duplicated for each object.
+
+-- 
+   __(&quot;&lt;         Marcin Kowalczyk
+   \__/       qrczak@xxxxxxxxxx
+    ^^     <a  rel="nofollow" href="http://qrnik.knm.org.pl/~qrczak/">http://qrnik.knm.org.pl/~qrczak/</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00102" href="msg00102.html">Re: Eq? issue</a></strong>
+<ul><li><em>From:</em> Marcin 'Qrczak' Kowalczyk</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00092" href="msg00092.html">Eq? issue</a></strong>
+<ul><li><em>From:</em> Andre van Tonder</li></ul></li>
+<li><strong><a name="00098" href="msg00098.html">Re: Eq? issue</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+<li><strong><a name="00100" href="msg00100.html">Re: Eq? issue</a></strong>
+<ul><li><em>From:</em> Andre van Tonder</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00100.html">Re: Eq? issue</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00102.html">Re: Eq? issue</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00100.html">Re: Eq? issue</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00102.html">Re: Eq? issue</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00101"><strong>Date</strong></a></li>
+<li><a href="threads.html#00101"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

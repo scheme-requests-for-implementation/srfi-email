@@ -1,0 +1,210 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Couple things... -->
+<!--X-From-R13: [vpunry Ecreore <fcreoreNvasbezngvx.hav&#45;ghrovatra.qr> -->
+<!--X-Date: Tue, 23 Dec 2003 10:22:19 +0100 (NFT) -->
+<!--X-Message-Id: y9lvfo7lwhn.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: opr0lf0hi7w2xcd0@mx.freenet.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Couple things...</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00024.html">Date Prev</a>][<a href="msg00026.html">Date Next</a>][<a href="msg00248.html">Thread Prev</a>][<a href="msg00030.html">Thread Next</a>][<a href="maillist.html#00025">Date Index</a>][<a href="threads.html#00025">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Couple things...</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: felix &lt;<a href="mailto:felix@DOMAIN.HIDDEN">felix@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Couple things...</li>
+<li><em>From</em>: Michael Sperber &lt;<a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 23 Dec 2003 10:22:12 +0100</li>
+<li><em>Cc</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:opr0lf0hi7w2xcd0@DOMAIN.HIDDEN">opr0lf0hi7w2xcd0@xxxxxxxxxxxxx</a>&gt; (<a href="mailto:felix@DOMAIN.HIDDEN">felix@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>'s message of &quot;Mon, 22 Dec 2003 18:54:07 +0100&quot;)</li>
+<li><em>References</em>: &lt;<a href="mailto:opr0lf0hi7w2xcd0@DOMAIN.HIDDEN">opr0lf0hi7w2xcd0@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Gnus/5.090019 (Oort Gnus v0.19) XEmacs/21.5 (celeriac, berkeley-unix)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt;&gt;&gt;&gt;&gt; &quot;felix&quot; == felix  &lt;felix@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx&gt; writes:
+
+felix&gt; It's absolutely unnecessary to specify which C-level forms are macros,
+felix&gt; or which are functions. Leave that to the implementors, and allow all
+felix&gt; the forms to be macros instead.
+
+That certainly was our intention.  Do we overspecify anything by
+saying &quot;Note that most functionality on the C side is implemented by
+macros.&quot;?
+
+felix&gt; Moreover, it might be helpful to change the
+felix&gt; references of &quot;scheme_define_exported_binding&quot; and
+felix&gt; &quot;scheme_enter_pointer&quot; to uppercase, since obviously the
+felix&gt; macro-versions are meant here. 
+
+That's a typo pure and simple.  Will get fixed.  Thanks for pointing
+it out!
+
+felix&gt; Defining bindings from C is allowed, and the SRFI-document
+felix&gt; specifically points out the C init-code may run before Scheme
+felix&gt; init-code. Yet, SCHEME_DEFINE_EXPORTED_BINDING may GC, even
+felix&gt; before Scheme init-code has run?  Weird. 
+
+Sure.  Could you specify where this is causing problems for you?
+
+felix&gt; I find it a bit tricky to exactly specify what may GC and what
+felix&gt; not.
+
+Yeah, me too. :-)
+
+felix&gt; For example: mutations (a la &quot;SCHEME_RECORD_SET&quot;) may very well
+felix&gt; allocate storage (if the write-barrier involves allocating something
+felix&gt; on the heap, that describes the mutated slot). The life-time of data
+felix&gt; on the heap may be extremely short - what happens if GC or finalizers
+felix&gt; run in a different OS-level thread?  The authors would do good by not
+felix&gt; assuming every Scheme implementation does it like S48 or PLT.
+
+It certainly wasn't our intention---we looked at a lot more Scheme
+implementations than just those two.  However, even writing up the
+current draft was difficult enough.  I'm happy to hear suggestions on
+how to improve it.
+
+felix&gt; Alternative approaches would be:
+
+felix&gt; 1) Selectively switch GC on/off in sections of C code (just like
+felix&gt;    critical sections, really).
+
+Is this really practical in all conceivable environments?
+
+felx&gt; 2) Allocate *once* a complete chunk that will be
+felix&gt;   able to hold all
+felix&gt;   data needed subsequently without triggering a GC.
+
+That certainly seems impractical to me if you need to limit space usage.
+
+felix&gt; Numeric types: complex numbers are not required by R5RS. I would
+felix&gt; propose making accessors and constructors for extended number types
+felix&gt; optional.
+
+Good point.
+
+felix&gt; SCHEME_CALL: &quot;For example, suppose Scheme procedure s0 captures
+felix&gt; continuation a and then calls C procedure c0, which in turn calls
+felix&gt; Scheme procedure s1. Procedure s1 can safely call the continuation a,
+felix&gt; because that is a downward use. When a is called Scheme will remove
+felix&gt; the portion of the C stack used by the call to c0.&quot;
+
+felix&gt; How do you know that? Why do you specify this? Does this mean a is a
+felix&gt; special kind of continuation, one that uses longjmp()? What if
+felix&gt; continuations are explicit (in a CPS manner)?
+
+Those aren't continuations in the sense of the SRFI.  (How you you
+tell from looking at one?)
+
+felix&gt;  &quot;On the other hand, if s1 captures a continuation, that continuation
+felix&gt;  cannot be used from s0, because by the time control returns to s0 the
+felix&gt;  C stack used by c0 will no longer be valid. An attempt to invoke an
+felix&gt;  upward continuation that is closed over a portion of the C stack will
+felix&gt;  raise an exception.&quot;
+
+felix&gt; Why should it raise an exception? We are interfacing Scheme with C, so
+felix&gt; probably speed is the matter. Since C is an unsafe language, I propose
+felix&gt; to remove all superfluous safety-checks. If I want to write safe code,
+felix&gt; I use Scheme.
+
+I suspect that, in practice, the performance impact of this check will
+be minuscule.  What do others think?
+
+felix&gt; Unfortunately it appears to me that this is just a polished up
+felix&gt; version of the S48 FFI, dragging in a lot of unnecessary (and
+felix&gt; implementation- dependent) details which may or may not fit
+felix&gt; other implementations.
+
+I don't think so.  In fact, historically, it was the other way around:
+The first draft of this was written with other Scheme implementations
+in mind, and then implemented on Scheme 48.  The actual historic
+ancestor is Elk (referenced in the document), not Scheme 48.
+
+It *is* the stated intention of this SRFI to be
+Scheme-implementation-agnostic.  However, of course our take on the
+matter is limited by what we know.  So I suggest that, whenever you
+say that we're being overly Scheme-48-specific, you make a concrete
+suggestion on how to be more general.  We've put significant thought
+into most of the issues you mention, so any lack of generality above
+that probably reflects more a limit of our abilities than a limit of
+our willingness to improve things.
+
+felix&gt; Why have countless macros that access and create Scheme data? Some
+felix&gt; basic forms for defining code callable from Scheme (and vice versa)
+felix&gt; would be more than enough, together with a simple system of specifying
+felix&gt; Scheme-&gt;C-&gt;Scheme type mappings. This would also remove the GC-related
+felix&gt; problems (mostly).
+
+I'll be glad to see a concrete writeup of this idea. :-)
+
+-- 
+Cheers =8-} Mike
+Friede, V&#xF6;lkerverst&#xE4;ndigung und &#xFC;berhaupt blabla
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00030" href="msg00030.html">Re: Couple things...</a></strong>
+<ul><li><em>From:</em> Thomas Bushnell, BSG</li></ul></li>
+<li><strong><a name="00053" href="msg00053.html">Re: Couple things...</a></strong>
+<ul><li><em>From:</em> felix</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00004" href="msg00004.html">Couple things...</a></strong>
+<ul><li><em>From:</em> felix</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00024.html">Re: character strings versus byte strings</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00026.html">Re: Strings/chars</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00248.html">Re: Strings/chars</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00030.html">Re: Couple things...</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00025"><strong>Date</strong></a></li>
+<li><a href="threads.html#00025"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

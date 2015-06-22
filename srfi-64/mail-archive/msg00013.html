@@ -1,0 +1,186 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Skipping selected tests which are groups -->
+<!--X-From-R13: Bre Pbguare <creNobguare.pbz> -->
+<!--X-Date: Wed,  9 Mar 2005 01:10:16 +0100 (NFT) -->
+<!--X-Message-Id: 422E3EDB.6020004@bothner.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: Pine.LNX.4.44.0503081721140.19219&#45;100000@localhost.localdomain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Skipping selected tests which are groups</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00012.html">Date Prev</a>][<a href="msg00014.html">Date Next</a>][<a href="msg00010.html">Thread Prev</a>][<a href="msg00015.html">Thread Next</a>][<a href="maillist.html#00013">Date Index</a>][<a href="threads.html#00013">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Skipping selected tests which are groups</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Donovan Kolbly &lt;<a href="mailto:donovan@DOMAIN.HIDDEN">donovan@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Skipping selected tests which are groups</li>
+<li><em>From</em>: Per Bothner &lt;<a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 08 Mar 2005 16:10:03 -0800</li>
+<li><em>Cc</em>: SRFI 64 &lt;<a href="mailto:srfi-64@DOMAIN.HIDDEN">srfi-64@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-64@DOMAIN.HIDDEN">srfi-64@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:Pine.LNX.4.44.0503081721140.19219-100000@DOMAIN.HIDDEN">Pine.LNX.4.44.0503081721140.19219-100000@xxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:Pine.LNX.4.44.0503081721140.19219-100000@DOMAIN.HIDDEN">Pine.LNX.4.44.0503081721140.19219-100000@xxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.7.3) Gecko/20041020</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+Donovan Kolbly wrote:
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><tt>I am trying to figure out the intended interaction between &quot;test-skip&quot; and 
+</tt><tt>&quot;test-begin&quot;.
+</tt><pre style="margin: 0em;">
+
+The spec says that &quot;Before each test (or begin-group [sic: I assume this
+means 'test-begin'])
+</pre></blockquote><pre style="margin: 0em;">
+
+I think I meant 'test-group'.
+
+the set of active skip-specifiers are applied to the
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+active test-runner. If any specifier matches, then the test is skipped.&quot;
+
+</pre><tt>What is &quot;the test&quot; when it's a test-begin?  Are all the tests inside the 
+</tt><tt>group supposed to be skipped, or is all the code evaluable between the 
+</tt><tt>start and end of the test group supposed to be skipped.
+</tt><pre style="margin: 0em;">
+
+Consider:
+
+  (test-skip &quot;test-b&quot;)
+  (test-begin &quot;test-b&quot;)
+  (do-some-stuff)
+  (test-assert &quot;b.1&quot; (whatever))
+  (test-assert &quot;b.2&quot; (foo))
+  (test-end &quot;test-b&quot;)
+
+Is (do-some-stuff) supposed to get evaluated?
+</pre></blockquote><pre style="margin: 0em;">
+
+Yes - there isn't really any way to avoid it.
+
+However, I thik you may be misunderstanding the difference between a
+test-name and a suite-name.  The (test-skip &quot;test-b&quot;) is short-hand
+for (test-skip (test-matched-named &quot;test-b&quot;)) - and there are no tests
+names &quot;test-b&quot; - only a *test suite* named &quot;test-b&quot;.
+
+At least that's the current specification and reference implementation.
+There is no (test-match-suite &quot;suite-name&quot;) - there probably should be.
+
+Here's an illustration, leaving aside the issue of test names:
+
+  (test-skip (test-match-nth 1 2)) ;; skip the next two tests
+  (test-begin &quot;test-b&quot;)           ; executed
+  (do-some-stuff)                 ; executed
+  (test-assert &quot;b.1&quot; (whatever))  ; first test skipped
+  (test-assert &quot;b.2&quot; (foo))       ; 2nd test skipped
+  (test-assert &quot;b.3&quot; (foo))       ; not skippped??
+  (test-end &quot;test-b&quot;)
+
+One could ask: should all the tests within the test-begin/test-end
+group count as a single tests when deciding which tests to skip?
+That's not the case in the current reference implementation, I believe,
+but a test-group does count as a single test.
+
+Btw: another reasonable should hand might be to interpret (test-skip N [M])
+for integers N/M as short-hand for (test-skip (test-matching N [M]))
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+...or... does &quot;begin-group&quot; in the spec mean &quot;test-group&quot;, in which case
+the user is obliged to lexically nest any forms which are to actually be
+skipped?
+
+e.g., this behavior is a little [ :-) ] easier to implement:
+
+</pre><tt>  (test-skip &quot;test-b&quot;)                                                              
+</tt><tt>  (test-group &quot;test-b&quot;
+</tt><pre style="margin: 0em;">
+    (do-some-stuff)                    ; skip
+    (test-assert &quot;b.1&quot; (whatever))     ; skip
+    (test-assert &quot;b.2&quot; (foo)))         ; skip
+  (test-end &quot;test-b&quot;)
+</pre></blockquote><pre style="margin: 0em;">
+
+Right except for the issue of whether the test-name &quot;test-b&quot; matches
+the suite-name &quot;test-b&quot;.
+
+The intention - and I believe the reference implementation - is that the
+decision to skip is made for each test-assert/test-eq*/etc *and* for each
+test-group.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Also, do skipped tests count for the purposes of the `count' argument to
+</pre><tt>test-end?  I assume so, or else much pain to any who uses both features!  
+</tt><tt>I suppose that is why SKIP is mentioned as a possible test result: to take 
+</tt><tt>up a slot in list whose length must be = to `count'.
+</tt></blockquote><pre style="margin: 0em;">
+
+Yes, that is the intention.  Though it doesn't appear that count is actually
+check in the RI.  Sigh.  I made a note ...
+
+By the way: I appreciate you trying out the API, and giving feedback.
+It's very valuable that somebody familiar with a Scheme implementation try
+to &quot;port&quot; the API and see how well it works.  Plus I haven't had a time to
+expierment with it much myself.
+--
+	--Per Bothner
+per@xxxxxxxxxxx   <a  rel="nofollow" href="http://per.bothner.com/">http://per.bothner.com/</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00010" href="msg00010.html">Skipping selected tests which are groups</a></strong>
+<ul><li><em>From:</em> Donovan Kolbly</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00012.html">Re: &quot;Test results&quot;</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00014.html">Re: &quot;Test results&quot;</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00010.html">Skipping selected tests which are groups</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00015.html">Meta-test suite</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00013"><strong>Date</strong></a></li>
+<li><a href="threads.html#00013"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

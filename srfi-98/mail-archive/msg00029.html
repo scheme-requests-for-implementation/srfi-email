@@ -1,0 +1,149 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: getenv vs. locale -->
+<!--X-From-R13: Euveb Ynjnv <fuvebNynin.arg> -->
+<!--X-Date: Sun, 20 Jul 2008 21:12:17 +0200 (MST) -->
+<!--X-Message-Id: 20080720.091203.622524227.shiro@lava.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: m2d4lbaxv3.fsf@cherry.siamics.int -->
+<!--X-Reference: 20080719.212021.1010996329.shiro@lava.net -->
+<!--X-Reference: f07386410807200533w4117379aiacd79e422c259079@mail.gmail.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: getenv vs. locale</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00028.html">Date Prev</a>][<a href="msg00030.html">Date Next</a>][<a href="msg00028.html">Thread Prev</a>][<a href="msg00032.html">Thread Next</a>][<a href="maillist.html#00029">Date Index</a>][<a href="threads.html#00029">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: getenv vs. locale</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:higepon@DOMAIN.HIDDEN">higepon@xxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: getenv vs. locale</li>
+<li><em>From</em>: Shiro Kawai &lt;<a href="mailto:shiro@DOMAIN.HIDDEN">shiro@xxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 20 Jul 2008 09:12:03 -1000 (HST)</li>
+<li><em>Cc</em>: <a href="mailto:oneingray@DOMAIN.HIDDEN">oneingray@xxxxxxxxx</a>, <a href="mailto:ivan@DOMAIN.HIDDEN">ivan@xxxxxxxxxxxxx</a>, <a href="mailto:srfi-98@DOMAIN.HIDDEN">srfi-98@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-98@DOMAIN.HIDDEN">srfi-98@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:f07386410807200533w4117379aiacd79e422c259079@DOMAIN.HIDDEN">f07386410807200533w4117379aiacd79e422c259079@xxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:m2d4lbaxv3.fsf@DOMAIN.HIDDEN">m2d4lbaxv3.fsf@xxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:20080719.212021.1010996329.shiro@DOMAIN.HIDDEN">20080719.212021.1010996329.shiro@xxxxxxxx</a>&gt;	&lt;<a href="mailto:f07386410807200533w4117379aiacd79e422c259079@DOMAIN.HIDDEN">f07386410807200533w4117379aiacd79e422c259079@xxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>From: higepon &lt;higepon@xxxxxxxxx&gt;
+Subject: Re: getenv vs. locale
+Date: Sun, 20 Jul 2008 21:33:54 +0900
+
+&gt; Thank you for your suggestions.
+&gt; 
+&gt; &gt; (a) Raises an exception (natural, but may be inconvenient in some cases)
+&gt; &gt; (b) Returns some value indicating such condition has happened
+&gt; &gt; (c) Allow an optional 'filter' argument.
+&gt; 
+&gt; I think (a) is good.
+&gt; It is enough for my usage (CGI applications).
+&gt; 
+&gt; What cases are inconvenient?
+&gt; Procedures return raw value(s) are necessary?
+
+Initially I thought it would be cumbersome to wrap every
+occurrence of getenv if I wanted to make sure getenv won't
+stop an application.  But maybe it's not so bad, since giving a
+proper filter argument is probably equally cumbersome.  And
+in either way, you can't change the behavior of getenvs used
+within third-party libraries.  So, the advantage of (c) is
+greater flexibility, including the integration of raw value
+handling into getenv function.
+(Alternatively, the condition thrown by getenv may include
+the offending value in it.)
+
+Do we need raw value handling?  Well, maybe.  I tend to say
+yes because of my tendency to try to cover all possible cases,
+but am not sure its practical implication.  Besides the
+obvious use cases such as logging and fancy error reporting,
+what I can think of is contrived examples such as
+the value of PWD includes a multibyte directory name whose
+encoding is different from the process's locale and you
+might want to convert it implicitly.
+
+The option (c) is difficult to implement on top of the 
+existing implementations, in most of which getenv is a primitive
+procedure returning a string (but there's the same difficulty 
+in the option (a) if you want to define a specific condition
+getenv should throw).
+
+Ultimately, the choice depends on the purpose of this srfi.
+If this one just wants to summarize &quot;current practices&quot;, leave
+the behavior undefined and cross your fingers that it works
+&quot;most of the time&quot;.  If this one wants to provide a portable
+and robust basis, specify the behavior and encourage existing
+implementations to follow.  I tend to vote the latter.
+(It would be very annoying if my application calling
+get-environment-variables keeps failing on the user's machine
+but not on my machine, and finding out it's because a single
+value in some obscure environment variable.)
+
+--shiro
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00032" href="msg00032.html">Re: getenv vs. locale</a></strong>
+<ul><li><em>From:</em> higepon</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00025" href="msg00025.html">getenv vs. locale</a></strong>
+<ul><li><em>From:</em> Ivan Shmakov</li></ul></li>
+<li><strong><a name="00026" href="msg00026.html">Re: getenv vs. locale</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+<li><strong><a name="00027" href="msg00027.html">Re: getenv vs. locale</a></strong>
+<ul><li><em>From:</em> higepon</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00028.html">Re: getenv vs. locale</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00030.html">Re: getenv vs. locale</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00028.html">Re: getenv vs. locale</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00032.html">Re: getenv vs. locale</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00029"><strong>Date</strong></a></li>
+<li><a href="threads.html#00029"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,190 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: no constants please -->
+<!--X-From-R13: Fbz Zbeq <ybeqNrzs.arg> -->
+<!--X-Date: Tue,  6 Jan 2004 17:59:48 +0100 (NFT) -->
+<!--X-Message-Id: 200401061725.JAA29276@morrowfield.regexps.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: E1AdT6G&#45;0000C0&#45;00@mail.mumble.net -->
+<!--X-Reference: 200401051651.IAA23986@morrowfield.regexps.com -->
+<!--X-Reference: y9lu13ansdu.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: 200401052226.OAA25305@morrowfield.regexps.com -->
+<!--X-Reference: y9lr7ydcylc.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: no constants please</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00206.html">Date Prev</a>][<a href="msg00208.html">Date Next</a>][<a href="msg00186.html">Thread Prev</a>][<a href="msg00210.html">Thread Next</a>][<a href="maillist.html#00207">Date Index</a>][<a href="threads.html#00207">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: no constants please</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: no constants please</li>
+<li><em>From</em>: Tom Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 6 Jan 2004 09:25:12 -0800 (PST)</li>
+<li><em>Cc</em>: <a href="mailto:kelsey@DOMAIN.HIDDEN">kelsey@xxxxxxx</a>, <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:y9lr7ydcylc.fsf@DOMAIN.HIDDEN">y9lr7ydcylc.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt; (message from	Michael Sperber on Tue, 06 Jan 2004 08:42:23 +0100)</li>
+<li><em>References</em>: &lt;<a href="mailto:E1AdT6G-0000C0-00@DOMAIN.HIDDEN">E1AdT6G-0000C0-00@xxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:200401051651.IAA23986@DOMAIN.HIDDEN">200401051651.IAA23986@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:y9lu13ansdu.fsf@DOMAIN.HIDDEN">y9lu13ansdu.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:200401052226.OAA25305@DOMAIN.HIDDEN">200401052226.OAA25305@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:y9lr7ydcylc.fsf@DOMAIN.HIDDEN">y9lr7ydcylc.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+
+    &gt; From: Michael Sperber &lt;sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx&gt;
+
+    [re a prototype of the draft FFI being used in rscheme]
+
+    &gt; Tom&gt; Not all incremental collectors are incompatible with the FFI (a mostly
+    &gt; Tom&gt; copying semi-conservative incremental GC would be one example).
+
+    &gt; This was actually a precise non-copying incremental GC.
+
+I didn't mean to imply otherwise -- only to ack that it's obvious the
+FFI isn't incompatible with _all_ possible implementations with
+incremental collectors.
+
+Anyway, as I said in the &quot;Pika from first principles&quot; message, perhaps
+the better way to motivate changes to the draft is not to build a big
+catalog of every GC technique we can think of, but simply to observe
+that it fails to fully abstract over the representations of Scheme
+values, locations and the implementations of primitive operations
+on the Scheme store.
+
+
+
+    [earlier in the same message]
+
+    &gt; Tom&gt; If the root set is large, certainly it should be traced in several
+    &gt; Tom&gt; steps, using barriers to preserve its invariants.
+
+    &gt;&gt;&gt; Is there a practical example of a system that does this?  It seems
+    &gt;&gt;&gt; very difficult to do, even absent an FFI to C, as your typical root
+    &gt;&gt;&gt; set---the current continuation---changes *all the time*.  (I'm really
+    &gt;&gt;&gt; curious.  I could never wrap my mind around this.)
+
+    Tom&gt; You can treat the &quot;big-three abstract registers&quot; (continuation, code,
+    Tom&gt; and environment) specially.   They have usefully limited usage
+    Tom&gt; patterns.   It's the other roots, if your implementation has them,
+    Tom&gt; that are of greater interest.  (The draft FFI creates &quot;other roots&quot;.)
+
+    &gt; That isn't the question I asked.  All hard questions are buried behind
+    &gt; &quot;specially.&quot;
+
+You're asking how I plan to treat the big-three registers in Pika?
+Similarly to SCM or the &quot;phantom stacks&quot; approach.
+
+$code presents no special problem:  the values it points to aren't
+subject to mutation and it is, indeed, an example of the kind root you
+were thinking of (one that the collector must scan atomically with the
+last step of a trace cycle).
+
+$environment and $continuation very often point to locations which are
+reachable _only_ from those registers.   It's possible to use
+basically a separate allocator and collector for these.
+
+Ignoring optimizations, the basic idea is: Stack allocate environments
+and continuations.  When the stack is exhausted, copy-collect them (or
+otherwise move them) to the general Scheme heap (most often, few will
+live during this collection).  If they are captured (by closure
+formation or continuation capture), collect them to the general
+Scheme heap at that time.
+
+While they live on the stack, the only references to these objects are
+rooted in $continuation and $environment and follow their respective
+chains.  The general collector can regard references from the stack to
+the heap as GC roots -- but there's no reason it can't trace those
+incrementally.  (The hypothesis being that environments and
+continuations tend to die very quickly on average, many will be
+created, be used, and die without the tracer seeing them at all.)
+
+Meanwhile, because the general purpose tracer is unconcerned with
+collecting the continuation and environment objects still living on
+the stack, mutations to environments on the stack don't need to
+preserve a tri-color invariant.  (The hypothesis being that a
+significant fraction of reads and writes are to and from environments
+that will be on the stack rather than the general heap, there will be
+a significant fraction of reads and writes that mostly skip the
+barriers.)
+
+There's a small catch: if you have some single sequence of code
+(compiled code or part of the guts of your interpreter) and you don't
+know a priori whether, when that code is executed, $environment and
+$continuation will point to the stack or to the general heap, then
+that code _does_ have to be prepared to preserve the tri-color
+invariant during environment mutation.   However, it can be a pretty
+cheap test to decide when you're reading/writing the stack vs. 
+the general heap.
+
+-t
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00210" href="msg00210.html">Re: no constants please</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00153" href="msg00153.html">Re: no constants please</a></strong>
+<ul><li><em>From:</em> Richard Kelsey</li></ul></li>
+<li><strong><a name="00158" href="msg00158.html">Re: no constants please</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00165" href="msg00165.html">Re: no constants please</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+<li><strong><a name="00171" href="msg00171.html">Re: no constants please</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00186" href="msg00186.html">Re: no constants please</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00206.html">scheme_lookup_imported_binding</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00208.html">Re: I don't believe in &quot;(may GC)&quot;</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00186.html">Re: no constants please</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00210.html">Re: no constants please</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00207"><strong>Date</strong></a></li>
+<li><a href="threads.html#00207"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

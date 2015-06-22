@@ -1,0 +1,162 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: neighbor deletion; param ordering; < &#38; <=; fresh lists; cell recycling -->
+<!--X-From-R13: fuvirefNpp.tngrpu.rqh -->
+<!--X-Date: Sun, 21 Jul 2002 05:44:04 +0200 (DFT) -->
+<!--X-Message-Id: 200207210343.g6L3hbd27195@mongkok.dyndns.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>neighbor deletion; param ordering; &lt; &amp; &lt;=; fresh lists; cell recycling</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00003.html">Date Prev</a>][<a href="msg00005.html">Date Next</a>][<a href="msg00003.html">Thread Prev</a>][<a href="msg00005.html">Thread Next</a>][<a href="maillist.html#00004">Date Index</a>][<a href="threads.html#00004">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>neighbor deletion; param ordering; &lt; &amp; &lt;=; fresh lists; cell recycling</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-32@DOMAIN.HIDDEN">srfi-32@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: neighbor deletion; param ordering; &lt; &amp; &lt;=; fresh lists; cell recycling</li>
+<li><em>From</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxxxxx</a></li>
+<li><em>Date</em>: Sat, 20 Jul 2002 23:43:37 -0400</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-32@DOMAIN.HIDDEN">srfi-32@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Reply-to</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>David-
+
+Thanks for the review!
+
+    From: David Feuer &lt;dfeuer@xxxxxxxxxxxxx&gt;
+    Subject: neighbor deletion 
+    Why does this belong in a sorting SRFI?
+
+Good question -- it ain't sorting. But it's something you typically do with
+sorted data. I considered punting these. But writing them well takes a little
+work (especially the iterative destructive list version), and part of the 
+library game, for me, is that I make an effort and write a thing well, once, 
+and then everyone can use it. Count it under &quot;manipulation of sorted data,&quot;
+just like vector binary search.
+
+    I think the ordering op should go first.  
+
+Me, too. But the compatibility win outweighs my preference here.
+
+    Also, &lt;= seems much more intuitive than &lt;.
+
+Me, too. But it busts compatibility with just about *everything* out there,
+lisp and Scheme. I don't think it's worth it.
+
+Can anyone find out why Common Lisp settled on &lt;? (I have emailed Kent Pitman
+asking him.)
+
+    I note that the non-mutating vector sorts are guaranteed to copy the
+    vector.  It would seem potentially very useful to give some indication of
+    whether the new vector is in fact different from the old vector, to allow
+    programmers to optimize for generational collectors.
+
+Heh? The new vector is *guaranteed* to be different from the old vector.
+You alter one, the other is unchanged. Guaranteed.
+
+    It would seem potentially slightly useful to have &quot;fully copying&quot; sorts,
+    that are guaranteed not to mutate the original list and not to share any
+    list structure with it, but I don't know if this would be sufficiently
+    useful to include.
+
+If you are in a functional mood, then you ought to be OK with sharing
+structure -- all I really should have to promise you is that I won't
+frob your input list. This is SORT-LIST's contract: it does not alter
+its input, but is allowed to share structure.
+
+If you really, really need to know that the returned list is fresh, that it
+contains no cons cells in common with the input list, you are in a
+side-effecting world. Otherwise you would not care about cons-cell identity,
+right? So copy the list and then use SORT-LIST!. It would probably run faster
+and certainly allocate less &quot;trash&quot; memory than a purely functional sort.
+So we might as well let this one slide.
+
+        make only a single, iterative, linear-time pass over their argument
+        lists, constructing their results by side-effecting these lists. The
+        intent of this algorithmic commitment is to allow the programmer to be
+        sure that if, for example, LIST-MERGE! is asked to merge two
+        ten-million-element lists, the operation will complete without
+        performing some extremely (possibly twenty-million) deep recursion.
+        That is, LIST-MERGE! is implemented as an iterative algorithm. &quot;
+
+    So does this mean that LIST-MERGE! is guaranteed to return an object
+    containing no new cons cells?  The spec is not so clear here.
+
+In the Republican expression, &quot;Read my lips: no new cells.&quot; Yeah, that's what
+I meant to say. Or, let me be a bit more careful. LIST-MERGE! is not simply
+*allowed* to recycle its list inputs, it is *required* to recycle them. I
+suppose this means that a perverse implementation could gratuitously allocate
+cells on the side, but every cell in the input has to show up in the output,
+so there are not going to be any new cells in the answer. Let me add a little
+bit of language to the spec to spell this out more (which is mostly taken
+from the later appearance of LIST-MERGE!):
+
+    These procedures use SET-CDR!s to rearrange the cells of the lists into
+    the final result. As such, they do not allocate any extra cons cells --
+    they work &quot;in place.&quot; Hence, any cons cell appearing in the result must
+    have originally appeared in an input.
+
+How's that?
+    -Olin
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00005" href="msg00005.html">Re: neighbor deletion; param ordering; &lt; &amp; &lt;=; fresh lists; cell recycling</a></strong>
+<ul><li><em>From:</em> David Feuer</li></ul></li>
+<li><strong><a name="00006" href="msg00006.html">cell recycling; reference implementation; param ordering; fresh lists</a></strong>
+<ul><li><em>From:</em> shivers</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00003.html">optimization</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00005.html">Re: neighbor deletion; param ordering; &lt; &amp; &lt;=; fresh lists; cell recycling</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00003.html">optimization</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00005.html">Re: neighbor deletion; param ordering; &lt; &amp; &lt;=; fresh lists; cell recycling</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00004"><strong>Date</strong></a></li>
+<li><a href="threads.html#00004"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

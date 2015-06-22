@@ -1,0 +1,124 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Fwd: vector&#45;binary&#45;search -->
+<!--X-From-R13: Rnivq Hna Vbea <qinaubeaNpf.hiz.rqh> -->
+<!--X-Date: Tue, 30 Mar 2004 06:47:24 +0200 (DFT) -->
+<!--X-Message-Id: 1080622032.4068fbd04c822@webmail.emba.uvm.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Fwd: vector-binary-search</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00075.html">Date Prev</a>][<a href="msg00077.html">Date Next</a>][<a href="msg00077.html">Thread Prev</a>][<a href="msg00078.html">Thread Next</a>][<a href="maillist.html#00076">Date Index</a>][<a href="threads.html#00076">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Fwd: vector-binary-search</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-43@DOMAIN.HIDDEN">srfi-43@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Fwd: vector-binary-search</li>
+<li><em>From</em>: David Van Horn &lt;<a href="mailto:dvanhorn@DOMAIN.HIDDEN">dvanhorn@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 29 Mar 2004 23:47:12 -0500</li>
+<li><em>Cc</em>: Sergei Egorov &lt;<a href="mailto:esl@DOMAIN.HIDDEN">esl@xxxxxxx</a>&gt;</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-43@DOMAIN.HIDDEN">srfi-43@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Internet Messaging Program (IMP) 3.2.1</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>[ The following is forwarded on behalf of Sergei Egorov &lt;esl@xxxxxxx&gt;.
+  -- David ]
+
+I think that using &quot;compare&quot; procedure for vector-binary-search
+is not very convenient. There are two main sources of inconvenience:
+first, there are no ready-to-use procedures implementing the &quot;compare&quot;
+interface; second, in most cases vector-binary-search will be used
+on vectors sorted by vector-sort{!} and in 90% of implementations
+sort using &quot;less&quot; predicates returning boolean.
+
+Binary search and sort procedures are closely related, so using the
+same convention for ordering predicate will benefit both. Since SRFI-43
+does not include any sorting procedures (I support this decision), it
+would be better either to drop vector-binary-search altogether or
+include a version which has a better chance to be compatible with
+sorting procedures defined elsewhere:
+
+(vector-binary-search vec val less)  =&gt; val position or #f
+
+Here's an implementation that is compatible with traditional
+use of &quot;less&quot; in sorting procedures:
+
+(define (vector-binary-search vec obj less)
+  (let search ((s 0) (e (vector-length vec)))
+    (let ((len (- e s)))
+      (case len
+        ((0) 
+         #f)
+        ((1) 
+         (let ((x (vector-ref vec s)))
+           (if (or (less x obj) (less obj x)) 
+               #f
+               s)))
+        (else
+         (let ((i (+ s (quotient len 2))))
+           (let ((x (vector-ref vec i)))
+             (cond
+               ((less obj x) (search s i))
+               ((less x obj) (search (+ i 1) e))
+               (else i)))))))))
+
+-- Sergei
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00078" href="msg00078.html">Re: Fwd: vector-binary-search</a></strong>
+<ul><li><em>From:</em> campbell</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00075.html">re: Updates to near finalization (finally!)</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00077.html">Re: VECTOR-UNFOLD and VECTOR-TABULATE</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00077.html">Re: VECTOR-UNFOLD and VECTOR-TABULATE</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00078.html">Re: Fwd: vector-binary-search</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00076"><strong>Date</strong></a></li>
+<li><a href="threads.html#00076"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

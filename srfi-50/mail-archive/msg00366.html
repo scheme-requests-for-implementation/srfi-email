@@ -1,0 +1,150 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: READ&#45;OCTET (Re: strings draft) -->
+<!--X-From-R13: Euveb Ynjnv <fuvebNynin.arg> -->
+<!--X-Date: Fri, 23 Jan 2004 07:01:01 +0100 (MET) -->
+<!--X-Message-Id: 20040122.200048.859491845.shiro@lava.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200401220511.VAA18432@morrowfield.regexps.com -->
+<!--X-Reference: Pine.LNX.4.58.0401220953470.29732@bolt.sonic.net -->
+<!--X-Reference: 200401230206.SAA23673@morrowfield.regexps.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>READ-OCTET (Re: strings draft)</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00365.html">Date Prev</a>][<a href="msg00367.html">Date Next</a>][<a href="msg00346.html">Thread Prev</a>][<a href="msg00367.html">Thread Next</a>][<a href="maillist.html#00366">Date Index</a>][<a href="threads.html#00366">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>READ-OCTET (Re: strings draft)</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a></li>
+<li><em>Subject</em>: READ-OCTET (Re: strings draft)</li>
+<li><em>From</em>: Shiro Kawai &lt;<a href="mailto:shiro@DOMAIN.HIDDEN">shiro@xxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 22 Jan 2004 20:00:48 -1000 (HST)</li>
+<li><em>Cc</em>: <a href="mailto:bear@DOMAIN.HIDDEN">bear@xxxxxxxxx</a>, <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:200401230206.SAA23673@DOMAIN.HIDDEN">200401230206.SAA23673@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:200401220511.VAA18432@DOMAIN.HIDDEN">200401220511.VAA18432@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:Pine.LNX.4.58.0401220953470.29732@DOMAIN.HIDDEN">Pine.LNX.4.58.0401220953470.29732@xxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:200401230206.SAA23673@DOMAIN.HIDDEN">200401230206.SAA23673@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>From: Tom Lord &lt;lord@xxxxxxx&gt;
+Subject: Re: strings draft
+Date: Thu, 22 Jan 2004 18:06:24 -0800 (PST)
+
+&gt;     &gt; In fact, READ-OCTET and WRITE-OCTET would in that case become primitive,
+&gt;     &gt; since READ-CHAR and DISPLAY could be implemented in terms of them but
+&gt;     &gt; the reverse would not be true.
+&gt; 
+&gt;     &gt; This neatly sidesteps the issue of needing character mappings for
+&gt;     &gt; every member of the range 128-255, and separates the ideas of octet
+&gt;     &gt; and character at the lowest level.
+&gt; 
+&gt; Hmm.  Well, an example of what it fails to sidestep is the issue of
+&gt; making the values representable by the C `char' type a subset of CHAR?
+&gt; It's also a fairly sorry approach to take for implementing many
+&gt; network protocols in a way that is simple, direct, &quot;tolerant of what
+&gt; it receives&quot;.
+
+Hm, I now see an advantage in Tom's approach.
+
+I've written code for an email filter program (with bayesian
+spam filtering, of course :-)  I read a RFC2822 message header
+and build an assoc list of header field, dealing with folded
+header lines.  Although RFC2822 defines the field body of the
+message headers should include only US-ASCII characters
+(except CR and LF), there are messages that has other octets
+within the header.
+
+With Tom's approach that a character can be used to represent
+an octet as well, probably one can set the input port encoding mode
+to &quot;raw&quot; or something (assume the port has a feature of character
+set conversion), then let read-char to retrieve each octet.
+In such case, you need to do the &quot;encoding conversion&quot;
+over the string afterwards (potentially performing &quot;encode guessing&quot;
+before that).   The string that contains range 128-255 characters
+might be unprintable as is, but the implementation can have
+some escaped format for them.
+
+The approach I'm taking is to read the header field as an
+octet stream, and construct an octet string, which is a special
+type of string that can contain any octet sequences.  After
+I do necessary processing, I make a conversion on octet string
+to produce a valid string, which contains legal characters.
+
+The benefit of octet string is that (1) it is fast to convert
+to underlying byte string (2) you can always tell the string
+is &quot;safe and normal&quot; or not.
+(1) is important for some applications, for example a program
+that does lots of UDP packet sending and returning---such &quot;block&quot;
+read/write is done in either octet string or uniform vector
+in my Scheme, and they are fast because it directly grabs C
+buffer.
+
+However, I do feel the presense of octet string ad-hoc.  Tom's
+approach does have conceptual cleanness, although probably
+the programmer has to be careful about the state of the string
+object she is dealing with (i.e. whether it has been converted
+or not).
+
+--shiro
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00342" href="msg00342.html">strings draft</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00345" href="msg00345.html">Re: strings draft</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+<li><strong><a name="00346" href="msg00346.html">Re: strings draft</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00365.html">Re: strings draft</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00367.html">Re: strings draft</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00346.html">Re: strings draft</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00367.html">Re: strings draft</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00366"><strong>Date</strong></a></li>
+<li><a href="threads.html#00366"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

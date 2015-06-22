@@ -1,0 +1,203 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: div0 and mod0 -->
+<!--X-From-R13: Ivyyvnz R Qyvatre <jvyyNppf.arh.rqh> -->
+<!--X-Date: Mon, 14 Aug 2006 22:50:35 +0200 (MST) -->
+<!--X-Message-Id: E1GCjOI&#45;00034r&#45;WC@adara.ccs.neu.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: div0 and mod0</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00504.html">Date Prev</a>][<a href="msg00506.html">Date Next</a>][<a href="msg00493.html">Thread Prev</a>][<a href="msg00506.html">Thread Next</a>][<a href="maillist.html#00505">Date Index</a>][<a href="threads.html#00505">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: div0 and mod0</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: div0 and mod0</li>
+<li><em>From</em>: William D Clinger &lt;<a href="mailto:will@DOMAIN.HIDDEN">will@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 14 Aug 2006 16:50:31 -0400</li>
+<li><em>Cc</em>: <a href="mailto:lucier@DOMAIN.HIDDEN">lucier@xxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>I apologize for overlooking Brad's message of 25 July
+on the subject of &quot;div0 and mod0&quot;.
+
+Brad Lucier wrote:
+
+&gt; div0 and mod0
+&gt; 
+&gt;     3. are useful in no algorithms of which I am aware;
+
+The current revision of the reference implementation for
+SRFI 77 contains the following uses of div0 and mod0.
+(I have edited this to remove some debugging code that
+would be removed in the next major version anyway.)
+
+Similar uses of div0 and mod0 are found in the definition
+of fixnum*/carry, and similar uses will be found in a more
+efficient version of the bignum code if I ever get around
+to writing it.
+
+; The challenge of fixnum*/2 is to avoid overflow when
+; computing the intermediate results.  That is done here
+; by computing modulo 1/2 the usual modulus, which this
+; code assumes to be an even power of two.
+;
+; (a * m + b) * (c * m + d)
+; = (a * c) * m^2 + (a * d + b * c) * m + b * d
+
+(define (fixnum*/2 x y)
+  (call-with-values
+   (lambda () (fixnum-div0+mod0 x *half-modulus*))
+   (lambda (a b)
+     (call-with-values
+      (lambda () (fixnum-div0+mod0 y *half-modulus*))
+      (lambda (c d)
+        (let* ((a*d (r5rs:* a d))
+               (b*c (r5rs:* b c))
+               (b*d (r5rs:* b d))
+               (a*d+b*c (fixnum+/2 a*d b*c))
+               (hibits (fixnum-mod a*d+b*c *half-modulus*))
+               (hibits (if (fixnum&gt;? hibits *half-high*)
+                           (fixnum- hibits *half-modulus*)
+                           hibits))
+               (hi (r5rs:* hibits *half-modulus*))
+               (lo b*d))
+        (fixnum+/2 hi lo)))))))
+
+&gt; Yet quotient and remainder have been removed by this
+&gt; SRFI, with the only rationale being:
+&gt; 
+&gt; Well, no rationale is given, only the bald statement
+&gt; 
+&gt; 
+&gt; The quotient, remainder, and modulo procedures were removed.
+&gt; 
+&gt; 
+&gt; This behavior might be characterized as &quot;program
+&gt; language design by assertion&quot;.
+
+Part of the rationale for removing remainder runs
+something like this:
+
+For any modulus n2, we would like to project arbitrary
+integers onto a set of n2 distinguished representatives
+of Z/n2.  The R5RS remainder procedure does not do this:
+it projects onto a set of 2*n2-1 representatives.  The
+mod, mod0, and R5RS modulo procedures all project onto
+a set of n2-1 representatives, but the sets are different:
+
+    mod:    { 0, 1, ..., |n2| - 1 }
+    mod0:   { - |n2|/2, ..., |n2|/2 - 1 }      if n2 is even
+            { - (|n2|-1)/2 , ..., (|n2|-1)/2 } if n2 is odd
+    modulo: { - n2 + 1, ..., 0 }               if n2 is negative
+            { 0, ..., n2 - 1 }                 if n2 is positive
+
+With mod, the representatives are non-negative, which is
+advantageous when projecting to an index into Scheme's
+0-origin structures (vectors, strings).
+
+With mod0, the representatives are centered (or nearly so)
+about zero, which is advantageous when working with two's
+complement, which shows up in R6RS fixnum arithmetic and
+in R6RS bytes objects.
+
+With modulo, the representatives have the sign of the
+divisor.  Although a lot of hardware works this way, and
+many programming languages work this way, I don't know of
+use cases where this is really what you want.  Since the
+modulo procedure was an orphan in the R5RS, without any
+matching division operator, the choice was between adding
+a division operator that plays well with modulo, or to
+remove modulo.  Not knowing of any use cases for modulo
+that are as compelling as those for mod and mod0, we left
+it out.
+
+&gt; I think these two decisions should be reversed and a
+&gt; division operator associated with the existing modulo in
+&gt; RNRS be added.
+
+I expect the quotient, remainder, and modulo procedures to
+be provided by an R5RS-compatibility library.  I believe
+that to be the right place for them if the primary argument
+for keeping them is backward compatibility with R5RS and
+earlier.
+
+Bear, Marcin Kowalczyk (citing Knuth, but Knuth's argument
+as cited doesn't hold for negative divisors, so Knuth seems
+to be neutral between mod and modulo), and Brad Lucier have
+all argued for modulo and a matching division operator
+(absent from R5RS), but none have yet cited applications
+for which modulo works better than mod.  I'd like to see
+examples.
+
+Bear and Kowalczyk, citing Knuth, have argued against
+quotient/remainder on the grounds I gave above, while
+Egner et al gave another argument against remainder.
+Kowalczyk and Lucier have cited the hardware-friendliness
+of quotient/remainder, but I don't regard that by itself
+as an advantage; I'd like to see examples for which the
+quotient/remainder behavior is what you'd actually want,
+as opposed to the div/mod or div0/mod0 behavior.
+
+Will
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00506" href="msg00506.html">Re: div0 and mod0</a></strong>
+<ul><li><em>From:</em> Bradley Lucier</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00504.html">Re: fixnum-* operations</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00506.html">Re: div0 and mod0</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00493.html">div0 and mod0</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00506.html">Re: div0 and mod0</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00505"><strong>Date</strong></a></li>
+<li><a href="threads.html#00505"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

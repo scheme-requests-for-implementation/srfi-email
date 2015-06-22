@@ -1,0 +1,186 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: various comments -->
+<!--X-From-R13: Xhffv Bvvghynvara <wcvvghynNyvat.uryfvaxv.sv> -->
+<!--X-Date: Sat, 17 Nov 2001 15:03:56 +0100 (MET) -->
+<!--X-Message-Id: qotk7wp335g.fsf@donner.ling.helsinki.fi -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: various comments</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00023.html">Date Prev</a>][<a href="msg00025.html">Date Next</a>][<a href="msg00000.html">Thread Prev</a>][<a href="msg00025.html">Thread Next</a>][<a href="maillist.html#00024">Date Index</a>][<a href="threads.html#00024">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: various comments</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-25@DOMAIN.HIDDEN">srfi-25@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: various comments</li>
+<li><em>From</em>: Jussi Piitulainen &lt;<a href="mailto:jpiitula@DOMAIN.HIDDEN">jpiitula@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: 17 Nov 2001 16:03:55 +0200</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-25@DOMAIN.HIDDEN">srfi-25@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Sender</em>: <a href="mailto:jpiitula@DOMAIN.HIDDEN">jpiitula@xxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>S.H.M.J. Houben wrote on Mon, 2001 Nov 12:
+
+&gt; Interesting proposal.
+&gt; 
+&gt; But of course lots of remarks:
+
+Thanks. Sorry for the delay - you were so fast I was not on the list
+myself yet, so I did not have your message at hand to follow up to.
+(I did a lynx -dump to a *mail* buffer now.)
+
+&gt; 1. The functionality of multi-dimensional arrays can also be
+&gt;    provided by nested 1-dimensional arrays. It is unclear to me why
+&gt;    multi-dimensional arrays are needed at all.
+
+I'm afraid ultimately they are not needed, but then one-dimensional
+arrays are not ultimately needed either.
+
+&gt;    What is the motivation: efficiency (and if so, explain how the
+&gt;    proposal is more efficient)
+
+The share-array magic provides a lot. A simple example: define a dot
+product for one-dimensional arrays, and then apply it to rows and
+columns of matrices. With vector-of-vectors, you have to copy each
+column, if not each row. With truly shared arrays, you need not.
+
+I have not timed anything, though.
+
+&gt;                                or added functionality (and if so,
+&gt;    give an example of things we can do with SRFI-25 not easily done
+&gt;    with R5RS vectors).
+
+Look at the transpose in the &quot;tools file&quot; linked from the Examples
+section. (Weird - netscape thinks it is &quot;untyped binary data&quot;. All the
+files are source code and contain only ASCII bytes.) It just permutes
+the index list and accesses the original array.
+
+&gt; 2. I don't think array-dimensions is a good name. I would [...]
+&gt;    what about calling it array-number-of-dimensions ?
+
+Too unwieldy. I'd rather call it haulong. What about array-dim? Or
+array-rank again, though somebody used to oppose that (because matrix
+rank is something else altogether).
+
+&gt; 3. I don't like the shape format. It is logically a list of pairs:
+&gt;    why not write it as one: e.g. ((0 4) (0 4)) looks better to me
+&gt;    than (0 4 0 4). For 0-based arrays the shorthand (4 4)
+&gt;    could then be used.
+
+A list of pairs would be ((0 . 4) (0 . 4)), so there is already an
+arbitrariness there. Yes, the bounds come logically in pairs, but I do
+not agree about any particular data structure being logical. To really
+write what the shape is I would write
+
+    (cartesian-product
+       (integers-between b0 e0)
+       (integers-between b1 e1)
+       ...).
+
+Also, (shape 0 4 0 4) does not get more complicated when an individual
+index expression gets more complicated. List structure would really
+favour constant bounds. Compare
+
+    (shape b (* 2 e) b (+ e 1))
+    (list (list b (* 2 e)) (list b (+ e 1)))
+
+and also notice that the very word &quot;shape&quot; there communicates intent
+to the reader, while &quot;list&quot; does not.
+
+&gt; 4. Apparently arrays are supposed to be disjoint from vectors.
+&gt;    This could be made more explicit. Also, this means that even
+&gt;    1-dimensional 0-based arrays are disjoint from vectors?
+
+Hm. Maybe that should be more explicit. Yes, I think they are best
+disjoint. Array-ref and friends might be able to access vectors
+transparently, with runtime cost, but I would not want to ask
+implementors to make vector-ref and friends able to access certain
+kinds of multidimensional arrays. They might just refuse.
+
+&gt; 5. From reading the proposal I understand that () is a valid shape,
+&gt;    but perhaps this point could be clarified separately.
+
+No, a zero-times-two array is a valid shape, returned by (shape). It
+is a natural limiting case, the shape of zero-dimensional arrays. I
+have some text about that somewhere, but I do not think I want to
+expand on it in the specification.
+
+&gt; 6. share-array says that a linear procedure must be given, and
+&gt;    that &quot;a constant term is just a special case&quot;. Could it be that
+&gt;    &quot;affine&quot; is meant instead of &quot;linear&quot;?
+
+You appear to be right. I will change that. My ignorance.
+
+&gt; 7. I would rename build-array to tabulate-array . There is little
+&gt;    difference, in my mind, between making and building an array.
+
+I agree. Good names do not come for free. Thanks.
+
+I will not bother the editors with that, though, as build-array is not
+in the specification. It is currently an illustration only: the Issues
+section is just for the discussion.
+
+(Sigh. I exaggerated the number of times Brian Denney sent his mail
+bomb. Sorry for that.)
+-- 
+Jussi 
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00025" href="msg00025.html">Re: various comments</a></strong>
+<ul><li><em>From:</em> Radey Shouman</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00023.html">How to unsubscribe Re: Consistency and convenience</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00025.html">Re: various comments</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00000.html">various comments</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00025.html">Re: various comments</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00024"><strong>Date</strong></a></li>
+<li><a href="threads.html#00024"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

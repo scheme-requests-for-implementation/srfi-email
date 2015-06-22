@@ -1,0 +1,270 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Arithmetic issues -->
+<!--X-From-R13: orne <orneNfbavp.arg> -->
+<!--X-Date: Tue, 18 Oct 2005 21:52:28 +0200 (MST) -->
+<!--X-Message-Id: Pine.LNX.4.58.0510181143440.2071@bolt.sonic.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: y9lzmp775oz.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Arithmetic issues</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00041.html">Date Prev</a>][<a href="msg00043.html">Date Next</a>][<a href="msg00286.html">Thread Prev</a>][<a href="msg00045.html">Thread Next</a>][<a href="maillist.html#00042">Date Index</a>][<a href="threads.html#00042">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Arithmetic issues</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Michael Sperber &lt;<a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Arithmetic issues</li>
+<li><em>From</em>: bear &lt;<a href="mailto:bear@DOMAIN.HIDDEN">bear@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 18 Oct 2005 12:52:21 -0700 (PDT)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:y9lzmp775oz.fsf@DOMAIN.HIDDEN">y9lzmp775oz.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:y9lzmp775oz.fsf@DOMAIN.HIDDEN">y9lzmp775oz.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+On Mon, 17 Oct 2005, Michael Sperber wrote:
+
+&gt;
+&gt;Now, the Issues section in the SRFI is pretty long.  We were hoping to
+&gt;get some feedback on where people stand on these issues, so it'd be
+&gt;great if you could see it as some kind of questionnaire and just fire
+&gt;off your position on the issues where you have one.  You don't have to
+&gt;bother with a rationale.  (But of course rationales are always
+&gt;appreciated.)
+
+Oh...kay.
+
+&gt; Instead of requiring the full numeric tower, R6RS could require only
+&gt; the fixnum/flonum base, and make the full tower available as modules
+&gt; in the standard library.
+
+I think the problem with that is that you then need to be able to hack
+the reader/writer so as to recognize or write the syntax of rational
+and complex numbers depending on whether the library is loaded.  And
+there is no way, currently, for hacking on the level of object syntax
+to be done in portable scheme code.  I would adore it if there were
+a way to do that, but opening up the read/write functions with 'hooks'
+that a library can stick appropriate routines into and later remove
+them from, would be a very large kettle of worms.
+
+Another problem is that for different applications, you'd want
+different parts of the numeric tower; for, eg, orbit calculations or
+quantum physics, I'd want extended-precison flonums and complex
+numbers - but not rationals.  For diophantine equations or number
+theory, I'd want bignums and exact rationals, but neither standard nor
+extended-precision flonums.  For crypto, I'd want bignums but not
+flonums.  etc.
+
+And I think that most of the people, most of the time, who get
+infinite-precision rationals don't actually want them.  They're vital
+for a very few things, but most of the time I have to remember to make
+a deliberate step or two to avoid them.  For general computation, I'm
+a big fan of being able to ask for extended (but finite) precision
+floating point numbers, but not a big fan of a representation like
+infinite-precision rational that gives back a number with a
+representation bigger and slower to work with than your arguments'
+representations almost every time you do anything to it.
+
+
+&gt; Should a minimum precision be required for fixnums or flonums?
+
+I think it's reasonable to require at least a 23-bit fixnum range.
+But I'd be deeply surprised if requiring it made a difference to
+any implementor.  Flonum precision I'm fairly agnostic about,
+except I want a way to query the system to see how big an &quot;ULP&quot;
+is for a given number and what the maximum/minimum magnitudes
+for a float are.
+
+&gt; Should the range of a fixnum be restricted to a power of two? To a
+&gt; two's complement range?
+
+I don't think it would be useful to do so.  Knowing that it's a power
+of two, or a twos-complement range, doesn't help much unless it
+actually matches the size of some kind of machine word.  Since scheme
+fixnums usually steal a few bits for typetags, they're not going to
+match that particular range anyway.  I'd go for the ability to
+evaluate expressions like (max-fixnum) or (min-fixnum) to find out the
+limits, but I see no point in constraining the limits in that way.
+
+&gt; The fixnum operations provide efficient fixnums that &quot;wrap.&quot;
+&gt; However, they do not give efficient access to the hardware
+&gt; facilities for carry and overflow. This would be desirable to
+&gt; implement efficient generic arithmetic on fixnums portably. On the
+&gt; other hand, there isn't much experience with formulating a portable
+&gt; interface to these facilities.
+
+So far I have no recommendation for a solution.  I'm too busy admiring
+the problem.  Each of the first dozen things my brain came up with
+looks like an ugly kluge.  I sincerely hope someone has a better idea
+than any of the ones I had.
+
+&gt; The fixnum operators wrap on overflow, i.e., they perform modular
+&gt; arithmetic.  For many purposes, it would be better for them to
+&gt; signal an error in safe mode. Since the modulus is
+&gt; implementation-dependent, portable code cannot generally take
+&gt; advantage of the wrapping. Instead, applications are likely to use
+&gt; fixnums simply to avoid the overhead of generic arithmetic under the
+&gt; assumption that all quantities computed fit in the fixnum range, and
+&gt; feedback if this turns out not to be the case will be valuable. On
+&gt; the other hand, the wrapping semantics can also be useful, i.e., in
+&gt; the coding of a practical implementation of bignums in terms of
+&gt; fixnums. It may be that we should consider including two sets of
+&gt; operators: fx operators that signal an error upon overflow and wfx
+&gt; operators that wrap.
+
+That (providing different operators) seems reasonable to me.  There is
+a case for an &quot;error behavior mode&quot; but if global it seems that it
+would be necessarily clumsy.  Most good ways of implementing an &quot;error
+behavior mode&quot; that I can think of apply to particular modules and
+files in a compilation or build process - ie, someone should be able
+to pick on a fairly fine grain exactly what subset of source code is
+subject to the stricter or looser error reporting rules.  And that
+means we get into the module system, which is already a whole mess of
+worms, right?  I wouldn't revisit this idea until scheme has an
+accepted, standardized module system.
+
+&gt; Should the binary fixnum/flonum operations allow other than two
+&gt; arguments?
+
+I'd consider it to be a good thing if they did. Rationale; I envision
+an optimization process where the programmer first gets the code
+working using generic operations, and then does small-change
+performance tweeks like using less-general functions where it won't
+affect correctness, while checking against the pristine code for
+errors.  Taking out a generic '+' and dropping in an 'fx+' should be a
+primary example of such a tweek, and therefore fx+ should have as many
+of the same argument signatures as + so as to facilitate the smallest
+possible changes being useful.
+
+&gt; What are the semantics of &quot;safe mode&quot; and &quot;unsafe mode&quot;? (This is a
+&gt; much larger question that R6RS should address.)
+
+The simple answers to this question will hose the people who are using
+their implementations' error reporting mechanisms as flow-of-control
+information via signals, conditions, traps, etc.  At first blush, I'd
+say that &quot;safe mode&quot; should report errors whenever it can detect
+them, and make serious effort to detect them.  Unsafe mode should simply
+assume whatever conditions are necessary for the code it's looking at
+to be correct, and give undefined behavior if those conditions fail.
+
+But the condition systems and error signalling used by several
+applications make an interesting sideshow of this question; some
+programs literally depend for their correctness on certain errors
+being signalled in certain ways.  So an &quot;unsafe mode&quot; that gave
+undefined behavior instead of reporting the errors they need it to
+report would cripple them.  Side question; do we want such programs
+to be portable?  Ever?
+
+&gt; Should R6RS allow other inexact reals beside the flonums? This draft
+&gt; does allow them, at the cost of some complications and additions
+&gt; such as real-&gt;flonum.
+
+I'd say yes.  For example, &quot;accounting numbers&quot; where the exponent is
+base-10 instead of base-2 can be very useful.
+
+
+&gt;Should the R5RS procedures for generic arithmetic (e.g. +) remain in
+&gt;R6RS? Here are five possible answers, phrased in terms of the +
+&gt;procedure:
+
+&gt; + is not defined in R6RS.
+&gt; + is defined to be a synonym for the ex+, so its domain is restricted
+&gt; to exact arguments, and always returns an exact result.
+
+&gt; + is defined as the union of the ex+ and in+ procedures, so all of its
+&gt; arguments are required to have the same exactness, and the exactness
+&gt; of its result is the same as the exactness of its arguments.
+
+&gt; + is defined as in R5RS, but with the increased portability provided
+&gt; by requiring the full numeric tower. This alternative is described in
+&gt; the section R5RS-style Generic Arithmetic.
+
+&gt; + is defined to return an exact result in all cases, even if one or
+&gt; more of its arguments is inexact. This alternative is described in the
+&gt; section Generic Exact Arithmetic.
+
++ (and similar math functions) should remain in R6RS. It should be
+  defined on *ALL* numeric representations the implementation
+  provides, including as much of the full numeric tower as is loaded,
+  and any extensions, so requiring all args to have the same exactness
+  or representation otherwise seems fairly nonsensical.
+
+  Returning exact from an addition on arguments at least one of which
+  was inexact also seems nonsensical to me, so I'd reject the fifth
+  posiblity out of hand.
+
+					Sigh.
+					More later.
+					Must sleep now.
+
+					Bear
+\
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00045" href="msg00045.html">Re: Arithmetic issues</a></strong>
+<ul><li><em>From:</em> John.Cowan</li></ul></li>
+<li><strong><a name="00048" href="msg00048.html">Re: Arithmetic issues</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00035" href="msg00035.html">Arithmetic issues</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00041.html">Re: meta-comment on typing</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00043.html">Some preliminary comments</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00286.html">Re: Arithmetic issues</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00045.html">Re: Arithmetic issues</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00042"><strong>Date</strong></a></li>
+<li><a href="threads.html#00042"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

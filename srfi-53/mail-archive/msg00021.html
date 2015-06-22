@@ -1,0 +1,188 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Initial comments &#38; questions -->
+<!--X-From-R13: Oaqer ina Fbaqre <naqerNurg.oebja.rqh> -->
+<!--X-Date: Thu, 25 Mar 2004 22:15:58 +0100 (NFT) -->
+<!--X-Message-Id: Pine.sola.4.10.10403251533590.26113&#45;100000@now.het.brown.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: Pine.LNX.4.44.0403192146070.15122&#45;100000@autodrip.bloodandcoffee.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Initial comments &amp; questions</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00020.html">Date Prev</a>][<a href="msg00022.html">Date Next</a>][<a href="msg00014.html">Thread Prev</a>][<a href="msg00023.html">Thread Next</a>][<a href="maillist.html#00021">Date Index</a>][<a href="threads.html#00021">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Initial comments &amp; questions</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:campbell@DOMAIN.HIDDEN">campbell@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Initial comments &amp; questions</li>
+<li><em>From</em>: Andre van Tonder &lt;<a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 25 Mar 2004 16:15:51 -0500 (EST)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-53@DOMAIN.HIDDEN">srfi-53@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-53@DOMAIN.HIDDEN">srfi-53@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:Pine.LNX.4.44.0403192146070.15122-100000@DOMAIN.HIDDEN">Pine.LNX.4.44.0403192146070.15122-100000@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>On Tue, 23 Mar 2004 campbell@xxxxxxxxxxxxxxxxxxxxxxxxxxx wrote:
+
+&gt; &gt; &gt;     ... you can't
+&gt; &gt; &gt;     implement COMPUTATION-RULES to be a valid transformer keyword like
+&gt; &gt; &gt;     SYNTAX-RULES in straight R5RS, but I think that small price to pay
+&gt; &gt; &gt;     is OK, because, after all, this is a request for implementors to
+&gt; &gt; &gt;     implement what you propose here.
+
+Perhaps one could state something like:
+
+  For portability, this SRFI implements forms 
+    
+     define-syntax*
+     let-syntax*
+     letrec-syntax*
+
+  to be used in conjuction with the transformer keyword
+  syntax-computations.
+  Implementors are encouraged, where allowed, for example, by a module
+  system, to fold this usage of define-syntax*, ... into the regular
+  syntactic binding forms define-syntax, ...
+
+&gt; &gt; &gt;   - Very little is mentioned about hygiene, which I'm worried about.
+&gt; &gt; &gt;   - Very little is mentioned about shadowing.
+&gt; &gt; 
+&gt; &gt; I'll see if I can come up with something intelligent to say about this.
+
+&gt; I expect the reason you're avoiding those mentions is that you're
+&gt; assuming the underlying SYNTAX-RULES implementation deals with them,
+&gt; but I think this is a dangerous assumption that could potentially cause
+&gt; _very_ unportable code.
+
+Could you expand on this?    
+
+&gt; &gt; &gt;   - Is pattern matching available in SYNTAX-DO's bindings?
+&gt; &gt; 
+&gt; &gt; No.  I thought about it but it would probably significantly complicate
+&gt; &gt; syntax-apply to correctly handle them.
+&gt; 
+&gt; Need it really be so?  Could there not be a *SYNTAX-DO used internally
+&gt; and a SYNTAX-DO atop it that performs pattern matching?
+
+Well, one could do something like
+
+  (syntax-bind ((&lt;pat&gt; &lt;comp&gt;))
+    &lt;body&gt;)
+
+  = (syntax-bind* ((x &lt;comp&gt;))
+      (let-syntax* ((deconstruct 
+                      (syntax-computations ()
+                        ((deconstruct &lt;pat&gt;) &lt;body&gt;))))
+        (deconstruct x)))
+
+In fact, I had this in an earlier version.  The problem was that with this 
+definition the pattern variables in &lt;pat&gt; would not shadow correctly.  The 
+solution would be to change syntax-apply, which is already very complex
+and slow.  
+ 
+&gt; Apologies: I misread the specification of SYNTAX-EQ?.  Still, I don't
+&gt; like EQ?: I think EQV? would be a much better choice.
+&gt; 
+&gt; Actually, here's what I'd really like for the set of comparators:
+&gt; 
+&gt;   (SYNTAX-FREE-IDENTIFIER=? &lt;id1&gt; &lt;id2&gt;)
+&gt;   
+&gt;   (SYNTAX-BOUND-IDENTIFIER=? &lt;id1&gt; &lt;id2&gt;)
+
+Thank you for the implementations.  Yes, I'll include something like this.   
+
+&gt;   (SYNTAX-LITERAL-IDENTIFIER=? &lt;id1&gt; &lt;id2&gt;)
+&gt;     Compare the names of ID1 &amp; ID2, discarding any other attributes.
+&gt;     This cannot be expressed as a simple SYNTAX-COMPUTATIONS macro.
+&gt;       [Is this a good idea?]
+
+Not sure.  
+
+&gt;   (SYNTAX-EQV? &lt;atom1&gt; &lt;atom2&gt; [&lt;symbol=?&gt;])
+&gt;     Compare ATOM1 &amp; ATOM2 for simple datum equality; if they are both
+&gt;     symbols, use SYMBOL=? to compare them; if SYMBOL=? is not passed,
+&gt;     check for either free or bound equality.
+&gt;       [If it is determined that SYNTAX-LITERAL-IDENTIFIER=? is a good
+&gt;        idea, might it be better to have that be SYMBOL=?'s default?]
+
+I would be inclined to simply choose one default (no third argument).  
+If the programmer wants something more complicated, they can easily 
+write that themselves.
+
+&gt;   (SYNTAX-EQUAL? &lt;stx1&gt; &lt;stx2&gt; [&lt;symbol=?&gt;])
+&gt;     Compare STX1 &amp; STX2 for structural equality, comparing symbols with
+
+I would leave this out.  It is unlikely to be used much.  
+
+&gt; It will?  I've seen LET/CC used only in PLT.  Historically, CATCH is
+&gt; the name for the special form that captures a continuation.
+
+I'm thinking of scrapping the continuation manipulations, since they are
+perhaps somewhat too closely bound to the current continuation-style
+impementation. 
+
+ 
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00023" href="msg00023.html">Re: Initial comments &amp; questions</a></strong>
+<ul><li><em>From:</em> Alex Shinn</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00013" href="msg00013.html">Re: Initial comments &amp; questions</a></strong>
+<ul><li><em>From:</em> campbell</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00020.html">Re: Initial comments &amp; questions</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00022.html">Re: isn't computation-rules redundant?</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00014.html">Re: Initial comments &amp; questions</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00023.html">Re: Initial comments &amp; questions</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00021"><strong>Date</strong></a></li>
+<li><a href="threads.html#00021"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

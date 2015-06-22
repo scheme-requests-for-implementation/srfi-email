@@ -1,0 +1,157 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Choose&#45;Your&#45;Own&#45;Ellipsis -->
+<!--X-From-R13: Oyybcubar Brgebsfxl <nyNcrgebsfxl.bet> -->
+<!--X-Date: Mon, 13 Oct 2003 16:43:07 +0200 (DFT) -->
+<!--X-Message-Id: 200310131443.HAA13228@radish.petrofsky.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Choose-Your-Own-Ellipsis</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00008.html">Date Prev</a>][<a href="msg00010.html">Date Next</a>][<a href="msg00021.html">Thread Prev</a>][<a href="msg00010.html">Thread Next</a>][<a href="maillist.html#00009">Date Index</a>][<a href="threads.html#00009">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Choose-Your-Own-Ellipsis</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-46@DOMAIN.HIDDEN">srfi-46@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Choose-Your-Own-Ellipsis</li>
+<li><em>From</em>: Allophone Petrofsky &lt;<a href="mailto:al@DOMAIN.HIDDEN">al@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 13 Oct 2003 07:43:00 -0700</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-46@DOMAIN.HIDDEN">srfi-46@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>I think the better approach to the nested ellipsis problem is to have
+syntax-rules take as an (optional) argument the identifier that you
+wish to use to indicate sequences.  E.g.:
+
+  (define-syntax generate-temporaries
+    (syntax-rules ()
+      ((_ ?origs ?k)
+       (letrec-syntax
+	   ((aux (syntax-rules ::: () ;; use &quot;:::&quot; as ellipsis
+		   ((_ ?temps () ?k*)
+		    (apply-syntax-cont ?k* ?temps))
+		   ((_ (?temp :::) (?x ?more :::) ?k*)
+		    (aux (?temp ::: new-temp)
+			 (?more :::)
+			 ?k*)))))
+	 (aux () ?origs ?k)))))
+
+Alternatively:
+
+  (define-syntax generate-temporaries
+    (syntax-rules this-ellipsis-id-is-not-used ()
+      ((_ ?origs ?k)
+       (letrec-syntax
+	   ((aux (syntax-rules () ;; use default &quot;...&quot; ellipsis
+		   ((_ ?temps () ?k*)
+		    (apply-syntax-cont ?k* ?temps))
+		   ((_ (?temp ...) (?x ?more ...) ?k*)
+		    (aux (?temp ... new-temp)
+			 (?more ...)
+			 ?k*)))))
+	 (aux () ?origs ?k)))))
+
+This approach doesn't have any problem with matching an ellipsis as
+part of a pattern, or with expanding into things like (x . ...), and
+it doesn't lead to goofy constructions like ((... ...) (... ...)).  If
+you want to nest three levels and be able to indicate a sequence at
+any level, just choose three different ellipses.
+
+Furthermore, there's no need to daintily pass ?k around in the example
+above.  You can just do:
+
+  (define-syntax generate-temporaries
+    (syntax-rules ()
+      ((_ ?origs ?k)
+       (letrec-syntax
+	   ((aux (syntax-rules ::: () ;; use &quot;:::&quot; as ellipsis
+		   ((_ ?temps ())
+		    (apply-syntax-cont ?k ?temps))
+		   ((_ (?temp :::) (?x ?more :::))
+		    (aux (?temp ::: new-temp)
+			 (?more :::))))))
+	 (aux () ?origs)))))
+
+and rely on hygienic renaming to prevent any uses of ::: in ?k from
+being confused with the ::: we introduced in the expansion of
+generate-temporaries.
+
+I don't know what the best exact syntax for this extension would be.
+Here are several possibilities (using the conventions foo* == any
+number of foo, and foo? == zero or one foo):
+
+  -- Ellipsis choice before the literals, as above:
+    (syntax-rules &lt;ellipsis&gt;? &lt;literals&gt; &lt;rule&gt;*)
+
+  -- After the literals:
+    (syntax-rules &lt;literals&gt; &lt;ellipsis&gt;? &lt;rule&gt;*)
+
+  -- On a per-rule basis:
+    (syntax-rules literals (&lt;ellipsis&gt;? &lt;pattern&gt; &lt;template&gt;) ...)
+
+  -- After the literals, with an extra &quot;noise word&quot; (like cond's =&gt;)
+     to distinguish this from other syntax-rules extensions:
+    (syntax-rules &lt;literals&gt; (ellipsis &lt;ellipsis&gt;)? &lt;rule&gt;*)
+
+-al
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00010" href="msg00010.html">Re: Choose-Your-Own-Ellipsis</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+<li><strong><a name="00011" href="msg00011.html">Re: Choose-Your-Own-Ellipsis</a></strong>
+<ul><li><em>From:</em> Taylor Campbell</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00008.html">Re: Nested syntax</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00010.html">Re: Choose-Your-Own-Ellipsis</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00021.html">Deliberate variable capture.</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00010.html">Re: Choose-Your-Own-Ellipsis</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00009"><strong>Date</strong></a></li>
+<li><a href="threads.html#00009"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

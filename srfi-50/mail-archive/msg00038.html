@@ -1,0 +1,158 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: more on GC issues -->
+<!--X-From-R13: Fbz Zbeq <ybeqNrzs.arg> -->
+<!--X-Date: Wed, 24 Dec 2003 00:03:52 +0100 (NFT) -->
+<!--X-Message-Id: 200312232327.PAA19093@morrowfield.regexps.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>more on GC issues</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00037.html">Date Prev</a>][<a href="msg00039.html">Date Next</a>][<a href="msg00057.html">Thread Prev</a>][<a href="msg00039.html">Thread Next</a>][<a href="maillist.html#00038">Date Index</a>][<a href="threads.html#00038">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>more on GC issues</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: more on GC issues</li>
+<li><em>From</em>: Tom Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 23 Dec 2003 15:27:33 -0800 (PST)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+I mentioned earlier that return values should really be via 
+return parameters.
+
+Argument parameters should be via references (pointers) as well:
+otherwise, people can just recreate the same problem:
+
+
+
+	scheme_value
+        my_helper_fn (scheme_value * a)
+        {
+          scheme_value a_copy;
+
+          a_copy = *a;
+
+          a = SCHEME_NULL;
+          return a_copy;
+        }
+
+
+and later:
+
+        /* GC-unsafe code:
+
+	x = SCHEME_CAR (my_helper_fn (&amp;some_var));
+
+
+With the changes I'm suggesting, one couldn't write my_helper_fn at
+all and would have to write calls like:
+
+
+	SCHEME_CAR (&amp;x, &amp;some_var);
+
+
+Also, direct assignment to protected local variables should be
+forbidden.   An incremental GC, for example, might want a write
+barrier there.   So, not:
+
+	scheme_value x;
+	scheme_value y;
+
+        [...]
+
+        x = y;
+
+
+but
+
+	SCHEME_LSET (&amp;x, &amp;y)
+
+As a matter of convenience, I think that GCPROing individual variables
+is a bother.   I prefer an interface like:
+
+
+	{
+          struct foo_frame
+          {
+            SCHEME_VALUE_FRAME;
+
+            scheme_value x;
+            scheme_value y;
+          } l;
+
+          SCHEME_PROTECT_FRAME (l);
+
+          [....]
+
+          SCHEME_CAR (&amp;l.x, &amp;l.y);
+          SCHEME_LSET (&amp;l.y, &amp;l.x);
+
+          [...]
+
+          SCHEME_UNPROTECT_FRAME (l);
+
+         }
+
+Also, SRFI-50 doesn't discuss the interaction of GCPROing a variable
+with initializing, but it needs to.
+
+
+-t
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00037.html">Re: GC safety and return values</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00039.html">handling multiple scheme instances</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00057.html">Re: GC safety and return values</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00039.html">handling multiple scheme instances</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00038"><strong>Date</strong></a></li>
+<li><a href="threads.html#00038"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

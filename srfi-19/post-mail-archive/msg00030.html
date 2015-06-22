@@ -1,0 +1,106 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Bug in time<=? and time>=? -->
+<!--X-From-R13: Rnir Uhearyy <qnirNhaglcrq.pbz> -->
+<!--X-Date: Sat, 28 Nov 2009 09:45:40 +0000 (UTC) -->
+<!--X-Message-Id: y9l1vjjdlto.fsf@deinprogramm.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Bug in time&lt;=? and time&gt;=?</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00029.html">Date Prev</a>][<a href="msg00031.html">Date Next</a>][<a href="msg00029.html">Thread Prev</a>][<a href="msg00031.html">Thread Next</a>][<a href="maillist.html#00030">Date Index</a>][<a href="threads.html#00030">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Bug in time&lt;=? and time&gt;=?</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-19@DOMAIN.HIDDEN">srfi-19@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Bug in time&lt;=? and time&gt;=?</li>
+<li><em>From</em>: Dave Gurnell &lt;<a href="mailto:dave@DOMAIN.HIDDEN">dave@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 28 Nov 2009 10:45:39 +0100</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-19@DOMAIN.HIDDEN">srfi-19@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Old-date</em>: Fri, 27 Nov 2009 10:05:22 +0000</li>
+<li><em>User-agent</em>: Gnus/5.110011 (No Gnus v0.11) XEmacs/21.5-b29 (darwin)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+Hi,
+
+I think there is a bug in the implementation of the aforementioned procedures. The same bug is present in time&lt;=? and time&gt;=?. I'll use the PLT implementation of  time&lt;=? as an example:
+
+  (define (time&lt;=? time1 time2)
+    (tm:time-compare-check time1 time2 'time&lt;=?)
+    (or (&lt;= (time-second time1) (time-second time2))
+        (and (= (time-second time1) (time-second time2))
+             (&lt;= (time-nanosecond time1) (time-nanosecond time2)))))
+
+The first &lt;= should be a &lt;, like this:
+
+  (define (time&lt;=? time1 time2)
+    (tm:time-compare-check time1 time2 'time&lt;=?)
+    (or (&lt; (time-second time1) (time-second time2))
+        (and (= (time-second time1) (time-second time2))
+             (&lt;= (time-nanosecond time1) (time-nanosecond time2)))))
+
+Otherwise the following code erroneously returns #t:
+
+  (time&lt;=? (make-time time-utc 2 1)
+           (make-time time-utc 1 1))
+
+I've filed a bug report for this in PLT. I'm not sure if the bug is also present in the reference implementation.
+
+Many thanks,
+
+-- Dave Gurnell
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00029.html">date to string mismatch for #\x</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00031.html">Re: Bug in time&lt;=? and time&gt;=?</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00029.html">date to string mismatch for #\x</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00031.html">Re: Bug in time&lt;=? and time&gt;=?</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00030"><strong>Date</strong></a></li>
+<li><a href="threads.html#00030"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

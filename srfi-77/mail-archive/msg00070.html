@@ -1,0 +1,206 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Exactness -->
+<!--X-From-R13: [nepva 'Cepmnx' Ybjnypmlx <depmnxNxaz.bet.cy> -->
+<!--X-Date: Thu, 20 Oct 2005 11:13:36 +0200 (MST) -->
+<!--X-Message-Id: 87ach45z5v.fsf@qrnik.zagroda -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 87wtk9qro1.fsf@qrnik.zagroda -->
+<!--X-Reference: 20051019191720.GA24703@mimir.szonye.com -->
+<!--X-Reference: 87fyqxb6i6.fsf@qrnik.zagroda -->
+<!--X-Reference: 20051019220800.GF24703@mimir.szonye.com -->
+<!--X-Reference: Pine.LNX.4.58.0510191726410.13819@bolt.sonic.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Exactness</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00069.html">Date Prev</a>][<a href="msg00071.html">Date Next</a>][<a href="msg00069.html">Thread Prev</a>][<a href="msg00071.html">Thread Next</a>][<a href="maillist.html#00070">Date Index</a>][<a href="threads.html#00070">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Exactness</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Exactness</li>
+<li><em>From</em>: Marcin 'Qrczak' Kowalczyk &lt;<a href="mailto:qrczak@DOMAIN.HIDDEN">qrczak@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 20 Oct 2005 11:13:32 +0200</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:Pine.LNX.4.58.0510191726410.13819@DOMAIN.HIDDEN">Pine.LNX.4.58.0510191726410.13819@xxxxxxxxxxxxxx</a>&gt; (<a href="mailto:bear@DOMAIN.HIDDEN">bear@xxxxxxxxx</a>'s message of &quot;Wed, 19 Oct 2005 18:50:14 -0700 (PDT)&quot;)</li>
+<li><em>Mail-followup-to</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>References</em>: &lt;<a href="mailto:87wtk9qro1.fsf@DOMAIN.HIDDEN">87wtk9qro1.fsf@xxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:20051019191720.GA24703@DOMAIN.HIDDEN">20051019191720.GA24703@xxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:87fyqxb6i6.fsf@DOMAIN.HIDDEN">87fyqxb6i6.fsf@xxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:20051019220800.GF24703@DOMAIN.HIDDEN">20051019220800.GF24703@xxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:Pine.LNX.4.58.0510191726410.13819@DOMAIN.HIDDEN">Pine.LNX.4.58.0510191726410.13819@xxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Sender</em>: Marcin 'Qrczak' Kowalczyk &lt;<a href="mailto:qrczak@DOMAIN.HIDDEN">qrczak@xxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Gnus/5.1006 (Gnus v5.10.6) Emacs/21.3 (gnu/linux)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>bear &lt;bear@xxxxxxxxx&gt; writes:
+
+&gt; The problem with exactness and inexactness, it appears, is that
+&gt; many implementors don't feel that it's worth implementing fully.
+
+I disagree. The problem is that R5RS tries to describe it as one of
+two fields of a number, the other being its value - while in reality
+it's a predicate about the representation of the value, not
+independently settable.
+
+&gt; And they have a point, I guess, in that a full implementation of
+&gt; it (fully orthogonal to type information) adds overhead to each
+&gt; and every fundamental mathematical function.
+
+Suppose we have two flonums tagged as exact. You divide them, and the
+result is not a finite binary fraction, so the implementation can't
+use the same representation for the result. What should it do?
+
+a) Represent it in a flonum tagged as inexact.
+b) Represent it as an exact ratio of two integers.
+
+In case a) exactness of flonums would be almost useless, because most
+fp data except initial inputs would be inexact - most fp operations
+must round data. Not only division; mere multiplication quickly runs
+out of space for representing all digits. Since exactness doesn't
+influence how computation proceeds, you could use it only to check the
+confidence of the implementation that the answer is correct, which is
+not strictly true anyway because of predicates returning exact
+booleans.
+
+In case b) using flonums to represent exact numbers would be almost
+useless, because most exact data except initial inputs would be
+converted to ratios - most fp operations must use some other type for
+the result to represent it fully accurately. The implementation could
+as well use ratios for all exact rational numbers and results will be
+the same, so exact doubles are redundant.
+
+R5RS doesn't specify what happens. For the first sight it seems to
+suggest a), but actually it encourages to implement b). It mandates it
+even for operations that integers are closed under, as long as the
+given exact integer is representable at all.
+
+I claim that the practical utility of numbers represented as fixnums,
+bignums or ratios but tagged as inexact is close to zero, and similarly
+for flonums tagged as exact.
+
+&gt; So they usually make the dodges and hacks that the standard fails to
+&gt; forbid, specifically making exactness correspond to representation
+&gt; type information rather than being orthogonal to type.
+
+And that's good, it's not orthogonal. If it was, using different
+representations for numbers of the same value and the same precision
+would be redundant. R5RS even specifies that such numbers would be
+indistinguishable (even more: the precision is not compared but the
+exactness only, which is wrong if there are several possible amounts
+of inexact precision, and SRFI-77 fixes that).
+
+&gt; Furthermore, treating exactness as type information actively
+&gt; messes up people who are trying to use it as exactness; having
+&gt; different numeric ranges and precisions for example, for exact
+&gt; and inexact numbers leads to all kinds of inconsistencies and
+&gt; problems.
+
+I presume then that since (factorial 100) preserves all 158 digits,
+you want (factorial 100.0) to produce a result with 158 digits but
+tagged as inexact, right? But this would make impossible to reason
+about complexity of numerical algorithms. Fixed-size flonums have a
+constant cost of primitive operations; this would no longer be true.
+
+People can be taught about this problem for rationals (or learn about
+it in the painful way), which is a necessary evil. But taking away
+the remaining tool for approximate computation with constant cost of
+primitive operations would be impractical.
+
+&gt; And the question comes down to this; in view of the widespread
+&gt; rebellion against fully implementing exactness among scheme system
+&gt; authors, and the harm caused by conflating exactness with type,
+&gt; should exactness remain part of the standard?
+
+It should be described as a property which can be inferred from the
+representation, not as an independently settable field.
+
+&gt; Or maybe we should make the whole concept optional, and explictly
+&gt; forbid any exact/inexact distinctions at all except in implementations
+&gt; where it really *is* information orthogonal to representation type.
+
+Are there any implementations where it is?
+
+&gt; I'd like to see more full implementations of exactness, but I'm not
+&gt; going to recommend that the standard actually require it; this
+&gt; appears to be a situation where making a demand that very few would
+&gt; bother to implement would just undermine the authority of the
+&gt; standard.
+
+Indeed. If everybody ignores something in the standard, it's should
+raise suspections that the standard has made an unfortunate decision.
+
+-- 
+   __(&quot;&lt;         Marcin Kowalczyk
+   \__/       qrczak@xxxxxxxxxx
+    ^^     <a  rel="nofollow" href="http://qrnik.knm.org.pl/~qrczak/">http://qrnik.knm.org.pl/~qrczak/</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00071" href="msg00071.html">Re: Exactness</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+<li><strong><a name="00072" href="msg00072.html">Re: Exactness</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00055" href="msg00055.html">My comments</a></strong>
+<ul><li><em>From:</em> Marcin 'Qrczak' Kowalczyk</li></ul></li>
+<li><strong><a name="00056" href="msg00056.html">Re: My comments</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+<li><strong><a name="00062" href="msg00062.html">Re: My comments</a></strong>
+<ul><li><em>From:</em> Marcin 'Qrczak' Kowalczyk</li></ul></li>
+<li><strong><a name="00067" href="msg00067.html">Re: My comments</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+<li><strong><a name="00068" href="msg00068.html">Exactness (was Re: My comments)</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00069.html">Re: Exactness</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00071.html">Re: Exactness</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00069.html">Re: Exactness</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00071.html">Re: Exactness</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00070"><strong>Date</strong></a></li>
+<li><a href="threads.html#00070"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

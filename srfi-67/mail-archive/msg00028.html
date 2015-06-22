@@ -1,0 +1,171 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: compare function return values -->
+<!--X-From-R13: orne <orneNfbavp.arg> -->
+<!--X-Date: Sat,  4 Jun 2005 20:07:57 +0200 (DFT) -->
+<!--X-Message-Id: Pine.LNX.4.58.0506041038160.19280@bolt.sonic.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20050510164111.GA11297@ling.helsinki.fi -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: compare function return values</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00027.html">Date Prev</a>][<a href="msg00029.html">Date Next</a>][<a href="msg00025.html">Thread Prev</a>][<a href="msg00029.html">Thread Next</a>][<a href="maillist.html#00028">Date Index</a>][<a href="threads.html#00028">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: compare function return values</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Panu A Kalliokoski &lt;<a href="mailto:atehwa@DOMAIN.HIDDEN">atehwa@xxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: compare function return values</li>
+<li><em>From</em>: bear &lt;<a href="mailto:bear@DOMAIN.HIDDEN">bear@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 4 Jun 2005 11:07:15 -0700 (PDT)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-67@DOMAIN.HIDDEN">srfi-67@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-67@DOMAIN.HIDDEN">srfi-67@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20050510164111.GA11297@DOMAIN.HIDDEN">20050510164111.GA11297@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:20050510164111.GA11297@DOMAIN.HIDDEN">20050510164111.GA11297@xxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+On Tue, 10 May 2005, Panu A Kalliokoski wrote:
+
+&gt;On Sun, May 08, 2005 at 10:25:28PM +0200, Jens Axel Søgaard wrote:
+&gt;&gt; The &quot;numbers can be used in index computations&quot; also refer to the fact
+&gt;&gt; that one at the assembly level can dispatch to the proper branch by
+&gt;&gt; doing a simple table lookup based upon the return value of a compare
+&gt;&gt; function.
+&gt;
+&gt;This can't possibly lead to any performance gain, because in the general
+&gt;case, the compiler will have to bound-check the integer returned by the
+&gt;compare function, which leads to two checks - the same number of
+&gt;comparisons as caused by checking which symbol it is.
+
+This isn't true, I don't think.  Depending on the level at
+which this function is integrated into the scheme system,
+the compiler can *know* that it will return one of the
+three values - and know that therefore it doesn't need to
+range check the table lookup.
+
+&gt;&gt; The overall idea is to provide enough constructs such that the user
+&gt;&gt; of this srfi never needs to know the underlying represention of the
+&gt;&gt; three cases. Thus the user is ought not to use bad practices from other
+&gt;&gt; languages.
+&gt;
+&gt;Yes.  So, my argument boils down to this:
+&gt;
+&gt;(1) there are no good reasons for using integers as the return values.
+&gt;(2) bad code should be discouraged. (eg. using compare values for
+&gt;indexing, addition etc.)
+&gt;(3) using symbols would lead to more descriptive user experience.
+&gt;-&gt; ergo, the return values of compare functions should be symbols.
+
+Hmmm.  I see your point and it is a valid point, but I have a
+few nits to pick:
+
+First, symbols, from an implementation POV, are a *lot* heavier
+than small integer numbers.  There are table lookups to do, and
+guarantees to make about symbols being eq? and hash functions to
+call and store the result of, etc.  Depending on the implementation,
+there's either a permanent allocation of heap, or garbage collection
+complicated by weak pointers to do repeatedly.  There are pointers
+to follow whenever referring to the value, and they may frequently
+lead to a cache miss.  Most of this could be optimized away by the
+mythical &quot;sufficiently smart compiler&quot;, but still, it would be
+unsurprising if operations using symbols in a real system took ten
+or even fifty times as long in amortized CPU cost over the program
+run, and in interpreted systems they almost certainly would.
+
+Second, small integers are useful in indexing arrays, and indexing
+arrays is a natural use of comparison results.  Indexing arrays with
+symbols is possible (and indeed, this is the &quot;natural&quot; form for
+hash tables, since symbols have precomputed hash values for exactly
+such use in name-value lookups), but ranges from inefficient to
+haphazard on very small tables, such as the prototypical 3-entry
+table suggested by comparison results.  It would almost certainly
+be a better implementation strategy to do three comparisons.
+
+Third, the limitation of array indexes to exact nonnegative integers
+only, and the requirement of starting at zero, is a problem that ought
+to be addressed first.  If arrays could be indexed by an arbitrary
+subrange of any scalar type including characters and booleans, for
+example, the underlying code for (and speed of) array lookups would
+be not *too* much different, and this would benefit the present problem
+by giving natural expression to arrays indexed by a scalar comparison
+type.
+
+Fourth, SRFI-10 suggests a method for extending syntax, albeit perhaps
+a bit clumsy:  Values such as #,(cmp lt) #,(cmp eq) and #,(cmp gt)
+could be the written form of a three-valued scalar type for comparison
+results.
+
+				Bear
+
+
+
+
+
+
+
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00029" href="msg00029.html">Re: compare function return values</a></strong>
+<ul><li><em>From:</em> Panu Kalliokoski</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00025" href="msg00025.html">Re: compare function return values</a></strong>
+<ul><li><em>From:</em> Panu A Kalliokoski</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00027.html">Revision of SRFI 67 available</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00029.html">Re: compare function return values</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00025.html">Re: compare function return values</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00029.html">Re: compare function return values</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00028"><strong>Date</strong></a></li>
+<li><a href="threads.html#00028"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

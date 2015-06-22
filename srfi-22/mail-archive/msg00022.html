@@ -1,0 +1,139 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Windows scripts -->
+<!--X-From-R13: [nep Trryrl <srryrlNWDA.G[bagerny.QO> -->
+<!--X-Date: Sun, 11 Mar 2001 11:27:55 &#45;0600 (CST) -->
+<!--X-Message-Id: 200103111727.f2BHRhe03969@vor.IRO.UMontreal.CA -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Windows scripts</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00021.html">Date Prev</a>][<a href="msg00023.html">Date Next</a>][<a href="msg00037.html">Thread Prev</a>][<a href="msg00023.html">Thread Next</a>][<a href="maillist.html#00022">Date Index</a>][<a href="threads.html#00022">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Windows scripts</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-22@DOMAIN.HIDDEN">srfi-22@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Windows scripts</li>
+<li><em>From</em>: Marc Feeley &lt;<a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 11 Mar 2001 12:27:43 -0500</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>I've looked into the syntax of Windows scripts and the compatibility
+with the SRFI 22 proposal.  First here is some information on Windows
+scripts.
+
+Windows scripts (usually called &quot;batch files&quot;) are files with a &quot;.bat&quot;
+or &quot;.cmd&quot; extension.  This extension can be omitted when invoking a
+script.  The script is composed of commands, there is no need for a
+special &quot;#!...&quot; header.  Commands are echoed to standard output as
+they are executed, except if they are prefixed with an at-sign (@) or
+if the command &quot;@echo off&quot; has been executed in the script.  The
+script name and arguments are named %0, %1, ..., %9.
+
+So it seems that Unix scripts, which must start with a header line
+&quot;#!....&quot;, can't be directly used as Windows scripts, because the
+header line will be echoed to standard output.  So the best that can
+be expected is that the top of the script is platform dependent and
+the Scheme code in the script is identical under Windows and UNIX.
+
+The best I have come up with is to structure Windows scripts with
+a single header line like this:
+
+    @;scheme-script %0 --call main %1 %2 %3 %4 %5 %6 %7 %8 %9
+    (define (main arg1 arg2)
+      (write (+ (string-&gt;number arg1) (string-&gt;number arg2)))
+      (newline))
+
+There are a couple of requirements for this to work properly.
+
+There must exist a **batch** file &quot;scheme-script.bat&quot; in the PATH that
+will be called by the Scheme script.  It must be a batch file to
+exploit a misfeature of Windows...  When an executable program (that
+is not a batch file) is launched from a batch file, execution will
+continue at the next line (as you would expect).  But when a batch
+file is launched from a batch file, execution will not continue at the
+next line (i.e.  it is like an implicit UNIX &quot;exec&quot;).  You must
+use &quot;call &lt;batch_file&gt;&quot; to continue at the next line.
+
+For Gambit the batch file &quot;scheme-script.bat&quot; could be something like
+this:
+
+    @shift
+    @gsi -e &quot;(define @ #f)(load \&quot;%0\&quot;)(apply %2 (cdddr (argv)))(exit)&quot; %3 %4 %5 %6 %7 %8 %9
+
+Note the definition of the &quot;@&quot; as a variable before the script is
+loaded.  When the script is loaded by the interpreter, it will see a
+reference to the variable &quot;@&quot; (which is defined so it doesn't generate
+an error and does nothing) and then a semicolon which starts a comment
+(so the rest of the line is also ignored).
+
+So it seems that the only requirement that should be added to SRFI 22
+to allow Windows scripts, is that the Scheme implementation supply
+a predefined variable &quot;@&quot;.  Note that the R5RS does not allow the
+at-sign as the first character of an identifier.  So alternatively,
+SRFI 22 could require that the Scheme implementation define &quot;@&quot; as
+a token with the same meaning as &quot;#!&quot;, or as a token that
+evaluates to #f, or whatever (but not an error).
+
+Marc
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00023" href="msg00023.html">Re: Windows scripts</a></strong>
+<ul><li><em>From:</em> Eli Barzilay</li></ul></li>
+<li><strong><a name="00033" href="msg00033.html">Re: Windows scripts</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr. Preprocessor]</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00021.html">Re: Several comments</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00023.html">Re: Windows scripts</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00037.html">Re: compilability of scripts</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00023.html">Re: Windows scripts</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00022"><strong>Date</strong></a></li>
+<li><a href="threads.html#00022"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

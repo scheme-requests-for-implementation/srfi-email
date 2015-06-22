@@ -1,0 +1,152 @@
+<!-- MHonArc v2.6.18 -->
+<!--X-Subject: Re: Final comments, mostly editorial -->
+<!--X-From-R13: Bre Pbguare <creNobguare.pbz> -->
+<!--X-Date: Sat,  7 Dec 2013 02:24:42 +0100 (MET) -->
+<!--X-Message-Id: 52A278CB.9030807@bothner.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20131127235920.GI29489@mercury.ccil.org -->
+<!--X-Reference: 5296BDF7.5060906@bothner.com -->
+<!--X-Reference: 20131128040725.GL29489@mercury.ccil.org -->
+<!--X-Reference: 5296CA57.301@bothner.com -->
+<!--X-Reference: 20131128045131.GO29489@mercury.ccil.org -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Final comments, mostly editorial</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00026.html">Date Prev</a>][<a href="msg00028.html">Date Next</a>][<a href="msg00026.html">Thread Prev</a>][<a href="msg00028.html">Thread Next</a>][<a href="maillist.html#00027">Date Index</a>][<a href="threads.html#00027">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Final comments, mostly editorial</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: John Cowan &lt;<a href="mailto:cowan@DOMAIN.HIDDEN">cowan@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Final comments, mostly editorial</li>
+<li><em>From</em>: Per Bothner &lt;<a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 06 Dec 2013 17:24:27 -0800</li>
+<li><em>Cc</em>: <a href="mailto:srfi-107@DOMAIN.HIDDEN">srfi-107@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-107@DOMAIN.HIDDEN">srfi-107@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="msg00026.html">20131128045131.GO29489@mercury.ccil.org</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="msg00021.html">20131127235920.GI29489@mercury.ccil.org</a>&gt; &lt;<a href="msg00022.html">5296BDF7.5060906@bothner.com</a>&gt; &lt;<a href="msg00023.html">20131128040725.GL29489@mercury.ccil.org</a>&gt; &lt;<a href="msg00025.html">5296CA57.301@bothner.com</a>&gt; &lt;<a href="msg00026.html">20131128045131.GO29489@mercury.ccil.org</a>&gt;</li>
+<li><em>User-agent</em>: Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20100101 Thunderbird/24.1.0</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+Still mulling how to handle &quot;]]&gt;&quot;.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+I'm inclined to think you're right, but I don't see any benefit in
+adding a restriction to prohibit &quot;SRFI 109 constructs&quot; in attribute values
+- it would seem to make the rules and syntax more complicated, just to
+reduce flexibility, without any obvious benefit.
+</pre></blockquote><pre style="margin: 0em;">
+
+I'm primarily concerned that, when translated into actual XML, it won't
+have the effects that people think it will have.
+</pre></blockquote><pre style="margin: 0em;">
+
+I don't understand what you mean by &quot;when translated into actual XML&quot;.
+If an xml-constructor containing &quot;]]&gt;&quot; in element content is evaluated
+it would (assuming some DOM-like implementation) create a text node
+containing &quot;]]&gt;&quot;.  Which is perfectly valid.  If this is the
+&quot;serialized&quot; (e.g. written out to an XML file) then it is the job
+of the serializer to replace &quot;]]&gt;&quot; by &quot;]]&amp;gt;&quot;.
+
+Note the syntax is intended for not only XML content, but also HTML
+and related syntaxes.  &quot;]]&gt;&quot; is not strictly valid, but it is &quot;in
+practice valid&quot; - browsers (at least Chrome and Firefox) don't complain.
+
+Furthermore, it appears to be valid HTML5, according to my reading of
+the spec and the validators I've tried.
+
+I did implement an experimental warning in Kawa:
+
+#|kawa:1|# #&lt;p&gt;Weird: ]]&gt;!&lt;/p&gt;
+/dev/stdin:1:12: warning - literal ']]&gt;' is only valid following '&lt;![CDATA['
+&lt;p&gt;Weird: ]]&amp;gt;!&lt;/p&gt;
+#|kawa:2|#
+
+Note the &quot;&gt;&quot; is serialized as &quot;&amp;gt;&quot; in the Print part of the REPL.
+
+</pre><tt>Perhaps a warning is a reasonable compromise.  In the SRFI, perhaps we 
+</tt><tt>could add:
+</tt><pre style="margin: 0em;">
+
+</pre><tt>The XML and HTML standards (up through HTML 4.x) do not allow the 
+</tt><tt>literal text
+</tt><pre style="margin: 0em;">
+&quot;]]&gt; in element content - instead it should be escaped as in &quot;]]&amp;gt;&quot;.
+This is for historical reasons of SGML-compatibility.
+An implementation SHOULD warn if literal &quot;]]&gt;&quot; is seen.
+--
+	--Per Bothner
+per@xxxxxxxxxxx   <a  rel="nofollow" href="http://per.bothner.com/">http://per.bothner.com/</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00028" href="msg00028.html">Re: Final comments, mostly editorial</a></strong>
+<ul><li><em>From:</em> John Cowan</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00021" href="msg00021.html">Final comments, mostly editorial</a></strong>
+<ul><li><em>From:</em> John Cowan</li></ul></li>
+<li><strong><a name="00022" href="msg00022.html">Re: Final comments, mostly editorial</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+<li><strong><a name="00023" href="msg00023.html">Re: Final comments, mostly editorial</a></strong>
+<ul><li><em>From:</em> John Cowan</li></ul></li>
+<li><strong><a name="00025" href="msg00025.html">Re: Final comments, mostly editorial</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+<li><strong><a name="00026" href="msg00026.html">Re: Final comments, mostly editorial</a></strong>
+<ul><li><em>From:</em> John Cowan</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00026.html">Re: Final comments, mostly editorial</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00028.html">Re: Final comments, mostly editorial</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00026.html">Re: Final comments, mostly editorial</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00028.html">Re: Final comments, mostly editorial</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00027"><strong>Date</strong></a></li>
+<li><a href="threads.html#00027"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

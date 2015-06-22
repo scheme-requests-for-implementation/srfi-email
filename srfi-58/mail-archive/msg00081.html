@@ -1,0 +1,180 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: #\a octothorpe syntax vs SRFI 10 -->
+<!--X-From-R13: Ohoerl Xnssre <ntwNnyhz.zvg.rqh> -->
+<!--X-Date: Wed,  5 Jan 2005 05:06:36 +0100 (NFT) -->
+<!--X-Message-Id: 20050105040636.AAE761B7717@voluntocracy.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: Pine.LNX.4.44.0501021514050.31217&#45;100000@autodrip.bloodandcoffee.net -->
+<!--X-Reference: Pine.LNX.4.58.0501031619210.1697@bolt.sonic.net -->
+<!--X-Reference: 20050104214208.GA6573@ogre.szonye.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: #\a octothorpe syntax vs SRFI 10</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00080.html">Date Prev</a>][<a href="msg00082.html">Date Next</a>][<a href="msg00100.html">Thread Prev</a>][<a href="msg00083.html">Thread Next</a>][<a href="maillist.html#00081">Date Index</a>][<a href="threads.html#00081">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: #\a octothorpe syntax vs SRFI 10</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:bradd%2Bsrfi@DOMAIN.HIDDEN">bradd+srfi@xxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: #\a octothorpe syntax vs SRFI 10</li>
+<li><em>From</em>: Aubrey Jaffer &lt;<a href="mailto:agj@DOMAIN.HIDDEN">agj@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue,  4 Jan 2005 23:06:36 -0500 (EST)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-58@DOMAIN.HIDDEN">srfi-58@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-58@DOMAIN.HIDDEN">srfi-58@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20050104214208.GA6573@DOMAIN.HIDDEN">20050104214208.GA6573@xxxxxxxxxxxxxxx</a>&gt; (<a href="mailto:bradd%2Bsrfi@DOMAIN.HIDDEN">bradd+srfi@xxxxxxxxxx</a>)</li>
+<li><em>References</em>: &lt;<a href="mailto:Pine.LNX.4.44.0501021514050.31217-100000@DOMAIN.HIDDEN">Pine.LNX.4.44.0501021514050.31217-100000@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:Pine.LNX.4.58.0501031619210.1697@DOMAIN.HIDDEN">Pine.LNX.4.58.0501031619210.1697@xxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20050104214208.GA6573@DOMAIN.HIDDEN">20050104214208.GA6573@xxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre> | Date: Tue, 4 Jan 2005 13:42:08 -0800
+ | From: &quot;Bradd W. Szonye&quot; &lt;bradd+srfi@xxxxxxxxxx&gt;
+ | 
+ | bear wrote:
+ | 
+ | Also, brackets have one major shortcoming (which the current SRFI
+ | 58 proposal shares): Since dimensions are inferred from the bracket
+ | contents, there's no way to represent arrays with a 0 dimension.
+
+ | For example, you can use SRFI 47 functions to create a 0x2x3 array:
+ | (MAKE-ARRAY '#() 0 2 3).  However, there's no &quot;natural&quot; external
+ | representation for this array using brackets.  Currently, SRFI 58
+ | suffers from the same problem: Its syntax specifies rank explicitly
+ | but infers shape from the list decomposition.  What should the
+ | Scheme writer use to represent that array?  Is it an error?
+
+The updated SRFI-58 provides clarification about rank 0:
+
+  Rank 0 arrays have one element; that element appears after the
+  prefix (perhaps with intervening whitespace) with no additional
+  parenthesis.
+
+ ...
+
+  Rank 0 arrays:
+
+  #0a sym
+  #0A:real-32 237.0
+
+ | &gt; You wanted an extremely verbose syntax using srfi-10. It turned out
+ | &gt; that nobody else wanted it, based on aesthetic objections.
+ | 
+ | I think #,(ARRAY ...) syntax is appropriate for some arrays.  It would
+ | permit a good, general notation for arbitrary arrays, based on the
+ | MAKE-ARRAY function of SRFI 47.
+ | 
+ |     #,(ARRAY &lt;prototype&gt; (&lt;dimensions&gt;) (&lt;element&gt;...)opt)
+ | 
+ | For example (using the common &quot;brackets = parens&quot; syntax for clarity):
+ | 
+ |     #,(ARRAY #() (2 2) [[a b] [c d]])    ; 2x2 heterogeneous array
+ |     #,(ARRAY (AS32) (2 2) [[1 2] [3 4]]) ; 2x2 array of 32-bit fixnums
+
+With brackets this looks good.  Without brackets it would be a mess.
+
+ |     #,(ARRAY #() (0 2 3))                ; zero-dimension array
+
+A 0 by 2 by 3 array would be #,(array #() (0 2 3) ())
+A 2 by 3 by 0 array would be #,(array #() (2 3 0) ((() () ()) (() () ())))
+
+ | This allows the reader to use any SRFI 47 &quot;prototype&quot; function to
+ | specify array types.  Thus, if a Scheme implementation adds new array
+ | types, they can simply add a new prototype generator.  For example, an
+ | implementation can extend both MAKE-ARRAY and the reader syntax to
+ | support 36-bit integers simply by defining new &quot;AS36&quot; and &quot;AU36&quot;
+ | prototype functions.
+ | 
+ |     (MAKE-ARRAY (AS36 0) 1 2) =&gt; #,(ARRAY (AS36) (1 2) [[0 0]])
+
+SRFI-10 makes a point of applying its elements, not evaluating them.
+So defining AS36 does not implement it; one must re-register the
+SRFI-10 syntax.  If your SRFI-10 function evaluates an argument, then
+it opens a trap door for mischief.
+
+ | I don't think this is appropriate for hand-written, heterogeneous
+ | arrays, however.  For those, I prefer something much terser.  The
+ | proposed syntax is almost good enough; however, I would rather it
+ | specify the array /dimensions/ rather than rank.  That's more
+ | consistent with existing extensions, like PLT's #n(...) syntax for
+ | vectors.
+ | 
+ | Specifying the dimensions also permits a convenient shorthand for
+ | repetitive arrays: If there aren't enough elements for a dimension,
+ | simply repeat the last element.  For example, #100(1) is shorthand
+ | for #(1 1 1 1 ... 1) in MzScheme, and #100() is shorthand for #(0 0
+ | ... 0).  A similar array syntax could use the analogous #A100x100()
+ | to get a very large zero matrix.
+
+What is the utility of an immutable large zero matrix?  That shorthand
+could be useful in calls to the ARRAY (or LIST-&gt;ARRAY) procedure, but
+for literal arrays it is wasted.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00083" href="msg00083.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+<li><strong><a name="00085" href="msg00085.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+<li><strong><a name="00092" href="msg00092.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00060" href="msg00060.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+<ul><li><em>From:</em> Taylor Campbell</li></ul></li>
+<li><strong><a name="00062" href="msg00062.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+<li><strong><a name="00064" href="msg00064.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00080.html">Re: SRFI-10 syntax vs. #nA syntax</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00082.html">Re: SRFI-10 syntax vs. #nA syntax</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00100.html">dope vector</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00083.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00081"><strong>Date</strong></a></li>
+<li><a href="threads.html#00081"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

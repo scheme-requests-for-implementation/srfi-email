@@ -1,0 +1,120 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: NAND &#38; NOR now n&#45;ary; Bug in BITWISE&#45;EQV? implementation -->
+<!--X-From-R13: fuvirefNpp.tngrpu.rqh -->
+<!--X-Date: Sun, 21 Jul 2002 19:14:43 +0200 (DFT) -->
+<!--X-Message-Id: 200207211714.g6LHEDo01095@mongkok.dyndns.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>NAND &amp; NOR now n-ary; Bug in BITWISE-EQV? implementation</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00003.html">Date Prev</a>][<a href="msg00005.html">Date Next</a>][<a href="msg00003.html">Thread Prev</a>][<a href="msg00005.html">Thread Next</a>][<a href="maillist.html#00004">Date Index</a>][<a href="threads.html#00004">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>NAND &amp; NOR now n-ary; Bug in BITWISE-EQV? implementation</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-33@DOMAIN.HIDDEN">srfi-33@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: NAND &amp; NOR now n-ary; Bug in BITWISE-EQV? implementation</li>
+<li><em>From</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxxxxx</a></li>
+<li><em>Date</em>: Sun, 21 Jul 2002 13:14:13 -0400</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-33@DOMAIN.HIDDEN">srfi-33@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Reply-to</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>I went ahead &amp; changed nand &amp; nor to be n-ary, as Marc suggested.
+
+I also discovered a bug in the spec for n-ary eqv. This is true:
+  (eqv i j) = (not (xor i j))
+But it does not generalise to the n-ary case. That is, it is *NOT TRUE* that
+  (eqv i ...)  =  (not (xor i ...))
+
+This buggy n-ary definition appears in the spec and the implementation of
+n-ary eqv. Here is the bogus definition from the reference implementation:
+
+  (define (bitwise-eqv . args) (bitwise-not (apply bitwise-xor args)))
+
+Nope. To use the not-xor definition, you must fold it across the args; 
+you can't save the not operation until the very end. So this is correct:
+
+  (define (bitwise-eqv . args)
+    (reduce (lambda (a b) (bitwise-not (bitwise-xor a b))) 
+	    -1 args))
+
+or, sticking to the R5RS core:
+
+(define (bitwise-eqv . args)
+  (let lp ((args args) (ans -1))
+    (if (pair? args)
+        (lp (cdr args) (bitwise-not (bitwise-xor ans (car args))))
+	ans)))
+
+I have changed the SRFI accordingly. The new draft is at
+    <a  rel="nofollow" href="http://www.cc.gatech.edu/~shivers/srfi/srfi-33.txt">http://www.cc.gatech.edu/~shivers/srfi/srfi-33.txt</a>
+and will propagate out to the standard url
+    <a  rel="nofollow" href="http://srfi.schemers.org/srfi-33/srfi-33.html">http://srfi.schemers.org/srfi-33/srfi-33.html</a>
+in the hands of esteemed editor Solsona in the near future.
+
+If anyone knows of a simpler n-ary definition of eqv that could
+be simply expressed in terms of n-ary primitives like and, or and 
+xor, I would like to see it.
+    -Olin
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00005" href="msg00005.html">Re: NAND &amp; NOR now n-ary; Bug in BITWISE-EQV? implementation</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+<li><strong><a name="00006" href="msg00006.html">The boolean eqv function &amp; n-ary generalisation of associative ops</a></strong>
+<ul><li><em>From:</em> shivers</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00003.html">n-ary nand &amp; nor; trivial ops; replace-bit-field</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00005.html">Re: NAND &amp; NOR now n-ary; Bug in BITWISE-EQV? implementation</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00003.html">n-ary nand &amp; nor; trivial ops; replace-bit-field</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00005.html">Re: NAND &amp; NOR now n-ary; Bug in BITWISE-EQV? implementation</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00004"><strong>Date</strong></a></li>
+<li><a href="threads.html#00004"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

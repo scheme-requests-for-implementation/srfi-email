@@ -1,0 +1,284 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: when GC is permitted -->
+<!--X-From-R13: Fbz Zbeq <ybeqNrzs.arg> -->
+<!--X-Date: Thu,  8 Jan 2004 22:32:52 +0100 (NFT) -->
+<!--X-Message-Id: 200401082158.NAA09647@morrowfield.regexps.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: E1AegLm&#45;0005zT&#45;00@mail.mumble.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: when GC is permitted</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00240.html">Date Prev</a>][<a href="msg00242.html">Date Next</a>][<a href="msg00237.html">Thread Prev</a>][<a href="msg00246.html">Thread Next</a>][<a href="maillist.html#00241">Date Index</a>][<a href="threads.html#00241">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: when GC is permitted</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:kelsey@DOMAIN.HIDDEN">kelsey@xxxxxxx</a></li>
+<li><em>Subject</em>: Re: when GC is permitted</li>
+<li><em>From</em>: Tom Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 8 Jan 2004 13:58:52 -0800 (PST)</li>
+<li><em>Cc</em>: <a href="mailto:jimb@DOMAIN.HIDDEN">jimb@xxxxxxxxxx</a>, <a href="mailto:felix@DOMAIN.HIDDEN">felix@xxxxxxxxxxxxx</a>, <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:E1AegLm-0005zT-00@DOMAIN.HIDDEN">E1AegLm-0005zT-00@xxxxxxxxxxxxxxx</a>&gt; (message from Richard Kelsey	on Thu, 08 Jan 2004 15:01:50 -0500)</li>
+<li><em>References</em>: &lt;<a href="mailto:E1AegLm-0005zT-00@DOMAIN.HIDDEN">E1AegLm-0005zT-00@xxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+
+    Jim&gt; Here's the implementation of mn_car, with run-time
+    Jim&gt; typechecking [.... example that uses mn__make_local_ref ....]
+    Jim&gt; mn__make_local_ref is an allocation.  
+
+    Tom&gt; Pika-style doesn't have that problem.
+
+    Richard&gt; Is this because the reference cell would be passed in by
+    Richard&gt; the caller?  Would it be fair to say that Pika-style is
+    Richard&gt; (in part) JNI-style with (some) stack-allocated reference
+    Richard&gt; cells?
+
+That's a pretty good way to look at it.
+
+
+    Richard&gt; I am still confused about it.  Perhaps you could give the
+    Richard&gt; mn_car() example in Pika.  Or mn_cadr() might be more
+    Richard&gt; elucidating.
+
+Let me try to explain it a bit and give the example you've asked for.
+
+I won't (for now) try to address _global_, C-allocated locations for
+holding Scheme values here -- just locals, parameters, and return
+values.   We can take up globals later.
+
+I'll also explain this in terms of a specific use of CPP macros and C
+constructs -- though it should be obvious that there's many possible
+variations which differ essentially only in syntax.
+
+In Pika-style, the C type of a C-allocated location which can hold a 
+Scheme value is defined as:
+
+	typedef &lt;unspecified&gt; t_scm_word;
+
+(The use of the string ``word'' there refers to a conceptual, virtual
+Scheme machine -- it has no necessary relationship to machine words.)
+
+Strictly speaking, if C declares a variable of type `t_scm_word' then
+there is nothing in the Pika conventions that requires that,
+literally, the storage for that C variable is identical with the
+storage corresponding to the Scheme location.  The lifetime of the
+t_scm_word is explicitly managed by code which implements the FFI.
+Therefore, the t_scm_word lvalue _may_ contain not the Scheme value
+directly, but instead some form of reference to the actual Scheme
+location.  For example, if one had a Scheme implementation that used a
+JNI-style FFI, and wanted to implement a Pika-style FFI on top of
+that, then the t_scm_word values might just contain mn_ref values --
+pointers to some _other_ location in the C store where the scheme
+value is stored.  (In practice, I would normally expect the t_scm_word
+lvalue to contain the Scheme value directly.  I'm only noting that it
+_could_ be held indirectly.)
+
+If a C block needs local (aka automatic) variables to hold scheme
+values, it has the form:
+
+
+	{
+          struct this_blocks_frame
+          {
+            SCM_FRAME;
+
+            t_scm_word x;
+            t_scm_word y;
+            [...];
+           } l;
+
+          [....];
+
+          SCM_PROTECT_FRAME (l);
+
+          [....];
+
+          SCM_UNPROTECT_FRAME (l);
+        }
+
+The declared structure type must have the illustrated form: a use of
+the SCM_FRAME macro where the first field would be declared, followed
+by t_scm_word declarations for each local variable.
+
+Conceptually, you can think of that structure declaration and the
+local variable `l' as allocating, on the C stack, some N locations to
+hold Scheme values.  N is the number of local variables and a useful
+upper bound on N can be inferrerd at compile-time from `sizeof (l)'.
+This concept is, I think, the same thing you are thinking when you
+wrote: &quot;Would it be fair to say that Pika-style is (in part) JNI-style
+with (some) stack-allocated reference cells?.&quot;   Yes: this
+struct-declaring convention is essentually allocating some Scheme
+locations on the C stack.
+
+SCM_PROTECT_FRAME has the job of informing the Scheme implementation
+that these new locations have been added to the Scheme heap.
+SCM_UNPROTECT_FRAME has the complementary duty.  Between those two
+calls, the Scheme locations allocated for these local variables are
+just like the CAR and CDR slots of a pair -- semantically, they are
+just additional, perfectly ordinary, Scheme locations.
+
+Primitive operations available within that C block are semantically
+defined (in part) in terms of their side-effects upon such locations.
+Consequently, their parameters are not Scheme values -- but
+indications of which locations to take values from.   Their return
+mechanism is not the C return mechanism -- but instead an indication
+of in which Scheme locations to store results.   Thus, instead of:
+
+	x = SCHEME_CAR (y);
+
+one writes:
+
+	scm_car (&amp;l.x, instance, &amp;l.y);
+
+(It turns out to be useful to use the C return value of scm_car for
+other purposes, such as error indications.)
+
+Really there is a double indirection there.  `l.y' is the C name of a
+Scheme location.  `&amp;l.y' is the name of a C location where a reference
+to a Scheme location is stored.  But the particular Scheme location
+named by l.y is unique (no other C variable names it) and coextensive
+with the C lifetime of l.y itself.  `l.y' will only ever refer to
+exactly one Scheme location.  Indeed, the expectation (but not the
+requirements) is that l.y is _itself_ the location named by l.y.  By
+passing `&amp;l.y' instead of `l.y' we avoid overspecifying what the
+typedef of t_scm_word is, and permit the (expected case) possibility
+that l.y itself is the Scheme location.
+
+What would CADR look like in Pika?  I'm not sure it is really an
+elucidating example but here you go.  
+
+Blowing off error handling from C (presuming that, if at all, it is
+handled by non-local exits) -- you'd get:
+
+        void
+	my_cadr (t_scm_word * answer,
+                 t_scm_instance instance,
+                 t_scm_word * pair)
+        {
+          scm_cdr (answer, instance, pair);
+          scm_car (answer, instance, answer);
+        }
+
+
+I would rather write it like this:
+
+        t_scm_error
+	my_cadr (t_scm_word * answer,
+                 t_scm_instance instance,
+                 t_scm_word * pair)
+        {
+          t_scm_error err = 0;
+
+          err = scm_cdr (answer, instance, pair);
+          if (!err)
+            {
+              err = scm_car (answer, instance, answer);
+            }
+          if (err)
+            {
+              scm_make_wrong (answer, instance);
+            }
+          return err;
+        }
+
+The `scm_make_wrong' call is a convention I use in Pika to set a
+return value to a value which is always an error to pass to some other
+primitive.  It is essentially a debugging aid and a portable FFI would
+not suffer terribly to omit it, leaving only:
+
+        t_scm_error
+	my_cadr (t_scm_word * answer,
+                 t_scm_instance instance,
+                 t_scm_word * pair)
+        {
+          t_scm_error err = 0;
+
+          err = scm_cdr (answer, instance, pair);
+          if (!err)
+            {
+              err = scm_car (answer, instance, answer);
+            }
+          return err;
+        }
+
+
+    &gt; Also, when running in a system with a precise collector and 
+    &gt; interrupt-anytime threads, Pika-style would require the elided
+    &gt; mn__[begin|end]_incoherent() critical section calls?
+
+No.
+
+There is an independent and wholly unrelated reason to want those for
+different examples, but they are not required for any of what we are
+discussing.
+
+
+-t
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00246" href="msg00246.html">Re: when GC is permitted</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00237" href="msg00237.html">Re: when GC is permitted</a></strong>
+<ul><li><em>From:</em> Richard Kelsey</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00240.html">Re: Pika-style from first principles</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00242.html">Re: Strings/chars</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00237.html">Re: when GC is permitted</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00246.html">Re: when GC is permitted</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00241"><strong>Date</strong></a></li>
+<li><a href="threads.html#00241"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

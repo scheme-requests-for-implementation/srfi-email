@@ -1,0 +1,146 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: no constants please -->
+<!--X-From-R13: Dvpuneq Yryfrl <xryfrlNf48.bet> -->
+<!--X-Date: Wed, 31 Dec 2003 19:26:11 +0100 (NFT) -->
+<!--X-Message-Id: E1Abl1V&#45;0003vW&#45;00@mail.mumble.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: Pine.LNX.4.58.0312310851120.13125@bolt.sonic.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: no constants please</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00119.html">Date Prev</a>][<a href="msg00121.html">Date Next</a>][<a href="msg00118.html">Thread Prev</a>][<a href="msg00122.html">Thread Next</a>][<a href="maillist.html#00120">Date Index</a>][<a href="threads.html#00120">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: no constants please</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:bear@DOMAIN.HIDDEN">bear@xxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: no constants please</li>
+<li><em>From</em>: Richard Kelsey &lt;<a href="mailto:kelsey@DOMAIN.HIDDEN">kelsey@xxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 31 Dec 2003 13:24:49 -0500</li>
+<li><em>Cc</em>: <a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>, <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:Pine.LNX.4.58.0312310851120.13125@DOMAIN.HIDDEN">Pine.LNX.4.58.0312310851120.13125@xxxxxxxxxxxxxx</a>&gt; (message from	bear on Wed, 31 Dec 2003 09:09:09 -0800 (PST))</li>
+<li><em>Sender</em>: &lt;<a href="mailto:kelsey@DOMAIN.HIDDEN">kelsey@xxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>   Date: Wed, 31 Dec 2003 09:09:09 -0800 (PST)
+   From: bear &lt;bear@xxxxxxxxx&gt;
+
+   == the pointer comparison is how you pretty much have to compare
+   (scheme eq?) any boxed values.  But unboxed values like short
+   integers, short characters, and floats get compared using ==
+   the value comparison instead.
+
+Are you saying that your definition of EQ? looks something
+like this (translated to whatever language you are using)?
+
+  (define (eq? x y)
+    (if (boxed? x)
+        (and (boxed? y)
+             (pointer== x y))
+        (and (unboxed? y)
+             (value== x y))))
+
+Boxed and unboxed values must be the same size, presumably,
+so why are two different operators needed?
+
+   I have constants corresponding to the &quot;unboxed value&quot; of #t and #f
+   on the C side as well, but they are used mainly as data sources.
+   IE, I don't represent scheme-false and scheme-true by pointing at
+   them, I represent those values by copying them.  So I do have
+   freshly-allocated #f's and #t's as unboxed values in the runtime.
+
+I don't understand what a freshly-allocated unboxed value
+is.  'Unboxed' normally means 'not in a heap (or stack or
+whatever)'.  How do you allocate something that isn't in a
+heap?
+
+   unspecific is not a constant at all; I use an error type which
+   records what form the error arose in and what the values of the
+   referenced variables were when the form was evaluated.  Thus
+   instead of #,(UNSPECIFIC) the internal representation (which I
+   intend to use to support a debugger) is going to be something
+   like
+
+   #,(ERROR: '((car foo) == (&lt;compiled function&gt; ()) 341.20))
+
+   indicating that the form (car foo) at line 341 column 20 attempted
+   to take the car of '().  The error object is returned from the
+   car operation, and propagated back from there to whatever called
+   car, etc, until it hits a handler.  These #UNSPECIFIC's are freshly-
+   allocated boxed values and get compared (by handlers) using a
+   pointer comparison.
+
+Sure, but a portable FFI cannot assume that the implementation
+supports your type of unspecific value.  Having the FFI use
+a single 'unspecific' value works in your implementaion (you
+just create a single unspecific value for use in C code).  It
+isn't as useful as it might be in your implementation but it
+is portable.
+                                     -Richard
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00122" href="msg00122.html">Re: no constants please</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00126" href="msg00126.html">Re: no constants please</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00118" href="msg00118.html">Re: no constants please</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00119.html">Re: no constants please</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00121.html">Re: no constants please</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00118.html">Re: no constants please</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00122.html">Re: no constants please</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00120"><strong>Date</strong></a></li>
+<li><a href="threads.html#00120"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

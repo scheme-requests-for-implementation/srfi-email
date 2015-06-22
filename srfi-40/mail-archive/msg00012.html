@@ -1,0 +1,164 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: stream&#45;define -->
+<!--X-From-R13: Dvpuneq Yryfrl <xryfrlNf48.bet> -->
+<!--X-Date: Fri, 14 Feb 2003 19:21:05 +0100 (NFT) -->
+<!--X-Message-Id: E18jkQo&#45;0004S4&#45;00@rosebud -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: y9lfzqqsygw.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: stream-define</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00011.html">Date Prev</a>][<a href="msg00013.html">Date Next</a>][<a href="msg00010.html">Thread Prev</a>][<a href="msg00013.html">Thread Next</a>][<a href="maillist.html#00012">Date Index</a>][<a href="threads.html#00012">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: stream-define</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:pbewig@DOMAIN.HIDDEN">pbewig@xxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: stream-define</li>
+<li><em>From</em>: Richard Kelsey &lt;<a href="mailto:kelsey@DOMAIN.HIDDEN">kelsey@xxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 14 Feb 2003 13:19:26 -0500</li>
+<li><em>Cc</em>: <a href="mailto:srfi-40@DOMAIN.HIDDEN">srfi-40@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-40@DOMAIN.HIDDEN">srfi-40@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:y9lfzqqsygw.fsf@DOMAIN.HIDDEN">y9lfzqqsygw.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt; (message from Phil	Bewig on Fri, 14 Feb 2003 15:55:59 +0100)</li>
+<li><em>Sender</em>: &lt;<a href="mailto:kelsey@DOMAIN.HIDDEN">kelsey@xxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>   From: Phil Bewig &lt;pbewig@xxxxxxxxxx&gt;
+   Date: Fri, 14 Feb 2003 15:55:59 +0100
+
+   I suppose your point is that the essence of a stream is
+   the delay/force mechanism, and my library offers no
+   easy access to just that mechanism by itself, only in
+   combination with lambda and variable binding.
+
+Right.  I had trouble understanding when to use STREAM-LAMBDA,
+part because it does three different things.
+
+   [...] I think I prefer the name
+   make-stream, for consistency with make-string and
+   make-vector, and because stream-delay emphasizes
+   the implementation mechanism rather than the data
+   type.
+
+Except that streams, like lists and unlike strings and vectors, aren't
+made.  Only pairs are made, using CONS.  The problem for fully-lazy
+streams is that you may need to delay the choice between returning (),
+making a new pair, or returning some existing one.  Calling the syntax
+you use for this MAKE-STREAM seems misleading.  You're using it for the
+delay, not for the stream, if you follow me.
+
+   Thus I propose make-stream for the core and both
+   stream-lambda and stream-define for the derived
+   library.
+
+I agree, except that I think STREAM-DELAY is a better name.
+
+   As to your other point, I may well have used
+   stream-define more often than necessary in the
+   reference implementation.  I was responding to a
+   problem that shows up with this version of
+   stream-cons that was used in several preliminary
+   versions of the SRFI:
+
+       (define-syntax old-stream-cons
+	 (syntax-rules ()
+	   ((old-stream-cons obj strm)
+	     (if (not (stream? strm))
+		(stream-error &quot;attempt to stream-cons onto non-stream object&quot;)
+		(make-stream (delay (cons obj strm)))))))
+
+Yes, but this is a macro, not a procedure.  Arguments to a macro get
+evaluated when they are used.  Arguments to procedure get evaluated before
+the call.
+
+   (define-syntax foo
+     ((foo x) (delay x)))
+
+actually delays a computation, because X is some random expression.  On the
+other hand,
+
+   (define (foo x)
+     (delay x))
+
+is equivalent to
+
+   (define (foo x)
+     (let ((y (delay x)))
+       (force y)
+       y))
+
+because evaluating an (un-SET!) variable reference neither causes or is
+affected by any side effects.  Thus there is no premature evaluation if
+a procedure checks that a argument that must be a stream actually is one.
+
+The nice thing about STREAM-DELAY is that it makes it clear that what
+is going on is a delay.  You use it if you want to delay evaluating a
+stream-valued expression and don't use it if there is nothing to delay.
+Because streams are fully-lazy there is no need for a corresponding
+STREAM-FORCE.  The various stream primitives (STREAM-NULL?, STREAM-CAR,
+and so forth) do the forcing.
+                                         -Richard
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00013" href="msg00013.html">Re: stream-define</a></strong>
+<ul><li><em>From:</em> Phil Bewig</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00010" href="msg00010.html">Re: stream-define</a></strong>
+<ul><li><em>From:</em> Phil Bewig</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00011.html">Re: some suggestions</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00013.html">Re: stream-define</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00010.html">Re: stream-define</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00013.html">Re: stream-define</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00012"><strong>Date</strong></a></li>
+<li><a href="threads.html#00012"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

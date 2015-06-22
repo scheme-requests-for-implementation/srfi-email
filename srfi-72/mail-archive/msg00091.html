@@ -1,0 +1,235 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: question on the opaque syntax object debate -->
+<!--X-From-R13: =?WEA&#45;8859&#45;1?C?Xraf_Okry_E=T8tnneq?= <wrafnkryNfbrtnneq.arg> -->
+<!--X-Date: Sun, 21 Aug 2005 12:16:59 +0200 (DFT) -->
+<!--X-Message-Id: 43085480.4030809@soegaard.net -->
+<!--X-Content-Type: multipart/mixed -->
+<!--X-Reference: 20050818160328.054BC60009B@iris.wilcoxsoftware.com -->
+<!--X-Reference: Pine.GSO.4.60.0508181243010.2651@now.het.brown.edu -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: question on the opaque syntax object debate</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00090.html">Date Prev</a>][<a href="msg00092.html">Date Next</a>][<a href="msg00080.html">Thread Prev</a>][<a href="msg00083.html">Thread Next</a>][<a href="maillist.html#00091">Date Index</a>][<a href="threads.html#00091">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: question on the opaque syntax object debate</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Andre van Tonder &lt;<a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: question on the opaque syntax object debate</li>
+<li><em>From</em>: Jens Axel S&#xF8;gaard &lt;<a href="mailto:jensaxel@DOMAIN.HIDDEN">jensaxel@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 21 Aug 2005 12:16:32 +0200</li>
+<li><em>Cc</em>: <a href="mailto:srfi-72@DOMAIN.HIDDEN">srfi-72@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-72@DOMAIN.HIDDEN">srfi-72@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:Pine.GSO.4.60.0508181243010.2651@DOMAIN.HIDDEN">Pine.GSO.4.60.0508181243010.2651@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:20050818160328.054BC60009B@DOMAIN.HIDDEN">20050818160328.054BC60009B@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:Pine.GSO.4.60.0508181243010.2651@DOMAIN.HIDDEN">Pine.GSO.4.60.0508181243010.2651@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mozilla Thunderbird 1.0.2 (Windows/20050317)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+Andre van Tonder wrote:
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+On Thu, 18 Aug 2005, Andrew Wilcox wrote:
+</pre></blockquote><pre style="margin: 0em;">
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Thus my question is: does PLT Scheme have syntax location features
+that this SRFI proposal is not able to provide?
+</pre></blockquote></blockquote><pre style="margin: 0em;">
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><tt>There is one that it would in principle be able to provide but chooses 
+</tt><tt>not to: The SRFI proposal requires the first argument of 
+</tt><tt>datum-&gt;syntax-object to be an identifier, as indeed Chez does, while PLT 
+</tt><tt>allows an arbitrary syntax object there.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>There is no fundamental reason why this cannot be supported, but it 
+</tt><tt>would make the reference implementation more complex.  Also, I don't 
+</tt><tt>know how useful this feature really is in practice.
+</tt></blockquote><pre style="margin: 0em;">
+
+</pre><tt>Attached below is an example, in which I used it. The function 
+</tt><tt>substitute-&lt;&gt;-with-name makes a recursive decent on a syntax-object
+</tt><pre style="margin: 0em;">
+and replaces &lt;&gt; with fresh names. Quasisyntax/loc (which is
+implemented using datum-&gt;syntax-object) is used to keep the
+properties of the original syntax.
+
+/Jens Axel
+</pre><pre>;;; deep-cut.ss  --  Jens Axel Soegaard
+
+; This file implementes a generalized version of cut from srfi-26.
+
+;  The macro cut transforms a &lt;cut-expression&gt; into a &lt;lambda expression&gt; 
+;  with as many formal variables as there are slots in the list &lt;slot-or-expr&gt;*. 
+;  The body of the resulting &lt;lambda expression&gt; calls the first &lt;slot-or-expr&gt; 
+;  with arguments from &lt;slot-or-expr&gt;* in the order they appear. In case there 
+;  is a rest-slot symbol, the resulting procedure is also of variable arity, 
+;  and the body calls the first &lt;slot-or-expr&gt; with all arguments provided to 
+;  the actual call of the specialized procedure.
+
+; &lt;cut-expression&gt; --&gt;  (cut &lt;slot-or-expr&gt; &lt;slot-or-expr&gt;*) 
+;                   |   (cut &lt;slot-or-expr&gt; &lt;slot-or-expr&gt;* &lt;...&gt;) ; with &quot;rest-slot&quot; 
+;                   |   (cute &lt;slot-or-expr&gt; &lt;slot-or-expr&gt;*) ; evaluate non-slots at specialization time 
+;                   |   (cute &lt;slot-or-expr&gt; &lt;slot-or-expr&gt;* &lt;...&gt;) ; with &quot;rest-slot&quot; 
+
+; &lt;slot-or-expr&gt;   --&gt;  &lt;&gt;; a &quot;slot&quot; 
+;                   |   &lt;expression&gt;; a &quot;non-slot expression&quot; 
+
+(module cut mzscheme
+  
+  (provide cut)
+  
+  (define-for-syntax (fresh-name)
+    (car (generate-temporaries #'(cut))))
+  
+  (define-for-syntax (substitute-&lt;&gt;-with-name expr)
+    (syntax-case expr (&lt;&gt;)
+      [&lt;&gt;       (let ((name (fresh-name)))
+                  (values (list name) name))]
+      [(a . d)  (let-values ([(a-names a-expr) (substitute-&lt;&gt;-with-name #'a)]
+                             [(d-names d-expr) (substitute-&lt;&gt;-with-name #'d)])
+                  (values (append a-names d-names)
+                          (quasisyntax/loc expr
+                            (#,a-expr . #,d-expr))))]
+      [_        (values '() expr)]))
+  
+  
+  ; generate-names/exprs : 
+  ;    Given the arguments for the macro call to cut as a syntax-list,
+  ;  call build with two lists:
+  ;    1) a list of names given to each &lt;&gt;-slot
+  ;    2) [cut] a list of the macro arguments, except that all occurences 
+  ;       of a &lt;&gt;-slots have been substituted with the chosen name.
+  (define-for-syntax (generate-names/exprs slot-or-exprs build)
+    (let loop ([slot-or-exprs   (syntax-&gt;list slot-or-exprs)]
+               [slot-names      '()]
+               [names-or-exprs  '()])
+      (cond
+        [(null? slot-or-exprs)  (build (reverse slot-names)
+                                       (reverse names-or-exprs))]
+        [else                   (let-values ([(names substituted-expr)
+                                              (substitute-&lt;&gt;-with-name (car slot-or-exprs))])
+                                  (loop (cdr slot-or-exprs)
+                                        (append (reverse names) slot-names)
+                                        (cons substituted-expr names-or-exprs)))])))
+  
+  (require-for-syntax (lib &quot;name.ss&quot; &quot;syntax&quot;))
+  
+  (define-for-syntax (make-inferred-cut-name stx)
+    (cond
+      [(identifier? stx)                       (string-&gt;symbol
+                                                (string-append
+                                                 &quot;specialized version of &quot;
+                                                 (symbol-&gt;string (syntax-e stx))
+                                                 &quot; originating from a cut&quot;))]
+      [(syntax-property stx 'inferred-name) =&gt; (lambda (name)
+                                                 (string-&gt;symbol
+                                                  (string-append
+                                                   &quot;specialized version of &quot;
+                                                   (symbol-&gt;string name)
+                                                   &quot; originating from a cut&quot;)))]
+      [else                                     #f]))
+  
+  (define-for-syntax (set-inferred-name stx name)
+    (if name
+        (syntax-property stx 'inferred-name name)
+        stx))
+  
+  (define-syntax (cut stx)
+    (syntax-case stx (&lt;&gt; &lt;...&gt;)
+      [(cut)
+       (raise-syntax-error #f &quot;cut expects 1 or more slots or expressions, given none&quot;  stx)]
+      [(cut &lt;&gt;)
+       (raise-syntax-error #f &quot;cut expects an expression at the first position, given a slot &lt;&gt;&quot; stx)]
+      [(cut proc)
+       (set-inferred-name 
+        #`(lambda () #,(syntax/loc stx (proc)))
+        (make-inferred-cut-name #'proc))]
+      [(cut &lt;&gt; slot-or-expr ...)
+       (raise-syntax-error #f &quot;cut expects an expression at the first position, given a slot &lt;&gt;&quot; stx)]
+      [(cut &lt;...&gt; slot-or-expr ...)
+       (raise-syntax-error #f &quot;cut expects an expression at the first position, given &lt;...&gt;&quot; stx)]
+      [(cut proc slot-or-expr ... &lt;...&gt;)
+       ;   Applying a wrong number of arguments to the the lamba generated by cut, will provoke an
+       ; error caused by the application (proc ...). The quasisyntax/loc makes sure DrScheme
+       ; shows the cut-expression as the source of the error in stead of showing an error in 
+       ; the code implementing the macro i.e. in this code.
+       ;   Note: Is it possible to propagate the error to the location of the wrong application
+       ;         in the user code?
+       (generate-names/exprs #'(slot-or-expr ...)
+                             (lambda (slot-names names-or-exprs . ignored)
+                               #`(lambda (#,@slot-names . xs)
+                                   #,(quasisyntax/loc stx
+                                       (apply proc #,@names-or-exprs xs)))))]
+      [(cut proc slot-or-expr ...)
+       (generate-names/exprs #'(slot-or-expr ...)
+                             (lambda (slot-names names-or-exprs . ignored)
+                               #`(lambda #,slot-names
+                                   #,(quasisyntax/loc stx
+                                       (proc #,@names-or-exprs)))))]))
+  
+  )
+
+;(require cut)
+;&gt; ((cut list '- (list &lt;&gt; (list '- &lt;&gt; &lt;&gt; '-)) (list &lt;&gt;) (list &lt;&gt; (list &lt;&gt; &lt;&gt;))) 2 3 4 5 6 7 8)
+;(- (2 (- 3 4 -)) (5) (6 (7 8)))
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00079" href="msg00079.html">question on the opaque syntax object debate</a></strong>
+<ul><li><em>From:</em> Andrew Wilcox</li></ul></li>
+<li><strong><a name="00080" href="msg00080.html">Re: question on the opaque syntax object debate</a></strong>
+<ul><li><em>From:</em> Andre van Tonder</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00090.html">Re: question on the opaque syntax object debate</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00092.html">Re: question on the opaque syntax object debate</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00080.html">Re: question on the opaque syntax object debate</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00083.html">Re: question on the opaque syntax object debate</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00091"><strong>Date</strong></a></li>
+<li><a href="threads.html#00091"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

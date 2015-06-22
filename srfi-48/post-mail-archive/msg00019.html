@@ -1,0 +1,240 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Fixed fix of ~w,dF -->
+<!--X-From-R13: Yra Rvpxrl <Yra.RvpxrlNnyyinagntr.pbz> -->
+<!--X-Date: Tue,  7 Jun 2005 17:21:57 +0200 (DFT) -->
+<!--X-Message-Id: 200506070722.34397.Ken.Dickey@allvantage.com -->
+<!--X-Content-Type: multipart/mixed -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Fixed fix of ~w,dF</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00018.html">Date Prev</a>][<a href="msg00020.html">Date Next</a>][<a href="msg00018.html">Thread Prev</a>][<a href="msg00020.html">Thread Next</a>][<a href="maillist.html#00019">Date Index</a>][<a href="threads.html#00019">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Fixed fix of ~w,dF</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-48@DOMAIN.HIDDEN">srfi-48@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Fixed fix of ~w,dF</li>
+<li><em>From</em>: Ken Dickey &lt;<a href="mailto:Ken.Dickey@DOMAIN.HIDDEN">Ken.Dickey@xxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 7 Jun 2005 07:22:33 -0700</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-48@DOMAIN.HIDDEN">srfi-48@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Organization</em>: BitWize Consulting</li>
+<li><em>User-agent</em>: KMail/1.7</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>I got the padding wrong on the last version.  Here is a corrected version of 
+FORMAT (attached) and test cases.
+
+(expect &quot;     1.020&quot; (format &quot;~10,3F&quot; 1.02))
+
+(expect &quot;     1.025&quot; (format &quot;~10,3F&quot; 1.025))
+
+(expect &quot;     1.026&quot; (format &quot;~10,3F&quot; 1.0256))
+
+(expect &quot;     1.002&quot; (format &quot;~10,3F&quot; 1.002))
+
+(expect &quot;     1.002&quot; (format &quot;~10,3F&quot; 1.0025))
+
+(expect &quot;     1.003&quot; (format &quot;~10,3F&quot; 1.00256))
+
+Additional test cases welcome.
+
+
+Cheers,
+-KenD
+</pre><pre>
+; (define-syntax expect
+;   (syntax-rules ()
+;     ((expect ?expected ?form) ;=&gt;
+;      (expect ?expected ?form equal?)
+;     )
+;     ((expect ?expected ?form ?compare) ;=&gt;
+;      (let ( (expected ?expected)
+;             (actual   ?form)
+;           )
+;        (if (?compare expected actual)
+; 	   (format #t &quot;PASSED:  ~w~%&quot; '?form)
+;            (format #t 
+; 		    &quot;~%**FAIL: expected: ~w~% got: ~w~% from: ~w~%&quot;
+; 		    expected
+; 		    actual
+; 		    '?form)))
+;     )
+; ) )
+
+;; Or old style macros [Gambit]
+;
+(define-macro (expect expected form . compare)
+  (let* ( (same? (if (null? compare) equal? (eval (car `,compare))))
+          (wanted (eval `,expected))
+          (actual (eval `,form))
+        )
+    (if (same? wanted actual)
+        (format #t &quot;PASSED:  ~s~%&quot; form)
+        (format #t 
+                &quot;~%**FAIL: expected: ~s~% got:  ~s~% from: ~s~%&quot;
+                wanted
+                actual
+                form))
+) )
+        
+
+;;;===================================================
+
+(expect (format &quot;test ~s&quot; 'me) (format #f &quot;test ~a&quot; &quot;me&quot;))
+
+(expect  &quot; 0.333&quot; (format &quot;~6,3F&quot; 1/3)) ;;; &quot;  .333&quot; OK
+
+(expect &quot;  12&quot; (format &quot;~4F&quot; 12))
+
+(expect &quot;  12.346&quot; (format &quot;~8,3F&quot; 12.3456))
+
+(expect &quot;123.346&quot; (format &quot;~6,3F&quot; 123.3456))
+
+(expect &quot;123.346&quot; (format &quot;~4,3F&quot; 123.3456))
+
+(expect &quot;0.000+1.949i&quot; (format &quot;~8,3F&quot; (sqrt -3.8)))
+
+(expect &quot; 32.00&quot; (format &quot;~6,2F&quot; 32))
+
+(expect &quot;    32&quot; (format &quot;~6F&quot; 32))
+
+(expect &quot;   32.&quot; (format &quot;~6F&quot; 32.)) ;; &quot;  32.0&quot; OK
+;; NB: (not (and (exact? 32.) (integer? 32.)))
+
+(expect &quot;  3.2e46&quot; (format &quot;~8F&quot; 32e45))
+
+(expect &quot; 3.2e-44&quot; (format &quot;~8F&quot; 32e-45))
+
+(expect &quot;  3.2e21&quot; (format &quot;~8F&quot; 32e20))
+
+;;(expect &quot;   3.2e6&quot; (format &quot;~8F&quot; 32e5)) ;; ok.  converted in input to 3200000.0
+
+(expect &quot;   3200.&quot; (format &quot;~8F&quot; 32e2)) ;; &quot;  3200.0&quot; OK
+
+(expect &quot; 3.20e11&quot; (format &quot;~8,2F&quot; 32e10))
+
+(expect &quot;      1.2345&quot; (format &quot;~12F&quot; 1.2345))
+
+(expect &quot;        1.23&quot; (format &quot;~12,2F&quot; 1.2345))
+
+(expect &quot;       1.234&quot; (format &quot;~12,3F&quot; 1.2345))
+
+(expect &quot;        0.000+1.949i&quot; (format &quot;~20,3F&quot; (sqrt -3.8)))
+
+(expect &quot;0.000+1.949i&quot; (format &quot;~8,3F&quot; (sqrt -3.8)))
+
+(expect &quot; 3.46e11&quot; (format &quot;~8,2F&quot; 3.4567e11))
+
+; (expect &quot;#1=(a b c . #1#)&quot;
+;         (format &quot;~w&quot; (let ( (c '(a b c)) ) (set-cdr! (cddr c) c) c)))
+
+(expect &quot;
+&quot;
+        (format &quot;~A~A~&amp;&quot; (list-&gt;string (list #\newline)) &quot;&quot;))
+
+(expect &quot;a new test&quot;
+        (format &quot;~a ~? ~a&quot; 'a &quot;~s&quot; '(new) 'test))
+
+(expect &quot;a new test, yes!&quot;
+        (format &quot;~a ~?, ~a!&quot; 'a &quot;~s ~a&quot; '(new test) 'yes))
+
+(expect &quot; 3.46e20&quot; (format &quot;~8,2F&quot; 3.4567e20))
+
+(expect &quot; 3.46e21&quot; (format &quot;~8,2F&quot; 3.4567e21))
+
+(expect &quot; 3.46e22&quot; (format &quot;~8,2F&quot; 3.4567e22))
+
+(expect &quot; 3.46e23&quot; (format &quot;~8,2F&quot; 3.4567e23))
+
+(expect &quot;   3.e24&quot; (format &quot;~8,0F&quot; 3.4567e24))
+
+(expect &quot;  3.5e24&quot; (format &quot;~8,1F&quot; 3.4567e24))
+
+(expect &quot; 3.46e24&quot; (format &quot;~8,2F&quot; 3.4567e24))
+
+(expect &quot;3.457e24&quot; (format &quot;~8,3F&quot; 3.4567e24))
+
+(expect &quot;   4.e24&quot; (format &quot;~8,0F&quot; 3.5567e24))
+
+(expect &quot;  3.6e24&quot; (format &quot;~8,1F&quot; 3.5567e24))
+
+(expect &quot; 3.56e24&quot; (format &quot;~8,2F&quot; 3.5567e24))
+
+(expect &quot;       -0.&quot; (format &quot;~10,0F&quot; -3e-4))
+
+(expect &quot;      -0.0&quot; (format &quot;~10,1F&quot; -3e-4))
+
+(expect &quot;     -0.00&quot; (format &quot;~10,2F&quot; -3e-4))
+
+(expect &quot;    -0.000&quot; (format &quot;~10,3F&quot; -3e-4))
+
+(expect &quot;   -0.0003&quot; (format &quot;~10,4F&quot; -3e-4))
+
+(expect &quot;  -0.00030&quot; (format &quot;~10,5F&quot; -3e-4))
+
+(expect &quot;     1.020&quot; (format &quot;~10,3F&quot; 1.02))
+
+(expect &quot;     1.025&quot; (format &quot;~10,3F&quot; 1.025))
+
+(expect &quot;     1.026&quot; (format &quot;~10,3F&quot; 1.0256))
+
+(expect &quot;     1.002&quot; (format &quot;~10,3F&quot; 1.002))
+
+(expect &quot;     1.002&quot; (format &quot;~10,3F&quot; 1.0025))
+
+(expect &quot;     1.003&quot; (format &quot;~10,3F&quot; 1.00256))
+
+;;   ---   E O F   ---   ;;
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00018.html">Format fix</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00020.html">w,dF under Guile and Gauche</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00018.html">Format fix</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00020.html">w,dF under Guile and Gauche</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00019"><strong>Date</strong></a></li>
+<li><a href="threads.html#00019"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

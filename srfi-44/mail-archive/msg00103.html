@@ -1,0 +1,213 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: s/&#45;LEFT//g? -->
+<!--X-From-R13: "Penqq I. Embalr" <oenqq+fesvNfmbalr.pbz> -->
+<!--X-Date: Tue, 21 Oct 2003 02:44:36 +0200 (DFT) -->
+<!--X-Message-Id: 20031021004429.GE4433@ogre.szonye.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20031016200629.GE2858@ogre.szonye.com -->
+<!--X-Reference: 20031020182528.GA26827@freenetproject.org -->
+<!--X-Reference: 20031020191331.GB4433@ogre.szonye.com -->
+<!--X-Reference: 20031020203620.GB28213@freenetproject.org -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: s/-LEFT//g?</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00102.html">Date Prev</a>][<a href="msg00104.html">Date Next</a>][<a href="msg00102.html">Thread Prev</a>][<a href="msg00104.html">Thread Next</a>][<a href="maillist.html#00103">Date Index</a>][<a href="threads.html#00103">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: s/-LEFT//g?</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: s/-LEFT//g?</li>
+<li><em>From</em>: &quot;Bradd W. Szonye&quot; &lt;<a href="mailto:bradd%2Bsrfi@DOMAIN.HIDDEN">bradd+srfi@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 20 Oct 2003 17:44:29 -0700</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20031020203620.GB28213@DOMAIN.HIDDEN">20031020203620.GB28213@xxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Mail-followup-to</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>References</em>: &lt;<a href="mailto:20031016200629.GE2858@DOMAIN.HIDDEN">20031016200629.GE2858@xxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20031020182528.GA26827@DOMAIN.HIDDEN">20031020182528.GA26827@xxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20031020191331.GB4433@DOMAIN.HIDDEN">20031020191331.GB4433@xxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20031020203620.GB28213@DOMAIN.HIDDEN">20031020203620.GB28213@xxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mutt/1.4i</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>On Mon, Oct 20, 2003 at 03:36:20PM -0500, scgmille@xxxxxxxxxxxxxxxxxx wrote:
+&gt; I've updated <a  rel="nofollow" href="http://sgmiller.org/code/srfi-44.html">http://sgmiller.org/code/srfi-44.html</a>.  The general
+&gt; method is *-get.  Sequences and ordered collections have a *-get-left,
+&gt; *-get-right as well.
+
+Comments on the latest draft:
+
+1. Mutable collections
+
+Is this the best name for the property? Just a quibble, but users may
+misunderstand the meaning of (not (mutable? c)) as &quot;can't change the
+values&quot; rather than &quot;can't use the !! procedures.&quot;
+
+2. Reversible collections
+
+This mixes up the two reversibility-related features.
+
+    reversible -&gt; backwards enumeration is POSSIBLE
+    bidirectional -&gt; backwards enumeration is EFFICIENT
+
+Of the two, &quot;reversible&quot; is more important, because it affects the
+interface. The text as written uses the &quot;reversible&quot; name, but it
+actually describes a &quot;bidirectional&quot; collection.
+
+Recommendation: Fix the definition so that it actually describes
+reversibility. Optionally, also include the &quot;bidirectional&quot; trait.
+
+3. Folding enumerators
+
+The enumerators do not match the interface or semantics for *-get.
+Specifically, it requires that collection-fold is a left-fold instead of
+an arbitrary fold.
+
+Recommendation: Match the new interface for *-get. Provide:
+
+    collection-fold     arbitrary/convenient/efficient order
+    *-fold-left         in-order enumeration
+    *-fold-right        reverse-order enumeration
+
+Issue: Should it be collection-fold-left or *-fold-left? In other words,
+are the directional enumerators defined for all collections or only for
+directional collections? If the former, then what do they do to an
+unordered bag?
+
+4. Immutable Collections
+
+Shouldn't there be a predicate for this?
+
+5. Size versus Length
+
+I'd like a suggestion that collection-size should return the number of
+iterations of collection-fold, if possible. No big deal if you disagree.
+
+6. Infinite collections
+
+I agree with the sentiment of the second paragraph -- cycles don't
+necessarily imply an infinite sequence -- but I think the text
+overconstrains implementations too much. It suggests to me that a finite
+data structure can never produce an infinite sequence, which I disagree
+with. It'd be better to say, &quot;Don't make it infinite just because you're
+lazy; only do it when that's what you really mean.&quot; I'm not sure how to
+express that more clearly without being insulting, though.
+
+7. Ordered Collections ... Value Equality
+
+Recommendation: Somewhere in here, point out that you can usually adapt
+a strict-weak ordering function for use as an equivalence function.
+
+Recommendation: Explicitly state that dictionaries should use the
+ordering function or the value-equivalence function as a default if you
+don't provide a separate one. Or at least insist that each collection
+document the default.
+
+8. Sequences
+
+Shouldn't there be a predicate to test for fixed-size sequences, since
+it affects the defined interfaces? Also, sequences should not be
+subtypes of bags unless bags also have a fixed-size interface.
+
+9. Procedures
+
+There are a lot of *-left and *-right operations defined for
+non-directional containers. For example, the bag still has *-insert-left
+and *-insert-right, which don't make any more sense than *-get-left
+does. Also, I didn't do a good job earlier of specifying exactly when
+*-left and *-right make sense.
+
+If a container has *-method, then it should have
+
+    *-method-left       if sequence?, ordered?, or reversible?
+    *-method-right      if reversible?
+
+For example, a bag should only have *-method-left if it's ordered or
+reversible, and *-method-right only if it's reversible.
+
+Also, &quot;insert-left&quot; and &quot;insert-right&quot; should probably be &quot;add-left&quot; and
+&quot;add-right.&quot; That way, INSERT and DELETE always require an index or key,
+REMOVE always requires a value, and ADD never requires any of them.
+
+Likewise, dictionaries should probably use INSERT and DELETE instead of
+PUT and REMOVE. Dictionaries are a lot like sequences with arbitrary
+indices, yet the interface isn't much like the sequence interface at
+all.
+
+In short, I think the procedures section needs an editorial overhaul to
+correctly incorporate the changes, and it needs some interface changes
+to reduce unnecessary incompatibilities between different collection
+types.
+
+I'll happily help with that overhaul if you like; after all, I am trying
+to help, not trying to be a trouble-maker!
+-- 
+Bradd W. Szonye
+<a  rel="nofollow" href="http://www.szonye.com/bradd">http://www.szonye.com/bradd</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00104" href="msg00104.html">Procedures (interfaces)</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00092" href="msg00092.html">s/-LEFT//g?</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+<li><strong><a name="00093" href="msg00093.html">Re: s/-LEFT//g?</a></strong>
+<ul><li><em>From:</em> scgmille</li></ul></li>
+<li><strong><a name="00095" href="msg00095.html">Re: s/-LEFT//g?</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+<li><strong><a name="00102" href="msg00102.html">Re: s/-LEFT//g?</a></strong>
+<ul><li><em>From:</em> scgmille</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00102.html">Re: s/-LEFT//g?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00104.html">Procedures (interfaces)</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00102.html">Re: s/-LEFT//g?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00104.html">Procedures (interfaces)</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00103"><strong>Date</strong></a></li>
+<li><a href="threads.html#00103"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

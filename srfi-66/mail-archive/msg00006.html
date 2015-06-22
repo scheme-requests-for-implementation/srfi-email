@@ -1,0 +1,218 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: additional operations: COPY! and COPY -->
+<!--X-From-R13: fronfgvna.rtareNcuvyvcf.pbz -->
+<!--X-Date: Mon, 14 Mar 2005 11:24:32 +0100 (NFT) -->
+<!--X-Message-Id: OF40D48FC9.78AA63CF&#45;ONC1256FC4.002DF802&#45;C1256FC4.00392CC3@philips.com -->
+<!--X-Content-Type: multipart/alternative -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>additional operations: COPY! and COPY</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00005.html">Date Prev</a>][<a href="msg00007.html">Date Next</a>][<a href="msg00005.html">Thread Prev</a>][<a href="msg00007.html">Thread Next</a>][<a href="maillist.html#00006">Date Index</a>][<a href="threads.html#00006">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>additional operations: COPY! and COPY</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-66@DOMAIN.HIDDEN">srfi-66@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: additional operations: COPY! and COPY</li>
+<li><em>From</em>: <a href="mailto:sebastian.egner@DOMAIN.HIDDEN">sebastian.egner@xxxxxxxxxxx</a></li>
+<li><em>Date</em>: Mon, 14 Mar 2005 11:23:25 +0100</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-66@DOMAIN.HIDDEN">srfi-66@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+
+<br><font size=2 face="sans-serif">Dear list,</font>
+<br>
+<br><font size=2 face="sans-serif">First of all I would like to express
+my support for this SRFI; in particular</font>
+<br><font size=2 face="sans-serif">because it is so concise and useful.
+In my opinion there is no conflict</font>
+<br><font size=2 face="sans-serif">at all with SRFI-4, neither in the Scheme
+system nor in my mind.</font>
+<br>
+<br><font size=2 face="sans-serif">Then I would like to support and Taylor's
+proposal of having a COPY!</font>
+<br><font size=2 face="sans-serif">operation, for example with the following
+specification:</font>
+<br>
+<br><font size=2 face="sans-serif">(BYTE-VECTOR-COPY! lhs i-lhs rhs i-rhs
+n)</font>
+<br>
+<br><font size=2 face="sans-serif">&nbsp; &nbsp; &nbsp; &nbsp; copies
+n bytes from the byte-vector rhs (starting at index i-rhs) into</font>
+<br><font size=2 face="sans-serif">&nbsp; &nbsp; &nbsp; &nbsp; the
+byte-vector lhs (starting at index i-lhs). The exact integers n, i-rhs,</font>
+<br><font size=2 face="sans-serif">&nbsp; &nbsp; &nbsp; &nbsp; and
+i-lhs satisfy</font>
+<br>
+<br><font size=2 face="sans-serif">&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+&nbsp; &nbsp; &nbsp; 0 &lt;= i-rhs &lt;= i-rhs + n &lt;= (byte-vector-length
+rhs),</font>
+<br><font size=2 face="sans-serif">&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+&nbsp; &nbsp; &nbsp; 0 &lt;= i-lhs &lt;= i-lhs + n &lt;= (byte-vector-length
+lhs).</font>
+<br>
+<br><font size=2 face="sans-serif">&nbsp; &nbsp; &nbsp; &nbsp; The
+procedure makes sure the elements are properly copied, even if</font>
+<br><font size=2 face="sans-serif">&nbsp; &nbsp; &nbsp; &nbsp; lhs
+and rhs refer to the same byte-vector object.</font>
+<br>
+<br><font size=2 face="sans-serif">(Warning to implementors in C: Use memmove,
+not memcpy!)</font>
+<br>
+<br><font size=2 face="sans-serif">In addition, I am frequently missing
+VECTOR-COPY, and this will likely also</font>
+<br><font size=2 face="sans-serif">be the case for byte vectors. So I propose
+to include also:</font>
+<br>
+<br><font size=2 face="sans-serif">(BYTE-VECTOR-COPY byte-vector)</font>
+<br>
+<br><font size=2 face="sans-serif">&nbsp; &nbsp; &nbsp; &nbsp; a
+newly allocated copy of byte-vector.</font>
+<br>
+<br><font size=2 face="sans-serif">Concerning the /fill/ argument in MAKE-BYTE-VECTOR:
+It is optional in R5RS,</font>
+<br><font size=2 face="sans-serif">but I would be in favour of having it
+mandatory here. (In fact, I would be in favour</font>
+<br><font size=2 face="sans-serif">of having it mandatory in MAKE-VECTOR
+as well; the internal representations</font>
+<br><font size=2 face="sans-serif">of vectors are always initialized anyhow.
+But that is another discussion.)</font>
+<br>
+<br><font size=2 face="sans-serif">&lt;minor nitpick&gt;The notation &quot;[0,
+255]&quot; could be replaced by &quot;[0..255]&quot; or</font>
+<br><font size=2 face="sans-serif">better yet by &quot;{0, ..., 255}&quot;
+for clarity.&lt;/minor nitpick&gt;</font>
+<br>
+<br><font size=2 face="sans-serif">See you,</font>
+<br>
+<br><font size=2 face="sans-serif">Sebastian.</font>
+<br>
+<br><font size=2 face="sans-serif">--- begin untested code snippet</font>
+<br>
+<br><font size=1><tt>; proposed operations</tt></font>
+<br>
+<br><font size=1><tt>(define (byte-vector-copy! lhs i-lhs rhs i-rhs n)</tt></font>
+<br><font size=1><tt>&nbsp; (let ((vec-lhs (byte-vector-elements lhs))</tt></font>
+<br><font size=1><tt>&nbsp; &nbsp; &nbsp; &nbsp; (vec-rhs (byte-vector-elements
+rhs)))</tt></font>
+<br><font size=1><tt>&nbsp; &nbsp; (let ((n-lhs (vector-length vec-lhs))</tt></font>
+<br><font size=1><tt>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; (n-rhs (vector-length
+vec-rhs)))</tt></font>
+<br><font size=1><tt>&nbsp; &nbsp; &nbsp; (if (not (and (integer? n) (exact?
+n) (&gt;= n 0)</tt></font>
+<br><font size=1><tt>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+&nbsp; &nbsp; (integer? i-lhs) (exact? i-lhs)</tt></font>
+<br><font size=1><tt>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+&nbsp; &nbsp; (&gt;= i-lhs 0) (&lt;= (+ i-lhs n) n-lhs)</tt></font>
+<br><font size=1><tt>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+&nbsp; &nbsp; (integer? i-rhs) (exact? i-rhs)</tt></font>
+<br><font size=1><tt>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+&nbsp; &nbsp; (&gt;= i-rhs 0) (&lt;= (+ i-rhs n) n-rhs)))</tt></font>
+<br><font size=1><tt>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; (error &quot;bad
+indices&quot; i-lhs i-rhs n))</tt></font>
+<br><font size=1><tt>&nbsp; &nbsp; &nbsp; (if (&lt;= i-lhs i-rhs)</tt></font>
+<br><font size=1><tt>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; (do ((i 0 (+ i
+1))) ((= i n))</tt></font>
+<br><font size=1><tt>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; (vector-set!
+vec-lhs </tt></font>
+<br><font size=1><tt>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;(+ i i-lhs)</tt></font>
+<br><font size=1><tt>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;(vector-ref vec-rhs (+ i i-rhs))))</tt></font>
+<br><font size=1><tt>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; (do ((i (- n 1)
+(- i 1))) ((= i -1))</tt></font>
+<br><font size=1><tt>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; (vector-set!
+vec-lhs</tt></font>
+<br><font size=1><tt>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;(+ i i-lhs)</tt></font>
+<br><font size=1><tt>&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;
+&nbsp; &nbsp; &nbsp; &nbsp; &nbsp;(vector-ref vec-rhs (+ i i-rhs))))))))</tt></font>
+<br>
+<br><font size=1><tt>(define (byte-vector-copy byte-vector)</tt></font>
+<br><font size=1><tt>&nbsp; (let ((n (byte-vector-length byte-vector)))</tt></font>
+<br><font size=1><tt>&nbsp; &nbsp; (let ((new-byte-vector (make-byte-vector
+n 0)))</tt></font>
+<br><font size=1><tt>&nbsp; &nbsp; &nbsp; (byte-vector-copy! new-byte-vector
+0 byte-vector 0 n)</tt></font>
+<br><font size=1><tt>&nbsp; &nbsp; &nbsp; new-byte-vector)))</tt></font>
+<br>
+<br><font size=1><tt>; test code</tt></font>
+<br>
+<br><font size=1><tt>(define x1 (byte-vector 1 2 3))</tt></font>
+<br><font size=1><tt>(byte-vector-copy! x1 1 x1 0 2)</tt></font>
+<br><font size=1><tt>(if (not (= (byte-vector-ref x1 2) 2))</tt></font>
+<br><font size=1><tt>&nbsp; &nbsp; (error &quot;byte-vector-copy! incorrect
+on overlapping copies&quot;))</tt></font>
+<br>
+<br><font size=2 face="sans-serif">--- end untested code snippet</font>
+<br><font size=2 face="sans-serif"><br>
+----<br>
+Dr. Sebastian Egner<br>
+Senior Scientist Channel Coding &amp; Modulation<br>
+Philips Research Laboratories<br>
+Prof. Holstlaan 4 (WDC 1-051, 1st floor, room 51)<br>
+5656 AA Eindhoven<br>
+The Netherlands<br>
+tel: &nbsp; &nbsp; &nbsp; +31 40 27-43166 &nbsp; *** SINCE 10-Feb-2005
+***<br>
+fax: &nbsp; &nbsp; &nbsp;+31 40 27-44004<br>
+email: sebastian.egner@xxxxxxxxxxx</font>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00007" href="msg00007.html">Also SUBSEQ and FILL! [was Re: additional operations: COPY! and COPY]</a></strong>
+<ul><li><em>From:</em> Donovan Kolbly</li></ul></li>
+<li><strong><a name="00010" href="msg00010.html">Re: additional operations: COPY! and COPY</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00005.html">Re: some comments</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00007.html">Also SUBSEQ and FILL! [was Re: additional operations: COPY! and COPY]</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00005.html">Re: some comments</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00007.html">Also SUBSEQ and FILL! [was Re: additional operations: COPY! and COPY]</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00006"><strong>Date</strong></a></li>
+<li><a href="threads.html#00006"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

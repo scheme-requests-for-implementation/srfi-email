@@ -1,0 +1,181 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: LIST&#45;LENGTH &#38; circular lists -->
+<!--X-From-R13: @bnu Tevrqzna <sevrqznaNfcybqr.pbz> -->
+<!--X-Date: Sun, 22 Apr 2001 18:27:17 &#45;0500 (CDT) -->
+<!--X-Message-Id: 20010422162708.782967.FMU5418@piglet.prv.splode.com -->
+<!--X-Content-Type: multipart/mixed -->
+<!--X-Reference: 199902191757.MAA24323@shivers.ne.mediaone.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: LIST-LENGTH &amp; circular lists</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00095.html">Date Prev</a>][<a href="msg00097.html">Date Next</a>][<a href="msg00047.html">Thread Prev</a>][<a href="msg00097.html">Thread Next</a>][<a href="maillist.html#00096">Date Index</a>][<a href="threads.html#00096">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: LIST-LENGTH &amp; circular lists</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-1@DOMAIN.HIDDEN">srfi-1@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: LIST-LENGTH &amp; circular lists</li>
+<li><em>From</em>: Noah Friedman &lt;<a href="mailto:friedman@DOMAIN.HIDDEN">friedman@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 22 Apr 2001 16:27:08 -0700 (PDT)</li>
+<li><em>Cc</em>: Olin Shivers &lt;<a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxxxxx</a>&gt;, Doug Currie &lt;<a href="mailto:e@DOMAIN.HIDDEN">e@xxxxxxxxxxx</a>&gt;,        <a href="mailto:hjstein@DOMAIN.HIDDEN">hjstein@xxxxxxxxx</a> (Harvey J. Stein)</li>
+<li><em>References</em>: &lt;<a href="mailto:199902191757.MAA24323@DOMAIN.HIDDEN">199902191757.MAA24323@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt; </li>
+<li><em>Reply-to</em>: Noah Friedman &lt;<a href="mailto:friedman@DOMAIN.HIDDEN">friedman@xxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Sorry to be bringing up such an old subject, but I ran across this thread
+as the result of a web search and couldn't help replying.
+
+Before quoting the following, let me remind you that Harvey Stein proposed
+that the &quot;generalized length&quot; of a list should be defined as the number of
+elements, not the number of times you could apply cdr to the list.  
+
+On Feb 22 1999, Doug Currie wrote the following:
+&gt;At 9:35 PM +0200 2/22/99, Harvey J. Stein wrote:
+&gt;&gt;...
+&gt;&gt;However, I don't think a generalized length is such a good idea.  It
+&gt;&gt;implies a substantial amount of additional overhead on computing the
+&gt;&gt;length of a list.  This overhead remains no matter what you return for
+&gt;&gt;circular lists - it's the act of detecting them which adds the
+&gt;&gt;overhead.
+&gt;
+&gt;Not necessarily. The length function must compute a count. At some point
+&gt;this count will exceed a (implementation dependent) limit, e.g., the size
+&gt;of the heap, when it becomes clear that the list is circular. For
+&gt;non-circular lists this adds little overhead, just one integer compare per
+&gt;iteration (in a clever low level implementation, it may add no overhead if
+&gt;it's combined with the detection of fixnum overflow to switch to bignum
+&gt;addition). For circular lists, this may take a while to detect, but on
+&gt;today's fast processors with lists that fit in cache it can be quite
+&gt;competitive with more complex approaches that allocate memory or use N*N*N
+&gt;algorithms. Using these counting techniques a list-length can be provided
+&gt;competitive in performance with a non-circular-list-detecting version.
+&gt;However, this approach doesn't provide a result for circular list more
+&gt;useful than 0 or #f.
+
+I think you can compute the number of distinct elements in a circular list
+in linear time and constant space without resorting to any
+implemented-defined behavior of the runtime environment.
+
+I defined the function below in MIT Scheme and evaluated the following:
+
+    (define l '(1 2 3 4 5 6 7))
+    (set-cdr! (list-tail l 6) (list-tail l 3))
+
+    (circular-list-length l)
+    ;Value: 7
+
+    (circular-list-length '(1 2 3))
+    ;Value: 3
+
+    (circular-list-length '())
+    ;Value: 0
+
+Here's the function definition, which works for non-circular lists as well.
+</pre><pre>(define (circular-list-length lst)
+  &quot;Return the number of distinct elements of circular list LST.&quot;
+  (let ((tortoise lst)
+        (hare lst)
+        (tortoise-advance #t)
+        (len 0))
+    ;; Find a member of the list guaranteed to be within the cycle, and
+    ;; compute length if list turns out to be non-circular.
+    (do ()
+        ((null? hare))
+      (set! hare (cdr hare))
+      (set! len  (1+ len))
+      (set! tortoise-advance (not tortoise-advance))
+      (if tortoise-advance
+           (set! tortoise (cdr tortoise)))
+      (if (eq? hare tortoise)
+          (begin
+            (set! hare '())
+            (set! len  0))))
+
+    (if (and (not (null? lst))
+             (zero? len))
+        (begin
+          ;; Find period of cycle.
+          (set! hare (cdr tortoise))
+          (set! len 1)
+          (do ()
+              ((eq? hare tortoise))
+            (set! hare (cdr hare))
+            (set! len (1+ len)))
+
+          ;; Give hare a head start from the start of the list equal to the
+          ;; loop size.  If both move at the same speed they must meet at
+          ;; the nexus because they are in phase, i.e. when tortoise enters
+          ;; the loop, hare must still be exactly one loop period
+          ;; ahead--but that means it will be pointing at the same list
+          ;; element.
+          (set! tortoise lst)
+          (set! hare (list-tail lst len))
+          (do ()
+              ((eq? tortoise hare))
+            (set! hare (cdr hare))
+            (set! tortoise (cdr tortoise))
+            (set! len (1+ len)))))
+    len))
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00097" href="msg00097.html">Re: LIST-LENGTH &amp; circular lists</a></strong>
+<ul><li><em>From:</em> shivers</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00042" href="msg00042.html">Re: LIST-LENGTH &amp; circular lists</a></strong>
+<ul><li><em>From:</em> Olin Shivers</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00095.html">Re: More on SRFI-1/SRFI-13 inconsistency in tabulate procedure</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00097.html">Re: LIST-LENGTH &amp; circular lists</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00047.html">Re: LIST-LENGTH &amp; circular lists</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00097.html">Re: LIST-LENGTH &amp; circular lists</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00096"><strong>Date</strong></a></li>
+<li><a href="threads.html#00096"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,160 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: no constants please -->
+<!--X-From-R13: Dvpuneq Yryfrl <xryfrlNf48.bet> -->
+<!--X-Date: Wed, 31 Dec 2003 22:13:55 +0100 (NFT) -->
+<!--X-Message-Id: E1Abnds&#45;000577&#45;00@mail.mumble.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 87fzf0py1k.fsf@becket.becket.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: no constants please</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00126.html">Date Prev</a>][<a href="msg00128.html">Date Next</a>][<a href="msg00125.html">Thread Prev</a>][<a href="msg00128.html">Thread Next</a>][<a href="maillist.html#00127">Date Index</a>][<a href="threads.html#00127">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: no constants please</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:tb@DOMAIN.HIDDEN">tb@xxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: no constants please</li>
+<li><em>From</em>: Richard Kelsey &lt;<a href="mailto:kelsey@DOMAIN.HIDDEN">kelsey@xxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 31 Dec 2003 16:12:36 -0500</li>
+<li><em>Cc</em>: <a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>, <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:87fzf0py1k.fsf@DOMAIN.HIDDEN">87fzf0py1k.fsf@xxxxxxxxxxxxxxxxx</a>&gt; (<a href="mailto:tb@DOMAIN.HIDDEN">tb@xxxxxxxxxx</a>)</li>
+<li><em>Sender</em>: &lt;<a href="mailto:kelsey@DOMAIN.HIDDEN">kelsey@xxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>   From: tb@xxxxxxxxxx (Thomas Bushnell, BSG)
+   Date: 31 Dec 2003 11:49:59 -0800
+
+   Richard Kelsey &lt;kelsey@xxxxxxx&gt; writes:
+
+   &gt; Are there any implementations of Scheme in use where SCHEME_FALSE,
+   &gt; SCHEME_TRUE, SCHEME_NULL, or SCHEME_UNSPECIFIC should be freshly
+   &gt; allocated?  Or where EQ? and == are not equivalent?  (These are not
+   &gt; rhetorical questions; I really would like to know -- is this an
+   &gt; existing or only potential problem for portability?)
+
+   It is a known strategy for more complex memory systems to have a
+   variety of different values for certain constants.  
+
+Okay, but that doesn't supply an answer to either question.
+
+Anyway, I just searched through SRFI-50 and found no mention
+of C's ==, so I am mystified as to why it is an issue.  The SRFI
+does have
+  int SCHEME_EQ_P(scheme_value, scheme_value)
+for invoking EQ? from C.  I could see adding
+  #define SCHEME_IS_FALSE(scheme_value)		\
+    (SCHEME_EQ_P(SCHEME_FALSE, scheme_value))
+  #define SCHEME_IS_TRUE(scheme_value)		\
+    (! SCHEME_EQ_P(SCHEME_FALSE, scheme_value))
+
+The SRFI doesn't say that there are any values that the GC
+doesn't care about; in particular it doesn't say that locations
+containing SCH_TRUE, SCH_FALSE, SCH_NULL, or SCH_UNSPECIFIC
+need not be registered with the GC.  They may be heap objects or
+they may not.
+
+This thread started with Tom Lord's statement:
+
+  SCHEME_FALSE, SCHEME_TRUE, SCHEME_NULL, and SCHEME_UNSPECIFIC should
+  be functions, not constants:
+
+  Not
+        x = SCHEME_FALSE;
+  but:
+        SCHEME_MAKE_FALSE (&amp;x, instance);
+
+  because, you never know, those constants might be heap allocated.
+
+and then in a second message:  
+
+  Perhaps it would be clearer if I said that those constants may be
+  _newly_ heap allocated.
+
+I can't imagine why an implementation would allocate any of
+these constants on the fly.  Even if you had a system which
+had multiple versions of them and the associated complicated
+EQ? (which I still don't believe will ever happen), why on 
+Earth would you allocate the new copies on the fly?
+
+There is a cost to indicating that a functions or macros may
+trigger a GC.  Their uses have to be scrutinized to see which
+values are live across the use.  It's a total pain.  I can't
+see declaring that SCHEME_FALSE, SCHEME_TRUE, SCHEME_NULL or
+SCHEME_UNDEFINED might trigger a GC just because there might
+someday exist such an implementation.
+
+If someone produces an undefined-value SRFI that describes
+undefined-value object containing useful data, such as Bear
+has in his implementation, then it would make sense to have
+a way to create such objects from C.  It doesn't make sense
+to do so now, when there isn't any such SRFI.  Even with
+such a SRFI there would be utility to having an undefined
+value that could be used in places where a GC would be
+undesirable.
+                                       -Richard
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00128" href="msg00128.html">Re: no constants please</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00125" href="msg00125.html">Re: no constants please</a></strong>
+<ul><li><em>From:</em> Thomas Bushnell, BSG</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00126.html">Re: no constants please</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00128.html">Re: no constants please</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00125.html">Re: no constants please</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00128.html">Re: no constants please</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00127"><strong>Date</strong></a></li>
+<li><a href="threads.html#00127"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

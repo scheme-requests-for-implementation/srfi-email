@@ -1,0 +1,172 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: neighbor deletion; param ordering; < &#38; <=; fresh lists; cell recycling -->
+<!--X-From-R13: Rnivq Trhre <qsrhreNgrpuubhfr.bet> -->
+<!--X-Date: Sun, 21 Jul 2002 07:48:33 +0200 (DFT) -->
+<!--X-Message-Id: Pine.LNX.4.44.0207210116370.14569&#45;100000@techhouse.brown.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200207210343.g6L3hbd27195@mongkok.dyndns.org -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: neighbor deletion; param ordering; &lt; &amp; &lt;=; fresh lists; cell recycling</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00004.html">Date Prev</a>][<a href="msg00006.html">Date Next</a>][<a href="msg00004.html">Thread Prev</a>][<a href="msg00006.html">Thread Next</a>][<a href="maillist.html#00005">Date Index</a>][<a href="threads.html#00005">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: neighbor deletion; param ordering; &lt; &amp; &lt;=; fresh lists; cell recycling</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-32@DOMAIN.HIDDEN">srfi-32@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: neighbor deletion; param ordering; &lt; &amp; &lt;=; fresh lists; cell recycling</li>
+<li><em>From</em>: David Feuer &lt;<a href="mailto:dfeuer@DOMAIN.HIDDEN">dfeuer@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 21 Jul 2002 01:48:39 -0400 (EDT)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-32@DOMAIN.HIDDEN">srfi-32@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:200207210343.g6L3hbd27195@DOMAIN.HIDDEN">200207210343.g6L3hbd27195@xxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+***I'm still wondering where the reference implementation is.***
+
+
+On Sat, 20 Jul 2002 shivers@xxxxxxxxxxxxx wrote:
+
+&gt; Good question -- it ain't sorting. But it's something you typically do with
+&gt; sorted data. I considered punting these. But writing them well takes a little
+&gt; work (especially the iterative destructive list version), and part of the
+&gt; library game, for me, is that I make an effort and write a thing well, once,
+&gt; and then everyone can use it. Count it under &quot;manipulation of sorted data,&quot;
+&gt; just like vector binary search.
+
+I think you should make it a separate SRFI.  It does seem a bit too small
+for that, but it really doesn't make sense to me to have it in the sorting
+library.
+
+&gt;     I think the ordering op should go first.
+&gt;
+&gt; Me, too. But the compatibility win outweighs my preference here.
+&gt;
+&gt;     Also, &lt;= seems much more intuitive than &lt;.
+&gt;
+&gt; Me, too. But it busts compatibility with just about *everything* out there,
+&gt; lisp and Scheme. I don't think it's worth it.
+
+Qaere:  Do you provide functions with the same _names_ as existing
+implementations, or just the same interfaces?  If the names are not the
+same, compatibility seems to me to be not such a big deal, as the
+functions will have to be redefined anyway.  It's not much harder to say
+(define (cl-sort-list list &lt;)
+	(sort-list (lambda (x y) (not (&lt; y x))) list))
+
+than
+(define (cl-sort-list sort-list)
+
+Not quite as easy, but not a big deal if you're going to have
+compatability definitions anyway.  Unless I'm missing some effect this has
+on the rest of the SRFI...
+
+Another little thought:  You could provide _both_, with the different
+versions marked by asterisks or something.  That could be a bit confusing
+though, and even lead to a bit of bloat.
+
+&gt;     I note that the non-mutating vector sorts are guaranteed to copy the
+&gt;     vector.  It would seem potentially very useful to give some indication of
+&gt;     whether the new vector is in fact different from the old vector, to allow
+&gt;     programmers to optimize for generational collectors.
+&gt;
+&gt; Heh? The new vector is *guaranteed* to be different from the old vector.
+&gt; You alter one, the other is unchanged. Guaranteed.
+
+What I was thinking was that in functional-style code, if you sort an
+array, and if the array was in fact already sorted, you get a little win
+by using the old array rather than the new one (and letting the new one
+get trashed almost immediately in the first generation) rather than having
+2 identical arrays sitting around wasting memory, and missing the
+opportunity for a first-generation collection.  But I'm no expert at GC,
+so this may not actually be significant.  Of course you can always check
+if the array is sorted first, but that would take more time.
+
+&gt; If you really, really need to know that the returned list is fresh, that it
+&gt; contains no cons cells in common with the input list, you are in a
+&gt; side-effecting world. Otherwise you would not care about cons-cell identity,
+&gt; right? So copy the list and then use SORT-LIST!. It would probably run faster
+&gt; and certainly allocate less &quot;trash&quot; memory than a purely functional sort.
+&gt; So we might as well let this one slide.
+
+I was thinking of this in the &quot;side-effecting world&quot;.  I was guessing
+(without any serious thought on the topic) that it could be faster (at
+least on some implementations) to do a total-copy sort than a
+copy-then-sort.  Don't have a clue if this is really the case.
+
+&gt; so there are not going to be any new cells in the answer. Let me add a little
+&gt; bit of language to the spec to spell this out more (which is mostly taken
+&gt; from the later appearance of LIST-MERGE!):
+
+Alright.  You may be able to get away with something really simple like:
+&quot;The maximum amount of live memory between the call to list-merge! and its
+completion may be no more than a constant amount more than the amount of
+live memory immediately before the call to list-merge!&quot;.
+
+&gt;     These procedures use SET-CDR!s to rearrange the cells of the lists into
+&gt;     the final result. As such, they do not allocate any extra cons cells --
+&gt;     they work &quot;in place.&quot; Hence, any cons cell appearing in the result must
+&gt;     have originally appeared in an input.
+
+I think that's OK.
+
+David
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00004" href="msg00004.html">neighbor deletion; param ordering; &lt; &amp; &lt;=; fresh lists; cell recycling</a></strong>
+<ul><li><em>From:</em> shivers</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00004.html">neighbor deletion; param ordering; &lt; &amp; &lt;=; fresh lists; cell recycling</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00006.html">cell recycling; reference implementation; param ordering; fresh lists</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00004.html">neighbor deletion; param ordering; &lt; &amp; &lt;=; fresh lists; cell recycling</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00006.html">cell recycling; reference implementation; param ordering; fresh lists</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00005"><strong>Date</strong></a></li>
+<li><a href="threads.html#00005"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

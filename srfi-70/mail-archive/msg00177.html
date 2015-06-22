@@ -1,0 +1,187 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: inexactness vs. exactness -->
+<!--X-From-R13: Ohoerl Xnssre <ntwNnyhz.zvg.rqh> -->
+<!--X-Date: Sun, 31 Jul 2005 04:37:47 +0200 (DFT) -->
+<!--X-Message-Id: 20050731023754.BBC9F1B77B4@voluntocracy.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: y9ly87s4ud7.fsf@sams.informatik.uni&#45;tuebingen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: inexactness vs. exactness</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00176.html">Date Prev</a>][<a href="msg00178.html">Date Next</a>][<a href="msg00169.html">Thread Prev</a>][<a href="msg00178.html">Thread Next</a>][<a href="maillist.html#00177">Date Index</a>][<a href="threads.html#00177">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: inexactness vs. exactness</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:will@DOMAIN.HIDDEN">will@xxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: inexactness vs. exactness</li>
+<li><em>From</em>: Aubrey Jaffer &lt;<a href="mailto:agj@DOMAIN.HIDDEN">agj@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 30 Jul 2005 22:37:54 -0400 (EDT)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-70@DOMAIN.HIDDEN">srfi-70@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-70@DOMAIN.HIDDEN">srfi-70@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:y9ly87s4ud7.fsf@DOMAIN.HIDDEN">y9ly87s4ud7.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt; (message from	William D Clinger on Wed, 27 Jul 2005 08:48:36 +0200)</li>
+<li><em>References</em>: &lt;<a href="mailto:y9ly87s4ud7.fsf@DOMAIN.HIDDEN">y9ly87s4ud7.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre> | From: William D Clinger &lt;will@xxxxxxxxxxx&gt;
+ | Date: Wed, 27 Jul 2005 08:48:36 +0200
+ | 
+ | Aubrey Jaffer wrote:
+ | &gt; But if we consider memory limitations for this system, then there
+ | &gt; are many mathematical numbers between any two representable
+ | &gt; inexacts whose storage requirements are too large to be
+ | &gt; represented on a particular physical computer.
+ | 
+ | This is true of exact rationals as well.  It is the programmer's
+ | responsibility to limit the precision of the program's numbers so
+ | the computer doesn't run out of memory.  One of the advantages of
+ | floating point representations for inexact numbers is that they do
+ | this automatically; one of the disadvantages of R5RS inexact
+ | arithmetic is that it doesn't guarantee such limited precision.
+
+My current thinking is to modify SRFI-70 to incorporate this
+distinction between exact and inexact:
+
+* A number is exact if it was written as an exact constant or was
+  derived from exact numbers using only exact operations.
+
+  The procedures listed below will always return an exact result
+  provided all their arguments are exact and the mathematically
+  expected result is representable as an exact number within the
+  implementation.
+
+     +            -             *
+     quotient     remainder     modulo
+     max          min           abs
+     numerator    denominator   gcd
+     lcm          floor         ceiling
+     truncate     round         rationalize
+     expt         floor-&gt;exact  ceiling-&gt;exact
+     truncate-&gt;exact            round-&gt;exact
+
+  For exact numbers, it is the programmer's responsibility to avoid
+  using numbers with magnitude or precision too large to be
+  represented in the implementation.
+
+* A number is inexact if it was written as an inexact constant, if it
+  was derived using inexact ingredients, or if it was derived using
+  inexact operations.  Thus inexactness is a contagious property of a
+  number.
+
+  Inexact numbers are approximate.  Every mathematical number within
+  the (convex) range of inexacts supported by an implementation will
+  round to an inexact number on input or as a result of computation.
+  The neighborhood of mathematical numbers rounding to a particular
+  inexact number must be simply connected.
+
+  In an implemenation supporting inexact numbers, all mathematical
+  real numbers will round to inexact real numbers on input or as a
+  result of a computation.
+
+  For complex numbers, it is the programmer's responsibility to avoid
+  using numbers with magnitude too large to be represented in the
+  implementation.
+
+  It is the duty of each implementation to make the result of
+  mathematical expressions as close as practical to the mathematically
+  ideal result.  The error in results of optimized or compiled
+  mathematical expressions must be no larger than the error band
+  expected from the combination of the error bands of its component
+  operations.
+
+Note that while the whole real line is covered by the neighborhoods
+associated with inexact reals, there may be many mathematical numbers
+which equal no exact number in an implementation.
+
+The programmer's responsibility to avoid using exact numbers with
+overlarge precisions conflicts with the practice of using series and
+iteration to approximate mathematical functions.  The higher order
+terms providing accuracy are harmless to inexact numbers, but can
+cause precision to explode in exact representations.
+
+Everyday inexact flonum computations like matrix triangulation,
+statistical analysis, or discreet Fourier transforms combine hundreds
+of inexact numbers.  Such code is unlikely to have been crafted to
+limit the intermediate precision swell which would result if it was
+run as exacts such as exact-rational or computable-real.
+
+In SRFI-70, computable-reals must be exact because determining the
+closeness of two numbers (for the purpose of inexact rounding) is not
+necessarily decidable.  This difficulty with comparisons extends to &lt;,
+&lt;=, =, &gt;, &gt;=, NEGATIVE?, POSITIVE?, and ZERO?.
+
+Making comparisons with computable-reals inexact might give more
+flexibility in dealing with them.  But, as expressed earlier, programs
+doing floating-point data crunching seem unlikely to run successfully
+in a computable-real implementation.  Dropping the program into the
+undecidable abyss when it tries to compare a computable-real number is
+not useful.  Comparisons of computable-reals must be carefully
+planned; they should be specialized operators.
+
+Inexact rational numbers pose no problem so long as the precision of
+results is bounded.  W. Clinger suggests limiting the precision of the
+result to the precision of the most precise argument.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00178" href="msg00178.html">Re: inexactness vs. exactness</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00168" href="msg00168.html">Re: inexactness vs. exactness</a></strong>
+<ul><li><em>From:</em> William D Clinger</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00176.html">Re: Nitpick with FLOOR etc.</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00178.html">Re: inexactness vs. exactness</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00169.html">Re: inexactness vs. exactness</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00178.html">Re: inexactness vs. exactness</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00177"><strong>Date</strong></a></li>
+<li><a href="threads.html#00177"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

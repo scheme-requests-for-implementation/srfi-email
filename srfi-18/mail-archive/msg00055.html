@@ -1,0 +1,147 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: thread&#45;priority>? -->
+<!--X-From-R13: [nep Trryrl <srryrlNWDA.G[bagerny.QO> -->
+<!--X-Date: Fri, 14 Apr 2000 21:16:06 &#45;0500 (CDT) -->
+<!--X-Message-Id: 200004150216.WAA19261@trex.IRO.UMontreal.CA -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>thread-priority&gt;?</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00054.html">Date Prev</a>][<a href="msg00056.html">Date Next</a>][<a href="msg00059.html">Thread Prev</a>][<a href="msg00061.html">Thread Next</a>][<a href="maillist.html#00055">Date Index</a>][<a href="threads.html#00055">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>thread-priority&gt;?</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-18@DOMAIN.HIDDEN">srfi-18@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: thread-priority&gt;?</li>
+<li><em>From</em>: Marc Feeley &lt;<a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 14 Apr 2000 22:16:00 -0400</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>It's nice to see the flurry of exchanges today!  Let me summarize the
+main problems I see with the existence of a settable thread-priority&gt;?
+procedure.
+
+1) Scheduling order depends on the definition of thread-priority&gt;?
+   which means libraries (and any code not written by the one setting
+   thread-priority&gt;?) can't depend on a particular semantics for
+   threads (in essence, threads can't be used in such code).  In
+   particular this means that the runtime system can't use threads
+   internally (to implement I/O, real-time clock, event listener,
+   etc).
+
+2) The meaning of (current-thread), (current-exception-handler), and
+   the dynamic environment in general during the execution of
+   thread-priority&gt;? is undefined.
+
+3) The thread-priority&gt;? procedure must be written with several
+   restrictions to prevent the scheduler from being called.
+   These restrictions are implementation dependent.  For example,
+   for the Gambit-C system the restrictions are:
+
+    - no preemption timer interrupt must occur (because this might
+      cause the scheduler to access an inconsistent queue of runnable
+      threads)
+
+    - no exception can be raised (because the exception handler is
+      undefined)
+
+    - no memory allocation can occur (because it could call the GC,
+      which might try to display a GC report, which will try to lock
+      an I/O buffer mutex, which might cause the current thread to
+      block; and also because a heap overflow exception might be
+      raised; and also because a user defined finalization procedure
+      might be run which does &quot;wild&quot; things like terminate a thread),
+      note that calling + and &lt; and many other variable arity
+      primitives may cause memory to be allocated for the rest
+      parameter
+
+   The restrictions may be completely different for other systems.  If
+   we use a system that is lower-level some of these restrictions may
+   disappear.  For example, if we just assume a system with the power
+   of C, the first restriction can be solved by masking the timer
+   signal, the second restriction does not apply because C does not
+   have exceptions, and the third restriction does not apply because C
+   does not have a GC.  thread-priority&gt;? is easy to write in C
+   because you have control over every little detail of the execution.
+   thread-priority&gt;? is impossible to write in standard Scheme because
+   there are unknown implicit operations that occur that the user
+   can't control.  On the other hand, the implementor of a Scheme
+   system can implement thread-priority&gt;? internally because he/she
+   knows how to prevent problematic operations.  Trust me, the
+   implementation I will supply with SRFI-18 will be non-portable!
+
+So if SRFI-18 specified a settable thread-priority&gt;? procedure, the
+specification would have to be so vague that it couldn't be used in
+portable code.  In essence, the user would have to define
+thread-priority&gt;?  differently on each Scheme system.  I think it is
+best to leave thread-priority&gt;? out of SRFI-18 and let each Scheme
+system that can and wants to support a settable thread-priority&gt;? to
+provide it as an extension to SRFI-18 and document the specific
+restrictions.
+
+Personally, even though it is possible to support a settable
+thread-priority&gt;? in Gambit-C (with the above restrictions), I will
+not provide such support because the documentation would involve and
+expose too much of the inner workings of the system (such as which
+primitives allocate memory under what conditions and which don't) and
+it is likely that too much user code would break in subtle ways from
+one release of the compiler to the next.  I guess what I'm saying is
+that I don't want Scheme to acquire the bad qualities of low-level
+programming languages.
+
+Marc
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00054.html">Priority Aging and RT</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00056.html">Re: The Scheduler</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00059.html">Re: Priority Aging and RT</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00061.html">non critical-section uses of mutexes</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00055"><strong>Date</strong></a></li>
+<li><a href="threads.html#00055"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

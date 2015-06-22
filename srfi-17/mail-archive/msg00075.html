@@ -1,0 +1,269 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Uniqueness of set! and dangers of locations -->
+<!--X-From-R13: byrtNcbobk.pbz -->
+<!--X-Date: Mon, 7 Feb 2000 14:51:47 &#45;0600 (CST) -->
+<!--X-Message-Id: 200002072050.UAA13733@fnmoc.navy.mil -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Uniqueness of set! and dangers of locations</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00074.html">Date Prev</a>][<a href="msg00076.html">Date Next</a>][<a href="msg00074.html">Thread Prev</a>][<a href="msg00077.html">Thread Next</a>][<a href="maillist.html#00075">Date Index</a>][<a href="threads.html#00075">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Uniqueness of set! and dangers of locations</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-17@DOMAIN.HIDDEN">srfi-17@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Uniqueness of set! and dangers of locations</li>
+<li><em>From</em>: <a href="mailto:oleg@DOMAIN.HIDDEN">oleg@xxxxxxxxx</a></li>
+<li><em>Date</em>: Mon, 7 Feb 2000 20:50:14 GMT</li>
+<li><em>Reply-to</em>: <a href="mailto:oleg@DOMAIN.HIDDEN">oleg@xxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+	Throughout this message, a 'compiler' stands for a genuine
+compiler from Scheme to machine codes, as well as a byte-compiler,
+pre-compiler, etc. Furthermore, the word compiler will also refer to a
+human being who is reading and trying to understand a piece of Scheme
+code.
+
+	To start up, difficult aliasing issues exist in R5RS
+Scheme. Consider for example,
+
+(let ((a (list 1 2 3)) (b #t))
+    (foo a) (bar b) (display a))
+
+where 
+	(define aG #f)
+	(define (foo x) (set! aG x))
+	(define (bar x) (set-cdr! aG #f))
+
+The invocation of bar seemingly has nothing to do with 'a'. However,
+after that invocation the contents of a cons cell named 'a' has
+changed: this cell has been aliased by foo into aG. These aliasing
+issues are similar to those a C compiler has to struggle with. Because
+of the possibility of aliasing the compiler can't employ aggressive
+caching.
+
+	However, even in the example above, even if one of the
+functions 'foo' or 'bar' choose to capture continuations, the compiler
+can be certain about one thing: the variable 'a' will continue to
+denote a pair (a cons-cell). Moreover, the variable 'a' continues to
+denote _the same_ pair (as told by eq?). The contents of this cell may
+change, yet its binding to the variable remains. Consider:
+
+(let* ((a (list 1 2 3)) (b #t) (c a))
+  (foo a) (display (eq? c a))
+  (bar b) (display (eq? c a))
+  (display a))
+
+No matter what foo and bar do, (eq? c a) holds. 
+
+	The only way variable 'a' can be changed to name something
+different is by a set! executed within a scope. Speaking in OO terms,
+set-car!, string-set! etc. mutators change the state of an object
+named by a variable, but do not change that object's identity. On the
+other hand, only set! can change the object's identity. Here identity
+means identical with respect to eq?. Identity also means value's
+type. For example:
+
+(let ((a (list 1 2 3)))
+  (foo a) (let ((b (cdr a))) ...))
+
+The compiler can be positive that no matter what foo does (including
+aliasing of the list or capturing continuations), after (foo a)
+completes 'a' will still be a pair. The contents of a 'car' or 'cdr'
+slots might've have changed, but 'a' will remain a pair. Therefore, a
+smart compiler can elide a typecheck in (let ((b (cdr a))) as it is
+unnecessary. A possibility for a type inference (performed by smart
+compilers like Stalin and Rice's soft-type system) and eliding of
+run-time type checks is usually considered a significant benefit.
+
+	Assignment statement in Java and similar languages as well as
+in ML are rather different from set! in Scheme. An assignment in Java
+cannot change the declared type of a variable. An assignment of a
+value which is incompatible with variable's type is an error in Java
+-- but not in Scheme. The statements
+	a = new Pair(b,c);
+	a.fst = d;
+are far more &quot;similar&quot; in Java than the expressions
+	(set! a (cons b c))
+	(set-car! a d)
+in Scheme. In Java, a compiler knows that the type of 'a's value
+before the assignment is _always_ the same as that after the
+assignment. In Scheme, this holds only for set-car!, vector-set!
+etc. mutators. set! is the only one mutator that can change the type
+of the value a variable refers to.
+
+Specification
+
+	A generalized state mutator still appears to be a good
+idea. Because set! is so unique in its actions, it appears a good idea
+not to overload this name. The purpose of the generalized set seems to
+be altering the state of an &quot;object&quot; rather than changing its
+identity. Therefore, a name more appropriate to that action ought to
+be chosen, e.g,. setl!, setf! or setg!
+
+I'd like to propose to specify setg! as follows:
+	SETG! (PROC ARG ...) VAL1 VAL2 ...
+where PROC is an expression that evaluates to a procedural value. ARG
+and VAL are arbitrary expressions returning a defined value. A
+procedure yielded by PROC should take as many arguments as ARG ... The
+semantics attached to the above expression is as follows:
+  if expression (PROC ARG ...) yields OLD-VAL1 OLD-VAL2 ... OLD-VALN
+then the first expression (PROC ARG ...) right after a successful
+evaluation of
+	SETG! (PROC ARG ...) VAL1 VAL2 ... VALN
+should result in values VAL1 VAL2 ... VALN
+
+The case &quot;setg! var value&quot; is specifically excluded by the above
+syntax.  SETG! can accomplish its actions by invoking a setter
+procedure that has been associated with the PROC beforehand. Or SETG!
+can re-write PROC's name (if PROC is a symbol), for example, xxx-ref
+will become xxx-set!. This as well as the order of ARGs and VALs in
+setter's invocation becomes more or less an implementation detail.
+
+
+Why locations are dangerous
+
+The only way a variable can be changed to name something different is
+by a set! executed within a scope -- a lexically apparent
+set!. Consider
+
+  (letrec ((a 1)
+           (foo (lambda (x)
+	     (if (some-test x) (set! a (some-fn x))))))
+        (foo a) (bar a))
+
+Now the compiler truly can't make any prediction about 'a' after (foo
+a) completes. Note however how this is different from
+
+	(define a #f)
+	(define foo
+	   (lambda (x) (if (some-test x) (set! a (some-fn x)))))
+	(let ((a 1)) (foo a) (bar a))
+
+In the latter case, the compiler is certain that 'a' remains an
+integer (moreover, a FIXNUM 1) after (foo a) finishes. To be sure
+that a particular variable keeps its original binding, the compiler
+only needs to examine code and function definitions _within a local
+scope_. The compiler does not need to chase functions defined
+elsewhere -- only those that are apparent in the scope and have been
+scanned.
+
+	The promise that no function external to a lexical environment
+can ever change that lexical environment is a strong and useful
+commitment. It makes Scheme code easier to reason about -- both by a
+compiler and a programmer. A programmer only needs to look through
+code defined within a local scope to see if the local environment will
+be changed or preserved. Introduction of locations or first-class
+environments takes this 'locality' commitment away. Consider for
+example,
+	(define Global-pa #f)
+	(define (foo px) (set! Global-pa px))
+	(define (bar) (set! (Global-pa) (list 1 2 3)))
+	(let ((a 1)) (foo (location a)) (bar) ...)
+
+An external function bar can now manipulate a binding of a local
+variable 'a' any way it wishes to. To make sure that a variable
+preserves its binding (type), a compiler now has to examine not only
+functions defined within the scope but also all the functions called
+within the scope. A simple type inference will now entail a global,
+inter-procedural flow analysis -- which is significantly more complex.
+
+	With locations, the compiler can no longer be sure what a
+variable denotes. The compiler has to insert full runtime checks
+everywhere. There is a great wisdom in a decision not to grant
+environments first-class status. Otherwise, a local scope is no longer
+local as any external function can create and alter local, private
+bindings. This would make Scheme a fully dynamically-scoped language,
+like e-Lisp. That is usually considered not a good thing.
+
+
+BTW, introduction of 'locations' does not appear necessary for a
+Scheme code to be able to access absolute memory addresses or use
+memory shared with other processes. The existing set of final SRFIs
+provides tools for doing such low-level, hardware-related operations.
+
+	On a UNIX platform, any process can open /dev/kmem or /dev/mem
+or /proc/proc-id/mem and wreck any havoc it is allowed to, with
+familiar read/write/lseek operations.
+
+Furthermore, one can imagine a function
+	make-absolute-u8vector ADDR LEN
+which, given ADDR and LEN, verifies that this range of addresses does
+not interfere with Scheme system's heap and other internal data
+structures, mmaps the address range appropriately and returns a
+uniform byte vector (per SRFI-4). With this function one can easily
+write drivers for FireWire or PCI devices (which use memory-mapped
+i/o) in Scheme.
+
+One can also imagine a form:
+	(define-record-type shmem-pare
+	 (kons shmem-id x y)
+	shmem-pare?
+	(x kar set-kar!)
+	(y kdr))
+
+which denotes a record (SRFI-9) whose body is in a shared memory
+segment. According to SRFI-9, slots of a record object should be
+mutated only be appropriate setter procedures. The set-kar! mutator
+can copy the assignable value into the shared memory segment if needed
+(making sure that there are no references from a shared memory segment
+to a private heap of a process). This procedure can make handling of a
+shared memory segment significantly less painful (compared to C).
+Again, both of the above procedures are easily implementable, and
+neither needs the concept of locations or first-class environments.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00074.html">Re: where is srfi-17 going?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00076.html">Re: where is srfi-17 going?</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00074.html">Re: where is srfi-17 going?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00077.html">A long time ago in a newsgroup far, far away, ...</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00075"><strong>Date</strong></a></li>
+<li><a href="threads.html#00075"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

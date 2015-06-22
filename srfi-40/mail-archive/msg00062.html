@@ -1,0 +1,280 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Yet another reference implementation -->
+<!--X-From-R13: Buvy Prjvt <corjvtNfjoryy.arg> -->
+<!--X-Date: Mon, 22 Sep 2003 14:56:25 +0200 (DFT) -->
+<!--X-Message-Id: y9leky9j820.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Yet another reference implementation</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00061.html">Date Prev</a>][<a href="msg00063.html">Date Next</a>][<a href="msg00059.html">Thread Prev</a>][<a href="msg00063.html">Thread Next</a>][<a href="maillist.html#00062">Date Index</a>][<a href="threads.html#00062">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Yet another reference implementation</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-40@DOMAIN.HIDDEN">srfi-40@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Yet another reference implementation</li>
+<li><em>From</em>: Phil Bewig &lt;<a href="mailto:pbewig@DOMAIN.HIDDEN">pbewig@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 15 Sep 2003 22:12:29 -0500</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-40@DOMAIN.HIDDEN">srfi-40@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Reply-to</em>: &quot;<a href="mailto:pbewig@DOMAIN.HIDDEN">pbewig@xxxxxxxxxx</a>&quot; &lt;<a href="mailto:pbewig@DOMAIN.HIDDEN">pbewig@xxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Gnus/5.090019 (Oort Gnus v0.19) XEmacs/21.5 (cassava, berkeley-unix)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+Attached to the end of this note is yet another reference
+implementation of the core stream syntax and functions.
+This is the third implementation I have posted:
+
+    1  based on R5RS delay/force, and including
+        both the core and the library
+
+    2  based on Richard Kelsey's delay/force
+
+    3  based on Andre von Tonder's most recent
+        lazy primitives (even later than his Sept 6th
+        posting to c.l.scheme, and considerably
+        simpler and faster)
+
+I would appreciate experimentation with this version of
+the core stream syntax and functions, especially with
+regard to its safe-for-space properties.  Hopefully Andre's
+lazy primitives make it safe-for-space in all implementations
+of Scheme.
+
+Phil
+
+;;; STREAM -- LIBRARY OF SYNTAX AND FUNCTIONS TO MANIPULATE STREAMS
+
+;;; A stream is a new data type, disjoint from all other data types, that
+;;; contains a promise that, when forced, is either nil (a single object
+;;; distinguishable from all other objects) or consists of an object (the
+;;; stream element) followed by a stream.  Each stream element is evaluated
+;;; exactly once, when it is first retrieved (not when it is created); once
+;;; evaluated its value is saved to be returned by subsequent retrievals
+;;; without being evaluated again.
+
+;; STREAM-TYPE -- type of streams
+;; STREAM? object -- #t if object is a stream, #f otherwise
+(define-record-type stream-type
+  (make-stream promise)
+  stream?
+  (promise stream-promise))
+
+
+;;; UTILITY FUNCTIONS
+
+;; STREAM-ERROR message -- print message then abort execution
+;  replace this with a call to the native error handler
+;  if stream-error returns, so will the stream library function that called it
+(define (stream-error message) (display message) (newline) (car '()))
+
+;; ANY pred? list -- first non-#f (pred? list-item), else #f
+(define (any pred? lst)
+  (cond ((null? lst) #f)
+        ((null? (cdr lst)) (pred? (car lst)))
+        (else (or (pred? (car lst)) (any pred? (cdr lst))))))
+
+;; ALL pred? list -- #f if any (pred? list-item) is #f, or last pred?
+(define (all pred? lst)
+  (cond ((null? lst) #t)
+        ((null? (cdr lst)) (pred? (car lst)))
+        (else (and (pred? (car lst)) (all pred? (cdr lst))))))
+
+
+;;; LOW-LEVEL STREAM FUNCTIONS by Andre von Tonder (private e-mail 13-SEP-2003)
+
+;; STREAM-LOW-LEVEL-LAZY -- an &quot;atomic&quot; (delay (force ...))
+(define-syntax stream-low-level-lazy
+  (syntax-rules ()
+    ((stream-low-level-lazy exp)
+        (cons 'suspension (lambda () exp)))))
+
+;; STREAM-LOW-LEVEL-STRICT -- make a value into a low-level promise
+(define (stream-low-level-strict x)
+  (make-stream (cons 'value x)))
+
+;; STREAM-LOW-LEVEL-DELAY -- make an expression into a low-level promise
+(define-syntax stream-low-level-delay
+  (syntax-rules ()
+    ((stream-low-level-delay exp)
+      (stream-low-level-lazy (stream-low-level-strict exp)))))
+
+;; STREAM-LOW-LEVEL-FORCE -- force the value from a low-level promise
+(define (stream-low-level-force prom)
+    (case (car prom)
+      ((value)      (cdr prom))
+      ((suspension) (let ((val (stream-promise ((cdr prom)))))
+                      (set-car! prom (car val))
+                      (set-cdr! prom (cdr val))
+                      (stream-low-level-force prom)))))
+
+
+;;; STREAM SYNTAX AND FUNCTIONS
+
+;; STREAM-NULL -- the distinguished nil stream
+(define stream-null (make-stream (stream-low-level-delay '())))
+
+;; STREAM-CONS object stream -- primitive constructor of streams
+(define-syntax stream-cons
+  (syntax-rules ()
+    ((stream-cons obj strm)
+      (make-stream
+        (stream-low-level-delay
+          (if (not (stream? strm))
+              (stream-error &quot;attempt to stream-cons onto non-stream&quot;)
+              (cons obj strm)))))))
+
+;; STREAM-NULL? object -- #t if object is the null stream, #f otherwise
+(define (stream-null? obj)
+  (and (stream? obj) (null? (stream-low-level-force (stream-promise obj)))))
+
+;; STREAM-PAIR? object -- #t if object is a non-null stream, #f otherwise
+(define (stream-pair? obj)
+  (and (stream? obj) (not (null? (stream-low-level-force (stream-promise obj))))))
+
+;; STREAM-CAR stream -- first element of stream
+(define (stream-car strm)
+  (cond ((not (stream? strm)) (stream-error &quot;attempt to take stream-car of non-stream&quot;))
+        ((stream-null? strm) (stream-error &quot;attempt to take stream-car of null stream&quot;))
+        (else (car (stream-low-level-force (stream-promise strm))))))
+
+;; STREAM-CDR stream -- remaining elements of stream after first
+(define (stream-cdr strm)
+  (cond ((not (stream? strm)) (stream-error &quot;attempt to take stream-cdr of non-stream&quot;))
+        ((stream-null? strm) (stream-error &quot;attempt to take stream-cdr of null stream&quot;))
+        (else (cdr (stream-low-level-force (stream-promise strm))))))
+
+;; STREAM-DELAY object -- the essential stream mechanism
+(define-syntax stream-delay
+  (syntax-rules ()
+    ((stream-delay expr)
+      (make-stream
+        (stream-low-level-lazy expr)))))
+
+;; STREAM object ... -- new stream whose elements are object ...
+(define (stream . objs)
+  (let loop ((objs objs))
+    (stream-delay
+      (if (null? objs)
+          stream-null
+          (stream-cons (car objs) (loop (cdr objs)))))))
+
+;; STREAM-UNFOLDN generator seed n -- n+1 streams from (generator seed)
+(define (stream-unfoldn gen seed n)
+  (define (unfold-result-stream gen seed)
+    (let loop ((seed seed))
+      (stream-delay
+        (call-with-values
+          (lambda () (gen seed))
+          (lambda (next . results)
+            (stream-cons results (loop next)))))))
+  (define (result-stream-&gt;output-stream result-stream i)
+    (stream-delay
+      (let ((result (list-ref (stream-car result-stream) i)))
+        (cond ((pair? result)
+                (stream-cons (car result)
+                             (result-stream-&gt;output-stream
+                               (stream-cdr result-stream) i)))
+              ((not result)
+                (result-stream-&gt;output-stream (stream-cdr result-stream) i))
+              ((null? result) stream-null)
+              (else (stream-error &quot;can't happen&quot;))))))
+  (define (result-stream-&gt;output-streams result-stream n)
+    (let loop ((i 0) (outputs '()))
+      (if (= i n)
+        (apply values (reverse outputs))
+        (loop (+ i 1)
+              (cons (result-stream-&gt;output-stream result-stream i)
+                    outputs)))))
+  (result-stream-&gt;output-streams (unfold-result-stream gen seed) n))
+
+;; STREAM-MAP func stream ... -- stream produced by applying func element-wise
+(define (stream-map func . strms)
+  (cond ((not (procedure? func)) (stream-error &quot;non-functional argument to stream-map&quot;))
+        ((null? strms) (stream-error &quot;no stream arguments to stream-map&quot;))
+        ((not (all stream? strms)) (stream-error &quot;non-stream argument to stream-map&quot;))
+        (else (let loop ((strms strms))
+                (stream-delay
+                  (if (any stream-null? strms)
+                      stream-null
+                      (stream-cons (apply func (map stream-car strms))
+                                   (loop (map stream-cdr strms)))))))))
+
+;; STREAM-FOR-EACH proc stream ... -- apply proc element-wise for side-effects
+(define (stream-for-each proc . strms)
+  (cond ((not (procedure? proc)) (stream-error &quot;non-functional argument to stream-for-each&quot;))
+        ((null? strms) (stream-error &quot;no stream arguments to stream-for-each&quot;))
+        ((not (all stream? strms)) (stream-error &quot;non-stream argument to stream-for-each&quot;))
+        (else (let loop ((strms strms))
+                (if (not (any stream-null? strms))
+                    (begin (apply proc (map stream-car strms))
+                           (loop (map stream-cdr strms))))))))
+
+;; STREAM-FILTER pred? stream -- new stream including only items passing pred?
+(define (stream-filter pred? strm)
+  (cond ((not (procedure? pred?)) (stream-error &quot;non-functional argument to stream-filter&quot;))
+        ((not (stream? strm)) (stream-error &quot;attempt to apply stream-filter to non-stream&quot;))
+        (else (stream-unfoldn
+                (lambda (s)
+                  (values
+                    (stream-cdr s)
+                    (cond ((stream-null? s) '())
+                          ((pred? (stream-car s)) (list (stream-car s)))
+                          (else #f))))
+                strm
+                1))))
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00061.html">Re: Much simpler leak-free implementation possible?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00063.html">Hello? Hello?</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00059.html">Monad for lazy evaluation</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00063.html">Hello? Hello?</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00062"><strong>Date</strong></a></li>
+<li><a href="threads.html#00062"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

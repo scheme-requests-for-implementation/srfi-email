@@ -1,0 +1,225 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: The Scheduler -->
+<!--X-From-R13: "[nex Y. Uneqare" <zxtNnfvzbi.ynay.tbi> -->
+<!--X-Date: Fri, 14 Apr 2000 11:09:29 &#45;0500 (CDT) -->
+<!--X-Message-Id: 200004141609.KAA28019@asimov.lanl.gov -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: okfog7dx993.fsf@bellsouth.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: The Scheduler</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00048.html">Date Prev</a>][<a href="msg00050.html">Date Next</a>][<a href="msg00048.html">Thread Prev</a>][<a href="msg00050.html">Thread Next</a>][<a href="maillist.html#00049">Date Index</a>][<a href="threads.html#00049">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: The Scheduler</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-18@DOMAIN.HIDDEN">srfi-18@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: The Scheduler</li>
+<li><em>From</em>: &quot;Mark K. Gardner&quot; &lt;<a href="mailto:mkg@DOMAIN.HIDDEN">mkg@xxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 14 Apr 2000 10:09:27 -0600</li>
+<li><em>Cc</em>: David Rush &lt;<a href="mailto:kumo@DOMAIN.HIDDEN">kumo@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>In-reply-to</em>: Your message of &quot;14 Apr 2000 11:33:12 BST.&quot;             &lt;<a href="mailto:okfog7dx993.fsf@DOMAIN.HIDDEN">okfog7dx993.fsf@xxxxxxxxxxxxx</a>&gt; </li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+David Rush &lt;kumo@xxxxxxxxxxxxx&gt; writes:
+&gt; that you are meaning that you have some subset of the tasks in
+&gt; the system that need completion by a certain time, 
+
+Yes. Deadline driven scheduling of RT tasks gives the highest priority
+to the task which has the earliest completion time.
+
+&gt; and that their priority should be dynamically raised each quanta
+&gt; that they are runnable but not actually running. Also that the
+&gt; priority of a deadlined task is never allowed to rise higher than
+&gt; that of a task with an earlier deadline.
+
+Conceptually, hard RT systems do not have quanta. However, as long as
+the partial ordering of tasks does not deviate from what it would be
+if priorities were assigned according to earliest completion time, you
+can do whatever you want to the actual priorities. 
+
+&gt; Now in a hypothetical system with deadlines, I've got to assume that
+&gt; you have tasks with and without deadlines (Non-deadline tasks being
+&gt; dedicated to various housekeeping functions: logging, monitoring,
+&gt; etc). Non-deadlined tasks would be scheduled by normal priority, but
+&gt; deadlined tasks get the per-quantum magic. 
+
+Looking at it from the RT perspective (to which I have been thoroughly
+indoctrinated ;-), non-RT tasks are tasks with deadlines at infinity.
+Thus, a RT task will always preempt a non-RT task when scheduled
+according to a deadline driven policy.
+
+&gt; Now if you try and map the scheduling of deadlined tasks into the
+&gt; priority scheme of non-deadlined tasks, you lose information in the
+&gt; scheduler, specifically the actual deadline (which serves as both a
+&gt; maximum priority limit and as strong heuristic of the needed
+&gt; priority).
+
+Yes. The loss of information is what prevents the implementation of
+deadline driven scheduling on a fixed priority scheduler in a straight
+forward and efficient way. 
+
+Note though, that it is possible to implement deadline driven
+scheduling in a fixed priority system by employing a scheduler task
+which has the second highest priority in the system. The scheduler
+task selects the (user) task with the earliest deadline and elevates
+its priority to be the highest priority in the system, where upon it
+preempts the scheduler thread and runs. If the average unit of work is
+sufficiently large in relation to the (admittedly high) overhead of
+the scheduler-as-task scheme, the system works pretty well for soft
+RT. This scheme was implemented on top of Solaris by Hao-hua Chu at
+the University of Illinois at Urbana-Champaign. For more details, see
+&lt;<a  rel="nofollow" href="http://cairo.cs.uiuc.edu/papers/thesis.hao.ps">http://cairo.cs.uiuc.edu/papers/thesis.hao.ps</a>&gt;.
+
+&gt; Another case where this kind of thing arises is in the
+&gt; implementation of priority inheritance mutexes. In this case each
+&gt; mutex has an associated priority, to which any acquiring thread gets
+&gt; promoted (if a thread already has higher priority than the mutex it
+&gt; retains its priority). So a thread's effective priority is the
+&gt; maximum of its 'native' priority and the priorities of any mutexes
+&gt; it owns. Again, with a simple integer mapping you can make the right
+&gt; thing happen, but it becomes very difficult to get the right
+&gt; priority restored to a thread upon mutex release, especially without
+&gt; stopping the the scheduler entirely.
+
+I'm not sure I followed you. First of all, if the mutex isn't assigned
+the highest priority of any task that acquires it, the potential for
+priority inversion (a low priority task executes while a higher
+priority task is blocked) is still there. Second of all, a correct
+implementation of priority inheritence raises the temporary priority
+of the task holding the mutex each time a higher priority task
+attempts to acquire the mutex. As soon as it releases the mutex, the
+task's priority returns to the priority it had before it acquired the
+mutex. Since a task can hold several mutexes, this requires a stack of
+(increasing) priorities, with the priority at the bottom of the stack
+being the task's original priority. I see nothing in the integer
+implementation that would prevent the use of integer priorities. In
+fact, priority inheritence is routinely done in fixed priority RT
+systems.
+
+&gt; Which was Marc's main complaint about the THREAD-PRIORITY&gt;?
+&gt; primitive. But the fundamental problem is that whenever you have a
+&gt; change in the priority levels of the tasks in a system the scheduler
+&gt; has to stop and get its head screwed back on straight. When all you
+&gt; have is a single integer affecting the task priority this doesn't
+&gt; seem to be much of a problem, but it is still the same problem.
+
+But the creation of a task also causes a change in the priority
+ordering of the tasks in the system. Changing the priority of an
+existing task is conceptually no different than removing the task at
+its current priority and creating it at its new priority (with out
+loosing its state, of course). Thus the &quot;stop&quot; mechanism is already in
+place.
+
+I believe Marc's objection to parameterizing the scheduler with
+THREAD-PRIORITY&gt;? (or allowing modular schedulers) is that it is very
+difficult to design the rest of the thread/mutex/condition variable
+system abstractly enough to allow things to work without heavy
+penalties in performance. (Depending on your definitions of
+&quot;difficult&quot; and &quot;performance&quot;, the design may be impossible.)
+Furthermore, the properties of the system depend critically upon the
+parameterizing comparison function hence it makes the use of
+independently developed libraries which use threads problematic. Their
+semantics will change depending on the comparision function you install.
+
+&gt; As you can tell, I am actually in favor of THREAD-PRIORITY&gt;?
+&gt; (although I'm not implementing a scheduler around it at the moment).
+&gt; It nicely captures the essence of the variations in scheduling
+&gt; schemes. But regardless of that my experience in implementing
+&gt; priority-inheritance mutexes suggests that having the
+&gt; (without-scheduling &lt;thunk&gt;) form is going to be necessary for
+&gt; mapping complex priority schemes onto the integers anyway.
+
+As you can tell from my original posting &quot;Thoughts on Priorities and
+Quanta&quot; in the archive and from my comments here, I too would like to
+see RT threads in Scheme. However, I feel that Marc has generally done
+a good job of wording SRFI-18 such that it does not preclude the
+development of a RT-thread SRFI in the future. The only limitation
+that I still see is that the concept of integral priorities prevents
+an efficient implementation of a deadline-driven scheduler.
+
+Marc: What about weakening the definition of priority to allow other
+comparable values such as real numbers or (more specifically) time
+objects? With this, I am sure a RT-SRFI could be written without
+having to undo parts of SRFI-18.
+
+Mark
+
+-- 
+Mark K. Gardner
+RADIANT Team
+Network Engineering, CIC-5
+Los Alamos National Laboratory
+P.O. Box 1663, M.S. D451
+Los Alamos, NM 87545
+Email: mkg@xxxxxxxx
+Phone: 1-505-665-4953
+-- 
+ 
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00050" href="msg00050.html">Re: The Scheduler</a></strong>
+<ul><li><em>From:</em> David Rush</li></ul></li>
+<li><strong><a name="00056" href="msg00056.html">Re: The Scheduler</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00045" href="msg00045.html">Re: The Scheduler</a></strong>
+<ul><li><em>From:</em> David Rush</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00048.html">Re: The Scheduler</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00050.html">Re: The Scheduler</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00048.html">Re: The Scheduler</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00050.html">Re: The Scheduler</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00049"><strong>Date</strong></a></li>
+<li><a href="threads.html#00049"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

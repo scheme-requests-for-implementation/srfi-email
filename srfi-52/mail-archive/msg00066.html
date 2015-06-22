@@ -1,0 +1,162 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Encodings. -->
+<!--X-From-R13: Bnhy Epuyvr <fpuyvrNpbzpnfg.arg> -->
+<!--X-Date: Sat, 14 Feb 2004 03:19:31 +0100 (NFT) -->
+<!--X-Message-Id: BC52EFD9.A565%schlie@comcast.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20040214000450.GG16778@ogre.szonye.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Encodings.</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00065.html">Date Prev</a>][<a href="msg00067.html">Date Next</a>][<a href="msg00075.html">Thread Prev</a>][<a href="msg00070.html">Thread Next</a>][<a href="maillist.html#00066">Date Index</a>][<a href="threads.html#00066">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Encodings.</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &lt;<a href="mailto:srfi-52@DOMAIN.HIDDEN">srfi-52@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Encodings.</li>
+<li><em>From</em>: Paul Schlie &lt;<a href="mailto:schlie@DOMAIN.HIDDEN">schlie@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 13 Feb 2004 21:19:21 -0500</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-52@DOMAIN.HIDDEN">srfi-52@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20040214000450.GG16778@DOMAIN.HIDDEN">20040214000450.GG16778@xxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Microsoft-Entourage/10.1.4.030702.0</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>From the best I can tell, there is no difference between opening a file
+using C's fopen function in binary mode or text mode, with the exception
+Of local conversion of new-line marker character(s) in VMS, MS-whatever,
+UNIX, MAC, etc.; both can be read/written logically sequentially, (although
+files opened in text mode are apparently permitted to strip or replace
+non-locally displayable and white-space characters which may exist prior to
+a new-line marker, and limit the number of characters between new-line
+sequences; which likely limits C's text mode file functions for storage of
+Unicode encoded text in the strictest case, as well as prevents the ability
+to properly read foreign text files properly if their local new-line
+conventions differ from the local host's conventions.
+
+Therefore (although I know folks hate my &quot;therefore&quot;s), scheme
+implementations which expect to leverage C's file function library,
+should likely open files in binary mode, and apply the local accepted
+new-line etc. conventions themselves, thereby enabling programs to
+be written capable of opening arbitrary formatted files, including
+foreign text files which have adopted different new-line encoding
+conventions than that of the local platform. (it's a bit more work,
+but it's the general solution, as otherwise it's restricted to only
+being able to process text files consistent with the platform's local
+formatting conventions.
+
+-paul-
+
+&gt; From: &quot;Bradd W. Szonye&quot; &lt;bradd+srfi@xxxxxxxxxx&gt;
+&gt; 
+&gt; Paul Schlie wrote:
+&gt;&gt; Just a nit, but a text file is a binary file ....
+&gt; 
+&gt; No, that is not true on all systems. There are systems where you simply
+&gt; cannot access a text file as a &quot;binary file&quot; (a stream of bytes).
+&gt; 
+&gt;&gt; More sophisticated indexed record file structures supported by some
+&gt;&gt; os's are themselves not much more than an intermediate primitive
+&gt;&gt; indexed data base built on top of plan old files composed of disk
+&gt;&gt; sectors, often with the knowledge of the storage systems blocking
+&gt;&gt; architecture for efficiency; but the general rule remains, you get out
+&gt;&gt; literally what you put in, as otherwise they wouldn't be very useful.
+&gt; 
+&gt; Yes, you get out what you put in. However, when a system provides no
+&gt; &quot;binary mode&quot; or &quot;stream mode&quot; for text files, there is no way to
+&gt; implement a text port in terms of a binary port.
+&gt; 
+&gt; To put it another way, a &quot;binary file&quot; is just a specific way of
+&gt; organizing data on disk, designed so that you can access individual
+&gt; bytes or words as a stream or in random order. UNIX systems store text
+&gt; files that way, such that binary files and text files are actually the
+&gt; same thing. On that kind of system, you can implement text ports on top
+&gt; of binary ports.
+&gt; 
+&gt; But some systems do not store text files that way. There simply are no
+&gt; operating system primitives to access them as a stream of bytes, and it
+&gt; would not make sense to implement text ports in terms of binary ports.
+&gt; That's why C has separate text and binary I/O modes. On UNIX-like,
+&gt; ASCII-based systems, the two modes are identical, because &quot;transforming&quot;
+&gt; binary data to text is a no-op. On DOS-like systems, text mode is
+&gt; implemented as a filter on top of binary mode, like you suggest. (That's
+&gt; also how it works on UNIX-like systems that use multibyte character
+&gt; sets.) But on systems where text and binary data are fundamentally
+&gt; different, the two I/O modes are independent.
+&gt; 
+&gt; While they're both ultimately bits on a spinning magnet, the interface
+&gt; to those bits is often very different depending on the type of data. At
+&gt; one time, the UNIX-like systems were the exception, not the rule. Now
+&gt; it's the other way around, but the byte-stream model is still not
+&gt; universal. Unless you really want to limit all I/O to that model
+&gt; (i.e., make it impossible to implement Scheme on some systems), you
+&gt; cannot design the system so that text I/O is a stream layer atop binary
+&gt; I/O.
+&gt; -- 
+&gt; Bradd W. Szonye
+&gt; <a  rel="nofollow" href="http://www.szonye.com/bradd">http://www.szonye.com/bradd</a>
+&gt; 
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00070" href="msg00070.html">Re: Encodings.</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00062" href="msg00062.html">Re: Encodings.</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00065.html">Re: Encodings.</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00067.html">Re: Encodings.</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00075.html">Re: Encodings.</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00070.html">Re: Encodings.</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00066"><strong>Date</strong></a></li>
+<li><a href="threads.html#00066"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

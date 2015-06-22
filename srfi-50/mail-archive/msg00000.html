@@ -1,0 +1,337 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: thread&#45;safe interfaces -->
+<!--X-From-R13: Xvz Pynaql <wvzoNerqung.pbz> -->
+<!--X-Date: Mon, 22 Dec 2003 08:40:57 +0100 (NFT) -->
+<!--X-Message-Id: vt28yl5e21q.fsf@zenia.home -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>thread-safe interfaces</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[Date Prev][<a href="msg00001.html">Date Next</a>][Thread Prev][<a href="msg00027.html">Thread Next</a>][<a href="maillist.html#00000">Date Index</a>][<a href="threads.html#00000">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>thread-safe interfaces</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: thread-safe interfaces</li>
+<li><em>From</em>: Jim Blandy &lt;<a href="mailto:jimb@DOMAIN.HIDDEN">jimb@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: 22 Dec 2003 02:37:05 -0500</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Sender</em>: <a href="mailto:jimb@DOMAIN.HIDDEN">jimb@xxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Gnus/5.09 (Gnus v5.9.0) Emacs/21.3</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+I remember someone (Richard K.?) remarking at the Scheme 2003 workshop
+that any discussion about threading seems inevitably to turn into a
+discussion about what &quot;thread&quot; really means, so let me show my colors
+up front.  When I say &quot;thread&quot;, I'm referring to all of the following:
+
+- The pleasant notation for some kinds of algorithms and user-visible
+  behavior.  The Concurrent ML / eXene attitude.  This view of threads
+  can easily be implemented entirely in the interpreter, with no
+  operating system support.
+
+- An abstraction that helps programmers write code which can run in
+  parallel on multi-processor or hyperthreaded systems, for a
+  performance gain.
+
+- The existing &quot;thread&quot; facilities provided by many popular operating
+  systems.  If I want to write Scheme code which acts as a plug-in or
+  an extension to any existing multi-threaded application out there
+  (Mozilla?  Apache?), I can never be a first-class citizen if my
+  Scheme system's &quot;threads&quot; are not the real thing.  Sure, I could
+  always fake it in various ways, but in my experience it'll always
+  show through in some annoying way whether you're doing it Right or
+  not.
+
+If I'm reading the proposal right, the interface does not support this
+notion of &quot;threads&quot;.
+
+If doing so simply isn't interesting to the SRFI-50 authors, I can
+understand that; it would be a major design change, and the best ways
+I know of to address it do add some run-time overhead, and do
+complicate the interface, while providing no benefit to
+single-threaded programs, which I would assume are still
+overwhelmingly the most common sort.
+
+----
+
+Assuming it is interesting:
+
+The proposal states that &quot;the garbage collector may run whenever an
+object is allocated in the heap.&quot;  In context, I think that really
+means, &quot;the garbage collector may *only* run...&quot;  In a multi-threaded
+context, I think this must mean that the collector may only run when
+any thread allocates an object on the heap, which isn't much of a
+restriction at all; the collector can run at any time.
+
+If that is so, then the way the proposal suggests C code should refer
+to Scheme values makes it impossible for the collector to find and
+relocate heap references.  The C compiler may have stashed them
+anywhere, in disguised forms, and it is probably unwilling to tell you
+much about where they are at any given time.
+
+The values returned by macros like SCHEME_EXTRACT_VALUE_POINTER and
+EXTRACT_STRING also can't be trusted long enough to be useful.
+
+The Java Native Interface handles this problem by essentially
+forbidding C code from ever referring directly to a GC'd object.
+Instead, C code may only handle &quot;references&quot; to GC'd objects.  This
+restriction is enforced by the type system.  References are explicitly
+freed objects, which is way people are accustomed to working in C.
+And because the explicit-free model is a complete pain in the neck,
+the JNI tries to ease that pain by segregating references into &quot;local&quot;
+and &quot;global&quot;, where &quot;local&quot; references are freed for you at a
+convenient time.
+
+(It doesn't work to make the scheme_value type the reference type:
+references do need to be freed, somehow, whereas assignment to a
+properly protected scheme_value variable is sufficient to drop the
+reference to the object it used to refer to.)
+
+At <a  rel="nofollow" href="http://svn.red-bean.com/repos/minor/trunk/include/minor/minor.h">http://svn.red-bean.com/repos/minor/trunk/include/minor/minor.h</a>,
+there is a sketch of a C API interface to a Scheme system that can
+support all the goals of SRFI-50 (precision; permitting copying
+collectors; etc.), and also support multithreaded programs.  The
+comments at the top of that file explain the approach I've outlined
+above in more detail.  This is a work in progress; it has not
+undergone any review to speak of.  But I think it does address the
+concerns I raised above.  I've included the relevant section at bottom.
+
+I think I have a pretty efficient implementation of this, too:
+
+- The implementations of the functions in the interface do not need to
+  hold a mutex while they operate on the real Scheme values.  &quot;car&quot;
+  does not require the acquisition and release of a mutex.
+
+  The only synchronization that actually takes place is between a
+  thread and its own signal handlers, so it can be done in C with
+  assignments to volatile variables --- ordinary, unsynchronized
+  stores that the compiler has less freedom to reorder and optimize
+  out.
+
+- Local references are allocated in small constant time, and all the
+  local references owned by a particular call are freed en masse.
+
+It's all untested; these are just assertions.  The rest of the code is
+there in that web hierarchy, if you don't mind the programmerly
+equivalent of seeing me in my underwear.
+
+The drawbacks compared to the proposed SRFI-50's approach are, as I
+see it:
+
+- SRFI-50 requires the programmer to do pretty simple annotations (the
+  GC_PROTECT macros), whereas the JNI approach makes the programmer
+  responsible for freeing references.  Sure, the &quot;local reference&quot;
+  tweak handles the common cases, but you still have to think harder
+  to make sure you got it right.
+
+- SRFI-50 allows code to directly manipulate references to Scheme
+  objects, where as the JNI requires the creation and destruction of
+  reference objects as well.
+
+
+
+
+---- 
+
+/* mn_refs: References to Minor objects.  */
+
+/* To support garbage collection, the Minor run-time needs to be able
+   to find all the Minor objects C code is examining at any given
+   time: if C code has access to an object, then the garbage collector
+   will make sure not to free it.
+
+   The functions in this interface never return, or accept, direct
+   pointers to Minor objects.  Instead, we introduce one level of
+   indirection: they return and accept `mn_ref' objects, which refer
+   to Minor objects.
+
+        C code:
+       mn_ref *x;
+         +-----+
+         |  .  |     the mn_ref
+         +--|--+       +-----+
+            `---------&gt;|  .  |
+                       +--|--+      ,--------------.
+                          `--------&gt;| minor object |
+                                    `--------------'
+
+   (The Minor objects themselves, of course, point directly to each
+   other; mn_refs are strictly an interface to non-GC'd languages.)
+
+   For example, the functions to construct and access pairs are
+   decared like this:
+
+        mn_ref *mn_cons (mn_call *c, mn_ref *car, mn_ref *cdr);
+        mn_ref *mn_car (mn_call *c, mn_ref *car);
+        mn_ref *mn_cdr (mn_call *c, mn_ref *cdr);
+
+   (Ignore the 'mn_call' arguments for the moment.)  The Minor
+   run-time keeps a list of all the mn_refs that have been given to C
+   code, and protects all the objects those mn_refs refer to from
+   being garbage collected.  We try to make mn_refs as lightweight as
+   possible.
+
+   C code using this interface is responsible for making sure every
+   mn_ref it is given gets freed.  Since this can be a rather complex
+   task to manage, we introduce some wrinkles to make the common cases
+   easy.  Mn_refs come in two kinds: local, and global.
+
+   - A local mn_ref is owned by a particular call of a C function by
+     Minor code; when that function call returns, all the local refs
+     it owns are automatically freed.
+
+     Specifically, when Minor calls a C function, it passes an extra
+     argument: a 'mn_call *' pointing to a call object created just
+     for that Minor-&gt;C call.  The functions in this interface that
+     construct local references all take a 'mn_call *' as their first
+     argument, and return local mn_refs owned by that call (with some
+     exceptions, all marked as such).  The call object also owns any
+     mn_refs the C function may have received as arguments from Minor
+     code.  When the C function returns, all the local refs its call
+     object owns are automatically freed, along with the call object
+     itself.
+
+     This means that, in the common case of Minor calling a C function
+     that does some work on its arguments and then returns without
+     stashing any Minor objects in global variables or data
+     structures, the C code doesn't need to do any extra bookkeeping;
+     once it returns, all the mn_refs it accumulated --- all local ---
+     will be freed.
+
+     However, the convenience of local mn_refs comes at a price: local
+     mn_refs should not be stored in global variables, nor should they
+     be shared with other threads.  To get around this problem, you
+     can promote a local mn_ref to a global mn_ref:
+
+   - A global mn_ref lives until you explicitly free it.  Global refs
+     can be shared amongst other threads, and stored in global
+     variables.  However, since global refs are never automatically
+     reclaimed, C code must take care of freeing them at the right
+     time itself; global refs are more work to manage.
+
+     Like any other kind of object shared between multiple threads,
+     it's up to the user of this interface to ensure that one thread
+     isn't using a global reference while another thread is freeing
+     it.
+
+   This interface provides functions to convert local mn_refs to
+   global mn_refs and vice versa, and a function to explicitly free
+   refs when necessary.
+
+   There are also some cases where C code will need to explicitly free
+   local mn_refs, before the call that owns them returns.  For
+   example, if a loop traverses a list using mn_car and mn_cdr, each
+   element is returned as a local mn_ref.  To avoid consuming storage
+   proportional to the length of the list for all those local mn_refs,
+   the loop must free them as it goes.  To accomodate cases like this,
+   there is also a function that explicitly frees a local mn_ref.
+
+   Almost every function in this interface takes a 'mn_call *' as its
+   first argument; unless stated otherwise, any mn_ref values it
+   returns are owned by that call.  When we use the call in the
+   obvious way, we don't bother to give it a name in the prototype,
+   for (a tiny bit of) legibility.
+
+   The exception is, obviously, the function that gives you your very
+   first call: mn_thread_first_call takes no arguments, and returns a
+   call object.  Since calls can't be shared amongst threads, every
+   thread that wants to use this API must call this function.  The
+   first time it is called, we initialize the Minor library.
+
+   Some subtleties:
+
+   - Except where we state otherwise, all the functions in this
+     interface promise to free any local refs they allocate before
+     they return (other than the local ref(s) they return).  This
+     allows these functions to be used within long-running loops
+     without accumulating local refs the caller has no way to free.
+
+   - You may notice that even functions that don't need to allocate or
+     return local references still expect a call argument --- if
+     there's no need to indicate who should own any new local refs,
+     why does the function need to know the current call?  The
+     collector also uses calls internally, as a cheap way to keep
+     track of which threads might be accessing heap objects.  If
+     you've ever touched a heap object, you must have a call.  So we
+     can take care of adding a thread to our list when we allocate
+     them their first call --- instead of having every function in
+     this interface check to make sure the calling thread is
+     registered.
+
+   - You may notice that this interface doesn't provide any functions
+     that change the heap object a reference refers to.  This is an
+     important property, because it allows this interface to be
+     perfectly thread-safe without doing any memory or execution
+     synchronization while accessing references.  Where the user's
+     code shares references between threads (global references only,
+     please), it's the user's responsibility to do the right sorts of
+     mutual exclusion to make that sharing kosher --- and that takes
+     care of us, as well.  The users manage the same synchronization
+     burden they've always had; we don't add to it, in complexity or
+     run-time overhead.
+
+     (The functions mn_to_car and mn_to_cdr look a little like
+     side-effecting functions, but the specification actually says
+     they destroy the original reference and return you a fresh one.
+     And it's always up to the client code to ensure that nobody
+     destroys an object while someone else is using it.  So the
+     calling thread must have the only live pointer to the
+     reference.)  */
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00027" href="msg00027.html">Re: thread-safe interfaces</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+<li><strong><a name="00065" href="msg00065.html">Re: thread-safe interfaces [correction]</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Next by Date:
+<strong><a href="msg00001.html">character strings versus byte strings</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00027.html">Re: thread-safe interfaces</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00000"><strong>Date</strong></a></li>
+<li><a href="threads.html#00000"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

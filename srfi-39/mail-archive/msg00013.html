@@ -1,0 +1,210 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Some comments -->
+<!--X-From-R13: sryvk <sryvkhaqqhavNserrarg.qr> -->
+<!--X-Date: Sat,  4 Jan 2003 17:05:26 +0100 (NFT) -->
+<!--X-Message-Id: 3E1701FF.20100@freenet.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 3E050560.6090507@freenet.de -->
+<!--X-Reference: 200212220251.gBM2p2Y14110@dino00.iro.umontreal.ca -->
+<!--X-Reference: 3E077CA2.2040703@freenet.de -->
+<!--X-Reference: 200212301429.gBUETMm28219@dino00.iro.umontreal.ca -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Some comments</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00012.html">Date Prev</a>][<a href="msg00014.html">Date Next</a>][<a href="msg00014.html">Thread Prev</a>][<a href="msg00015.html">Thread Next</a>][<a href="maillist.html#00013">Date Index</a>][<a href="threads.html#00013">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Some comments</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Marc Feeley &lt;<a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Some comments</li>
+<li><em>From</em>: felix &lt;<a href="mailto:felixundduni@DOMAIN.HIDDEN">felixundduni@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 04 Jan 2003 16:47:11 +0100</li>
+<li><em>Cc</em>: <a href="mailto:srfi-39@DOMAIN.HIDDEN">srfi-39@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-39@DOMAIN.HIDDEN">srfi-39@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>References</em>: &lt;<a href="mailto:3E050560.6090507@DOMAIN.HIDDEN">3E050560.6090507@xxxxxxxxxx</a>&gt; &lt;<a href="mailto:200212220251.gBM2p2Y14110@DOMAIN.HIDDEN">200212220251.gBM2p2Y14110@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:3E077CA2.2040703@DOMAIN.HIDDEN">3E077CA2.2040703@xxxxxxxxxx</a>&gt; &lt;<a href="mailto:200212301429.gBUETMm28219@DOMAIN.HIDDEN">200212301429.gBUETMm28219@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.0.0) Gecko/20020529</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+Marc Feeley wrote:
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+
+This is unfortunate, since this SRFI really moves all that &quot;legacy&quot;
+code into non-specifiedness...
+</pre></blockquote><pre style="margin: 0em;">
+
+
+Since SRFI 39 did not exist when the legacy code was written the code
+never conformed to it.  So SRFI 39 does not &quot;move&quot; the code into
+non-specifiedness.  The other choice (of having &quot;make-parameter&quot;
+create the mutable parameters as specified in SRFI 39) is even less
+appealing because in that case PLT legacy code would no longer work if
+PLT adopted that semantics.
+</pre></blockquote><pre style="margin: 0em;">
+
+That is exactly the reason why I think having fully thread-local
+parameters is the more practical solution. The &quot;legacy&quot; code I talk of
+is the (perhaps not unconsiderable) amount of code written that uses
+parameters that do not share their value among different threads
+(as in PLT).
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+I think parameters (as used in Chez, PLT or (say) Chicken) are
+(IMHO) well understood and heavily used.
+</pre></blockquote><pre style="margin: 0em;">
+
+
+For these systems and Gambit-C, &quot;make-mutable-parameter&quot; and
+&quot;make-parameter&quot; can be defined as the native &quot;make-parameter&quot; when
+multithreading is not used.  The semantic differences only matter with
+PLT when threads are being used and the parameters are mutated (indeed
+only PLT and Chicken implement threads and the Chicken manual does not
+explain the interaction between parameters and threads).
+</pre></blockquote><pre style="margin: 0em;">
+
+[It does, albeit not explicitly enough (see the SRFI-18 section).
+I will fix this.]
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+I view SRFI
+39's main contribution as a specification of how mutation of
+parameters should work in the presence of threads.
+</pre></blockquote><pre style="margin: 0em;">
+
+Absolutely. But I think one should be more pragmatic here and
+use parameters as user-defined *fully* thread-local storage,
+dynamically scoped.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+No &quot;copy-on-write&quot; is not a valid implementation.  The reason is that
+the &quot;swapping&quot; semantics requires the child thread to have an
+independent copy of the parent's thread.  So the child must get a
+snapshot of the parent's dynamic environment which will make the
+child's mutations invisible to the parent ***AND*** the parent's
+mutations invisible to the child.  The copy-on-write approach you
+suggest only makes the child's mutations invisible to the parent.
+</pre></blockquote><pre style="margin: 0em;">
+
+That's not true. I'm probably expressing myself not clearly enough.
+`make-parameter' creates a parameter in a global environment (not attached)
+to any thread. Thread-creation copies the parent's parameter-env,
+*but* this env will be empty if the parent has not yet changed it's
+parameter-env (i.e. it is equivalent to the global env).
+
+I'm pretty sure that it works. I would be delighted to see some sample
+code that demonstrates the problem.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+
+When I say &quot;clean&quot; I don't mean it so subjectively.  A strong argument
+can be made that the semantics I propose in SRFI 39 for dynamic
+binding are closer to the lexical binding semantics.  What does this
+mean?  Well, if you look at how environments are manipulated in the
+denotational semantics (section 7.2 of R5RS) you will see that there
+are only two operations on environments &quot;lookup&quot; and &quot;extends&quot;.
+&quot;lookup&quot; returns the location in the store that is bound to an
+identifier.  The value associated to a location in the store is
+obtained with &quot;hold&quot; and &quot;assign&quot; changes the value associated with
+the location.  Dynamic binding as I propose it uses exactly the same
+operations (with the minor point that the domain of &quot;lookup&quot; and
+&quot;extends&quot; must be changed to accept parameter objects).  In addition
+to the lexical environment, the semantic functions also need an extra
+environment: the dynamic environment.  The dynamic binding semantics
+is simply obtained by having procedure call pass this dynamic
+environment to the called procedure (and this is the only thing that
+distinguished it from lexical binding).  Similarly (but obviously
+outside the scope of R5RS), the creation of a new thread would capture
+the dynamic environment of the parent thread.  That's it.  There is no
+need for an additional semantic operation for copying dynamic
+environments (which is non trivial because it must allocate store).
+Dynamic binding is a simple and natural extension of the R5RS
+</pre></blockquote><pre style="margin: 0em;">
+
+Perfectly valid, but to repeat: I see parameters as a simple and effective device
+for having thread-local storage, nothing more.
+
+I find the reasons you give insufficient for changing a well-established
+construct like parameters. The performance argument is weak, incompatibility
+to existing systems will make adoption of this SRFI harder and compatibility
+to non-released software is unimportant. Additionally it puts unneccessary burden
+on implementors and confuses users of implementations that have parameters and threads.
+
+(BTW, there is a simple way out of this dilemma: use different
+names - `make-dynamic' and `let-dynamic' come to mind, for example...)
+
+
+cheers,
+felix
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00015" href="msg00015.html">Re: Some comments</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00001" href="msg00001.html">Some comments</a></strong>
+<ul><li><em>From:</em> felix</li></ul></li>
+<li><strong><a name="00003" href="msg00003.html">Re: Some comments</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+<li><strong><a name="00008" href="msg00008.html">Re: Some comments</a></strong>
+<ul><li><em>From:</em> felix</li></ul></li>
+<li><strong><a name="00009" href="msg00009.html">Re: Some comments</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00012.html">Re: Some comments</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00014.html">Re: Some comments</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00014.html">Re: Some comments</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00015.html">Re: Some comments</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00013"><strong>Date</strong></a></li>
+<li><a href="threads.html#00013"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

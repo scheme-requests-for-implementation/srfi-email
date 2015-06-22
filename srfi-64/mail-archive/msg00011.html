@@ -1,0 +1,142 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: "Test results" -->
+<!--X-From-R13: Bre Pbguare <creNobguare.pbz> -->
+<!--X-Date: Wed,  9 Mar 2005 00:38:04 +0100 (NFT) -->
+<!--X-Message-Id: 422E3752.7000604@bothner.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: Pine.LNX.4.44.0503081644470.19219&#45;100000@localhost.localdomain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: &quot;Test results&quot;</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00010.html">Date Prev</a>][<a href="msg00012.html">Date Next</a>][<a href="msg00009.html">Thread Prev</a>][<a href="msg00012.html">Thread Next</a>][<a href="maillist.html#00011">Date Index</a>][<a href="threads.html#00011">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: &quot;Test results&quot;</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Donovan Kolbly &lt;<a href="mailto:donovan@DOMAIN.HIDDEN">donovan@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: &quot;Test results&quot;</li>
+<li><em>From</em>: Per Bothner &lt;<a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 08 Mar 2005 15:37:54 -0800</li>
+<li><em>Cc</em>: <a href="mailto:srfi-64@DOMAIN.HIDDEN">srfi-64@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-64@DOMAIN.HIDDEN">srfi-64@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:Pine.LNX.4.44.0503081644470.19219-100000@DOMAIN.HIDDEN">Pine.LNX.4.44.0503081644470.19219-100000@xxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:Pine.LNX.4.44.0503081644470.19219-100000@DOMAIN.HIDDEN">Pine.LNX.4.44.0503081644470.19219-100000@xxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.7.3) Gecko/20041020</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+Donovan Kolbly wrote:
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+The section &quot;Test results&quot; talks about what test results are, but it isn't
+immediately clear how they are obtained as association lists.  For my
+instance, I am implementing a &lt;test-result&gt; class, and I suppose I will
+need to roll up the fields into an alist.  I can do that... but when?
+</pre></blockquote><pre style="margin: 0em;">
+
+The test-runner-on-test/test-runner-on-test! parameter is part of the API,
+and the function returned from (test-runner-on-test runner) takes a
+test-result association list, so you have to create it by then.
+
+The test-%report-result function also expects an alist, but you're free
+to re-implement that function as its not part of the API.
+
+I'm not wedded to using alists - I used them as a simple extensible
+API.  We could instead hide the current test result in the test-runner,
+and use callback functions:
+  (test-result-get 'property-name [runner])
+  (test-result-set! 'property-name value [runner])
+  (test-result-clear [runner])
+The reference implementation can use a &quot;private&quot; association list stored
+in the test-runner.  RScheme can use a &lt;test-result&gt; object.
+
+We might add some convenience functions:
+  (test-result-passed?) == (memq (test-result-get 'result-kind) '(PASS XPASS))
+
+This also solves Alex Shinn's request for a way to query the result of a
+test.  I'm assuming test-result-clear gets called at the start of a test-*,
+so the previous test's properties are available until then:
+
+   (test-assert foo)
+   (if (not (test-result-passed?))
+      (test-skip ....))
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Also, I don't understand the sentence &quot;The test-kind association return
+one of the following symbols&quot;.  Does that mean that one key in the alist
+is the symbol 'test-kind and the value is one of the indicated symbols,
+so, for example, the following might be a test result:
+
+   ((test-kind . PASS) (source-file . &quot;foo.scm&quot;) (source-line . 13))
+</pre></blockquote><pre style="margin: 0em;">
+
+Correct.
+
+(I notice that I'm inconsistent about whether result kinds are upper-case or
+lower-case, which makes a difference in case-sensitive Schemes.  Oops.)
+--
+	--Per Bothner
+per@xxxxxxxxxxx   <a  rel="nofollow" href="http://per.bothner.com/">http://per.bothner.com/</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00012" href="msg00012.html">Re: &quot;Test results&quot;</a></strong>
+<ul><li><em>From:</em> Donovan Kolbly</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00009" href="msg00009.html">&quot;Test results&quot;</a></strong>
+<ul><li><em>From:</em> Donovan Kolbly</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00010.html">Skipping selected tests which are groups</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00012.html">Re: &quot;Test results&quot;</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00009.html">&quot;Test results&quot;</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00012.html">Re: &quot;Test results&quot;</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00011"><strong>Date</strong></a></li>
+<li><a href="threads.html#00011"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

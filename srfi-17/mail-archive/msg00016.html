@@ -1,0 +1,131 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Redefinition of the setter -->
+<!--X-From-R13: Znef Fubznf Vnafra <yguNppf.arh.rqh> -->
+<!--X-Date: Mon, 17 Jan 2000 10:04:31 &#45;0600 (CST) -->
+<!--X-Message-Id: 200001171604.e0HG4TH17339@electra.ccs.neu.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Redefinition of the setter</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00015.html">Date Prev</a>][<a href="msg00017.html">Date Next</a>][<a href="msg00020.html">Thread Prev</a>][<a href="msg00021.html">Thread Next</a>][<a href="maillist.html#00016">Date Index</a>][<a href="threads.html#00016">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Redefinition of the setter</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-17@DOMAIN.HIDDEN">srfi-17@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Redefinition of the setter</li>
+<li><em>From</em>: Lars Thomas Hansen &lt;<a href="mailto:lth@DOMAIN.HIDDEN">lth@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 17 Jan 2000 11:04:29 -0500</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+I think the hedge in the specification
+
+ &gt;However, I do suggest a rule that that once a setter has been specified
+ &gt;for a procedure, then changing the setter property to something else is
+ &gt;undefined. This would allow a compiler to optimize setter calls to the
+ &gt;same extent that resolve (or inline) calls to specific functions. I see
+ &gt;no use for being able to change the setter property once set, except
+ &gt;perhaps for debugging.
+
+is not in the spirit of the language and has little practical value.
+
+Say I have a record type Point with a field x and operations
+
+  (define point-x ...)
+  (define point-x-set! ...)
+  (set! (setter point-x) point-x-set!)
+
+The restriction in the spec guarantees that in cases where the compiler
+can determine that point-x has not changed, (setter point-x) also has
+not changed.  Without this restriction, the compiler could statically
+determine that (setter point-x) has not changed only in cases where all
+uses of point-x can be determined, and none of those uses are an
+expression like
+
+	(set! (setter point-x) ...)
+
+If all changes to point-x are statically visible, then the compiler is
+better off with the restriction: in systems with a module system, in
+particular, the restriction may allow the compiler to generate better
+code.  But in a system with a module system the compiler may also be
+able to perform the analysis to derive the same fact.
+
+Furthermore, it may be useful to redefine setters.  Suppose I want to
+track how often point-x-set! is called.  Normally I would say
+
+  (define point-x-set!
+    (let ((point-x-set! point-x-set!))
+      (lambda (p v)
+	(set! point-x-set-counter (+ 1 point-x-set-counter))
+	(point-x-set! p v))))
+
+but since the old definition can be called indirectly through set! I
+need to change (setter point-x) also.  If redefinition is not possible,
+I'm stuck -- only because the compiler's life should be made easier!
+That does not seem reasonable.
+
+When the compiler doesn't know _what_ a particular setter is at runtime,
+because the getter may change, then it must perform some sort of
+run-time lookup and dispatch.  Generally it is possible to compile the
+lookup into something that runs in constant time, eg. by hanging the
+setter off the getter.  Whatever the technique, the setter can't (in
+general) be inlined, the cost of the call will probably dominate the
+cost of the lookup and the cost of the operation itself, and the
+language restriction has bought us nothing.
+
+--lars
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00015.html">Re: Sample implementation</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00017.html">Re: Sample implementation</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00020.html">Re: a meta-comment</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00021.html">Re: a meta-comment</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00016"><strong>Date</strong></a></li>
+<li><a href="threads.html#00016"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,166 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Improper lists -->
+<!--X-From-R13: Ayva Euviref <fuvirefNfuviref.ar.zrqvnbar.arg> -->
+<!--X-Date: Tue, 29 Jun 1999 08:03:57 &#45;0500 (CDT) -->
+<!--X-Message-Id: 199906291309.JAA02417@shivers.ne.mediaone.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Improper lists</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00053.html">Date Prev</a>][<a href="msg00055.html">Date Next</a>][<a href="msg00059.html">Thread Prev</a>][<a href="msg00056.html">Thread Next</a>][<a href="maillist.html#00054">Date Index</a>][<a href="threads.html#00054">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Improper lists</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-1@DOMAIN.HIDDEN">srfi-1@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Improper lists</li>
+<li><em>From</em>: Olin Shivers &lt;<a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 29 Jun 1999 09:09:42 -0400</li>
+<li><em>Reply-to</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>    I think that the whole idea of &quot;robustness&quot; (meaning don't break under
+    any circumstances) is not in a Scheme tradition: 
+
+Depends on what you mean by robustness! Scheme has a great tradition of
+the kind of robustness associated with &quot;safe&quot; languages.
+
+    after all these years
+    spent trying to convince programmers that (car '()) is an error,
+    we are back to (length &quot;abc&quot;) =&gt; 0. Since &quot;improper list&quot; is synonymous
+    to &quot;any object&quot; (anything or a pair = anything), we will end up with a
+    list library that accepts (and often produces) nonsensical data.
+
+What I meant by robust was &quot;has a spec that operates on the full set of
+possible input values.&quot; But let's not get hung up on a word.
+
+    incorrect code, but no error is likely to be signalled, because
+    the list is never 'applied' (but improperness is propagated)
+    (filter '(2 7 1 8 2) even?) =&gt; #{procedure even?}
+
+    This &quot;result&quot; can be propagated further without any warning:
+    (length (filter '(2 7 1 8 2) even?)) =&gt; 0 ;no even numbers?
+
+Even Scheme 48's weak-sister type checker will warn of this.
+
+    &gt;In this spirit, *all* of the procedures in list-lib are defined to work
+    &gt;on improper lists.
+
+    The last phrase translates as follows: &quot;*all* of the procedures in list-lib
+    are defined to accept *any* objects, not only lists&quot;. And still, the
+    &quot;consistency&quot; will require to redefine NULL? and LIST? to return #t on all
+    atoms (actually, LIST? should return #t on everything)...
+
+NULL? accepts any value, and tests for (). This is straightforward.
+There is no LIST? -- as you point out, it is not a useful concept.
+There is PROPER-LIST?, DOTTED-LIST? and CIRCULAR-LIST?.
+
+It's *easier* and *simpler* to define these list-processing primitives
+to work on improper lists. You basically write your recursions/loops
+    (if (pair? lis)
+        &lt;recursive/iterative case&gt;
+        &lt;base case&gt;)
+instead of the common pattern
+    (if (null? lis)
+        &lt;base-case&gt;
+        &lt;recursive/iterative case&gt;)
+
+Notice that the common pattern makes things *harder* for a soft-typing
+optimiser, since you *don't know* in the recursive/iterative case that
+LIS is a pair -- you only know that it is not null. This means that the
+car and cdr operations you will perform on LIS in the recursive/iterative
+arm of the conditional have to be run-time type checked.
+
+In the first pattern, the type optimiser *knows* that LIS is a pair
+in the recursive/iterative arm of the IF. So pair-processing code in
+that arm is properly guarded, and can be optimised to run without
+run-time checks.
+
+Let's consider a binary (APPEND x y). Here's the traditional pattern:
+
+    (let recur ((x x))
+      (if (null? x) 
+          y
+          (cons (car x) (recur (cdr x)))))
+
+Again, the (CAR X) and (CDR X) expressions are not guaranteed to
+work. If you focus on *pairness*, they are guaranteed to work:
+    
+    (let recur ((x x))
+      (if (pair? x) 
+          (cons (car x) (recur (cdr x)))
+          y))
+
+Now, you can focus on pairness, and still rule out improper lists by
+writing this definition:
+
+    (let recur ((x x))
+      (cond ((pair? x) (cons (car x) (recur (cdr x))))
+            ((null? x) y)
+            (else (error ...))))
+
+All this means, however, that we basically coded in a gratuitous
+restriction to our definition that wasn't at all needed. It is not
+one with the structure of the problem; we just bolted it on.
+
+I feel it's bogus. Go with the structure of the system.
+    -Olin
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00056" href="msg00056.html">Re: Improper lists</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr. Preprocessor]</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00053.html">Improper lists [Was: SRFI-1 round 3 discussion]</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00055.html">Re: Improper lists [Was: SRFI-1 round 3 discussion]</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00059.html">Re: Improper lists</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00056.html">Re: Improper lists</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00054"><strong>Date</strong></a></li>
+<li><a href="threads.html#00054"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

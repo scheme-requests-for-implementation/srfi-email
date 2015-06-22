@@ -1,0 +1,113 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Reference implementation's use of datum&#45;>syntax is not portable -->
+<!--X-From-R13: Rrevpx Sqqvatgba <qrevpx.rqqvatgbaNtznvy.pbz> -->
+<!--X-Date: Tue, 12 Aug 2008 09:39:50 +0200 (MST) -->
+<!--X-Message-Id: 1218526785.31048.278.camel@eep -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Reference implementation's use of datum-&gt;syntax is not portable</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00033.html">Date Prev</a>][<a href="msg00035.html">Date Next</a>][<a href="msg00025.html">Thread Prev</a>][<a href="msg00037.html">Thread Next</a>][<a href="maillist.html#00034">Date Index</a>][<a href="threads.html#00034">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Reference implementation's use of datum-&gt;syntax is not portable</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-99@DOMAIN.HIDDEN">srfi-99@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Reference implementation's use of datum-&gt;syntax is not portable</li>
+<li><em>From</em>: Derick Eddington &lt;<a href="mailto:derick.eddington@DOMAIN.HIDDEN">derick.eddington@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 12 Aug 2008 00:39:45 -0700</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-99@DOMAIN.HIDDEN">srfi-99@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Dkim-signature</em>: v=1; a=rsa-sha256; c=relaxed/relaxed;        d=gmail.com; s=gamma;        h=domainkey-signature:received:received:subject:from:to:content-type         :date:message-id:mime-version:x-mailer:content-transfer-encoding;        bh=SsEAOmAaQhLYRx2duB0M/ydlP2/OpvwuVE9zS3NtV3I=;        b=AiV94tcrbk/aeSV6mLr7Ex6KaxYYt4FY5HPsEiT9unu7jToP90qcQK0I2HIsmHbab9         YWA7TtslJDON+3DMPNSJ6MZRyxpcjrRe6mjwbDsW7kLBWLPiJR/KkwERygGmNSKL9Dbt         eOAMTdlW7TqTTX/GrilFBFgxEAP6A4LtXSo9g=</li>
+<li><em>Domainkey-signature</em>: a=rsa-sha1; c=nofws;        d=gmail.com; s=gamma;        h=subject:from:to:content-type:date:message-id:mime-version:x-mailer         :content-transfer-encoding;        b=UmgWXZpcZYoGffdmStnYcJJ62vZ1LdD0JKmFItI5vuLLlJ84KYwk8qCe7fChQKr6Ip         LEVJrqkttO5nNMXMZRo+1xjWCb/EPHBdamDzHTJQ/3fTf6em58KEbWmk/EPLgK3QAIOs         dSC6c+XZs+ahDsuRoCgi7Vt4vnM6vaNenmWzs=</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>The R6RS Libraries 12.6 says of datum-&gt;syntax: &quot;Template-id must be a
+template identifier and datum should be a datum value.&quot;  
+
+That does say &quot;should&quot;, not &quot;must&quot;, but to be portable, only a datum
+value should be used, right?  The syntax object
+#'define-record-type-helper in the below makes the list not be a datum
+value.  This prevents the reference implementation from working in PLT
+Scheme and Ikarus.
+
+          (datum-&gt;syntax
+           #'tname
+           `(,#'define-record-type-helper
+             ,type-name ,fields ,parent
+             ,(if constructor-args
+                  (list constructor-name constructor-args)
+                  constructor-name)
+             ,predicate-name
+             ,accessor-fields ,mutator-fields)))))))
+
+
+(import
+  (rnrs base)
+  (err5rs records syntactic))
+(define-record-type A #t #t a b)
+
+
+PLT's error =&gt;
+
+zone/scheme/err5rs/records/syntactic.sls:119:10: datum-&gt;syntax: 
+expected argument of type &lt;datum&gt;; given
+{#&lt;syntax:/home/d/.plt-scheme/4.0.2.6/collects/err5rs/records/syntactic.sls:121:16&gt; A #(a b) #f make-A A? {{A-a a} {A-b b}} ()}
+
+
+-- 
+: Derick
+----------------------------------------------------------------
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00033.html">Re: Why vectors?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00035.html">Re: Initial comments</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00025.html">Re: Why the inversion of mutability between make-rtd and define-record-type?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00037.html">Re: Reference implementation's use of datum-&gt;syntax is not portable</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00034"><strong>Date</strong></a></li>
+<li><a href="threads.html#00034"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

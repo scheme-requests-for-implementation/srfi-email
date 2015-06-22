@@ -1,0 +1,219 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Not quite enough abstraction -->
+<!--X-From-R13: Penq Zhpvre <yhpvreNzngu.cheqhr.rqh> -->
+<!--X-Date: Sat, 26 Jan 2002 09:10:46 +0100 (NFT) -->
+<!--X-Message-Id: 200201252244.g0PMirT06711@banach.math.purdue.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Not quite enough abstraction</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00063.html">Date Prev</a>][<a href="msg00065.html">Date Next</a>][<a href="msg00063.html">Thread Prev</a>][<a href="msg00065.html">Thread Next</a>][<a href="maillist.html#00064">Date Index</a>][<a href="threads.html#00064">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Not quite enough abstraction</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-25@DOMAIN.HIDDEN">srfi-25@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Not quite enough abstraction</li>
+<li><em>From</em>: Brad Lucier &lt;<a href="mailto:lucier@DOMAIN.HIDDEN">lucier@xxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 25 Jan 2002 17:44:53 -0500 (EST)</li>
+<li><em>Cc</em>: <a href="mailto:lucier@DOMAIN.HIDDEN">lucier@xxxxxxxxxxxxxxx</a> (Brad Lucier), <a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>,	<a href="mailto:oleg@DOMAIN.HIDDEN">oleg@xxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-25@DOMAIN.HIDDEN">srfi-25@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>This is a side comment about this SRFI.
+
+I'm working with fMRI data, which consists of a time series of volumes,
+of slices, of rows, of pixels, of complex numbers.  Just what an
+array SRFI should help with.
+
+Until now, I've been doing the following operations on the data (in place).
+
+1.  Two-D FFT's on slices.
+2.  Complex (as in complex numbers) wavelet transforms in the various
+     coordinate directions.
+3.  Various nonlinear operations on the wavelet coefficients to smooth the
+    images.
+4, 5, 6. ...  The reverse of all these operations.
+
+Now I have to do time-series analysis of pixels and wavelet coefficients,
+moving around quadrants of slices (take a two-d slice (image), and swap the
+pixels in opposite diagonal quadrants), turning out pbm images of statistically
+significant pixels, merging pgm images of complex magnitudes of pixels and pbm
+images of the location of significant pixels, etc.  My low-level approach up to
+this point is beginning to fail me.  (When the low level operations are rather
+complex, like FFTs and wavelet transforms, you tend not to notice the control
+flow code around the basic algorithms.)
+
+So I looked at Alan Bawden's code and this SRFI.  And it turns out that
+neither is at a high enough abstraction level to really simplify my life.
+Both work too much at the &quot;move a word around&quot; level of programming.
+Both assume that there are underlying arrays that are mutable, you can
+set! elements of the arrays, the underlying arrays are generic
+containers (vectors, not f64vectors or f32vectors, ...), etc.
+
+So then I remembered code for an abstract-vector abstraction I wrote
+several years ago for another rather complex image processing problem
+(genetic programming to derive image processing algorithms).  In my
+implementation, an abstract vector s just a mapping whose domain is a
+subset 0..n-1 of the integers and whose range is the set of all Scheme values.
+That is, they have a dimension n and a function (mapping) from 0..n-1
+to Scheme objects.  That's it.  The code was written so that Scheme
+vectors are also abstract vectors, but so also can be f64vectors, etc.
+
+And I see now that a multi-dimensional version of abstract-vector is
+what I need for my current purposes.  It's unfortunate that the
+current SRFI can't fulfill my needs as usefully, but that's the
+way things go.
+
+To make things precise, I've included my old code at the end of this
+message.  It uses the define-structure extension of Gambit-C and
+a few Gambit-C declarations to speed things up.  As you can see, there
+are no low-level (word level) operations, but for the most part, you
+don't really need them.  Note also abstract-vector-&gt;vector, which
+fixes a concrete representation of an abstract-vector so that one
+can use a fixed, precomputed, representation of an abstract vector.
+
+Brad Lucier
+
+(define-structure avec dimension mapping)
+
+(define (dimension av)
+  (cond ((avec?   av) (avec-dimension av))
+	((vector? av) (vector-length av))
+	(else (error &quot;dimension: argument is not an abstract vector&quot;))))
+
+(define (mapping av)
+  (cond ((avec?   av) (avec-mapping av))
+	((vector? av) (lambda (i) (vector-ref av i)))
+	(else (error &quot;mapping: argument is not an abstract vector&quot;))))
+
+(define (abstract-vector? av)
+  (or (avec? av) (vector? av)))
+
+(define (abstract-vector-map f)
+  (lambda args
+    (cond ((null? args) (error &quot;abstract-vector-map: argument list is empty&quot;))
+	  ((let loop ((first (car args)) (rest (cdr args)))
+	     (and (abstract-vector? first) 
+                  (or (null? rest) (loop (car rest) (cdr rest)))))
+	   (let ((dimensions (map dimension args)))
+	     (if (apply = dimensions)
+		 (let ((n (car dimensions))
+		       (mappings (map mapping args)))
+		   (case (length dimensions)
+		     ((1) (let ((g (car mappings)))
+			    (make-avec n (lambda (i) (f (g i))))))
+		     ((2) (let ((g1 (car mappings))
+				(g2 (cadr mappings)))
+			    (make-avec n (lambda (i) (f (g1 i) (g2 i))))))
+		     ((3) (let ((g1 (car mappings))
+				(g2 (cadr mappings))
+				(g3 (caddr mappings)))
+			    (make-avec n (lambda (i) (f (g1 i) (g2 i) (g3 i))))))
+		     ((4) (let ((g1 (car mappings))
+				(g2 (cadr mappings))
+				(g3 (caddr mappings))
+				(g4 (cadddr mappings)))
+			    (make-avec n (lambda (i) (f (g1 i) (g2 i) (g3 i) (g4 i))))))
+		     (else (make-avec n (lambda (i) (apply f (map (lambda (g) (g i)) mappings)))))))
+		 (error &quot;abstract-vector-map: arguments have different dimensions&quot;))))
+	  (else (error &quot;abstract-vector-map: arguments are not abstract vectors&quot;)))))
+
+(define (abstract-vector-&gt;avec av)                ; a copying implementation
+  (if (abstract-vector? av)
+      (make-avec (dimension av) (mapping av))
+      (error &quot;abstract-vector-&gt;avec: not an abstract vector&quot;)))
+
+(declare (inline) (inlining-limit 10000))
+
+(define (abstract-vector-reduce f identity av)
+  (if (abstract-vector? av)
+      (let ((n (dimension av))
+	    (g (mapping av)))
+	(declare (fixnum))
+	(do ((i 0 (+ i 1))
+	     (result identity (f result (g i))))
+	    ((= i n) result)))
+      (error &quot;abstract-vector-reduce: argument is not an abstract vector&quot;)))
+
+(define (abstract-vector-&gt;vector av)              ; a copying implementation
+  (if (abstract-vector? av)
+      (let* ((n (dimension av))
+	     (f (mapping av))
+	     (v (make-vector n)))
+	(declare (fixnum))
+	(do ((i 0 (+ i 1)))
+	    ((= i n) v)
+	  (vector-set! v i (f i))))
+      (error &quot;abstract-vector-&gt;vector: argument is not an abstract vector&quot;)))
+
+(define (abstract-vector-for-each av)
+  (if (abstract-vector? av)
+      (let ((n (dimension av))
+	    (f (mapping av)))
+	(declare (fixnum))
+	(do ((i 0 (+ i 1)))
+	    ((= i n) (void))
+	  (f i)))
+      (error &quot;abstract-vector-for-each: argument is not an abstract vector&quot;)))
+
+(declare (not inline) (inlining-limit 0))
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00065" href="msg00065.html">Re: Not quite enough abstraction</a></strong>
+<ul><li><em>From:</em> Jussi Piitulainen</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00063.html">toner cartridges</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00065.html">Re: Not quite enough abstraction</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00063.html">toner cartridges</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00065.html">Re: Not quite enough abstraction</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00064"><strong>Date</strong></a></li>
+<li><a href="threads.html#00064"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

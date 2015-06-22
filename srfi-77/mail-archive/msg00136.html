@@ -1,0 +1,134 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Is exact 0 "stronger" than inexact 0.0? -->
+<!--X-From-R13: [nepva 'Cepmnx' Ybjnypmlx <depmnxNxaz.bet.cy> -->
+<!--X-Date: Sun, 23 Oct 2005 20:17:35 +0200 (MST) -->
+<!--X-Message-Id: 87k6g4ayj1.fsf@qrnik.zagroda -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20051023173417.6D2841B77BB@home.voluntocracy.org -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Is exact 0 &quot;stronger&quot; than inexact 0.0?</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00135.html">Date Prev</a>][<a href="msg00137.html">Date Next</a>][<a href="msg00135.html">Thread Prev</a>][<a href="msg00199.html">Thread Next</a>][<a href="maillist.html#00136">Date Index</a>][<a href="threads.html#00136">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Is exact 0 &quot;stronger&quot; than inexact 0.0?</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Is exact 0 &quot;stronger&quot; than inexact 0.0?</li>
+<li><em>From</em>: Marcin 'Qrczak' Kowalczyk &lt;<a href="mailto:qrczak@DOMAIN.HIDDEN">qrczak@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 23 Oct 2005 20:17:22 +0200</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20051023173417.6D2841B77BB@DOMAIN.HIDDEN">20051023173417.6D2841B77BB@xxxxxxxxxxxxxxxxxxxxx</a>&gt; (Aubrey Jaffer's message of &quot;Sun, 23 Oct 2005 13:34:17 -0400 (EDT)&quot;)</li>
+<li><em>Mail-followup-to</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>References</em>: &lt;<a href="mailto:20051023173417.6D2841B77BB@DOMAIN.HIDDEN">20051023173417.6D2841B77BB@xxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Sender</em>: Marcin 'Qrczak' Kowalczyk &lt;<a href="mailto:qrczak@DOMAIN.HIDDEN">qrczak@xxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Gnus/5.1006 (Gnus v5.10.6) Emacs/21.3 (gnu/linux)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Aubrey Jaffer &lt;agj@xxxxxxxxxxxx&gt; writes:
+
+&gt;    (* 0 +inf.0)                           ==&gt;  +nan.0
+&gt; ...
+&gt;    (/ 0 0.0)                              ==&gt;  unspecified
+&gt;    (/ 0.0 0)                              ==&gt;  +nan.0
+&gt;    (/ 0.0 0.0)                            ==&gt;  +nan.0
+&gt;
+&gt; Why is only (/ 0 0.0) out of this set unspecified?
+
+I don't know. In my model and implementation:
+     (* 0 +inf.0) ==&gt; 0
+     (/ 0 0.0)    ==&gt; 0
+     (/ 0.0 0)    ==&gt; error
+     (/ 0 0)      ==&gt; error
+
+In general my recipe for evaluating such operations is as follows:
+
+1. Replace 0.0 with a very small positive number, +inf.0 with a very
+   large number, -0.0 and -inf.0 analogously, +nan.0 with any number.
+   0 stays exact.
+
+2. Perform the operation.
+
+3. Try to perform the inverse substitution. If the answer would depend
+   on the initial choice of substituted numbers:
+   a) If the result can't decide between 0.0 and -0.0, answer 0.0
+      (in most rounding modes) or -0.0 (when rounding towards -inf).
+   b) If the result can't decide between a number and an error,
+      answer the number (this happens e.g. for (/ 0 +nan.0)).
+   c) Otherwise answer +nan.0.
+
+This algorithm doesn't explain two-argument atan near zero, which
+is treated specially, as per IEEE and other languages (the algorithm
+would answer +nan.0).
+
+Disclaimer: I haven't checked whether atan is the only special case,
+I formulated the rules just now.
+
+Note that in my model (- 0 x) is (- x), but (- 0.0 x) is different
+(assuming the default rounding mode). Also (+ A (* B +i)) is A+Bi;
+this would not be true if complex numbers had both real and imaginary
+part of the same exactness, because adding 0.0 is not identity at -0.0.
+
+-- 
+   __(&quot;&lt;         Marcin Kowalczyk
+   \__/       qrczak@xxxxxxxxxx
+    ^^     <a  rel="nofollow" href="http://qrnik.knm.org.pl/~qrczak/">http://qrnik.knm.org.pl/~qrczak/</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00135" href="msg00135.html">Is exact 0 &quot;stronger&quot; than inexact 0.0?</a></strong>
+<ul><li><em>From:</em> Aubrey Jaffer</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00135.html">Is exact 0 &quot;stronger&quot; than inexact 0.0?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00137.html">Re: arithmetic issues</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00135.html">Is exact 0 &quot;stronger&quot; than inexact 0.0?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00199.html">Common Lisp solved this problem 20 years ago</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00136"><strong>Date</strong></a></li>
+<li><a href="threads.html#00136"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

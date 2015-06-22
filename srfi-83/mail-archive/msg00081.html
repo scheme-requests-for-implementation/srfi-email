@@ -1,0 +1,322 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Independent optimizing compilation -->
+<!--X-From-R13: [vpunry Ecreore <fcreoreNvasbezngvx.hav&#45;ghrovatra.qr> -->
+<!--X-Date: Mon, 26 Dec 2005 17:07:52 +0100 (MET) -->
+<!--X-Message-Id: y9lr77z6dv9.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20051204152542.215159806E@pluto.mumble.net -->
+<!--X-Reference: y9ld5kc7tb5.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: 43933AAF.4020006@bothner.com -->
+<!--X-Reference: y9l8xv065gi.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: Pine.GSO.4.60.0512041811240.27828@now.het.brown.edu -->
+<!--X-Reference: y9l1x0r4cow.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: 1133809350.7279.5.camel@localhost.localdomain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Independent optimizing compilation</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00080.html">Date Prev</a>][<a href="msg00082.html">Date Next</a>][<a href="msg00075.html">Thread Prev</a>][<a href="msg00082.html">Thread Next</a>][<a href="maillist.html#00081">Date Index</a>][<a href="threads.html#00081">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Independent optimizing compilation</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Sam Tobin-Hochstadt &lt;<a href="mailto:samth@DOMAIN.HIDDEN">samth@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Independent optimizing compilation</li>
+<li><em>From</em>: Michael Sperber &lt;<a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 26 Dec 2005 17:07:38 +0100</li>
+<li><em>Cc</em>: <a href="mailto:srfi-83@DOMAIN.HIDDEN">srfi-83@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-83@DOMAIN.HIDDEN">srfi-83@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:1133809350.7279.5.camel@DOMAIN.HIDDEN">1133809350.7279.5.camel@xxxxxxxxxxxxxxxxxxxxx</a>&gt; (Sam	Tobin-Hochstadt's message of &quot;Mon, 05 Dec 2005 14:02:30 -0500&quot;)</li>
+<li><em>References</em>: &lt;<a href="mailto:20051204152542.215159806E@DOMAIN.HIDDEN">20051204152542.215159806E@xxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:y9ld5kc7tb5.fsf@DOMAIN.HIDDEN">y9ld5kc7tb5.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:43933AAF.4020006@DOMAIN.HIDDEN">43933AAF.4020006@xxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:y9l8xv065gi.fsf@DOMAIN.HIDDEN">y9l8xv065gi.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:Pine.GSO.4.60.0512041811240.27828@DOMAIN.HIDDEN">Pine.GSO.4.60.0512041811240.27828@xxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:y9l1x0r4cow.fsf@DOMAIN.HIDDEN">y9l1x0r4cow.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:1133809350.7279.5.camel@DOMAIN.HIDDEN">1133809350.7279.5.camel@xxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Gnus/5.110003 (No Gnus v0.3) XEmacs/21.5-b24 (darwin)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+Sam Tobin-Hochstadt &lt;samth@xxxxxxxxxxx&gt; writes:
+
+&gt; On Mon, 2005-12-05 at 19:32 +0100, Michael Sperber wrote:
+&gt;
+&gt;&gt; Some of these goals conflict, at least among the module systems and
+&gt;&gt; designs we've looked at, which is why we (eventually) narrowed down
+&gt;&gt; the list of requirements.  I'll be happy to elaborate, but it's a long
+&gt;&gt; tortuous story ... :-)
+&gt;
+&gt; I think this story, and a comparison with existing Scheme module
+&gt; systems, would be very helpful for understanding the proposal.  At least
+&gt; the latter belongs in the SRFI document as well.
+
+I'll try.  It gets long and ugly, though.
+
+DISCLAIMER: THE VIEWS EXPRESSED OR IMPLIED IN THIS MESSAGE ARE MY OWN
+ONLY; EVEN THOUGH I AM AN R6RS EDITOR, I CAN'T SPEAK FOR THE OTHER
+R6RS COMMITTEES.  I TAKE NO RESPONSIBILITY FOR ANY BRAIN DAMAGE
+INCURRED AS A RESULT OF READING THIS MESSAGE.
+
+I listed a couple of possible requirements, and everyone can go and
+look for module systems that satisfy any given set of them.  One is
+enough to create a conflict, however.  So, for the purposes of this
+message, take just one: namespace management.
+
+What's essential to namespace management?  Two things: exporting names
+from one environment, and importing them into another.  Suppose you
+have forms:
+
+(export &lt;identifier&gt; ...)
+(import &lt;environment spec&gt;)
+
+where EXPORT somehow makes identifiers from the current environment
+available for use by an IMPORT form in another place.  Supposedly,
+there's some way to reference the EXPORT form or its environment via
+the &lt;environment spec&gt; thing.  (Now, there's a whole set of tricky
+issues surrounding the possible natures of &lt;environment spec&gt;---around
+the issue of &quot;linking&quot;---but I'll ignore these here.)
+
+A symptomatic question for issue of &quot;namespace management&quot; is: where
+can EXPORT and IMPORT forms occur?  Consider three different module
+systems, those of Scheme 48, PLT Scheme (its MODULE form, to be
+precise), and Chez Scheme.  Here are links explaining those module
+systems, if you're interested:
+
+The &quot;Module system&quot; chapter of the
+The Incomplete Scheme 48 Reference Manual
+<a  rel="nofollow" href="http://www.s48.org/1.3/manual/manual.html">http://www.s48.org/1.3/manual/manual.html</a>
+Matthew Flatt: Composable and Compilable Macros
+<a  rel="nofollow" href="http://www.cs.utah.edu/plt/publications/macromod.pdf">http://www.cs.utah.edu/plt/publications/macromod.pdf</a>
+Oscar Waddell and R. Kent Dybvig: Extending the Scope of Syntactic Abstraction
+<a  rel="nofollow" href="http://www.cs.indiana.edu/~dyb/pubs/popl99.pdf">http://www.cs.indiana.edu/~dyb/pubs/popl99.pdf</a>
+
+Anyway, the answers to the question are:
+
+Scheme 48: in the separate module language
+PLT Scheme: at the toplevel of a MODULE body
+Chez Scheme: inside a MODULE form, which is just DEFINE and can occur
+  anywhere DEFINE occurs
+
+(Andre could add a fourth point along this spectrum with the previous
+incarnation of his module system.)
+
+Why do these three Schemes take such different positions, with Scheme
+48 and Chez at the extremes?  Chez's position is well-supported in the
+preamble of the R5RS:
+
+&gt; Scheme demonstrates that a very small number of rules for forming
+&gt; expressions, with no restrictions on how they are composed [...]
+
+... and this clearly applies to Chez's module system: Its MODULE form
+(along with its IMPORT form) is just like a definition, and can be
+combined with other definitions.  Moreover, MODULE and IMPORT forms
+can result from macro expansion, and this allows expressing a number
+of module-system-related problems to be solved by writing a bunch of
+macros on top of the primitives of the module system.  This is very
+nice.
+
+But this generality also has a price.  The root of the problem can be
+cast in terms of a seemingly simple extension to R5RS: internal
+DEFINE-SYNTAX.  Consider the following code fragment:
+
+(let-syntax ((foo (syntax-rules ()
+                    ((foo) 'outer))))
+  (let ()
+    (define a (foo))
+    (define-syntax foo
+      (syntax-rules ()
+        ((foo) 'inner)))
+    a))
+
+What should the return values be?  Regular internal definitions are
+mutually recursive, and, if the same holds true for internal syntax
+definitions, well, the return value surely should be 'inner, right?
+
+Consider this code fragment, then:
+
+(let-syntax ((foo (syntax-rules ()
+                    ((foo ?x) (define ?x 'outer)))))
+  (let ()
+    (foo a)
+    (define-syntax foo
+      (syntax-rules ()
+        ((foo ?x) (define ?x 'inner))))
+    a))
+
+If, in the first example, the macro invocation of FOO references the
+subsequent definition, surely the same should be the case here, right?
+After all, macro definitions and invocations are in the same order in
+both examples.  Yet, in PLT Scheme and Chez Scheme, you get 'outer,
+proving that the opposite holds true.
+
+The explanation is that PLT and Chez do two expansion passes, one to
+figure out the set of active definitions, and then another to do the
+full expansion.  Details have, until recently, varied.  Here's some
+indication of the potential impact of such algorithmic variations:
+
+<a  rel="nofollow" href="http://list.cs.brown.edu/pipermail/plt-scheme/2005-June/009213.html">http://list.cs.brown.edu/pipermail/plt-scheme/2005-June/009213.html</a>
+
+So, with internal DEFINE-SYNTAX, you get more generality
+(DEFINE-SYNTAX can occur wherever DEFINE occurs), but you also have to
+explain the expansion algorithm, and, worse, syntax definitions don't
+behave like regular ones: macros can expand into definitions, and
+macro expansion depends on what macros are defined, so you get a
+conceptual recursion that has to be resolved using some kind of
+sequential aspect of the macro-expansion algorithm.  (Because of this,
+the problem can actually be explained in terms of plain R5RS, but the
+examples get more obscure.)
+
+Now, Chez's MODULE and IMPORT forms are definitions on steroids, so
+the problems explained above are exacerbated in the sense that your
+language definition gets more complex, and gets an operational flavor.
+Looking in the R5RS for guidance, you get:
+
+&gt; &quot;[Scheme] was designed to have an exceptionally clear and simple
+&gt; semantics [...]&quot;
+
+... and arguably this kind of change gets us away from &quot;exceptional
+clarity.&quot;  At this point, you have to choose between the
+&quot;compositionality&quot; and the &quot;simplicity&quot; requirements of R5RS.  Among
+the R6RS editors, we couldn't agree which one was more serious or less
+important or whatever.
+
+Consider another aspect, hygiene.
+
+Scheme 48 takes the stance that the module definitions live in a
+separate language (Taylor Campbell has done a pretty good job of
+explaining some of the philosophical issues behind its design), and
+this means that I can read the module structure of a program
+independently from the code implementing the modules.  Also, I can
+figure out a module's exports by just looking through the module
+definition.  This restricts what you can do, but it also makes it very
+clear where to look for your definitions.  In PLT Scheme or Chez
+Scheme, macro expansion can be employed to construct the module
+dependency graph or the exports of a module, and do fancy stuff.
+
+Now, 
+
+(import &lt;module spec&gt;)
+
+is (some people disagree on my use of this word) an unhygienic
+construct: it binds names not mentioned in the form.  Moreover, with
+macro expansion, you can obscure the fact that an import is
+happening.  With Chez's construct (as explained in the paper cited
+above; I hear there've been changes since), you additionally get this
+in local environments:
+
+(module m (foo bar)
+  (define foo 'm))
+
+(define-syntax baz
+  (syntax-rules ()
+    ((baz) (import m))))
+
+(let ((foo 'bar))
+  (baz)
+  foo) 
+
+In the last expression, you don't see the lexically enclosing FOO, but
+rather one that's imported.  Whether you're considering this a problem
+or not depends on the kinds of programs and programmers you deal
+with, and what your brain considers &quot;simple.&quot; 
+
+You might also argue that, with the introduction of SYNTAX-CASE (as
+we're planning to do), you can write non-hygienic macros anyway, and
+therefore, the cat's out of the bag, we might as well go down the
+whole route, ladidadida.  Or you might argue the opposite
+dumdidumdidum.
+
+... and on and on and on ...
+
+Get the picture?  This kind of argument occurs over almost any aspect
+of the module system, and it is always impossible to resolve in a
+&quot;best&quot; manner, or has been so far, anyway.  (I sometimes wish this
+were ML: none of the hard problems there. :-) ) Moreover, a bunch of
+people are doing exciting and fresh research on the subject, none of
+which will be ready for R6RS.
+
+Which is why the R6RS editors re-focused on meeting a minimal set of
+requirements, in an almost-minimal fashion, in the context of a
+not-really-a-module-system.  For now, we're just concentrating on
+letting you give your code to someone else, and use someone else's
+code, while letting implementors provide and invent all kinds of
+exciting module systems, just so long as they implement the library
+standard, too.  Maybe, in a few years, we'll have a better answer for
+the &quot;module-system question&quot; where it'll be easier to agree.  Right
+now, the issues are genuinely too hard.
+
+Hope this helps clear things up a little bit.
+
+-- 
+Cheers =8-} Mike
+Friede, V&#xF6;lkerverst&#xE4;ndigung und &#xFC;berhaupt blabla
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00082" href="msg00082.html">Re: Independent optimizing compilation</a></strong>
+<ul><li><em>From:</em> Ray Blaak</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00067" href="msg00067.html">Re: Independent optimizing compilation</a></strong>
+<ul><li><em>From:</em> Taylor Campbell</li></ul></li>
+<li><strong><a name="00068" href="msg00068.html">Re: Independent optimizing compilation</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+<li><strong><a name="00069" href="msg00069.html">Re: Independent optimizing compilation</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+<li><strong><a name="00070" href="msg00070.html">Re: Independent optimizing compilation</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+<li><strong><a name="00072" href="msg00072.html">Re: Independent optimizing compilation</a></strong>
+<ul><li><em>From:</em> Andre van Tonder</li></ul></li>
+<li><strong><a name="00074" href="msg00074.html">Re: Independent optimizing compilation</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+<li><strong><a name="00075" href="msg00075.html">Re: Independent optimizing compilation</a></strong>
+<ul><li><em>From:</em> Sam Tobin-Hochstadt</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00080.html">Reference implementation available?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00082.html">Re: Independent optimizing compilation</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00075.html">Re: Independent optimizing compilation</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00082.html">Re: Independent optimizing compilation</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00081"><strong>Date</strong></a></li>
+<li><a href="threads.html#00081"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

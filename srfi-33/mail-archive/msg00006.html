@@ -1,0 +1,165 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: The boolean eqv function &#38; n&#45;ary generalisation of associative ops -->
+<!--X-From-R13: fuvirefNpp.tngrpu.rqh -->
+<!--X-Date: Sun, 21 Jul 2002 21:07:53 +0200 (DFT) -->
+<!--X-Message-Id: 200207211907.g6LJ7Qm01201@mongkok.dyndns.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200207211714.g6LHEDo01095@mongkok.dyndns.org -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>The boolean eqv function &amp; n-ary generalisation of associative ops</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00005.html">Date Prev</a>][<a href="msg00007.html">Date Next</a>][<a href="msg00007.html">Thread Prev</a>][<a href="msg00008.html">Thread Next</a>][<a href="maillist.html#00006">Date Index</a>][<a href="threads.html#00006">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>The boolean eqv function &amp; n-ary generalisation of associative ops</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-33@DOMAIN.HIDDEN">srfi-33@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: The boolean eqv function &amp; n-ary generalisation of associative ops</li>
+<li><em>From</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxxxxx</a></li>
+<li><em>Date</em>: Sun, 21 Jul 2002 15:07:26 -0400</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-33@DOMAIN.HIDDEN">srfi-33@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>:       &lt;<a href="mailto:200207211714.g6LHEDo01095@DOMAIN.HIDDEN">200207211714.g6LHEDo01095@xxxxxxxxxxxxxxxxxx</a>&gt;(<a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxxxxx</a>) </li>
+<li><em>References</em>: &lt;<a href="mailto:200207211714.g6LHEDo01095@DOMAIN.HIDDEN">200207211714.g6LHEDo01095@xxxxxxxxxxxxxxxxxx</a>&gt; </li>
+<li><em>Reply-to</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>    From: Marc Feeley &lt;feeley@xxxxxxxxxxxxxxxx&gt; 
+    &gt; I also discovered a bug in the spec for n-ary eqv. This is true:
+    &gt;   (eqv i j) = (not (xor i j))
+    &gt; But it does not generalise to the n-ary case. That is, it is *NOT TRUE* 
+    &gt; that
+    &gt;   (eqv i ...)  =  (not (xor i ...))
+
+    Are you sure? I've always thought that (eqv i ...) = (not (xor i ...)) .
+    What does eqv mean anyway?
+
+EQV is the boolean equals predicate: x eqv y is true iff x=y:
+  x   y   x=y
+  -----------
+  #f  #f  #t
+  #f  #t  #f
+  #t  #f  #f
+  #t  #t  #t
+It's pretty easy to see that this is the same as &quot;not (x xor y).&quot;
+Ok, so far, so good.
+
+Now draw up a little three-input / eight-row truth table, and you
+will see that eqv is associative, but that its associative n-ary
+generalisation is *not* the same as &quot;(not (xor x y z))&quot;. Too bad.
+      x  y  z   x=(y=z)     (x=y)=z	~(x xor y xor z)
+    ----------------------------------------------------
+    (#f #f #f):      #f     	 #f                   #t
+    (#f #f #t):      #t 	 #t		      #f
+    (#f #t #f):      #t 	 #t		      #f
+    (#f #t #t):      #f 	 #f		      #t
+    (#t #f #f):      #t 	 #t		      #f
+    (#t #f #t):      #f 	 #f		      #t
+    (#t #t #f):      #f 	 #f		      #t
+    (#t #t #t):      #t 	 #t		      #f
+
+Now, any time we have an associative two-argument function, it's a good
+idea to make it n-ary. Consider +, for example. If you see
+  (+ a b c)
+you don't have to wonder, &quot;Is that a+(b+c) or is that (a+b)+c?&quot; It's the same.
+(It's the same in Scheme anyway... not in C. But we digress.) It's annoying
+in Scheme to ask people to write
+  (+ (+ a b) c)
+or
+  (+ a (+ b c))
+when there's *no distinction* and
+  (+ a b c)
+is so much clearer and easier to read... especially when a, b &amp; c are
+complex expressions themselves. So we do the n-ary generalisation.
+
+OK, eqv is associative, so we should go ahead and make it n-ary, so that
+people can write the simpler and easier to read
+  (bitwise-eqv a b c d)
+instead of the equivalent
+  (bitwise-eqv a (bitwise-eqv b (bitwise-eqv c d)))
+(echhh) just as with +. 
+
+BUT, just because
+  (bitwise-eqv (bitwise-eqv a b) c)  =   (bitwise-eqv a (bitwise-eqv b c))
+that does not mean that
+  (bitwise-eqv a b c) = (bitwise-not (bitwise-xor a b c))
+It doesn't. See the truth table above.
+
+OK?
+
+Just for a little context, play this game: ask yourself, &quot;How many functions
+are there from two booleans to a boolean?&quot; Go ahead; work it out. Then you will
+see that SRFI 33 provides a name for every one of them, and defines one
+operation for each such function mapping that function over a pair of
+semi-infinite bit strings: bit x bit -&gt; bit.
+
+That is the *core idea* underlying that part of the library. Generalising
+to n-ary bitstring ops where convenient is icing on the cake.
+    -Olin
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00008" href="msg00008.html">Re: The boolean eqv function &amp; n-ary generalisation of associative ops</a></strong>
+<ul><li><em>From:</em> Alfresco Petrofsky</li></ul></li>
+<li><strong><a name="00010" href="msg00010.html">bitwise-=</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+<li><strong><a name="00012" href="msg00012.html">The big picture</a></strong>
+<ul><li><em>From:</em> shivers</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00004" href="msg00004.html">NAND &amp; NOR now n-ary; Bug in BITWISE-EQV? implementation</a></strong>
+<ul><li><em>From:</em> shivers</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00005.html">Re: NAND &amp; NOR now n-ary; Bug in BITWISE-EQV? implementation</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00007.html">Re: NAND &amp; NOR now n-ary; Bug in BITWISE-EQV? implementation</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00007.html">Re: NAND &amp; NOR now n-ary; Bug in BITWISE-EQV? implementation</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00008.html">Re: The boolean eqv function &amp; n-ary generalisation of associative ops</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00006"><strong>Date</strong></a></li>
+<li><a href="threads.html#00006"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

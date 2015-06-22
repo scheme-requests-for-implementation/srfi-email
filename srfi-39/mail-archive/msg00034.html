@@ -1,0 +1,140 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Moving ahead -->
+<!--X-From-R13: Oyunzoen Brgebsfxl <nyunzoenNcrgebsfxl.bet> -->
+<!--X-Date: Sat,  8 Mar 2003 18:09:15 +0100 (NFT) -->
+<!--X-Message-Id: 200303081709.JAA31535@radish.petrofsky.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200303072209.h27M9Uad005975@dino00.iro.umontreal.ca -->
+<!--X-Reference: 3E69EE42.3000101@freenet.de -->
+<!--X-Reference: 200303081437.h28EbZds008351@dino00.iro.umontreal.ca -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Moving ahead</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00033.html">Date Prev</a>][<a href="msg00035.html">Date Next</a>][<a href="msg00033.html">Thread Prev</a>][<a href="msg00035.html">Thread Next</a>][<a href="maillist.html#00034">Date Index</a>][<a href="threads.html#00034">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Moving ahead</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Moving ahead</li>
+<li><em>From</em>: Alhambra Petrofsky &lt;<a href="mailto:alhambra@DOMAIN.HIDDEN">alhambra@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 8 Mar 2003 09:09:06 -0800</li>
+<li><em>Cc</em>: <a href="mailto:felixundduni@DOMAIN.HIDDEN">felixundduni@xxxxxxxxxx</a>, <a href="mailto:srfi-39@DOMAIN.HIDDEN">srfi-39@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-39@DOMAIN.HIDDEN">srfi-39@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:200303081437.h28EbZds008351@DOMAIN.HIDDEN">200303081437.h28EbZds008351@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt; (message	from Marc Feeley on Sat, 8 Mar 2003 09:37:35 -0500)</li>
+<li><em>References</em>: &lt;<a href="mailto:200303072209.h27M9Uad005975@DOMAIN.HIDDEN">200303072209.h27M9Uad005975@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:3E69EE42.3000101@DOMAIN.HIDDEN">3E69EE42.3000101@xxxxxxxxxx</a>&gt; &lt;<a href="mailto:200303081437.h28EbZds008351@DOMAIN.HIDDEN">200303081437.h28EbZds008351@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; From: Marc Feeley &lt;feeley@xxxxxxxxxxxxxxxx&gt;
+
+&gt; Note that the lambda form does not close over the dynamic
+&gt; environment so why should it be different from delay?  Well if you
+&gt; did this the &quot;dynamic environment&quot; would in fact be the lexical
+&gt; environment so you would lose all the benefits of dynamic binding.
+&gt; When one writes a function with lambda there is an expectation that
+&gt; the dynamic environment is abstracted over.  However when using a
+&gt; DELAY the expectation is that only the evaluation time is changed,
+&gt; not the computation being performed (unless side-effects are
+&gt; performed that expose the evaluation order).
+
+Do you agree that what you are proposing violates the r5rs
+specification of delay?  If so, do you really think it's worth the
+incompatibility?  Perhaps you should use a different name, like
+dynamic-delay.  Dynamic-delay can be portably implemented as shown
+below, at least with respect to a single-threaded r5rs system with
+dynamic-wind:
+
+  (define-syntax dynamic-delay
+    (syntax-rules ()
+      ((_ expr)
+       ((call-with-current-continuation
+	  (lambda (k1)
+	    (lambda ()
+              (delay (call-with-current-continuation
+		      (lambda (k2) (k1 (lambda () (k2 expr)))))))))))))
+
+  (let* ((x #f)
+         (promise (delay x)))
+    (dynamic-wind
+      (lambda () (set! x #t))
+      (lambda () (force x))
+      (lambda () (set! x #f))))
+  =&gt; #t
+
+  (let* ((x #f)
+         (promise (dynamic-delay x)))
+    (dynamic-wind
+      (lambda () (set! x #t))
+      (lambda () (force promise))
+      (lambda () (set! x #f))))
+  =&gt; #f
+
+-al
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00035" href="msg00035.html">Re: Moving ahead</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00031" href="msg00031.html">Moving ahead</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+<li><strong><a name="00032" href="msg00032.html">Re: Moving ahead</a></strong>
+<ul><li><em>From:</em> felix</li></ul></li>
+<li><strong><a name="00033" href="msg00033.html">Re: Moving ahead</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00033.html">Re: Moving ahead</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00035.html">Re: Moving ahead</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00033.html">Re: Moving ahead</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00035.html">Re: Moving ahead</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00034"><strong>Date</strong></a></li>
+<li><a href="threads.html#00034"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

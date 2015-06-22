@@ -1,0 +1,325 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: My suggestions to the R6RS committee about numerics -->
+<!--X-From-R13: Penqyrl Zhpvre <yhpvreNzngu.cheqhr.rqh> -->
+<!--X-Date: Wed, 18 May 2005 22:38:46 +0200 (DFT) -->
+<!--X-Message-Id: y9ly8acfewc.fsf@sams.informatik.uni&#45;tuebingen.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>My suggestions to the R6RS committee about numerics</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00000.html">Date Prev</a>][<a href="msg00002.html">Date Next</a>][<a href="msg00220.html">Thread Prev</a>][<a href="msg00003.html">Thread Next</a>][<a href="maillist.html#00001">Date Index</a>][<a href="threads.html#00001">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>My suggestions to the R6RS committee about numerics</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-70@DOMAIN.HIDDEN">srfi-70@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: My suggestions to the R6RS committee about numerics</li>
+<li><em>From</em>: Bradley Lucier &lt;<a href="mailto:lucier@DOMAIN.HIDDEN">lucier@xxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 18 May 2005 22:38:43 +0200</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-70@DOMAIN.HIDDEN">srfi-70@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Old-date</em>: Wed, 18 May 2005 13:20:23 -0500</li>
+<li><em>User-agent</em>: Gnus/5.110003 (No Gnus v0.3) XEmacs/21.5-b20 (berkeley-unix)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>First, I think that the suggestions in this SRFI are more aptly  
+directed to the editors of R6RS than to the editors of SRFIs.
+
+At any rate, I sent document about proposed changes to numerics to  
+Marc Feeley last March to forward to the committee.  Since then my  
+thinking has evolved a bit, but I thought I would just include my  
+comments verbatim here.
+
+Brad
+
+The first part deals with IEEE 754/854 arithmetic.
+If you don't support this arithmetic, then things are still up in the  
+air.
+
+
+6.1 Equivalence predicates
+
+&lt;Replace the parts about numbers with what I've written here.  BTW,
+since each of these subclauses are supposed to be complete sentences
+(notice the periods ending them), they should each begin with capital  
+letters.&gt;
+
+The eqv? procedure returns #t if:
+
+*  obj1 and obj2 are both IEEE 754/854 format numbers, and obj1 and  
+obj2 have
+the same base, sign, number of exponent digits, exponent bias, biased  
+exponent,
+number of significand digits, and significand.
+
+*  obj1 and obj2 are both exact numbers and are numerically equal  
+(see =, section 6.2).
+
+The eqv? procedure returns #f if:
+
+*  one of obj1 and obj2 is an exact number but the other is an  
+inexact number.
+
+*  obj1 and obj2 are both IEEE 754/854 format numbers, and the base,  
+sign,
+number of exponent digits, exponent bias, biased exponent, number of  
+significand
+digits, or significand of obj1 and obj2 differ.
+
+*  obj1 and obj2 are exact numbers for which the = procedure returns #f.
+
+Note: This section does not state under which conditions eqv? returns  
+#t or #f
+for inexact numbers that are not in IEEE 754/854 format.  We  
+recommend that
+numbers not in IEEE 754/854 format for which a base, sign, number of  
+exponent
+digits, exponent bias, biased exponent, number of significand digits,  
+and
+significand can be defined follow the same rules as above.
+
+6.2.4 Syntax of numerical constants
+
+&lt;Add a syntax here for positive and negative infinity and not-a-number
+(NaN) in IEEE 754/854 arithmetic.&gt;
+
+6.2.5. Numerical operations
+
+(number? obj )                           procedure
+(complex? obj )                          procedure
+(real? obj )                             procedure
+(rational? obj )                         procedure
+(integer? obj )                          procedure
+
+These numerical type predicates can be applied to any kind
+of argument, including non-numbers. They return #t if the
+object is of the named type, and otherwise they return #f.
+In general, if a type predicate is true of a number then
+all higher type predicates are also true of that number.
+Consequently, if a type predicate is false of a number, then
+all lower type predicates are also false of that number.
+
+&lt;delete this&gt;
+If z is an inexact complex number, then (real? z) is true
+if and only if (zero? (imag-part z)) is true. If x is an
+inexact real number, then (integer? x) is true if and only
+if (= x (round x)).
+&lt;add this&gt;
+If an implementation uses IEEE 754/854 format for inexact numbers then:
+*  If z is an inexact complex number, then (real? z) is true if and
+only if both (exact? (imag-part z)) and (zero? (imag-part z)) are true.
+*  If z is an inexact real number, then (rational? z) is true if and  
+only
+if z is not positive or negative infinity or a not-a-number.
+
+If x is a rational number, then (integer? x) is true if and only
+if (= x (round x)).
+&lt;end of addition&gt;
+
+(complex? 3+4i) =) #t
+(complex? 3) =) #t
+(real? 3) =) #t
+&lt;add this&gt;
+(real? -2.5+0.0i) =) undetermined
+(real? -2.5+0.0i) =) #f  if IEEE 754/854 arithmetic is used.
+&lt;end of addition&gt;
+(real? #e1e10) =) #t
+(rational? 6/10) =) #t
+(rational? 6/3) =) #t
+(integer? 3+0i) =) #t
+(integer? 3.0) =) #t
+(integer? 8/4) =) #t
+&lt;delete this&gt;
+Note: The behavior of these type predicates on inexact numbers
+is unreliable, since any inaccuracy may affect the result.
+Note: In many implementations the rational? procedure will
+be the same as real?, and the complex? procedure will be the
+same as number?, but unusual implementations may be able
+to represent some irrational numbers exactly or may extend the
+number system to support some kind of non-complex numbers.
+&lt;end of deletion&gt;
+
+(exact? z)                      procedure
+(inexact? z)                    procedure
+
+These numerical precidates provide tests for the exactness of a  
+quantity.
+For any Scheme number, precisely one of these predicates is true.
+
+&lt;Add the following&gt;
+
+For implementations that allow (real z) and (imag z) to have different
+exactness, then (exact? z) returns #t if and only if both (exact?  
+(real z))
+and (exact? (imag z)) return #t.
+
+&lt;end of addition&gt;
+
+&lt;Change the comparison predicates to the following&gt;
+
+(= z1 : : : ) procedure
+(&lt; x1 : : : ) procedure
+(&gt; x1 : : : ) procedure
+(&lt;= x1 : : : ) procedure
+(&gt;= x1 : : : ) procedure
+These procedures return #t if their arguments are (respectively):
+equal, monotonically increasing, monotonically decreasing,
+monotonically nondecreasing, or monotonically
+nonincreasing.  If any of these procedures is called with only one
+argument then that procedure shall return #t.
+
+These procedures are required to be transitive.
+
+Note: The traditional implementations of these predicates in
+Lisp-like languages are not transitive.
+
+Note: If an implementation uses IEEE 754/854 format for its inexact
+numbers, then these procedures shall return #f if called with two
+or more arguments when one of the arguments is a NaN.
+
+&lt;change the following predicates&gt;
+
+(zero? z) library procedure
+(positive? x) library procedure
+(negative? x) library procedure
+(odd? n) library procedure
+(even? n) library procedure
+These numerical predicates test a number for a particular
+property, returning #t or #f.
+
+If an implementation uses IEEE 754/854 format for its inexact
+numbers, then zero?, positive?, and negative? return #f if called with
+a NaN argument.
+
+&lt;change the following procedures&gt;
+
+(max x1 x2 : : : ) library procedure
+(min x1 x2 : : : ) library procedure
+
+These procedures return the maximum or minimum of their
+arguments.
+
+(max 3 4) =) 4 ; exact
+(max 3.9 4) =) 4.0 ; inexact
+
+If an implementation uses IEEE 754/854 format for its inexact
+numbers, and any of the arguments to max and min are NaNs, then
+max and min returns one of the NaN arguments as its result.
+
+Note: If any argument is inexact, then the result will also be
+inexact (unless the procedure can prove that the inaccuracy is
+not large enough to a ect the result, which is possible only in
+unusual implementations). If min or max is used to compare
+numbers of mixed exactness, and the numerical value of the
+result cannot be represented as an inexact number without loss
+of accuracy, then the procedure may report a violation of an
+implementation restriction.
+
+&lt;change the following procedures&gt;
+
+(+ z1 : : : ) procedure
+(* z1 : : : ) procedure
+
+These procedures return the sum or product of their arguments.
+
+(+ 3 4) =) 7
+(+ 3) =) 3
+(+) =) 0
+(* 4) =) 4
+(*) =) 1
+
+Note: We recommend that (+ 0 z) =&gt; z, (* 1 z) =&gt; z, and (* 0 z) =&gt; 0
+for all z.  This simplifies some rules for addition and
+multiplication for complex and inexact numbers
+if an implementation uses IEEE 754/854
+format for its inexact arithmetic.
+
+&lt;change the following procedures&gt;
+
+(- z1 z2) procedure
+(- z) procedure
+(- z1 z2 : : : ) optional procedure
+(/ z1 z2) procedure
+(/ z) procedure
+(/ z1 z2 : : : ) optional procedure
+
+With two or more arguments, these procedures return the
+difference or quotient of their arguments, associating to the
+left. With one argument, however, they return the additive
+or multiplicative inverse of their argument.
+
+Note: We recommend that (- z 0) and (/ z 1) return z, (- 0 z) return
+the additive inverse of z, (/ 1 z) return the multiplicative inverse
+of z, (/ 0 z) return 0, and (/ z 0) be an error for
+all z.  This simplifies some rules for addition, subtraction,
+multiplication, and division of complex and inexact numbers
+if an implementation uses IEEE 754/854
+format for its inexact arithmetic.
+
+&lt;change floor, ceiling, truncate, and round to take rational arguments,
+not real arguments&gt;
+
+&lt;change rationalize to take rational arguments, not real arguments&gt;
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00003" href="msg00003.html">Re: My suggestions to the R6RS committee about numerics</a></strong>
+<ul><li><em>From:</em> David Van Horn</li></ul></li>
+<li><strong><a name="00010" href="msg00010.html">Re: My suggestions to the R6RS committee about numerics</a></strong>
+<ul><li><em>From:</em> Aubrey Jaffer</li></ul></li>
+<li><strong><a name="00054" href="msg00054.html">Re: My suggestions to the R6RS committee about numerics</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00000.html">Revision of SRFI 70 available</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00002.html">Two specific suggestions.</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00220.html">Revision of SRFI 70 available</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00003.html">Re: My suggestions to the R6RS committee about numerics</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00001"><strong>Date</strong></a></li>
+<li><a href="threads.html#00001"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

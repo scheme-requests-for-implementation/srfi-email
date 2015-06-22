@@ -1,0 +1,161 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: fundamental design issues -->
+<!--X-From-R13: Fnlybe Qnzcoryy <pnzcoryyNzhzoyr.arg> -->
+<!--X-Date: Sat,  3 Dec 2005 17:22:30 +0100 (CET) -->
+<!--X-Message-Id: y9ly832f8wb.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: Pine.LNX.4.58.0512021732090.631@bolt.sonic.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: fundamental design issues</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00048.html">Date Prev</a>][<a href="msg00050.html">Date Next</a>][<a href="msg00095.html">Thread Prev</a>][<a href="msg00054.html">Thread Next</a>][<a href="maillist.html#00049">Date Index</a>][<a href="threads.html#00049">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: fundamental design issues</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-83@DOMAIN.HIDDEN">srfi-83@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: fundamental design issues</li>
+<li><em>From</em>: Taylor Campbell &lt;<a href="mailto:campbell@DOMAIN.HIDDEN">campbell@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 03 Dec 2005 17:22:12 +0100</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-83@DOMAIN.HIDDEN">srfi-83@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:Pine.LNX.4.58.0512021732090.631@DOMAIN.HIDDEN">Pine.LNX.4.58.0512021732090.631@xxxxxxxxxxxxxx</a>&gt; (<a href="mailto:bear@DOMAIN.HIDDEN">bear@xxxxxxxxx</a>)</li>
+<li><em>User-agent</em>: Gnus/5.110003 (No Gnus v0.3) XEmacs/21.5-b21 (darwin)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>   Date: Fri, 2 Dec 2005 18:21:57 -0800 (PST)
+   From: bear &lt;bear@xxxxxxxxx&gt;
+
+   But I want to point out some simple things that work
+   in other languages, and point out that this model
+   does not support them.
+
+(I'm going to assume, since you're responding to my mail, that by
+'this model' you mean my (Scheme48-based) model, not the current
+SRFI's (MzScheme-based) model.)
+
+   In static languages such as C and Pascal, a forward
+   declaration is often used to state particular properties
+   about a function or procedure, while leaving the body
+   of the definition for later (presumably after the
+   definitions of some of the things it depends on).
+
+   In both languages, a procedure or function may have any
+   number of forward declarations (or the same forward
+   declaration may be imported multiple times) but only
+   one definition.
+
+   In C in particular, this turned out to facilitate a
+   very useful pattern.  A &quot;header file&quot; with nothing but
+   forward declarations allows most interdependency problems
+   to be solved statically, because the forward declarations
+   facilitate the separated compilation of many different
+   units. The effect is that with the forward declarations
+   handy, the compiler knows how to compile calls to particular
+   functions, even when the definitions of those functions are
+   not visible.  This is very important.
+
+I certainly agree that this can be very important, and this is why I
+am proposing a module model that allows for this kind of information
+to be obtained from simple static analyses of the module language
+without delving into the source code of any modules.
+
+   So I look at the &quot;imports&quot; syntax, and I am thinking,
+   &quot;Here is a forward declaration.  Does it contain enough
+   information to allow a compiler to create an optimized
+   call to the associated function without being able to
+   see the function definition?&quot;  And the answer is a resounding
+   no.  It contains only namespace control information.
+
+No, the answer is not a resounding 'no.'  The answer depends on what
+information can be obtained statically from the modules from which
+bindings are being imported.  In my proposed model, this information
+is *always* available to a processor of the module system, in the form
+of the interface of the module.  Indeed, namespace control information
+is only one of the many useful properties of the model I'm proposing,
+among which this kind of easy static analysis of module descriptions
+also lies.
+
+   So I look at the &quot;exports&quot; syntax, and I am thinking,
+   &quot;okay, here is more namespace control information, but it
+   is also a specification that, together with the file of
+   source code, may be used to automatically generate
+   (implicit) forward declarations usable in the compilation
+   of other files.&quot;
+
+Ignoring macros, you do not need the source file.  The interface
+contains enough information to know what kind of denotation every
+identifier exported by a module implementing the interface will have.
+This is sufficient to compile clients of the modules (assuming, again,
+that macros are not used, which inherently require static information
+to be passed across module compilations).
+
+In the simplest form, there is no more information than whether the
+binding is a syntactic binding or a run-time variable binding, but the
+EXPORT syntax could be extended to support more information than that
+for further compiler optimization.  In Scheme48, for example, there is
+a simple static type language that can be used to annotate the
+identifiers listed in interfaces with their static types; the
+interface of the SCHEME module, for instance, might be defined along
+these lines:
+
+ (define-interface scheme-interface
+   (export ... (car (proc (:pair) :value)) ...))
+
+(This optional static type language is documented in my unofficial
+Scheme48 reference manual, which is available on the web at
+&lt;<a  rel="nofollow" href="http://mumble.net/~campbell/darcs/s48-refman/">http://mumble.net/~campbell/darcs/s48-refman/</a>&gt; (Texinfo source; I can
+supply different formats on request).)
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00048.html">Re: fundamental design issues (long message)</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00050.html">Re: wrapping procedures</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00095.html">Re: fundamental design issues (long message)</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00054.html">Independent optimizing compilation [was: fundamental design issues]</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00049"><strong>Date</strong></a></li>
+<li><a href="threads.html#00049"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

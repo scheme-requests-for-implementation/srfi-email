@@ -1,0 +1,211 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: extending the discussion -->
+<!--X-From-R13: Fbz Zbeq <ybeqNrzs.arg> -->
+<!--X-Date: Wed, 15 Dec 1999 13:57:53 &#45;0600 (CST) -->
+<!--X-Message-Id: 199912151957.LAA14546@emf.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>extending the discussion</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00033.html">Date Prev</a>][<a href="msg00035.html">Date Next</a>][<a href="msg00036.html">Thread Prev</a>][<a href="msg00037.html">Thread Next</a>][<a href="maillist.html#00034">Date Index</a>][<a href="threads.html#00034">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>extending the discussion</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-13@DOMAIN.HIDDEN">srfi-13@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: extending the discussion</li>
+<li><em>From</em>: Tom Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 15 Dec 1999 11:57:46 -0800 (PST)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+I propose that the discussion period for SRFI-13 be extended and that
+the additional time be used to consider some substantial changes.
+
+The primary issue is the treatment of shared substrings and string
+indexes.  
+
+	* The convention of permitting string interfaces everywhere
+	  makes it more difficult to implement extensions of the
+	  proposed library, and complicates the interfaces of all
+	  conforming extensions.  This is because extensions ought to
+	  also obey the same convention.
+
+	* Permitting string indexes everywhere precludes conformance
+	  to another, more established convention: that comparison
+	  functions should permit more than two arguments.
+
+	* Permitting string indexes everywhere encourages programmers
+	  seeking to write portable code to use string indexes when
+	  shared substrings would be simpler and less error prone.
+	  This makes it awkward to incorporate the code such
+	  programmers write into systems which support shared
+	  substrings.  Moreover, manipulating string indexes is
+	  notoriously error prone and so should not be a prominent
+	  feature of portable Scheme style.
+
+	* A reasonable alternative is to have two SRFI's: One, a
+	  string library without ubiquitous index parameters and
+	  without &quot;substring/shared&quot;, the other, a SRFI for
+	  &quot;substring/shared&quot; in which that procedure is guaranteed to
+	  return a value which shares state with its primary string
+	  argument.
+
+	  Those who use only the first SRFI are thereby discouraged
+	  from trying to use Scheme for hyper-efficient string
+	  processing.  Those who want to use Scheme for
+	  hyper-efficient string processing are thereby encouraged to
+	  choose an implementation or environment which supports
+	  shared substrings.  Those who want to write maximally
+	  portable code are discouraged from counting on
+	  hyper-efficient string processing.  All of the standardized
+	  interfaces are kept simple and clean.  Existing conventions
+	  (such as N-ary comparison operators) are preserved.
+
+	  Future SRFI's, which define additional string manipulation
+	  functions for use in applications which expect
+	  hyper-efficient string processing should assume that
+	  &quot;substring/shared&quot; is present.  SRFI's which define
+	  additional string manipulation procedures just for
+	  convenience, where efficiency is not a concern, can avoid
+	  shared substrings.
+
+	* In a SRFI which defines &quot;substring/shared&quot;, it should be
+	  mandatory that the string returned from that procedure share
+	  state with the primary string argument.  Two additional
+	  procedures are desirable:
+
+		shared-substring? obj =&gt; boolean
+
+	  which tells whether a particular string is a shared
+	  substring, and
+
+		containing-string string =&gt; string start end
+
+	  which converts a shared substring to its parent string and
+	  indexes, and an ordinary string to itself, 0, and its
+	  length.
+
+	  It is important that &quot;substring/shared&quot; return a truly
+	  shared substring so that side effects on its result are
+	  reflected in its argument.  That propagation of side effects
+	  is an essential part of using shared substrings to write
+	  code which manipulates strings efficiently.
+	  
+A secondary issue is the conventions of accepting a parameter which
+may be a character, character set, or predicate.
+
+	* The CHAR/CSET/PREDICATE convention complicates the
+          implementation of every procedure which uses it.  Future
+          extensions to the library are similarly complicated.
+
+	* The addition of a single procedure to the character set
+          library could simplify the convention:
+
+		(char-set-membership cset) =&gt; predicate
+
+	  where
+
+		(predicate c) =&gt; #t  ; if c is in cset
+				 #f  ; otherwise
+
+	   With `char-set-membership', the convention should be
+	   simplified to CHAR/PREDICATE.
+
+	 * I would not suggest further simplifying the convention
+	   by defining:
+
+		(char-equality character) =&gt; predicate
+
+	  since passing a character for one of these parameters is
+	  presumably, by far, the common case.  Also, passing a
+	  character for one of these parameters is supported by the
+	  traditional standards (R^nRS and every implementation).
+
+	* There is then a choice between two conventions represented
+	  by this example:
+
+		string-index char/predicate string
+
+	  or
+
+		string-index char string
+		string-predicate-index predicate string
+
+	  I prefer the latter, though not for any particularly strong
+	  reason.
+
+
+Another secondary issue is whether symbols should be acceptable as
+arguments to procedures that expect strings but that do not modify
+those strings.  The print name of the symbol would be used as the
+string value of a symbol.  I have found this convention natural, easy
+to implement, and useful.
+
+A final secondary issue is whether procedures that construct strings
+from individual elements permit the use of strings (and symbols) as
+elements.  SRFI-13 says they do not but I have found this feature to
+be natural, easy to implement, and useful.
+
+
+Tom Lord
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00037" href="msg00037.html">Re: extending the discussion</a></strong>
+<ul><li><em>From:</em> Mikael Ståldal</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00033.html">Position of the Judean People's Front</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00035.html">extending the discussion</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00036.html">Re: Position of the Judean People's Front</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00037.html">Re: extending the discussion</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00034"><strong>Date</strong></a></li>
+<li><a href="threads.html#00034"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

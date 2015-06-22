@@ -1,0 +1,206 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: The power of Lists -->
+<!--X-From-R13: Yrvgu Ievtug <xjevtugNserr&#45;pbzc&#45;fubc.pbz> -->
+<!--X-Date: Tue, 16 Aug 2005 06:16:39 +0200 (DFT) -->
+<!--X-Message-Id: 200508160415.j7G4FILO004069@fcs12.free&#45;comp&#45;shop.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200508150313.j7F3DX2R002970@fcs12.free&#45;comp&#45;shop.com -->
+<!--X-Reference: 4300FE32.5040709@soegaard.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: The power of Lists</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00072.html">Date Prev</a>][<a href="msg00074.html">Date Next</a>][<a href="msg00072.html">Thread Prev</a>][<a href="msg00074.html">Thread Next</a>][<a href="maillist.html#00073">Date Index</a>][<a href="threads.html#00073">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: The power of Lists</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:jensaxel@DOMAIN.HIDDEN">jensaxel@xxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: The power of Lists</li>
+<li><em>From</em>: Keith Wright &lt;<a href="mailto:kwright@DOMAIN.HIDDEN">kwright@xxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 16 Aug 2005 00:15:18 -0400</li>
+<li><em>Cc</em>: <a href="mailto:srfi-72@DOMAIN.HIDDEN">srfi-72@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-72@DOMAIN.HIDDEN">srfi-72@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:4300FE32.5040709@DOMAIN.HIDDEN">4300FE32.5040709@xxxxxxxxxxxx</a>&gt; (message from	Jens Axel S&#xF8;gaard on Mon, 15 Aug 2005 22:42:26	+0200)</li>
+<li><em>References</em>: &lt;<a href="mailto:200508150313.j7F3DX2R002970@DOMAIN.HIDDEN">200508150313.j7F3DX2R002970@xxxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:4300FE32.5040709@DOMAIN.HIDDEN">4300FE32.5040709@xxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; From: =?ISO-8859-1?Q?Jens_Axel_S=F8gaard?= &lt;jensaxel@xxxxxxxxxxxx&gt;
+&gt; Cc: srfi-72@xxxxxxxxxxxxxxxxx
+&gt; 
+&gt; Hi Keith,
+&gt; 
+&gt; &gt; If it were done with some procedural macro system that represents
+&gt; &gt; syntax as a special type, it could not have been tested on lists
+&gt; &gt; of symbols, it would have been full of syntax-&gt;list and
+&gt; &gt; list-&gt;syntax conversions in non-obvious places, and I just don't
+&gt; &gt; think it would have been so much fun that I would have stayed up
+&gt; &gt; half the night working on it, or finished it before morning.
+&gt; 
+&gt; I liked your example so much I decided to put in the conversions.
+
+I'm glad you liked it.  Can I ask what you converted it to?
+I mean, I can see what you did, but is it MzScheme, Chez, ...?
+
+I knew by the time I finished typing that paragraph that I was
+overstating the case, but out of perversity I hit send anyway.
+
+I reserve the right to say whether I am having fun, but
+in fact, given two isomorphic types and the two functions to
+convert between them, it can't be too much harder to write
+the program to use one vs. the other.
+
+The real problem, if there is one, comes in making or using
+library procedures where you are not allowed to modify the source
+code, but want the same procedure to work in either case.
+
+If eveything is represented as a list then procedures can
+be parameterized by operations on elements only.  If the
+lists are complicated and the elements are simple, then that
+is a big win.  For example, the parser can be changed from
+symbol lists to syntax by changing nothing but the function
+that assigns weights to the operators, without changing 
+the source of the parser at all!
+
+This particular example is near the limits of its usefulness,
+because there is not an infinite supply of things people
+want to put into lists of infix expressions and parse into
+Lisp syntax.  But you could imagine that someone thinks of
+a new kind of identifier, perhaps with more debugging info
+attached, or appropriate to an extended language, and wants
+to reuse the parser for that.
+
+For a better example I should have found a way to use more
+library procedures like |list|, |map|, and |append|, but
+standard Scheme doesn't have all that many list library
+procedures, and I didn't want to have to invent a lot of
+them just to show how much trouble it is.
+
+&gt; The first change is that the table isn't syntax, but a list.
+&gt; You defined the table as
+&gt; 
+&gt;      (define table (syntax ((:= . 8)(or . 7) (and . 6)
+&gt;                             (&lt; . 5) (= . 4)(+ . 3)(* . 2))))
+&gt; 
+&gt; although it is only the identifiers are syntax-objects in
+&gt; this context. (Btw - that's an example of &quot;breaking the abstraction&quot;)
+
+Yes, I felt a bit guilty writing that, but it was already the
+most boring part, and the SRFI reference implementation does not
+accept the #' abbreviation for |syntax|.
+
+&gt; The assocations from identifiers to weights can be written
+&gt; directly as:
+&gt; 
+&gt; (define table `((,#':= . 8) (,#'or . 7) (,#'and . 6)
+&gt;                  (,#'&lt; . 5)  (,#'= . 4)  (,#'+ . 3) (,#'* . 2)))
+
+so I would say (quasiquote (((unquote (syntax :=)) . 8) ((unquote...
+  ;; sick of typing this, 
+  ;; enough for an example
+
+&gt; Since your version uses list? and pair? to check whether a
+&gt; subexpression is a compound expression, we need stx-list?
+&gt; and stx-pair? when checking for compund subexpressions.
+
+So the real question is: What do you gain by having isomorphic
+types with all the operations repeated with different names,
+and how many times are you willing to do everything over
+from the beginning when somebody thinks of a &quot;new&quot; kind
+of list which is not a list, but is rather a stack, a queue,
+a bill of materials, a star catalog, ...
+
+In the past the rumor had been floating about that syntax could
+_not_ be represented as the lists it appears to be, because
+hygienic macro expansion required a lot of information at the
+internal nodes.  But now, until somebody finds the bug, it
+seems that Dr. van Tonder has shown that is not true.
+Lists of identifiers suffice, provided only that the identifiers
+are smart enough.
+
+A lot of people still seem wedded to the idea that the internal
+nodes need a lot of information attached in order to support
+debugging, so I would like to ask the further question:
+What do you need to know about a piece of syntax that is not
+covered by its shape as a parenthesized list of identifiers
+and everything there is to know about the identifiers?
+
+For example, if I am told that division by zero happened,
+and that the occurrence of / that called for that division
+came from this location in that file and the arguments were
+such and such, does that not pretty much exhaust the issue?
+Will someone demand to know more about the occult properties
+of the parentheses that attach that / to those arguments?
+
+Thank you for your interest.
+
+-- 
+     -- Keith Wright
+
+Programmer in Chief, Free Computer Shop
+ ---  Food, Shelter, Source code.  ---
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00074" href="msg00074.html">Re: The power of Lists</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00064" href="msg00064.html">The power of Lists</a></strong>
+<ul><li><em>From:</em> Keith Wright</li></ul></li>
+<li><strong><a name="00072" href="msg00072.html">Re: The power of Lists</a></strong>
+<ul><li><em>From:</em> Jens Axel S&#xF8;gaard</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00072.html">Re: The power of Lists</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00074.html">Re: The power of Lists</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00072.html">Re: The power of Lists</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00074.html">Re: The power of Lists</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00073"><strong>Date</strong></a></li>
+<li><a href="threads.html#00073"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

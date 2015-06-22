@@ -1,0 +1,173 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Issues with Unicode -->
+<!--X-From-R13: "Fnlybe D. Qnzcoryy" <pnzcoryyNzhzoyr.arg> -->
+<!--X-Date: Wed, 26 Apr 2006 09:50:47 +0200 (MST) -->
+<!--X-Message-Id: 20060426074806.156FB98B52@pluto.mumble.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20060425.202707.244068718.shiro@lava.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Issues with Unicode</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00300.html">Date Prev</a>][<a href="msg00302.html">Date Next</a>][<a href="msg00300.html">Thread Prev</a>][<a href="msg00302.html">Thread Next</a>][<a href="maillist.html#00301">Date Index</a>][<a href="threads.html#00301">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Issues with Unicode</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:shiro@DOMAIN.HIDDEN">shiro@xxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Issues with Unicode</li>
+<li><em>From</em>: &quot;Taylor R. Campbell&quot; &lt;<a href="mailto:campbell@DOMAIN.HIDDEN">campbell@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 26 Apr 2006 07:48:05 +0000</li>
+<li><em>Cc</em>: <a href="mailto:srfi-75@DOMAIN.HIDDEN">srfi-75@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-75@DOMAIN.HIDDEN">srfi-75@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20060425.202707.244068718.shiro@DOMAIN.HIDDEN">20060425.202707.244068718.shiro@xxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: IMAIL/1.21; Edwin/3.116; MIT-Scheme/7.7.90.+</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>   Date: Tue, 25 Apr 2006 20:27:07 -1000 (HST)
+   From: Shiro Kawai &lt;shiro@xxxxxxxx&gt;
+
+   Alternative implementations of strings have been discussed in
+   this list, and some threads in comp.lang.scheme, I think.
+   I'd like to draw attention to one point which hasn't been
+   raised, IIRC.  (Maybe it is too trivial and everybody knows 
+   about it; if so, sorry for the noise.)
+
+I can't recall whether this ever came up here, but last year, when
+this SRFI was still fresh and under heavy discussion, I wrote up an
+alternative proposal for a Unicode-supporting -- although *not*
+Unicode-mandating -- string API, where strings are collections of
+grapheme clusters indexed by opaque cursors, not character indices,
+and whose binary encoding is separated into BLOB-&gt;STRING and
+STRING-&gt;BLOB[!] procedures and abstracted by text codec descriptors.
+The text of the document is here:
+
+  &lt;<a  rel="nofollow" href="http://mumble.net/~campbell/proposals/alt-text.text">http://mumble.net/~campbell/proposals/alt-text.text</a>&gt;.
+
+It came out of many extensive discussions with John Cowan, Jorgen
+Schaefer, and probably a number of other persons whom I've forgotten
+by now.  Here are some of the most important points about it, off the
+top of my head:
+
+ 1. It doesn't require Unicode support, for instance in the Scheme
+    system that runs on your doorknob.  More seriously, the API simply
+    does not specify anything about particular code point mappings or
+    text codecs other than that ASCII must be supported.
+
+ 2. It's high-level.  We can sweep things like normalization wholly
+    under the rug with it.  We needn't mandate a particular internal
+    string representation; the API would work just as well with all
+    strings as UTF-8 strings internally, as with all strings as UTF-32
+    strings internally, as with all strings as pairs of text codec and
+    actual storage internally.
+
+ 3. Further on the point that we can use UTF-8 internally: not only
+    does it permit efficient variable-width string representations
+    such as UTF-8 -- because strings are indexed by opaque cursors
+    which may be stepped as octet indices for constant-time access,
+    while natural number indices of characters would require O(n)
+    access time --, but higher-level text structures, such as grapheme
+    clusters or words or sentences or paragraphs, would require
+    explicit stepping like with string cursors anyway, or O(n) access
+    times.
+
+ 4. Strings are immutable.  The application of mutability in old
+    R5RS-style strings was extremely limited, anyway: you can change
+    existing characters, but you can't insert or delete, so you can't,
+    say, change a whole _word_ in a string, if the substitute has a
+    length different from the original.  It just so happened that all
+    characters had the same width in all practical implementations, so
+    we could swap in new ones as we pleased, but this assumption
+    doesn't hold up very well if we want to extend our text-processing
+    capabilities beyond that limited world and to higher-level text
+    structures such as words and sentences.  Also, because strings are
+    immutable, we can more safely share storage, and it is not
+    unreasonable to mandate the existence of an O(1) STRING-SLICE
+    procedure, like SRFI 13's SUBSTRING/SHARED.
+
+There are, of course, still some problems with it.  I couldn't think
+of a good literal syntax, for instance.  However, I think the basic
+idea of the proposal is a considerable improvement over the current,
+historically motivated, mutable character vector model of strings.
+
+   Some of the fancier implementations might not go well with
+   preemptive multithreads; if mutation of string touches more
+   than one place of the string objects, it creates a hazard.
+
+While I agree that strings ought to be immutable, as you recommended
+afterward, I don't think this is really a very good reason: I can't
+imagine why anyone would *want* to share a mutable string between
+threads badly enough for synchronization to be the default.
+
+   (It might be convenient to have mutable strings for editor-like
+   applications; which also allow length-changing mutation.  I'd
+   rather think it to be another type of object that can be built
+   on top of immutable strings; e.g. a buffer object realized by
+   a balanced tree of string segments).
+
+This would definitely be useful.  It would also definitely fall
+outside the scope of basic Unicode support in R6RS, so I think SRFI 75
+shouldn't even try to specify any mutable string data in general.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00302" href="msg00302.html">Re: Issues with Unicode</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00300" href="msg00300.html">Re: Issues with Unicode</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00300.html">Re: Issues with Unicode</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00302.html">Re: Issues with Unicode</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00300.html">Re: Issues with Unicode</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00302.html">Re: Issues with Unicode</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00301"><strong>Date</strong></a></li>
+<li><a href="threads.html#00301"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

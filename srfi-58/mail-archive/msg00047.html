@@ -1,0 +1,210 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: #\a octothorpe syntax vs SRFI 10 -->
+<!--X-From-R13: orne <orneNfbavp.arg> -->
+<!--X-Date: Sun,  2 Jan 2005 22:27:15 +0100 (NFT) -->
+<!--X-Message-Id: Pine.LNX.4.58.0501021234300.24613@bolt.sonic.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: Pine.LNX.4.44.0501021211380.30874&#45;100000@autodrip.bloodandcoffee.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: #\a octothorpe syntax vs SRFI 10</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00046.html">Date Prev</a>][<a href="msg00048.html">Date Next</a>][<a href="msg00045.html">Thread Prev</a>][<a href="msg00054.html">Thread Next</a>][<a href="maillist.html#00047">Date Index</a>][<a href="threads.html#00047">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: #\a octothorpe syntax vs SRFI 10</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:campbell@DOMAIN.HIDDEN">campbell@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: #\a octothorpe syntax vs SRFI 10</li>
+<li><em>From</em>: bear &lt;<a href="mailto:bear@DOMAIN.HIDDEN">bear@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 2 Jan 2005 13:27:06 -0800 (PST)</li>
+<li><em>Cc</em>: Per Bothner &lt;<a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a>&gt;, <a href="mailto:srfi-58@DOMAIN.HIDDEN">srfi-58@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-58@DOMAIN.HIDDEN">srfi-58@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:Pine.LNX.4.44.0501021211380.30874-100000@DOMAIN.HIDDEN">Pine.LNX.4.44.0501021211380.30874-100000@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:Pine.LNX.4.44.0501021211380.30874-100000@DOMAIN.HIDDEN">Pine.LNX.4.44.0501021211380.30874-100000@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+On Sun, 2 Jan 2005 campbell@xxxxxxxxxxxxxxxxxxxxxxxxxxx wrote:
+
+&gt;On Sun, 2 Jan 2005, bear wrote:
+&gt;
+&gt;&gt; Arrays are damned useful, and being able to write them succintly
+&gt;&gt; is damned useful.  It's true enough that scheme code is mostly lists,
+&gt;&gt; but that doesn't mean that a succinct syntax for arrays wouldn't be
+&gt;&gt; very useful, nor does it mean that SRFI-10 syntax is good enough for
+&gt;&gt; everything that isn't a list.
+&gt;
+&gt;This is a completely undefended assertion.  You claim that arrays
+&gt;should have a succinct syntax without stating why that is so, and you
+&gt;again fall back to the nebulous aesthetics to claim that SRFI 10 'isn't
+&gt;good enough' for arrays.
+
+And your claim that it is good enough is based on what?  Look, I'm
+going to quit responding on this subpoint: there is no reason
+whatsoever *EXCEPT* aesthetics to pick any external syntax over
+any other.  You lost (so badly that you are now forced to disparage
+as &quot;nebulous&quot; the only possible argument), so deal with it.
+
+
+&gt;&gt; Different coders, different code.  When I'm storing aggregations of
+&gt;&gt; things, I usually use vectors for access speed rather than lists.
+&gt;&gt; Doing so is extremely awkward in Scheme.  I only use lists in code
+&gt;&gt; where they're either &quot;the right thing&quot; for that particular application,
+&gt;&gt; or I'm being deliberately lazy and not optimizing.
+&gt;
+&gt;Sorry, I meant '...more frequently than arrays in Lisp's syntax.'  (It
+&gt;was originally part of the first point, but, when splitting it off into
+&gt;a separate point, I forgot to include the 'in literal syntax' part.)
+
+My source code in some cases is almost five percent literal vectors.
+A recent example:
+
+
+;; transformation matrix for a camera right turn of 0.1 radians.
+(define right-turn-1 #( #((cos 0.1) (sin 0.1) 1.0   1.0)
+                        #((sin 0.1) (cos 0.1) 1.0   1.0)
+                        #(1.0       1.0       1.0   1.0)
+                        #(1.0       1.0       1.0   1.0)))
+
+I don't want a front-loaded syntax because it will push the
+indentation level over further than is convenient to work with.
+
+
+&gt;&gt;                                                     I even go so far
+&gt;&gt; as to implement &quot;closure&quot; arrays for succinct reference and mutation
+&gt;&gt; instead of going through vector-ref and vector-set!.  Not being able
+&gt;&gt; to write an external form for such gets in my way.
+&gt;
+&gt;Perhaps you could elaborate on this: I don't quite understand what you
+&gt;mean here.
+
+I define mutable arrays using a constructor that returns a pair of
+procedures - one for reference and one for mutation.  So I can
+do something like this:
+
+(let ((m (closure-array 4 4)))
+  (define foo (car m))
+  (define foo! (cdr m)))
+
+instead of
+(define foo (vector (make-vector 4) (make-vector 4) (make-vector 4) (make-vector 4)))
+
+and thereafter:
+
+(foo 2 3)
+instead of
+(vector-ref (vector-ref foo 2) 3)
+
+and
+
+(foo! 2 3 #\a)
+instead of
+(let ((z (vector-ref foo 2)))
+   (vector-set! z 3 #\a)
+   (vector-set! foo 2 z))
+
+
+But this trick, however useful, is limited because the arrays I
+can use with it are actually procedures, and procedures lack a
+reliable read-write syntax.
+
+This is just one example of the crap I go through to circumvent
+the clumsiness of arrays in scheme, and one example of why I wish
+they were as natural (and succinct) as lists.
+
+&gt;&gt;  How
+&gt;&gt; &gt;    often do you find yourself wanting to write a literal array, except
+&gt;&gt; &gt;    as the first argument to SRFI 47's MAKE-ARRAY?
+&gt;&gt;
+&gt;&gt; Geez, let me count the ways.  Data tables for character properties.
+&gt;&gt; color palettes.  Graphic sprites.  Coordinate transformation matrices.
+&gt;&gt; cellular automata substructures.  Default Window coordinate lists.
+&gt;&gt; Map data.  Integrated-circuit diagrams.  Alias tables for character
+&gt;&gt; names.  Parallel Records.  Tuple aggregates.  Multi-Character tokens
+&gt;&gt; for protocol drivers. Image data.  Compiler transition tables. Tax
+&gt;&gt; rate tables.  Icons. Lists of countries, states, counties, and
+&gt;&gt; municipalities.  Bus routes.  Airline schedules.  Cellular coverage
+&gt;&gt; areas.  And the list goes on...
+&gt;
+&gt;Great.  So you've listed a lot of applications for arrays.  Now answer
+&gt;the question I asked: how often do you find yourself in Scheme code
+&gt;wanting to write literal arrays by hand?
+
+Look again at the list.  Those are precisely what you asked for:
+all are applications of STATIC arrays.
+
+These are places where I want immutable arrays during runtime, and
+the only way to get an immutable anything in scheme is to write it
+directly.  At least up through debugging, I write these directly,
+making them immutable.
+
+				Bear
+
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00054" href="msg00054.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+<ul><li><em>From:</em> Tony Garnock-Jones</li></ul></li>
+<li><strong><a name="00060" href="msg00060.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+<ul><li><em>From:</em> Taylor Campbell</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00045" href="msg00045.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+<ul><li><em>From:</em> campbell</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00046.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00048.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00045.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00054.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00047"><strong>Date</strong></a></li>
+<li><a href="threads.html#00047"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

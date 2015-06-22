@@ -1,0 +1,145 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Substring indices everywhere? Eating a cake without destroying it -->
+<!--X-From-R13: byrtNcbobk.pbz -->
+<!--X-Date: Fri, 31 Dec 1999 15:28:16 &#45;0600 (CST) -->
+<!--X-Message-Id: 199912312126.VAA11818@fnmoc.navy.mil -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Substring indices everywhere? Eating a cake without destroying it</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00038.html">Date Prev</a>][<a href="msg00040.html">Date Next</a>][<a href="msg00038.html">Thread Prev</a>][<a href="msg00040.html">Thread Next</a>][<a href="maillist.html#00039">Date Index</a>][<a href="threads.html#00039">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Substring indices everywhere? Eating a cake without destroying it</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-13@DOMAIN.HIDDEN">srfi-13@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Substring indices everywhere? Eating a cake without destroying it</li>
+<li><em>From</em>: <a href="mailto:oleg@DOMAIN.HIDDEN">oleg@xxxxxxxxx</a></li>
+<li><em>Date</em>: Fri, 31 Dec 1999 21:26:15 GMT</li>
+<li><em>Cc</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxx</a></li>
+<li><em>Reply-to</em>: <a href="mailto:oleg@DOMAIN.HIDDEN">oleg@xxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+As the recent discussion (in particular, Tom Lord's message)
+indicated, the pervasive use of substring indices in SRFI-13 is
+controversial. There appears however to be a way to have the best of
+both approaches.
+
+Consider procedures
+	string= SMTH1 SMTH2
+	string-pad SMTH k [char]
+	string-prefix? SMTH1 SMTH2
+	string-tokenize SMTH [token-set]
+	string-&gt;number SMTH [base]
+
+etc.
+SMTH may be a string value. In that case, string= is equivalent to
+R5RS string=?; The meaning of other procedures is obvious. The
+argument list is simple and concise.
+
+However, SMTH may also be a form:
+	(XS&gt;&lt; STR BEG-INDEX) or
+	(XS&gt;&lt; STR BEG-INDEX END-INDEX)
+where END-INDEX is assumed to be (string-length STR) if omitted. 
+Thus we can write:
+
+	(let ((str &quot;foobar&quot;) (foo &quot;foo&quot;))
+	  (display (string= str foo))
+	  (display (string= (XS&gt;&lt; str 0 3) foo))
+	  (display (string= (XS&gt;&lt; str 3) (XS&gt;&lt; foo 0))))
+	(string-&gt;number (XS&gt;&lt; &quot;$12345.99&quot; 1))
+etc.
+
+What exactly is the XS&gt;&lt; form? It's up to an implementation. One
+Scheme system may choose to implement (XS&gt;&lt; str ind1 ind2) as
+(substring str ind1 ind2). This is the easiest (albeit not very
+efficient) approach.  In this case, (XS&gt;&lt; str ind1 ind2) is a real
+string, so we can use R5RS string-&gt;number, string=?, etc. procedures
+as they are.
+
+(XS&gt;&lt; str ind1 ind2) may also be a shared substring, should a
+particular Scheme system support such things. (XS&gt;&lt; str ind1 ind2) may
+also be a lazy substring, implemented as
+	(vector 'lazy-subst-tag str ind1 ind2)
+or with records, or even as a distinct datatype. Note that I have NOT
+said that (XS&gt;&lt; str ind1 ind2) is a procedure and its result is a
+first-class value. I don't want to commit that (XS&gt;&lt; str ind1 ind2)
+may meaningfully be used outside of string functions. The only promise
+I'd like to make is that (XS&gt;&lt; str ind1 ind2) _denotes_ a substring
+when used within a string function. It appears that such a limited
+promise makes even a shared substring implementation of the XS&gt;&lt; form
+transparent to the user. The XS&gt;&lt; form seems to answer all the
+concerns Tom Lord had about pervasiveness of substring indices. At
+the same time it preserves the spirit of Olin's library.
+
+	Happy Y2K!
+
+
+PS. It may make sense to allow indices in the XS&gt;&lt; form take negative
+values as well. If an index is negative, the length of the string
+should be added to it implicitly. For example, (XS&gt;&lt; str -3) would
+mean the last three characters of str. This convention is supported in
+Perl and Python, and appears rather useful.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00040" href="msg00040.html">Re: Substring indices everywhere? Eating a cake without destroying it</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+<li><strong><a name="00041" href="msg00041.html">Re: Substring indices everywhere?</a></strong>
+<ul><li><em>From:</em> Mikael Ståldal</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00038.html">Re: extending the discussion</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00040.html">Re: Substring indices everywhere? Eating a cake without destroying it</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00038.html">Re: extending the discussion</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00040.html">Re: Substring indices everywhere? Eating a cake without destroying it</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00039"><strong>Date</strong></a></li>
+<li><a href="threads.html#00039"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

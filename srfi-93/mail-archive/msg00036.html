@@ -1,0 +1,161 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Fresh syntax and unintentional capture -->
+<!--X-From-R13: Oaqer ina Fbaqre <naqerNabj.urg.oebja.rqh> -->
+<!--X-Date: Mon, 26 Jun 2006 17:11:26 +0200 (MST) -->
+<!--X-Message-Id: Pine.GSO.4.60.0606261014481.25436@now.het.brown.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 449fe4fc.gar5o63ARh9Y18wd%dyb@garbo.cs.indiana.edu -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Fresh syntax and unintentional capture</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00035.html">Date Prev</a>][<a href="msg00037.html">Date Next</a>][<a href="msg00035.html">Thread Prev</a>][<a href="msg00037.html">Thread Next</a>][<a href="maillist.html#00036">Date Index</a>][<a href="threads.html#00036">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Fresh syntax and unintentional capture</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:dyb@DOMAIN.HIDDEN">dyb@xxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Fresh syntax and unintentional capture</li>
+<li><em>From</em>: Andre van Tonder &lt;<a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 26 Jun 2006 11:11:16 -0400 (EDT)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-93@DOMAIN.HIDDEN">srfi-93@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-93@DOMAIN.HIDDEN">srfi-93@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:449fe4fc.gar5o63ARh9Y18wd%25dyb@DOMAIN.HIDDEN">449fe4fc.gar5o63ARh9Y18wd%dyb@xxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:449fe4fc.gar5o63ARh9Y18wd%25dyb@DOMAIN.HIDDEN">449fe4fc.gar5o63ARh9Y18wd%dyb@xxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+On Mon, 26 Jun 2006 dyb@xxxxxxxxxxxxxx wrote:
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Andre wrote:
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+As I tried to argue in SRFI 72, unless fresh syntax is the default,
+it is easy to reproduce in syntax-case all the unintentional capture
+problems that hygienic macros were invented to solve in  the first
+place.
+</pre></blockquote><pre style="margin: 0em;">
+
+No, it's not.  In fact, it is impossible to reproduce any of the
+unintentional capture problems that hygienic macros were invented to
+solve.
+</pre></blockquote><pre style="margin: 0em;">
+
+</pre><tt>Granted.  I will not dispute the original intent of the Founders.  Yet many 
+</tt><tt>inter-transformer potential captures can be directly mapped to 
+</tt><tt>intra-transformer potential captures by simply converting a transformer to a 
+</tt><tt>helper procedure, which is not an uncommon occurrence.  The examples I listed
+</tt><pre style="margin: 0em;">
+were the result of such a mapping.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+The unintended captures that can be reproduced, such as the ones that you
+described in your note and in SRFI 72, are of a different, less common,
+and less troublesome sort.
+</pre></blockquote><pre style="margin: 0em;">
+
+</pre><tt>I do not agree that it is necessarily less troublesome.  I have run 
+</tt><tt>into very troublesome bugs caused by this issue, where macros silently 
+</tt><tt>gave the wrong answer some time after they had already been tested, because 
+</tt><tt>of an obscure identifier conflict.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>I submit that the conventional model makes it impossible to reliably write 
+</tt><tt>helper procedures shared by different macros, since such procedures would have 
+</tt><tt>to know all surrounding bound identifiers potentially introduced by all
+</tt><pre style="margin: 0em;">
+possible present and future callers.  For example, the helper
+
+  (define (helper) (syntax (list 1 2 3)))
+
+</pre><tt>will fail if any future caller inserts the result in code where LIST has been 
+</tt><tt>rebound.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>The only solution I see, in the current model, is for the helper procedure to 
+</tt><tt>list all identifiers it introduces as part of its public interface.  The
+</tt><pre style="margin: 0em;">
+author of any caller then has to manually ensure that it does not rebind any
+of these identifiers.  Needless to say, this is fragile and error-prone.
+
+My only conclusion is that the conventional model is not intended for certain
+styles of procedural macro-writing.  This is a legitimate restriction, but
+since it is not enforced, users should be made aware of it.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+The SRFI 72 model does have its merits, and, as I mentioned privately
+back when you were still designing the SRFI 72 system, we've seriously
+considered the model ourselves.  I just don't believe the benefits
+outweigh the costs.
+</pre></blockquote><pre style="margin: 0em;">
+
+</pre><tt>Fair enough.  I just wanted to make sure the issue was recorded in the 
+</tt><tt>discussion list.
+</tt><pre style="margin: 0em;">
+
+Regards
+Andre
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00037" href="msg00037.html">Re: Fresh syntax and unintentional capture</a></strong>
+<ul><li><em>From:</em> Andre van Tonder</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00035" href="msg00035.html">Re: Fresh syntax and unintentional capture</a></strong>
+<ul><li><em>From:</em> dyb</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00035.html">Re: Fresh syntax and unintentional capture</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00037.html">Re: Fresh syntax and unintentional capture</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00035.html">Re: Fresh syntax and unintentional capture</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00037.html">Re: Fresh syntax and unintentional capture</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00036"><strong>Date</strong></a></li>
+<li><a href="threads.html#00036"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

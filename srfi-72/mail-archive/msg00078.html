@@ -1,0 +1,165 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Namespaces -->
+<!--X-From-R13: [negva Unfovpuyre <tnfovpuyNvasbezngvx.hav&#45;ghrovatra.qr> -->
+<!--X-Date: Wed, 17 Aug 2005 12:02:05 +0200 (DFT) -->
+<!--X-Message-Id: 6qfyt83mqz.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: Pine.GSO.4.60.0508141113450.22403@now.het.brown.edu -->
+<!--X-Reference: ofslxc5npp.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: xg8br3zwlun.fsf@paaulau.informatik.uni&#45;freiburg.de -->
+<!--X-Reference: xg8pssfuvnb.fsf@paaulau.informatik.uni&#45;freiburg.de -->
+<!--X-Reference: q3ek8u3vmv.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: xg8vf26dj5g.fsf@paaulau.informatik.uni&#45;freiburg.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Namespaces</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00077.html">Date Prev</a>][<a href="msg00079.html">Date Next</a>][<a href="msg00077.html">Thread Prev</a>][<a href="msg00065.html">Thread Next</a>][<a href="maillist.html#00078">Date Index</a>][<a href="threads.html#00078">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Namespaces</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Matthias Neubauer &lt;<a href="mailto:neubauer@DOMAIN.HIDDEN">neubauer@xxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Namespaces</li>
+<li><em>From</em>: Martin Gasbichler &lt;<a href="mailto:gasbichl@DOMAIN.HIDDEN">gasbichl@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 17 Aug 2005 12:01:56 +0200</li>
+<li><em>Cc</em>: Andre van Tonder &lt;<a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxxxxxx</a>&gt;,	<a href="mailto:srfi-72@DOMAIN.HIDDEN">srfi-72@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-72@DOMAIN.HIDDEN">srfi-72@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:xg8vf26dj5g.fsf@DOMAIN.HIDDEN">xg8vf26dj5g.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt; (Matthias Neubauer's message of &quot;Tue, 16 Aug 2005 16:57:15 +0200&quot;)</li>
+<li><em>References</em>: &lt;<a href="mailto:Pine.GSO.4.60.0508141113450.22403@DOMAIN.HIDDEN">Pine.GSO.4.60.0508141113450.22403@xxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:ofslxc5npp.fsf@DOMAIN.HIDDEN">ofslxc5npp.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:xg8br3zwlun.fsf@DOMAIN.HIDDEN">xg8br3zwlun.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:xg8pssfuvnb.fsf@DOMAIN.HIDDEN">xg8pssfuvnb.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:q3ek8u3vmv.fsf@DOMAIN.HIDDEN">q3ek8u3vmv.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:xg8vf26dj5g.fsf@DOMAIN.HIDDEN">xg8vf26dj5g.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Gnus/5.1006 (Gnus v5.10.6) XEmacs/21.4 (Jumbo Shrimp, berkeley-unix)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Matthias Neubauer &lt;neubauer@xxxxxxxxxxxxxxxxxxxxxxxxxx&gt; writes:
+
+&gt; Martin Gasbichler &lt;gasbichl@xxxxxxxxxxxxxxxxxxxxxxxxxxx&gt; writes:
+&gt; Yeah yeah, you're right of course! But still, ...
+&gt; 
+&gt;   val prog : ('a, int) code = .&lt;let x_2 = 1 in 2&gt;.
+&gt; 
+&gt;   # .! prog;;
+&gt;   - : int = 2
+&gt; 
+&gt; ..., the result still is 2! That's the point! Andre seemed to suggest
+&gt; at the beginning of this thread that either 1 or &quot;no result&quot; would be
+&gt; sensible results for this example. I think returning &quot;1&quot; is the wrong
+&gt; thing here, because this seems to contradict lexical scoping
+&gt; completely. Either return &quot;2&quot; by adding cross-stage persistence (CSE),
+&gt; or return an error without it as you suggest.
+
+I don't suggest to return an error but to return &quot;1&quot;. As I said
+before, lexical scoping does not apply because (SYNTAX 2) is data. You
+don't expect
+
+(eval `(let ((x 1))
+          ,(let ((x 2))
+              'x)))
+      
+to evaluate to anything else but 1, right?
+
+&gt;&gt; But you don't need it because a macro is a source-to-source
+&gt;&gt; transformation and UNQUOTE (as SRFI-72 and MetaOCaml provide it)
+&gt;&gt; already does the trick:
+&gt;&gt;
+&gt;&gt; let prog = .&lt; let x = 1 in  
+&gt;&gt;               .~ (let m () = let x = .&lt; 2 &gt;. in  
+&gt;&gt;                              .&lt; .~ x &gt;.  
+&gt;&gt;                   in 
+&gt;&gt;                    .&lt; .~ (m ()) &gt;.) &gt;.;;
+&gt;
+&gt; Sure, you don't need it. But just compare the two code fragments from
+&gt; above: to achieve the same result without CSP, you have to insert even
+&gt; more UNQUOTEs and SYNTAX brackets in your macro than before. 
+
+No, you don't need to add more SYNTAX clauses than before. Actually,
+the SYNTAX clause on the right-hand side of the &quot;let&quot; fixes another
+bug in your example and points to an important difference between
+macros and MetaOCaml: In MetaOCaml you can transport arbitrary values
+to a higher stage, but as a macro is a source-to-source
+transformation, you can only transport code.
+
+&gt; It gets even worse, if x is not just a value but a more complicated
+&gt; expression. 
+
+Hu? x is not a value but a variable. Which expression do you want to
+be more complicated?
+
+&gt; With CSE, it is simpler to write macros to achieve the same result.
+
+No, all you save is a comma before the variable name.
+
+&gt; So why not just allow it?  Are there any drawbacks?
+
+Sure: The model you need to describe this is far more complicated and
+it violates the correspondence to (QUASI)QUOTE.
+
+-- 
+Martin
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00047" href="msg00047.html">Namespaces</a></strong>
+<ul><li><em>From:</em> Andre van Tonder</li></ul></li>
+<li><strong><a name="00050" href="msg00050.html">Re: Namespaces</a></strong>
+<ul><li><em>From:</em> Martin Gasbichler</li></ul></li>
+<li><strong><a name="00070" href="msg00070.html">Re: Namespaces</a></strong>
+<ul><li><em>From:</em> Matthias Neubauer</li></ul></li>
+<li><strong><a name="00071" href="msg00071.html">Re: Namespaces</a></strong>
+<ul><li><em>From:</em> Matthias Neubauer</li></ul></li>
+<li><strong><a name="00075" href="msg00075.html">Re: Namespaces</a></strong>
+<ul><li><em>From:</em> Martin Gasbichler</li></ul></li>
+<li><strong><a name="00076" href="msg00076.html">Re: Namespaces</a></strong>
+<ul><li><em>From:</em> Matthias Neubauer</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00077.html">Re: Namespaces</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00079.html">question on the opaque syntax object debate</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00077.html">Re: Namespaces</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00065.html">Re: Namespaces</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00078"><strong>Date</strong></a></li>
+<li><a href="threads.html#00078"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

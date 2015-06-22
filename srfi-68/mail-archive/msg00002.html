@@ -1,0 +1,244 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: output stream API -->
+<!--X-From-R13: Eronfgvna Stare <fronfgvna.rtareNcuvyvcf.pbz> -->
+<!--X-Date: Fri, 20 May 2005 11:40:47 +0200 (DFT) -->
+<!--X-Message-Id: OF7FF63142.12B96F31&#45;ONC1257007.002CE7A6&#45;C1257007.00351D14@philips.com -->
+<!--X-Content-Type: multipart/alternative -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>output stream API</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00001.html">Date Prev</a>][<a href="msg00003.html">Date Next</a>][<a href="msg00007.html">Thread Prev</a>][<a href="msg00004.html">Thread Next</a>][<a href="maillist.html#00002">Date Index</a>][<a href="threads.html#00002">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>output stream API</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-68@DOMAIN.HIDDEN">srfi-68@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: output stream API</li>
+<li><em>From</em>: Sebastian Egner &lt;<a href="mailto:sebastian.egner@DOMAIN.HIDDEN">sebastian.egner@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 20 May 2005 11:39:21 +0200</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-68@DOMAIN.HIDDEN">srfi-68@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+
+<br><font size=2 face="sans-serif">Hello Mike,</font>
+<br>
+<br><font size=2 face="sans-serif">I am still absorbing the I/O SRFI; it
+is quite a complicated thing.</font>
+<br><font size=2 face="sans-serif">It turns out, I keep forgetting the
+way this SRFI organizes I/O land.</font>
+<br><font size=2 face="sans-serif">The problem is not really the fact that
+there are three layers,</font>
+<br><font size=2 face="sans-serif">but that there are so many operations
+which pass around data</font>
+<br><font size=2 face="sans-serif">in different conventions (store in vector
+with start, end; without;</font>
+<br><font size=2 face="sans-serif">allocate new vector, ...) and so many
+helper functions, each with</font>
+<br><font size=2 face="sans-serif">its own name.</font>
+<br>
+<br><font size=2 face="sans-serif">Here are a few concrete points:</font>
+<br>
+<br><font size=2 face="sans-serif">1. One specific thing that I just tripped
+over: The return values of output-bytes,</font>
+<br><font size=2 face="sans-serif">output-char etc. are unspecified. Did
+I miss something, or shouldn't they</font>
+<br><font size=2 face="sans-serif">rather return the new stream, as a functional
+interface would?</font>
+<br>
+<br><font size=2 face="sans-serif">2. For what it's worth, the input-&lt;type&gt;
+ops return an object and the </font>
+<br><font size=2 face="sans-serif">rest stream. Now in many cases the first
+thing to do is determine </font>
+<br><font size=2 face="sans-serif">the length/size of the object to detect
+EOF.</font>
+<br>
+<br><font size=2 face="sans-serif">The interface could return that right
+away:</font>
+<br>
+<br><font size=2 face="sans-serif">Instead of this (using SRFI-71 notation):</font>
+<br>
+<br><font size=2><tt>(let ((string stream (input-string stream)))</tt></font>
+<br><font size=2><tt>&nbsp; (let ((n (string-length string)))</tt></font>
+<br><font size=2><tt>&nbsp; &nbsp; (if (positive? n)</tt></font>
+<br><font size=2><tt>&nbsp; &nbsp; &nbsp; &nbsp; ...process string[0..n-1]...)))</tt></font>
+<br><font size=2 face="sans-serif">&nbsp; </font>
+<br><font size=2 face="sans-serif">you get this:</font>
+<br>
+<br><font size=2><tt>(let ((n string stream (input-string stream)))</tt></font>
+<br><font size=2><tt>&nbsp; (if (positive? n)</tt></font>
+<br><font size=2><tt>&nbsp; &nbsp; &nbsp; ...process string[0..n-1]...))</tt></font>
+<br>
+<br><font size=2 face="sans-serif">Alternatively, you could define all
+input-&lt;type&gt; to return always</font>
+<br><font size=2 face="sans-serif">a 'return code' argument, i.e. input-&lt;type&gt;
+returns</font>
+<br><font size=2 face="sans-serif">1. return code (exact integer for nr.
+of bytes read),</font>
+<br><font size=2 face="sans-serif">2. one or more values read from the
+stream, and</font>
+<br><font size=2 face="sans-serif">3. the residual stream.</font>
+<br><font size=2 face="sans-serif">This will enable a future extension
+to read other types of objects</font>
+<br><font size=2 face="sans-serif">(numbers, ...) in the same convention.
+Without the return code I</font>
+<br><font size=2 face="sans-serif">would be more in favor of returning
+#f at EOF for uniformity (breaking </font>
+<br><font size=2 face="sans-serif">with SML Basis Library which is for
+a stronly typed language).</font>
+<br>
+<br><font size=2 face="sans-serif">3. Whenever there is a vector-like object
+(byte-vector, string) one can</font>
+<br><font size=2 face="sans-serif">combine the two operations with start
+index and/or count into a single</font>
+<br><font size=2 face="sans-serif">operation by using optional arguments.
+This reduces the number of ops</font>
+<br><font size=2 face="sans-serif">by about 10 to 15. You might end up
+with these:</font>
+<br>
+<br><font size=1><tt>(reader-read-bytes! reader bytes [ start count ])</tt></font>
+<br><font size=1><tt>(writer-write-bytes! writer bytes [ start count ])</tt></font>
+<br><font size=1><tt>(input-bytes input-stream [ count ]) ; includes input-bytes-n</tt></font>
+<br><font size=1><tt>(input-string input-stream [ count ]) ; includes input-string-n</tt></font>
+<br><font size=1><tt>(output-bytes output-stream bytes [ start count ])
+; includes output-bytes-n</tt></font>
+<br><font size=1><tt>(output-string output-stream string [ start count
+]) ; includes output-string-n</tt></font>
+<br><font size=1><tt>(read-bytes [ [ count ] input-port ]) ; includes read-bytes-n</tt></font>
+<br><font size=1><tt>(read-string [ [ count ] input-port ]) ; includes
+read-string-n</tt></font>
+<br><font size=1><tt>(display-bytes bytes [ start count ] [ output-port
+]) ; includes display-bytes-n</tt></font>
+<br><font size=1><tt>(display-string string [ start count ] [ output-port
+]) ; includes display-string-n</tt></font>
+<br>
+<br><font size=2 face="sans-serif">For input/read-bytes/-string one could
+even consider passing a special</font>
+<br><font size=2 face="sans-serif">symbol for the count argument, e.g.
+'until-eof, indicating that the rest of the</font>
+<br><font size=2 face="sans-serif">input should be read.</font>
+<br>
+<br><font size=2 face="sans-serif">4. One source of confusion for me is
+still the read/write/display legacy</font>
+<br><font size=2 face="sans-serif">of Scheme that went into this SRFI.
+I am aware that this is a touchy issue,</font>
+<br><font size=2 face="sans-serif">and breaking with tradition on this
+point might hurt more than it helps.</font>
+<br><font size=2 face="sans-serif">But are there other solutions?</font>
+<br>
+<br><font size=2 face="sans-serif">5. There are no constructors for creating
+ports from streams. Is that intentional?</font>
+<br><font size=2 face="sans-serif">My understanding of a port is that it
+is conceptually a reference-cell for a stream,</font>
+<br><font size=2 face="sans-serif">although it might be implemented more
+efficiently.</font>
+<br>
+<br><font size=2 face="sans-serif">6. It would be great if there were a
+mechanism specified for passing</font>
+<br><font size=2 face="sans-serif">additional arguments (options) between
+the levels. Learning from other</font>
+<br><font size=2 face="sans-serif">existing I/O libraries, it is a recurring
+problem that you need to pass</font>
+<br><font size=2 face="sans-serif">funny little hints (e.g. access permission
+flags) down (and sometimes</font>
+<br><font size=2 face="sans-serif">up) the protocol stack to do what you
+need to do. I am not talking about</font>
+<br><font size=2 face="sans-serif">arcane IOCTLs, but over simple things
+like opening a file for writing with</font>
+<br><font size=2 face="sans-serif">the right attributes to actually be
+able to write to it (this is no joke, R5RS</font>
+<br><font size=2 face="sans-serif">open-output-file does not specify what
+happens if the file exists.)</font>
+<br>
+<br><font size=2 face="sans-serif">Unfortunately, this SRFI does not specify
+any mechnism for passing</font>
+<br><font size=2 face="sans-serif">optional arguments around, whatsoever.</font>
+<br>
+<br><font size=2 face="sans-serif">I am very much afraid that this will
+lead to another variation of the</font>
+<br><font size=2 face="sans-serif">situation we have with the existing
+Scheme I/O: Everybody implements</font>
+<br><font size=2 face="sans-serif">the standard, everybody extends it to
+be practically useful on the host OS,</font>
+<br><font size=2 face="sans-serif">and yet there is no portable way to
+open a stupid plain-vanilla output file</font>
+<br><font size=2 face="sans-serif">because some systems need another procedure
+for that, some want a</font>
+<br><font size=2 face="sans-serif">symbol as optional argument etc. In
+the end, I write my own &quot;standard&quot;</font>
+<br><font size=2 face="sans-serif">abstract layer.</font>
+<br>
+<br><font size=2 face="sans-serif">To be constructive and concrete, it
+would be sufficient for now to specify</font>
+<br><font size=2 face="sans-serif">that all open-&lt;something&gt; procedures
+would accept an optional argument,</font>
+<br><font size=2 face="sans-serif">e.g. called 'options', that they store
+in the object and pass to each other</font>
+<br><font size=2 face="sans-serif">when they call each other. This specification
+could be tightened such</font>
+<br><font size=2 face="sans-serif">that 'options' is an association list
+using EQV?. It's then up to the implementation</font>
+<br><font size=2 face="sans-serif">to define something sensible with it,
+or not, but at least I can portably </font>
+<br><font size=2 face="sans-serif">store the options in a data structure.</font>
+<br>
+<br><font size=2 face="sans-serif">So much for now, and btw., I think this
+SRFI is a very useful initiative!</font>
+<br>
+<br><font size=2 face="sans-serif">Sebastian.</font>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00004" href="msg00004.html">Re: output stream API</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00001.html">Re: If you like &quot;u8vector&quot; ...</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00003.html">Re: If you like &quot;u8vector&quot; ...</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00007.html">Re: If you like &quot;u8vector&quot; ...</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00004.html">Re: output stream API</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00002"><strong>Date</strong></a></li>
+<li><a href="threads.html#00002"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,248 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: gratuitous optimization and benchmarking [was Re: Request for Clarification on Rationale] -->
+<!--X-From-R13: "Fnlybe D. Qnzcoryy" <pnzcoryyNzhzoyr.arg> -->
+<!--X-Date: Fri,  7 Apr 2006 07:33:05 +0200 (MST) -->
+<!--X-Message-Id: 20060407053259.0E15998B46@pluto.mumble.net -->
+<!--X-Content-Type: multipart/mixed -->
+<!--X-Reference: 20060406.140148.745432536.shiro@lava.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>gratuitous optimization and benchmarking [was Re: Request for Clarification on Rationale]</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00019.html">Date Prev</a>][<a href="msg00021.html">Date Next</a>][<a href="msg00018.html">Thread Prev</a>][<a href="msg00013.html">Thread Next</a>][<a href="maillist.html#00020">Date Index</a>][<a href="threads.html#00020">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>gratuitous optimization and benchmarking [was Re: Request for Clarification on Rationale]</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:shiro@DOMAIN.HIDDEN">shiro@xxxxxxxx</a></li>
+<li><em>Subject</em>: gratuitous optimization and benchmarking [was Re: Request for Clarification on Rationale]</li>
+<li><em>From</em>: &quot;Taylor R. Campbell&quot; &lt;<a href="mailto:campbell@DOMAIN.HIDDEN">campbell@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 7 Apr 2006 05:32:58 +0000</li>
+<li><em>Cc</em>: <a href="mailto:init@DOMAIN.HIDDEN">init@xxxxxxxxxxx</a>, <a href="mailto:srfi-86@DOMAIN.HIDDEN">srfi-86@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-86@DOMAIN.HIDDEN">srfi-86@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20060406.140148.745432536.shiro@DOMAIN.HIDDEN">20060406.140148.745432536.shiro@xxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: IMAIL/1.21; Edwin/3.116; MIT-Scheme/7.7.90.+</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Any compiler can optimize a lambda argument to CWV(*), but the key is
+that the lambda does not require a run-time, heap-allocated closure.
+Joo ChurlSoo's tests here are very skewed in this way, because the
+procedure argument to mu procedures must be heap-allocated in the
+general case, whereas the arguments to CWV can *always* be optimized
+(and stack-allocated, as any other continuations are) even in the
+general case.
+
+((*) I find it very bizarre that there is a significant performance
+difference between CWV &amp; RECEIVE in Gauche, but that's a topic for a
+different conversation.)
+
+Soo's benchmarks do not test anything beyond procedure call vs
+procedure return, the latter of which often has the overhead for
+multiple return values anyway in order to optimize the path for the
+single-value case in interpreters.  All of the systems that he tested
+except Chez and Scheme48 use completely unoptimized VALUES &amp; CWV
+implementations, furthermore.
+
+Now let's try a slightly different set of benchmarks.  This new code
+elides the superfluous construction of a list, but builds many
+closures, which are almost always needed in code that uses multiple
+return values, so this benchmark more closely measures the performance
+of real code (cough cough cough cough).  I also added another order of
+magnitude to the number of iterations in the T tests, because ten
+million went by too fast for accurate measurement.  In addition, I ran
+the GC before starting the timer in all of the benchmarks.  I'd have
+run each test ten or so times and taken the average time, but I got
+bored waiting for Scheme48 and Gauche.  I got roughly consistent
+answers from T, anyway.
+
+All benchmarks were run on a 333 MHz UltraSPARC 5, although the
+Scheme systems were all compiled as 32-bit programs.  No other users
+on the machine, &amp;c. &amp;c., unless someone snuck on while I wasn't
+looking.  I forget how much RAM it has.
+
+        T 3.1 (19)      Scheme48 0.57   Gauche 0.8.6
+m        36.91s         184.78s         210.86s
+v        10.33s         151.11s          83.33s
+mm       51.15s         258.25s         361.96s
+vv       12.8s          189.54s         105.47s
+
+Each of these tests calls the multiple-value-returning-entity with a
+continuation that computes the sum of the iteration number and the
+three values returned by the entity.  The procedures m, v, mm, and vv
+are identical to the similarly named procedures in Soo's original
+code.
+
+I'd have tried more Scheme systems, but I don't have access to full
+Chez, I can't build RScheme on this machine or figure out how to use
+it on another, and unfortunately I can't find any other Scheme that
+uses a saner representation of multiple values than a tagged list or
+equivalent.  (Eli Barzilay informs me that MzScheme implements
+multiple values better than a tagged list, but I wanted to sleep
+tonight, so I didn't try to build it and run the tests with it.)
+
+I have attached the source code, soo.scm and soo.t, to this message.
+
+This goes to show that anyone can make benchmarks that match the
+results they want.  I, of course, claim that *my* benchmarks are more
+accurate to the truth than the other ones posted here, but YMMV.
+Although I, of course, maintain that a proper system for multiple
+return values is more efficient than MU &amp; NU, the best conclusion to
+draw is probably the absence of one, and I recommend omitting any
+mention of performance from the rationale.
+</pre><pre>(define-syntax mu
+  (syntax-rules ()
+    ((mu argument ...) (lambda (f) (f argument ...)))))
+
+(define m (mu 1 2 3))
+(define v (lambda () (values 1 2 3)))
+(define mm (lambda (x)
+             (if (&lt; x 0)
+                 (mu 1 2 3)
+                 (if (= x 0)
+                     (mu 4 5 6)
+                     (mu 7 8 9)))))
+(define vv (lambda (x)
+             (if (&lt; x 0)
+                 (values 1 2 3)
+                 (if (= x 0)
+                     (values 4 5 6)
+                     (values 7 8 9)))))
+
+(define-syntax dotimes
+  (syntax-rules ()
+    ((DOTIMES (i count) body0 body1 ...)
+     (LET ((%COUNT count))
+       (DO ((i 0 (+ i 1)))
+           ((= i %COUNT))
+         body0
+         body1
+         ...)))))
+
+(define (test-m)
+  (dotimes (i 10000000)
+    (m (lambda (x y z)
+         (+ i x y z)))))
+
+(define (test-v)
+  (dotimes (i 10000000)
+    (receive (x y z) (v)
+      (+ i x y z))))
+
+(define (test-mm)
+  (dotimes (i 10000000)
+    ((mm i) (lambda (x y z)
+              (+ i x y z)))))
+
+(define (test-vv)
+  (dotimes (i 10000000)
+    (receive (x y z) (vv i)
+      (+ i x y z))))
+</pre><pre>(herald soo)
+
+(define-local-syntax (mu . arguments)
+  (let ((f (generate-symbol 'f)))
+    `(LAMBDA (,f) (,f ,@arguments))))
+
+(define m (mu 1 2 3))
+(define v (lambda () (return 1 2 3)))
+(define mm (lambda (x)
+             (if (&lt; x 0)
+                 (mu 1 2 3)
+                 (if (= x 0)
+                     (mu 4 5 6)
+                     (mu 7 8 9)))))
+(define vv (lambda (x)
+             (if (&lt; x 0)
+                 (return 1 2 3)
+                 (if (= x 0)
+                     (return 4 5 6)
+                     (return 7 8 9)))))
+
+(define-local-syntax (dotimes var+count . body)
+  (let ((i (car var+count))
+        (count (generate-symbol 'count)))
+    `(LET ((,count ,(cadr var+count)))
+       (DO ((,i 0 (FX+ ,i 1)))
+           ((FX= ,i ,count))
+         ,@body))))
+
+;;; For each test, we add a non-empty continuation, which also refers
+;;; back to the variable i in order to force it to become a run-time
+;;; closure.
+
+(define (test-m)
+  (dotimes (i 100000000)
+    (m (lambda (x y z)
+         (fx+ i (fx+ x (fx+ y z)))))))
+
+(define (test-v)
+  (dotimes (i 100000000)
+    (receive (x y z) (v)
+      (fx+ i (fx+ x (fx+ y z))))))
+
+(define (test-mm)
+  (dotimes (i 100000000)
+    ((mm i) (lambda (x y z)
+              (fx+ i (fx+ x (fx+ y z)))))))
+
+(define (test-vv)
+  (dotimes (i 100000000)
+    (receive (x y z) (vv i)
+      (fx+ i (fx+ x (fx+ y z))))))
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00018" href="msg00018.html">Re: Request for Clarification on Rationale</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00019.html">Re: Request for Clarification on Rationale</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00021.html">Re: gratuitous optimization and benchmarking</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00018.html">Re: Request for Clarification on Rationale</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00013.html">Re: Request for Clarification on Rationale</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00020"><strong>Date</strong></a></li>
+<li><a href="threads.html#00020"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

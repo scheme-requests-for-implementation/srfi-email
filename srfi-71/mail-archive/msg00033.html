@@ -1,0 +1,208 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: taking off parentheses of only a resting argument -->
+<!--X-From-R13: fbb <vavgNvavFrez.pbz> -->
+<!--X-Date: Thu,  7 Jul 2005 09:07:51 +0200 (DFT) -->
+<!--X-Message-Id: uoe9f2iwu.fsf@iniTerm.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>taking off parentheses of only a resting argument</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00032.html">Date Prev</a>][<a href="msg00034.html">Date Next</a>][<a href="msg00032.html">Thread Prev</a>][<a href="msg00034.html">Thread Next</a>][<a href="maillist.html#00033">Date Index</a>][<a href="threads.html#00033">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>taking off parentheses of only a resting argument</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-71@DOMAIN.HIDDEN">srfi-71@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: taking off parentheses of only a resting argument</li>
+<li><em>From</em>: soo &lt;<a href="mailto:init@DOMAIN.HIDDEN">init@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: 07 Jul 2005 16:07:45 +0900</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-71@DOMAIN.HIDDEN">srfi-71@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Gnus/5.09 (Gnus v5.9.0) Emacs/21.3</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>The previous one seems to be deviated from the focus of this srfi.
+
+Now I suggest taking off the parentheses of only a resting argument.  Then the
+following bare-let* becomes compatible with r5rs-let* and almost compatible
+with let*-values, and any keyword such as values becomes needless.
+
+Examples:
+
+(bare-let* ((a 10)
+	    (b c (values 20 30))
+	    ((d e . f) (values 1 2 3 4))
+	    g 111			; taking off a pair of parentheses
+	    ((h) 40)			; This can be omitted.
+	    ((i j) (values 50 60)))	; This can be omitted.
+	   (list a b c d e f g h i j))
+
+(srfi-let* ((a 10)
+	    (b c (values 20 30))
+	    ((values d e . f) (values 1 2 3 4))
+	    ((values . g) 111)
+	    ((values h) 40)
+	    ((values i j) (values 50 60)))
+	   (list a b c d e f g h i j))
+
+(let*-values (((a) 10)
+	      ((b c) (values 20 30))
+	      ((d e . f) (values 1 2 3 4))
+	      (g 111)			; incompatible with bare-let*
+	      ((h) 40)
+	      ((i j) (values 50 60)))
+  (list a b c d e f g h i j))
+
+=&gt; '(10 20 30 1 2 (3 4) (111) 40 50 60)
+
+(define-syntax bare-let*
+  (syntax-rules ()
+    ((bare-let* () body1 body2 ...)
+     ((lambda () body1 body2 ...)))
+
+    ;; extension --- intervening body
+    ((bare-let* ((() a ...) clause ...) body1 body2 ...)
+     ((lambda ()
+	a ...
+	(bare-let* (clause ...) body1 body2 ...))))
+
+;;     ;; If commenting out, it becomes incompatible with let*-values 
+;;     ((bare-let* (((a b ...) c) clause ...) body1 body2 ...)
+;;      (error &quot;bare-let*: syntax error&quot; '((a b ...) c)))
+
+    ((bare-let* (((a . b) c) clause ...) body1 body2 ...)
+     (call-with-values (lambda () c)
+       (lambda (a . b)
+	 (bare-let* (clause ...) body1 body2 ...))))
+
+    ((bare-let* ((a1 a2 a3 ...) clause ...) body1 body2 ...)
+     (many-let ((a1) (a2 a3 ...))
+		(bare-let* (clause ...) body1 body2 ...)))
+
+    ;; extension --- I like direct escape.
+    ((bare-let* ((a) clause ...) body1 body2 ...)
+     (call-with-current-continuation
+      (lambda (a)
+	(bare-let* (clause ...) body1 body2 ...))))
+
+    ;; extension --- extended named-let* 
+    ((bare-let* ((a . b) clause ...) body1 body2 ...)
+     (dot-let ((a) b)
+	      (bare-let* (clause ...) body1 body2 ...)))
+
+;;     ((bare-let* ((a . b) clause ...) body1 body2 ...)
+;;      (error &quot;bare-let*: syntax error&quot; '(a . b)))
+
+    ((bare-let* (a b clause ...) body1 body2 ...)
+     (call-with-values (lambda () b)
+       (lambda a
+	 (bare-let* (clause ...) body1 body2 ...))))))
+
+(define-syntax many-let
+  (syntax-rules ()
+    ((many-let ((a ...) (a1 a2 a3 ...)) body1 body2 ...)
+     (many-let ((a ... a1) (a2 a3 ...)) body1 body2 ...))
+    ((many-let ((a a1 ...) (b)) body1 body2 ...)
+     (call-with-values (lambda () b)
+       (lambda (a a1 ...) body1 body2 ...)))))
+
+(define-syntax dot-let
+  (syntax-rules ()
+    ((dot-let ((a ...) (an . bn)) body1 body2 ...)
+     (dot-let ((a ... an) bn) body1 body2 ...))
+    ((dot-let ((a a1 ...)  b) body1 body2 ...)
+     (%dot-let (() (a a1 ...) b) body1 body2 ...))))
+
+(define-syntax %dot-let
+  (syntax-rules ()
+    ((%dot-let (((n v) ...) ((n1 v1) a2 ...) b) body1 body2 ...)
+     (%dot-let (((n v) ... (n1 v1)) (a2 ...) b) body1 body2 ...))
+    ((%dot-let (((n v) ...) (a1 a2 ...) b) body1 body2 ...)
+     (%dot-let (((n v) ... (a1 a1)) (a2 ...) b) body1 body2 ...))
+    ((%dot-let (((n v) ...) () b) body1 body2 ...)
+     ((letrec ((b (lambda (n ...) body1 body2 ...)))
+       b)
+      v ...))))
+
+;; extended example
+(bare-let* ((a 10)
+	    (b c (values 20 30))
+	    d 1000
+	    (h)
+	    ((k 11) a (l 22) . m)
+	    (() (display &quot;test&quot;) (newline))
+	    ((e f . g) (apply values '(1 2 3 4 5))))
+	   (if (&lt; a 20)
+	       (begin (display (list a b c k l)) (newline) (m 100 200 300))
+	       (display (list a b c k l d e f g h)))
+	   (newline)
+	   (display &quot;this is a test&quot;)
+	   (newline)
+	   (h)
+	   (display &quot;this is not seen&quot;)
+	   (newline))
+=&gt;
+test
+(10 20 30 11 22)
+test
+(200 20 30 100 300 (1000) 1 2 (3 4 5) #&lt;continuation&gt;)
+this is a test
+-- 
+Joo ChurlSoo
+
+
+
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00032.html">taking off a parenthesis</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00034.html">a bug</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00032.html">taking off a parenthesis</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00034.html">a bug</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00033"><strong>Date</strong></a></li>
+<li><a href="threads.html#00033"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,186 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: freshman&#45;level Boyer&#45;Moore fast string search -->
+<!--X-From-R13: Ivyyvnz R Qyvatre <prfhenNirevmba.arg> -->
+<!--X-Date: Fri, 29 Jul 2005 07:31:47 +0200 (DFT) -->
+<!--X-Message-Id: y9lbr4m2n5q.fsf@sams.informatik.uni&#45;tuebingen.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>freshman-level Boyer-Moore fast string search</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00268.html">Date Prev</a>][<a href="msg00269.html">Date Next</a>][<a href="msg00281.html">Thread Prev</a>][<a href="msg00276.html">Thread Next</a>][<a href="maillist.html#00270">Date Index</a>][<a href="threads.html#00270">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>freshman-level Boyer-Moore fast string search</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-75@DOMAIN.HIDDEN">srfi-75@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: freshman-level Boyer-Moore fast string search</li>
+<li><em>From</em>: William D Clinger &lt;<a href="mailto:cesura@DOMAIN.HIDDEN">cesura@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 29 Jul 2005 07:31:45 +0200</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-75@DOMAIN.HIDDEN">srfi-75@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Gnus/5.110003 (No Gnus v0.3) XEmacs/21.5-b20 (berkeley-unix)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>The purpose of this note is to show how random access
+to the characters of a string improves the efficiency
+of string searching beyond what is possible with random
+access to the bytes of a UTF-8 string.
+
+This can be demonstrated using the Boyer-Moore algorithm
+for fast string searching, but that algorithm is fairly
+hard to analyze.  For this note, I use a simplified form
+of the Boyer-Moore algorithm, which I call the Freshman-
+Level Boyer-Moore (FLBM) algorithm because it is simple
+enough to be explained in freshman-level courses.  The
+difference between the full Boyer-Moore algorithm and
+the FLBM algorithm is that the automaton used in the FLBM
+algorithm returns to its start state following every random
+access into the string being searched.
+
+The FLBM algorithm
+------------------
+Given:  a string s0 of length m for which we are to search,
+and a set of strings to be searched for occurrences of s0
+as a substring.  Let n be the total length of the strings
+to be searched.
+Returns:  a set of pairs of the form &lt;s,i&gt;, where s is one
+of the strings that was searched, i is an index into s, and
+s0 is a substring of s beginning at i.
+
+Preprocessing
+-------------
+
+The FLBM algorithm begins by pre-processing s0 to compute
+the following table.  For each character that occurs within
+s0, the table contains the index of the last occurrence of
+that character within s0.
+
+Using red-black search trees, this table can be constructed
+in O(m lg m) time, can be searched in O(lg m) time, and
+occupies O(m) space.  Hence the preprocessing step takes
+O(m lg m) time and O(m) space.
+
+Initialization
+--------------
+
+To search for s0 within a string s, set the initial value
+of i to 0.
+
+Main step
+---------
+
+If i+m-1 is less than the number of characters within s,
+let s[i+m-1] be the (i+m-1)th character of s.  If s[i+m-1]
+does not occur within s0, then set i to i+m.  Otherwise let
+k be the index of the last occurrence of s[i+m-1] within s0,
+and set i to i+m-1-k.
+
+With random access to the characters of s, the operation
+described by the previous paragraph runs in O(lg m) time.
+With random access to the bytes of s represented in UTF-8,
+however, the previous paragraph takes O(m) time.  The problem
+with UTF-8 is that we can't access s[i+m-1] without looking
+at all of the bytes that encode the characters that precede
+it.  We can look at the byte with index i+m-1, and we might
+even be able to calculate the character whose UTF-8 encoding
+includes the byte at byte index i+m-1 (I don't know Unicode
+well enough to know whether this is possible), but knowing
+that character doesn't help.  For the FLBM algorithm to work,
+we have to know the *character* with index i+m-1.  Without
+knowledge of that character, we cannot use our table to
+compute the new value of i.  Furthermore we cannot fall back
+on preprocessing the UTF-8 representation of s0 and using
+that table instead, because the computation of the new value
+for i would depend upon knowing that all characters of s are
+encoded using some fixed number of bytes, which is not true
+of UTF-8.
+
+Now to finish the explanation of the algorithm.  If k=m-1,
+then setting i to i+m-1-k did not change the value of i.
+In that case, and in that case only, we use a naive string
+comparison to see whether s0 is a substring of s starting
+at index i.  If it is, then we have found a match; whether
+we have found a match or not, we set i to i+1 and continue.
+
+Then repeat the main step of the algorithm.  Stop when i+m-1
+is no longer a valid character index into s.
+
+Analysis
+--------
+
+I will assume m &lt; n.  (If this assumption is not true, then the
+problem is vacuous: s0 cannot be a substring of any string to
+be searched.)
+
+In the worst case, the FLBM algorithm requires O(mn lg m) time.
+In the best case, however, the FLBM algorithm runs in O(n/m lg m)
+time.  This is also the usual case in practice.
+
+With UTF-8 encoding, the FLBM algorithm requires O(mn lg m) time
+in the worst case, and O(n lg m) time in the best case.  In the
+usual case, FLBM/UTF-8 takes O(n lg m) time.  This usual-case
+performance for UTF-8 is asymptotically worse than for encodings
+that allow random access to characters.
+
+The FLBM algorithm requires O(m) space regardless of the
+encoding used for strings.
+
+Will
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00276" href="msg00276.html">Re: freshman-level Boyer-Moore fast string search</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00268.html">Re: Surrogates and character representation</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00269.html">Re: freshman-level Boyer-Moore fast string search</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00281.html">Re: freshman-level Boyer-Moore fast string search</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00276.html">Re: freshman-level Boyer-Moore fast string search</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00270"><strong>Date</strong></a></li>
+<li><a href="threads.html#00270"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

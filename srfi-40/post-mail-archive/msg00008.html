@@ -1,0 +1,132 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Problems with SRFI document -->
+<!--X-From-R13: Oyrknaqre Fuvry <guvryNrcbd.qr> -->
+<!--X-Date: Wed, 12 Jan 2005 09:52:22 +0100 (NFT) -->
+<!--X-Message-Id: m3is6358se.fsf@hamburg.office.epoq.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: y9lhdq7gxj3.fsf@sams.informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: y9lllfh3x72.fsf@sams.informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: Pine.GSO.4.60.0409110853540.8837@now.het.brown.edu -->
+<!--X-Reference: 416C04CC.7070005@cs.uvm.edu -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Problems with SRFI document</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00007.html">Date Prev</a>][<a href="msg00009.html">Date Next</a>][<a href="msg00007.html">Thread Prev</a>][<a href="msg00006.html">Thread Next</a>][<a href="maillist.html#00008">Date Index</a>][<a href="threads.html#00008">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Problems with SRFI document</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-40@DOMAIN.HIDDEN">srfi-40@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Problems with SRFI document</li>
+<li><em>From</em>: Alexander Thiel &lt;<a href="mailto:thiel@DOMAIN.HIDDEN">thiel@xxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 05 Jan 2005 10:03:59 +0100</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-40@DOMAIN.HIDDEN">srfi-40@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:416C04CC.7070005@DOMAIN.HIDDEN">416C04CC.7070005@xxxxxxxxxx</a>&gt; (David Van Horn's message of &quot;Tue, 12 Oct 2004 12:22:36 -0400&quot;)</li>
+<li><em>References</em>: &lt;<a href="mailto:y9lhdq7gxj3.fsf@DOMAIN.HIDDEN">y9lhdq7gxj3.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:y9lllfh3x72.fsf@DOMAIN.HIDDEN">y9lllfh3x72.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:Pine.GSO.4.60.0409110853540.8837@DOMAIN.HIDDEN">Pine.GSO.4.60.0409110853540.8837@xxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:416C04CC.7070005@DOMAIN.HIDDEN">416C04CC.7070005@xxxxxxxxxx</a>&gt;</li>
+<li><em>Sender</em>: Alexander Thiel &lt;<a href="mailto:thiel@DOMAIN.HIDDEN">thiel@xxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Gnus/5.1007 (Gnus v5.10.7) Emacs/21.3 (gnu/linux)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>David Van Horn &lt;dvanhorn-uTS83RNB0zM3uPMLIKxrzw@xxxxxxxxxxxxxxxx&gt; writes:
+
+&gt;
+&gt; I've checked in changes to address both of these issues.  Please
+&gt; let me know if any other problems exist with the reference
+&gt; implementation.
+&gt;
+&gt; David
+&gt;
+
+Hello David,
+
+actually there is another problem with the reference
+implementation. With the code from
+<a  rel="nofollow" href="http://srfi.schemers.org/srfi-40/srfi-40.html">http://srfi.schemers.org/srfi-40/srfi-40.html</a> downloaded on January
+5th, 2005 I get the following error:
+
+&gt; mzscheme -L 9.ss srfi --load srfi-40-ref.scm
+Welcome to MzScheme version 208, Copyright (c) 2004 PLT Scheme, Inc.
+&gt; (stream-car (stream 1 2 3))
+car: expects argument of type &lt;pair&gt;; given lazy
+
+The problem is in the definition of stream-low-level-force which for
+the chosen implementation of a promise I believe should read:
+
+(define (stream-low-level-force promise)
+    (case (car promise)
+      ((eager) (cdr promise))
+      ((lazy)  (let ((promise* (stream-promise ((cdr promise)))))
+                 (if (not (eqv? (car promise*) 'eager))
+                     (begin (set-car! promise (car promise*))
+                            (set-cdr! promise (cdr promise*))
+                            (set-car! promise* promise)))
+                 (stream-low-level-force promise)))))
+
+Cheers,
+
+        Alex
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00001" href="msg00001.html">Problems with SRFI document</a></strong>
+<ul><li><em>From:</em> Gordon Weakliem</li></ul></li>
+<li><strong><a name="00002" href="msg00002.html">Re: Problems with SRFI document</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+<li><strong><a name="00003" href="msg00003.html">Re: Problems with SRFI document</a></strong>
+<ul><li><em>From:</em> Andre van Tonder</li></ul></li>
+<li><strong><a name="00007" href="msg00007.html">Re: Problems with SRFI document</a></strong>
+<ul><li><em>From:</em> David Van Horn</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00007.html">Re: Problems with SRFI document</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00009.html">Corrected reference implementation</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00007.html">Re: Problems with SRFI document</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00006.html">Library of functions for manipulating streams</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00008"><strong>Date</strong></a></li>
+<li><a href="threads.html#00008"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

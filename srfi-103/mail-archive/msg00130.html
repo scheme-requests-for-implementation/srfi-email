@@ -1,0 +1,153 @@
+<!-- MHonArc v2.6.16 -->
+<!--X-Subject: Re: remaining issue: Windows&#45;disallowed file names -->
+<!--X-From-R13: "D. Yrag Rloivt" <qloNpf.vaqvnan.rqh> -->
+<!--X-Date: Sun, 14 Mar 2010 04:12:28 +0000 (UTC) -->
+<!--X-Message-Id: 201003140412.o2E4CmjY023679@garbo.cs.indiana.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 1267837572.12814.109.camel@eep -->
+<!--X-Reference: 201003070545.o275jjtC014624@garbo.cs.indiana.edu -->
+<!--X-Reference: 1268013838.23559.217.camel@eep -->
+<!--X-Reference: 201003081842.o28IgsK7032406@garbo.cs.indiana.edu -->
+<!--X-Reference: 1268121335.29314.390.camel@eep -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: remaining issue: Windows-disallowed file names</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00129.html">Date Prev</a>][<a href="msg00131.html">Date Next</a>][<a href="msg00129.html">Thread Prev</a>][<a href="msg00131.html">Thread Next</a>][<a href="maillist.html#00130">Date Index</a>][<a href="threads.html#00130">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: remaining issue: Windows-disallowed file names</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-103@DOMAIN.HIDDEN">srfi-103@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: remaining issue: Windows-disallowed file names</li>
+<li><em>From</em>: &quot;R. Kent Dybvig&quot; &lt;<a href="mailto:dyb@DOMAIN.HIDDEN">dyb@xxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 13 Mar 2010 23:12:48 -0500</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-103@DOMAIN.HIDDEN">srfi-103@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:1268121335.29314.390.camel@DOMAIN.HIDDEN"><a href="msg00129.html">1268121335.29314.390.camel@eep</a></a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:1267837572.12814.109.camel@DOMAIN.HIDDEN"><a href="msg00119.html">1267837572.12814.109.camel@eep</a></a>&gt; &lt;<a href="mailto:201003070545.o275jjtC014624@DOMAIN.HIDDEN">201003070545.o275jjtC014624@xxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:1268013838.23559.217.camel@DOMAIN.HIDDEN"><a href="msg00126.html">1268013838.23559.217.camel@eep</a></a>&gt; &lt;<a href="mailto:201003081842.o28IgsK7032406@DOMAIN.HIDDEN">201003081842.o28IgsK7032406@xxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:1268121335.29314.390.camel@DOMAIN.HIDDEN"><a href="msg00129.html">1268121335.29314.390.camel@eep</a></a>&gt;</li>
+<li><em>User-agent</em>: Heirloom mailx 12.4 7/29/08</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; In conclusion, I don't see why considering library names as
+&gt; representations of contemporary file names is proper, and I don't see
+&gt; why it outweighs the importance of abstract unrestricted library names.
+
+All of what you say follows from your perspective but is uncompelling to
+me from my perspective.  So perhaps we just have to agree to disagree.
+
+But in your second-to-last paragraph:
+
+&gt; If you want to override the SRFI to catch such library names, you can
+&gt; also map them to a file name without the SRFI's encoding (maybe just the
+&gt; &quot;absolute path&quot; first symbol).  Same for ~.
+
+lies a possible compromise I might be able to justify implementing: 
+require a system to look first for the unencoded version of the
+constructed pathname (ignoring search-path prefixes if the pathname is
+absolute in the host filesystem) and, if that fails, then for the encoded
+version.  For example, say the list of library directories includes &quot;lib1&quot;
+and &quot;lib2&quot; and the list of library extensions includes only &quot;sls&quot;.  Then
+the system looks for (/ foo) first in /foo.sls, then in lib1/%2f%/foo.sls,
+then in lib2/%2f%/foo.sls.  It looks for (srfi :1) first in
+lib1/srfi/:1.sls, then in lib2/srfi/:1.sls, then in lib1/srfi/%3a%1.sls,
+then in lib2/srfi/%3a%1.sls.  This should allow one to name any file that
+exists in the filesystem and to specify absolute pathnames for convenience
+or security, without inhibiting the sharing of filenames with funny
+characters via the %scalar-value% encoding.  Obviously, a system could
+choose not to bother trying the unencoded version of the path name if it
+is clearly not valid for the underlying filesystem.
+
+Incidentally, is there a reason to chose &quot;r6rs-lib&quot; as the extension for
+R6RS libraries rather than the shorter &quot;sls&quot; as recommended in the R6RS
+non-normative appendices?  We selected sls because it did not (to our
+knowledge) conflict with existing extensions for Scheme source code, so I
+assume that's not your reason.  If there is no particular reason why you
+chose r6rs-lib, please change it to sls.
+
+Also, Chez Scheme treats a trailing separator character (&quot;:&quot; under
+Unix-based systems, &quot;;&quot; under Windows) in its variants of SCHEME_LIB_PATH
+and SCHEME_LIB_EXTENSIONS as an indication that the system should look in
+the system-specific libraries/extensions if the library isn't found in
+the user-specified set.  (This mirrors similar behavior for the
+LD_LIBRARY_PATH variable used by some Unix dynamic loaders.)  Perhaps SRFI
+103 should do the same.  For example, if SCHEME_LIB_PATH is set to
+&quot;foo:bar&quot; on a Unix-based system, the system should look in foo and bar
+only, but if SCHEME_LIB_PATH is set to &quot;foo:bar:&quot;, the system should look
+in foo, bar, and any system-specific library directories.  It is useful to
+prevent the system from looking in system-specific libraries if you want
+to make sure you know exactly where each library is coming from, and it is
+useful for user directories to be searched first if you have a library
+you want used in preference to one shipped with the implementation.
+
+Kent
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00131" href="msg00131.html">Re: remaining issues</a></strong>
+<ul><li><em>From:</em> Derick Eddington</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00119" href="msg00119.html">remaining issue: Windows-disallowed file names</a></strong>
+<ul><li><em>From:</em> Derick Eddington</li></ul></li>
+<li><strong><a name="00124" href="msg00124.html">Re: remaining issue: Windows-disallowed file names</a></strong>
+<ul><li><em>From:</em> R. Kent Dybvig</li></ul></li>
+<li><strong><a name="00126" href="msg00126.html">Re: remaining issue: Windows-disallowed file names</a></strong>
+<ul><li><em>From:</em> Derick Eddington</li></ul></li>
+<li><strong><a name="00128" href="msg00128.html">Re: remaining issue: Windows-disallowed file names</a></strong>
+<ul><li><em>From:</em> R. Kent Dybvig</li></ul></li>
+<li><strong><a name="00129" href="msg00129.html">Re: remaining issue: Windows-disallowed file names</a></strong>
+<ul><li><em>From:</em> Derick Eddington</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00129.html">Re: remaining issue: Windows-disallowed file names</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00131.html">Re: remaining issues</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00129.html">Re: remaining issue: Windows-disallowed file names</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00131.html">Re: remaining issues</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00130"><strong>Date</strong></a></li>
+<li><a href="threads.html#00130"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

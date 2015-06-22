@@ -1,0 +1,226 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: div0 and mod0 -->
+<!--X-From-R13: Penqyrl Zhpvre <yhpvreNzngu.cheqhr.rqh> -->
+<!--X-Date: Mon, 28 Aug 2006 01:16:13 +0200 (MST) -->
+<!--X-Message-Id: BB5979CF&#45;6F7B&#45;497D&#45;98B1&#45;F1476F3AE987@math.purdue.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: E1GCjOI&#45;00034r&#45;WC@adara.ccs.neu.edu -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: div0 and mod0</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00505.html">Date Prev</a>][<a href="msg00507.html">Date Next</a>][<a href="msg00505.html">Thread Prev</a>][<a href="msg00507.html">Thread Next</a>][<a href="maillist.html#00506">Date Index</a>][<a href="threads.html#00506">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: div0 and mod0</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: William D Clinger &lt;<a href="mailto:will@DOMAIN.HIDDEN">will@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: div0 and mod0</li>
+<li><em>From</em>: Bradley Lucier &lt;<a href="mailto:lucier@DOMAIN.HIDDEN">lucier@xxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 27 Aug 2006 19:16:03 -0400</li>
+<li><em>Cc</em>: Bradley Lucier &lt;<a href="mailto:lucier@DOMAIN.HIDDEN">lucier@xxxxxxxxxxxxxxx</a>&gt;,	<a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:E1GCjOI-00034r-WC@DOMAIN.HIDDEN">E1GCjOI-00034r-WC@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:E1GCjOI-00034r-WC@DOMAIN.HIDDEN">E1GCjOI-00034r-WC@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+
+On Aug 14, 2006, at 4:50 PM, William D Clinger wrote:
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+The current revision of the reference implementation for
+SRFI 77 contains the following uses of div0 and mod0.
+(I have edited this to remove some debugging code that
+would be removed in the next major version anyway.)
+
+Similar uses of div0 and mod0 are found in the definition
+of fixnum*/carry, and similar uses will be found in a more
+efficient version of the bignum code if I ever get around
+to writing it.
+
+; The challenge of fixnum*/2 is to avoid overflow when
+; computing the intermediate results.  That is done here
+; by computing modulo 1/2 the usual modulus, which this
+; code assumes to be an even power of two.
+;
+; (a * m + b) * (c * m + d)
+; = (a * c) * m^2 + (a * d + b * c) * m + b * d
+
+(define (fixnum*/2 x y)
+  (call-with-values
+   (lambda () (fixnum-div0+mod0 x *half-modulus*))
+   (lambda (a b)
+     (call-with-values
+      (lambda () (fixnum-div0+mod0 y *half-modulus*))
+      (lambda (c d)
+        (let* ((a*d (r5rs:* a d))
+               (b*c (r5rs:* b c))
+               (b*d (r5rs:* b d))
+               (a*d+b*c (fixnum+/2 a*d b*c))
+               (hibits (fixnum-mod a*d+b*c *half-modulus*))
+               (hibits (if (fixnum&gt;? hibits *half-high*)
+                           (fixnum- hibits *half-modulus*)
+                           hibits))
+               (hi (r5rs:* hibits *half-modulus*))
+               (lo b*d))
+        (fixnum+/2 hi lo)))))))
+</pre></blockquote><pre style="margin: 0em;">
+
+Will:
+
+</pre><tt>You chose to illustrate the utility of fixnum-div0+mod0 by pointing  
+</tt><tt>to a routine in a runtime library.  That, and your comment that &quot;The  
+</tt><tt>challenge of fixnum*/2 is to avoid overflow,&quot; which, on its face,  
+</tt><tt>seems a bit extreme (avoiding overflow is *the* challenge?) reminded  
+</tt><tt>me of the following.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>My experience in building runtime libraries (little that it is---I  
+</tt><tt>wrote the final set of elementary function routines for UCSD Pascal  
+</tt><tt>and then worked with Marc Feeley on the arithmetic runtime of Gambit)  
+</tt><tt>is that the constraints one is given and the design choices that one  
+</tt><tt>makes are often unusual to the point of being unique.  For example,  
+</tt><tt>in UCSD Pascal the virtual machine would stop with an exception  
+</tt><tt>whenever a floating-point underflow-to-zero occurred.  This made it  
+</tt><tt>imperative that my library avoid all underflows; perhaps one might  
+</tt><tt>say that avoiding underflow was *the* challenge, though I would think  
+</tt><tt>that the true challenge was to get a reasonable amount of accuracy  
+</tt><tt>for arguments over close to the maximum possible range within a  
+</tt><tt>reasonable execution time. At the time I had a prepublication copy of  
+</tt><tt>Cody and Waite; I was able to suggest some changes to the draft based  
+</tt><tt>on my somewhat unusual constraints, and several of these changes were  
+</tt><tt>incorporated (although the algorithm in the published text for exp,  
+</tt><tt>which I didn't get to until just before publication, would still  
+</tt><tt>underflow in double precision on the VAX).
+</tt><pre style="margin: 0em;">
+
+</pre><tt>Since you say so, I believe that the challenge, given your  
+</tt><tt>constraints, is to avoid overflow, but I don't know why.  For  
+</tt><tt>example, in the Gambit Virtual Machine (GVM) it is assumed that  
+</tt><tt>signed multiplication &quot;wraps&quot;, in the terminology of GCC, and the  
+</tt><tt>Gambit runtime takes advantage of that fact, and uses the -fwrapv  
+</tt><tt>flag with gcc to ensure it.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>Your routine also assumes the availability of r5rs:*, but not,  
+</tt><tt>presumably, r5rs:modulus; that fixnum-div0+mod0 was written before,  
+</tt><tt>and not needing, fixnum*/2; and that you'd prefer to manipulate bit  
+</tt><tt>fields (which I presume you're doing, since I presume that *half- 
+</tt><tt>modulus*, etc., are powers of two) using fixnum-div0+mod0 instead of  
+</tt><tt>using shifts and logical operations, etc.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>As these constraints seem to me very artificial, I do not find this  
+</tt><tt>application of, or need for, fixnum-div0+mod0 compelling.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>Since you brought up runtime libraries, I decided to say what low- 
+</tt><tt>level fixnum routines are used in the runtime libraries for Gambit.
+</tt><pre style="margin: 0em;">
+
+(##fixnum.+  x y)       (adds with wrapping on overflow)
+(##fixnum.+? x y)       (returns x+y if it's a fixnum, or #f otherwise)
+(##fixnum.*  x y)       (returns wrapped version of x*y)
+</pre><tt>(##fixnum.*? x y)       (if y is not 0 or -1, returns x*y if it is a  
+</tt><tt>fixnum, or #f otherwise)
+</tt><pre style="margin: 0em;">
+(##fixnum.-  x y)       (returns wrapped version of x-y)
+(##fixnum.-? x y)       (returns x-y if it's a fixnum, or #f otherwise)
+</pre><tt>(##fixnum.-? x)         (returns -x if x is not the most negative  
+</tt><tt>fixnum, #f otherwise)
+</tt><pre style="margin: 0em;">
+##fixnum.quotient
+##fixnum.remainder
+##fixnum.modulo
+
+</pre><tt>plus some unchecked versions of bitwise shifts of various types, and  
+</tt><tt>other operations that do not differ in principle from their generic  
+</tt><tt>counterparts except that they can be specialized for fixnums: max,  
+</tt><tt>min, zero?, &lt;, ...
+</tt><pre style="margin: 0em;">
+
+(##fixnum.*? x y) calculates
+
+(temp = x*y, (temp/y=x ? temp : #f))
+
+</pre><tt>which is a correct test for overflow in multiplication if overflow  
+</tt><tt>wraps and y is not 0 or -1 (there are those constraints again!) and  
+</tt><tt>full multiplication of fixnums (which can be inlined if necessary) is
+</tt><pre style="margin: 0em;">
+
+      (cond ((##fixnum.= y 0)
+             0)
+            ((if (##fixnum.= y -1)
+                 (##fixnum.-? x)
+                 (##fixnum.*? x y))
+             =&gt; (lambda (result) result))
+            (else
+             (##bignum.* (##bignum.&lt;-fixnum x) (##bignum.&lt;-fixnum y))))
+
+</pre><tt>If you like, I can argue that *these* operations be included in R6RS,  
+</tt><tt>and can offer the Gambit runtime as evidence that these operations  
+</tt><tt>are useful.
+</tt><pre style="margin: 0em;">
+
+But I don't intend to do that.
+
+Brad
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00505" href="msg00505.html">Re: div0 and mod0</a></strong>
+<ul><li><em>From:</em> William D Clinger</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00505.html">Re: div0 and mod0</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00507.html">Re: div0 and mod0</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00505.html">Re: div0 and mod0</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00507.html">Re: div0 and mod0</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00506"><strong>Date</strong></a></li>
+<li><a href="threads.html#00506"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

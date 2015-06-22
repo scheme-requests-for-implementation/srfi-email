@@ -1,0 +1,119 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Missing GC_PROTECTs in reference implementation -->
+<!--X-From-R13: [negva Unfovpuyre <tnfovpuyNvasbezngvx.hav&#45;ghrovatra.qr> -->
+<!--X-Date: Tue,  6 May 2003 16:55:20 +0200 (DFT) -->
+<!--X-Message-Id: 64ptmwxgyw.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Missing GC_PROTECTs in reference implementation</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[Date Prev][Date Next][Thread Prev][Thread Next][<a href="maillist.html#00000">Date Index</a>][<a href="threads.html#00000">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Missing GC_PROTECTs in reference implementation</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-27@DOMAIN.HIDDEN">srfi-27@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Missing GC_PROTECTs in reference implementation</li>
+<li><em>From</em>: Martin Gasbichler &lt;<a href="mailto:gasbichl@DOMAIN.HIDDEN">gasbichl@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 06 May 2003 16:55:19 +0200</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-27@DOMAIN.HIDDEN">srfi-27@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Gnus/5.1001 (Gnus v5.10.1) XEmacs/21.4 (Portable Code, berkeley-unix)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+The reference implementation for Scheme 48 lacks some annotations for
+the garbage collector. Here is a patch:
+
+--- mrg32k3a-b.c.orig   Tue May  6 16:35:56 2003
++++ mrg32k3a-b.c        Tue May  6 16:40:06 2003
+@@ -113,6 +113,9 @@
+ s48_value mrg32k3a_pack_state1(s48_value state) {
+   s48_value result;
+   state_t   s;
++  S48_DECLARE_GC_PROTECT(1);
++
++  S48_GC_PROTECT_1(state); /* s48_extract_integer may GC */
+ 
+ #define REF(i) (double)s48_extract_integer(S48_VECTOR_REF(state, (long)(i)))
+ 
+@@ -126,6 +129,8 @@
+ 
+ #undef REF
+ 
++  S48_GC_UNPROTECT();
++
+   /* box s into a Scheme object */
+   result = S48_MAKE_VALUE(state_t);
+   S48_SET_VALUE(result, state_t, s);
+@@ -133,9 +138,12 @@
+ }
+ 
+ s48_value mrg32k3a_unpack_state1(s48_value state) {
+-  s48_value result;
++  s48_value result = S48_UNSPECIFIC;
+   state_t   s;
+ 
++  S48_DECLARE_GC_PROTECT(1);
++  S48_GC_PROTECT_1(result);
++
+   /* unbox s from the Scheme object */
+   s = S48_EXTRACT_VALUE(state, state_t);
+ 
+@@ -156,6 +164,8 @@
+   SET(10, s.x22);
+ 
+ #undef SET
++
++  S48_GC_UNPROTECT();
+ 
+   return result;
+ }
+
+
+Unlike documented in the manual, s48_extract_integer may cause a GC (if
+Scheme 48 needs a bignum to represent the number).
+
+-- 
+Martin
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00000"><strong>Date</strong></a></li>
+<li><a href="threads.html#00000"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

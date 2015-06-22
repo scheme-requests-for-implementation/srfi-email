@@ -1,0 +1,189 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: a separate configuration language -->
+<!--X-From-R13: fcreoreNWasbezngvx.Gav&#45;Fhrovatra.Rr ([vpunry Ecreore M[e. Bercebprffbe]) -->
+<!--X-Date: Sun, 28 Feb 1999 03:18:48 &#45;0600 (CST) -->
+<!--X-Message-Id: y9lk8x2aolk.fsf@brabantio.informatik.uni&#45;tuebingen.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 199902261959.OAA12390@kima.nj.nec.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: a separate configuration language</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00024.html">Date Prev</a>][<a href="msg00026.html">Date Next</a>][<a href="msg00024.html">Thread Prev</a>][<a href="msg00026.html">Thread Next</a>][<a href="maillist.html#00025">Date Index</a>][<a href="threads.html#00025">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: a separate configuration language</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-0@DOMAIN.HIDDEN">srfi-0@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: a separate configuration language</li>
+<li><em>From</em>: <a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a> (Michael Sperber [Mr. Preprocessor])</li>
+<li><em>Date</em>: 28 Feb 1999 10:01:43 +0100</li>
+<li><em>Cc</em>: Richard Kelsey &lt;<a href="mailto:kelsey@DOMAIN.HIDDEN">kelsey@xxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>In-reply-to</em>: Richard Kelsey's message of &quot;Fri, 26 Feb 1999 14:59:55 -0500&quot;</li>
+<li><em>References</em>: &lt;<a href="mailto:199902261959.OAA12390@DOMAIN.HIDDEN">199902261959.OAA12390@xxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Sender</em>: <a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt;&gt;&gt;&gt;&gt; &quot;Richard&quot; == Richard Kelsey &lt;kelsey@xxxxxxxxxxxxxxxxxxx&gt; writes:
+
+Richard&gt;    References: &lt;199902261636.LAA11953@xxxxxxxxxxxxxxx&gt;
+Richard&gt;    From: sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx (Michael Sperber [Mr. Preprocessor])
+Richard&gt;    Date: 26 Feb 1999 17:52:16 +0100
+
+Richard&gt;    Sure, that's just not the way we intended it to be written.
+
+Richard&gt; It's the way you wrote it in the revised SRFI.  I quote:
+
+Richard&gt;  where the programmer is implementing some abstraction that can use
+Richard&gt;  function aaa from SRFI a or can use function bbb from SRFI b. However,
+Richard&gt;  the semantic fit with aaa is substantially better, which the programmer
+Richard&gt;  recognized by giving that implementation first.
+
+Ooops.  Our wording is obviously incorrect.  It's probably a remnant
+from an earlier draft.  This should be fixed.  I'll get to work on
+something tomorrow.
+
+Richard&gt; All I did was make srfi-a and srfi-b a little more concrete.
+
+Richard&gt;    How about:
+
+Richard&gt;    (cond-implements
+Richard&gt;      (srfi-x 'good)
+Richard&gt;      (else
+Richard&gt;        (cond-implements
+Richard&gt; 	(srfi-y (display &quot;GIF only, sorry&quot;)
+Richard&gt; 		(newline)
+Richard&gt; 		... jpeg stubs that raise errors ...))
+
+Richard&gt;    ?
+
+Richard&gt; I don't see why this makes a difference.  Is the intent that the
+Richard&gt; implementation not be allowed to choose the ELSE clause if it
+Richard&gt; doesn't have to?
+
+Exactly.  This should also be clarified.  Sorry for the sloppy
+wording.
+
+Richard&gt; What if the ELSE clause has a more efficient implementation
+Richard&gt; than any others?  The existence of a feature may make the
+Richard&gt; program less efficient rather than more.
+
+Then you should have written your COND-IMPLEMENTS form the other way
+around, using NOT.  (Now I finally see what NOT is for.  You read
+this, Dave?)
+
+Richard&gt; What bothers me is that the programmer and user know so much and
+Richard&gt; the implementation knows so little.  All the implementation knows
+Richard&gt; about is the general efficiency of its SRFI implementations.
+Richard&gt; It knows nothing about the semantic loss of a particular choice,
+Richard&gt; or the actual efficieny gains.  What if the semantic loss is
+Richard&gt; crucial to the user, or if the program only makes minimal use
+Richard&gt; of an SRFI?  In neither case would the efficieny matter.
+
+I agree, but as pointed out above, the idea of COND-IMPLEMENTS is that
+the implementation must choose a non-ELSE branch if it can.  This
+allows you to write down a linear conditional if you want.
+
+Richard&gt; It makes it hard to determine what program is actually going to run.
+Richard&gt; Suppose SRFI-Y defines function Y and SRFI-Z defines function Z and
+Richard&gt; both require some kind of initialization.  My program leads off with:
+
+Richard&gt;   (cond-implements ((and srfi-x srfi-y)
+Richard&gt;                     ... initialize y using x ...)
+Richard&gt;                    ((and srfi-x srfi-z)
+Richard&gt;                     ... initialize z using x ...)
+Richard&gt;                    (else
+Richard&gt;                     (error &quot;insufficient implementation&quot;)))
+
+Richard&gt; Later I do:
+
+Richard&gt;   (cond-implements (srfi-y (y))
+Richard&gt;                    (srfi-z (z)))
+
+Richard&gt; If the implementation prefers SRFI-Z to SRFI-Y in the presence
+Richard&gt; of SRFI-X, but the other way around without SRFI-X, then this will
+Richard&gt; break because the second form will call the uninitialized SRFI.
+Richard&gt; In fact, there is no COND-IMPLEMENTS form I can write which will
+Richard&gt; necessarily call the correct function, if the implementation is
+Richard&gt; free to ignore previous choices.
+
+Sure, but that's because your program is buggy.
+
+(cond-implements ((and srfi-x srfi-y)
+                  ... initialize y using x ...)
+                  (define a y)
+                 ((and srfi-x srfi-z)
+                  ... initialize z using x ...)
+                  (define a z)
+                 (else
+                  (error &quot;insufficient implementation&quot;)))
+
+(a)
+
+I agree this needs to be documented more clearly.
+
+-- 
+Cheers =8-} Mike
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00026" href="msg00026.html">Re: a separate configuration language</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr. Preprocessor]</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00024" href="msg00024.html">Re: a separate configuration language</a></strong>
+<ul><li><em>From:</em> Richard Kelsey</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00024.html">Re: a separate configuration language</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00026.html">Re: a separate configuration language</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00024.html">Re: a separate configuration language</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00026.html">Re: a separate configuration language</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00025"><strong>Date</strong></a></li>
+<li><a href="threads.html#00025"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

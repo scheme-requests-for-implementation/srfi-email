@@ -1,0 +1,159 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: behaviour of ~&#38; in format string -->
+<!--X-From-R13: Yra Rvpxrl <Yra.RvpxrlNnyyinagntr.pbz> -->
+<!--X-Date: Sun,  3 Jul 2005 05:33:58 +0200 (DFT) -->
+<!--X-Message-Id: 200507021937.09753.Ken.Dickey@allvantage.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20050702164629.4e654237.lewis@napanet.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: behaviour of ~&amp; in format string</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00023.html">Date Prev</a>][Date Next][<a href="msg00023.html">Thread Prev</a>][Thread Next][<a href="maillist.html#00024">Date Index</a>][<a href="threads.html#00024">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: behaviour of ~&amp; in format string</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Stephen Lewis &lt;<a href="mailto:lewis@DOMAIN.HIDDEN">lewis@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: behaviour of ~&amp; in format string</li>
+<li><em>From</em>: Ken Dickey &lt;<a href="mailto:Ken.Dickey@DOMAIN.HIDDEN">Ken.Dickey@xxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 2 Jul 2005 19:37:08 -0700</li>
+<li><em>Cc</em>: SRFI-48 mailing list &lt;<a href="mailto:srfi-48@DOMAIN.HIDDEN">srfi-48@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-48@DOMAIN.HIDDEN">srfi-48@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20050702164629.4e654237.lewis@DOMAIN.HIDDEN">20050702164629.4e654237.lewis@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Organization</em>: BitWize Consulting</li>
+<li><em>References</em>: &lt;<a href="mailto:20050702164629.4e654237.lewis@DOMAIN.HIDDEN">20050702164629.4e654237.lewis@xxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: KMail/1.7</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Stephen,
+
+You raise a good point about the inability of FORMAT to determine, between 
+invocations, that a new line has been started.
+
+The reason that the reference implementation of FORMAT does not remember state 
+about the last character between invocations is that [1] it is not the only 
+function which side effects output, and [2] there is no _portable_ way to 
+query a Scheme port to determine it's state history with respect to newlines.
+
+Consider the following example:
+
+(format &quot;abc~%&quot;)
+(display &quot;x&quot;)
+(format &quot;~&amp;def~&amp;ghi~%&quot;)
+
+
+A &quot;stateful&quot; format would be correct with your sample, but in the above case 
+yield the (incorrect)
+
+ abc
+ xdef
+ ghi
+
+rather than the correct &quot;unstateful&quot; (current) srfi-48
+
+ abc
+ x
+ def
+ ghi
+
+Given the amazing creativity w.r.t port implementations amoung various Scheme 
+runtimes, I opted NOT to try and respecify/shadow/override all output as part 
+of SRFI-48.  There are  just too many non-R^nRS output functions in use (in 
+object ports, vector ports, fifo ports, graphic ports...).
+
+Given this lack, I chose to be &quot;wrong&quot; in cases where state would be required 
+to be &quot;remembered&quot; between invocations of FORMAT rather than the converse.
+
+Note that this does accord with the Common Lisp definition for ~&amp; :
+
+  &quot;Unless it can be determined that the output stream is already at 
+   the beginning of a line, this outputs a newline&quot;.
+
+Traditionally, this is implemented as a call to the function FRESH-LINE, where 
+the text elucidates [&quot;this&quot; refers to being at the start of a line]:
+  &quot;(If for some reason this cannot be determined, then a newline is output   
+  anyway).&quot;
+
+[Guy Steele, Jr, _Common LISP, The Language, Second Edition_, Digital Press, 
+1990, pg 596, pg 579].
+
+FRESH-LINE is implemented various Scheme dialects (e.g. MIT-Scheme, T) with 
+the same definition.
+
+The CL specification, and my implementation, are conservative but may result 
+in a &quot;spurious&quot; newline--which IS allowed by the definition.
+
+It is probably worthwhile mentioning this in the ISSUES section of SRFI-48.
+
+I have been neglegent in this respect and shall update the text.
+
+Thanks much for pointing this out.
+
+-KenD
+
+===========================================
+On Saturday 02 July 2005 16:46, you wrote:
+&gt; Ken Dickey,
+&gt; I believe that '~&amp;&quot; should ensure that output begins on a new line. That
+&gt; is, output a newline character if (and only if) the output stream is *not*
+&gt; already at the start of a line. 
+&gt; ... 
+&gt; (format t &quot;abc~%&quot;)
+&gt; (format t &quot;~&amp;def~&amp;ghi~%&quot;)
+...
+&gt;== I believe that the blank line between &quot;abc&quot; and &quot;def&quot; (which only occurs
+&gt; when I use srfi-48 under either Guile or Gauche) is spurious,
+&gt; Stephen Lewis
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00023" href="msg00023.html">behaviour of ~&amp; in format string</a></strong>
+<ul><li><em>From:</em> Stephen Lewis</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00023.html">behaviour of ~&amp; in format string</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00023.html">behaviour of ~&amp; in format string</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00024"><strong>Date</strong></a></li>
+<li><a href="threads.html#00024"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

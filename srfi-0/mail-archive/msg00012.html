@@ -1,0 +1,139 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: logical operations in if&#45;implements -->
+<!--X-From-R13: Bre Pbguare <obguareNpltahf.pbz> -->
+<!--X-Date: Sat, 16 Jan 1999 00:02:31 &#45;0600 (CST) -->
+<!--X-Message-Id: 199901160602.WAA10985@cygnus.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>logical operations in if-implements</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00011.html">Date Prev</a>][<a href="msg00013.html">Date Next</a>][<a href="msg00009.html">Thread Prev</a>][<a href="msg00028.html">Thread Next</a>][<a href="maillist.html#00012">Date Index</a>][<a href="threads.html#00012">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>logical operations in if-implements</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-0@DOMAIN.HIDDEN">srfi-0@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: logical operations in if-implements</li>
+<li><em>From</em>: Per Bothner &lt;<a href="mailto:bothner@DOMAIN.HIDDEN">bothner@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 15 Jan 1999 22:02:28 -0800</li>
+<li><em>Cc</em>: <a href="mailto:bothner@DOMAIN.HIDDEN">bothner@xxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>The if-implements macro provides some of same functionality
+of the C pre-processor.  I.e.:
+
+	(if-implements  FEATURE-ID DEFINITION)
+
+corresponds to:
+
+	#ifdef FEATURE_ID
+	DEFINITION
+	#endif
+
+However, cpp allows a much more general expression language.
+Most of the time, one does not need it, but it is occasionally useful.
+It is easy to generalize if-implements to conditionals:
+
+	(if-implements (and FEATURE1 FEATURE2) DEFS1 DEFS2)
+is equivalent to:
+	(if-implements FEATURE1 (if-implements FEATURE2 DEFS1 DEFS2) DEFS2)
+
+and
+        (if-implements (or FEATURE1 FEATURE2) DEFS1 DEFS2)
+is equivalent to:
+	(if-implements FEATURE1 DEFS1 (if-implements FEATURE2 DEFS1 DEFS2))
+
+and
+	(if-implememnts (not FEATURE) DEFS1 DEFS2)
+is equivalent to:
+	(if-implements FEATURE DEFS2 DEFS1)
+
+In other words:  Though and, or and not do not provide more power,
+they may provie some convenience.
+
+That leads to a more general idea of a compile-time expression
+evaluation using names from a special compile-time name-space
+- which of course is what cpp offers.
+
+For example, if version 2.00 of implementation foo is known to have a bug
+for which we know a work-around, we can do:
+	(if-implements (and foo (= foo-version 200)) work-around)
+
+Thus a proposal for a more general concept:
+
+(if-defined &lt;compile-time-expression&gt; &lt;form-1&gt; &lt;form-2&gt;)
+
+This evaluates &lt;compile-time-expression&gt; at macro-substitution time,
+in an implementation-defined namespace that includes all the
+names of R5RS.  (However, only constants and side-effect free
+functions are allowed.)  Any names in &lt;compile-time-expression&gt;
+that are not defined in the implementation namespace are assumed
+to be #f.  (It follows that it is an error to use an undefined
+name in function position or an arithmetic operation.)
+
+This subsumes if-implemented, as well as the expression evaluation
+features of cpp.  I do not propose a way for the user #define new names,
+though an implemenation might allow names to be specified on the
+command line, or when loading a new module.
+
+	--Per Bothner
+Cygnus Solutions     bothner@xxxxxxxxxx     <a  rel="nofollow" href="http://www.cygnus.com/~bothner">http://www.cygnus.com/~bothner</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00028" href="msg00028.html">Re: logical operations in if-implements</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00011.html">Re: Namespace management &amp; SRFI-0</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00013.html">Suggestion for SRFI 0</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00009.html">Re: IF-IMPLEMENTS restricted to top-level?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00028.html">Re: logical operations in if-implements</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00012"><strong>Date</strong></a></li>
+<li><a href="threads.html#00012"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,224 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: let&#45;fluid problem -->
+<!--X-From-R13: Znef Fubznf Vnafra <yguNppf.arh.rqh> -->
+<!--X-Date: Wed, 24 Nov 1999 12:36:21 &#45;0600 (CST) -->
+<!--X-Message-Id: 199911241836.NAA21314@vega.ccs.neu.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 199911192230.RAA00927@mongkok.ai.mit.edu -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: let-fluid problem</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00010.html">Date Prev</a>][<a href="msg00012.html">Date Next</a>][<a href="msg00010.html">Thread Prev</a>][<a href="msg00004.html">Thread Next</a>][<a href="maillist.html#00011">Date Index</a>][<a href="threads.html#00011">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: let-fluid problem</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: let-fluid problem</li>
+<li><em>From</em>: Lars Thomas Hansen &lt;<a href="mailto:lth@DOMAIN.HIDDEN">lth@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 24 Nov 1999 13:36:19 -0500</li>
+<li><em>Cc</em>: <a href="mailto:srfi-15@DOMAIN.HIDDEN">srfi-15@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: Your message of &quot;Fri, 19 Nov 1999 17:30:57 EST.&quot;             &lt;<a href="mailto:199911192230.RAA00927@DOMAIN.HIDDEN">199911192230.RAA00927@xxxxxxxxxxxxxxxxxx</a>&gt; </li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+(Second followup, different subtopic)
+
+Olin writes (in an earlier message, sorry for lengthy quote):
+
+&gt;I would like to argue against any DYNAMIC-WIND + SET! sort of
+&gt;&quot;fluid variable&quot; system. The problem is threads. If you have a
+&gt;thread model, then any thread switch involves unwinding up the
+&gt;stack to the common ancestor continuation, then winding down into
+&gt;the activated continuation. This seems unacceptably expensive; thread
+&gt;switch should be a low-overhead operation.
+&gt;
+&gt;Because of this issue, I strongly prefer making fluid variables
+&gt;a primitive construct. Scheme48's system is a pretty canonical example
+&gt;of this genre. &quot;Fluid variables&quot; are data structures. So you have the
+&gt;following primitive procedures:
+&gt;   (MAKE-FLUID value) -&gt; fluid
+&gt;   (LET-FLUID fluid value thunk)
+&gt;   (LET-FLUIDS fluid1 value1 ... fluidn valuen thunk)
+&gt;   (FLUID fluid) -&gt; value
+&gt;   (SET-FLUID! fluid value)
+&gt;There are no primitive syntax forms. This design is not unique to S48;
+&gt;I believe it was proposed by someone other than Kelsey &amp; Rees, and
+&gt;is used elsewhere (but I can't recall who or where).
+&gt;
+&gt;Fluid values are cells that have dynamic scope, as provided by LET-FLUID.
+&gt;You typically bind them to global vars, e.g.
+&gt;    (define $cwd (make-fluid #f))
+&gt;    (define (with-cwd dir thunk) (let-fluid $cwd dir thunk))
+&gt;Throwing in or out of LET-FLUID scope does the right thing, as you'd want.
+&gt;
+&gt;Single-threaded implementations can provide fluids using DYNAMIC-WIND,
+&gt;*but* multithreaded implementatins can implement fluids using deep
+&gt;binding techniques, providing fast thread switch. This is not possible
+&gt;with a system that actually effects variables.
+
+Remarkably, it _is_ possible.
+
+The specification only says that valuables are stored in the dynamically
+bound variables, but specifies nothing about the mechanism.  All we need
+is a mechanism that (a) allows code inside the scope of the FLUID-LET to
+get and set the dynamically bound values, (b) allows code outside the
+scope of a FLUID-LET to get and set the original value, and (c) gets rid
+of the unwind/wind problem.
+
+For the sake of argument, take the case where the dynamically bound
+variable is a global.  In Larceny, a global has a single value slot, and
+reading a global is implemented using the following code sequence:
+
+get() =
+	get constant-vector from procedure
+	get global-cell from constant-vector
+	get global-cell.value
+	if value is #!undefined, then TRAP
+	return value
+
+and writing a global is implemented using the following sequence:
+
+store(object) =
+	get constant-vector from procedure
+	get global-cell from constant-vector
+	store object in global-cell.value
+
+This mechanism can be changed as follows.  The idea is to use the
+undefined-checking as a fast check for fluidness and handle dynamically
+bound variables out-of-line.  
+
+A global cell is given a second value word, whose initial value is #f.
+If its value is #f then the global is not dynamically bound by any part
+of the program; if its value is #t, then some part of the program has a
+FLUID-LET in effect on the variable.
+
+The code for reading the global is modified as follows:
+
+	[get cell as before]
+	get global-cell.value1
+	if value1 is #!undefined, then			[ fluid or undefined ]
+		get global-cell.value2
+		if value2 is #f, then 
+			TRAP				[ undefined variable ]
+		return lookup-fluid(global-cell)	[ fluid ]
+	else return value1				[ normal ]
+
+The code for writing the global is modified as follows:
+
+	[get cell as before]
+	get global-cell.value1
+	if value1 is #!undefined, then			[ maybe fluid? ]
+		get global-cell.value2
+		if value2 is #f, then			[ undefined ]
+			store object in global-cell.value1
+		else					[ fluid ]
+			store-fluid(global-cell,object)
+	else store object in global-cell.value1
+
+The functions lookup-fluid and store-fluid can use whatever storage
+mechanism they like to map variables to values (notably thread-local
+storage and deep binding).  
+
+One piece remains: FLUID-LET would do something like this on entry:
+
+	if global is already dynamically bound then
+		save current value 
+		store new value for lookup-fluid to find
+	else
+		save current value for lookup-fluid to find; this is
+			the value outside any FLUID-LET
+		set global.value1 to #!undefined
+		set global.value2 to #t
+		store new value for lookup-fluid to find
+
+and the opposite on exit, except that it takes a little effort to make
+sure that the last thread to undo a fluid binding on the global restores
+the global to a &quot;normal&quot; value.
+
+The cost to code that reads globals is 0 for globals that are not
+dynamically bound, and a call-out of some sort for globals that are
+dynamically bound.  The cost in code size is effectively 0 because the
+code that checks value2 can be moved into the trap handler.
+
+The cost to code that writes globals is a compare and statically
+predictable branch for globals that are not dynamically bound, and in
+addition a call-out for globals that are dynamically bound.
+
+The space cost is one _bit_ per global, which in some implementations
+will probably need to be rounded up to one or two words.
+
+In addition, the mechanism requires that global-variable checking is
+never turned off in programs that use fluid variables implemented
+with this technique.
+
+For lexically scoped variables (I find I use fluid-let with these more
+than with globals) the problem is a little thornier because they are not
+usually checked for definedness; however, if FLUID-LET is known to the
+compiler then the compiler can insert the necessary checks on access
+to variables that are fluidly bound in the lexical scope.
+
+(For multiprocessors -- well, I don't know.  I didn't say I was
+advocating this implementation, only that the SRFI-15 spec does not
+necessarily imply the unwind/wind cost on a thread switch.)
+
+--lars
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00007" href="msg00007.html">Re: let-fluid problem</a></strong>
+<ul><li><em>From:</em> shivers</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00010.html">Re: let-fluid problem</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00012.html">[srfi-15] FLUID-LET wrapup</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00010.html">Re: let-fluid problem</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00004.html">Re: let-fluid problem</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00011"><strong>Date</strong></a></li>
+<li><a href="threads.html#00011"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

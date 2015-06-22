@@ -1,0 +1,184 @@
+<!-- MHonArc v2.6.16 -->
+<!--X-Subject: Re: proposing a simpler mechanism -->
+<!--X-From-R13: Rnivq Hna Vbea <qinaubeaNppf.arh.rqh> -->
+<!--X-Date: Tue, 12 Jan 2010 18:51:35 +0000 (UTC) -->
+<!--X-Message-Id: 4B4CC4A5.9060408@ccs.neu.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200911130158.nAD1ww8C007840@moose.cs.indiana.edu -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: proposing a simpler mechanism</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00034.html">Date Prev</a>][Date Next][<a href="msg00032.html">Thread Prev</a>][<a href="msg00021.html">Thread Next</a>][<a href="maillist.html#00035">Date Index</a>][<a href="threads.html#00035">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: proposing a simpler mechanism</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &quot;R. Kent Dybvig&quot; &lt;<a href="mailto:dyb@DOMAIN.HIDDEN">dyb@xxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: proposing a simpler mechanism</li>
+<li><em>From</em>: David Van Horn &lt;<a href="mailto:dvanhorn@DOMAIN.HIDDEN">dvanhorn@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 12 Jan 2010 13:51:17 -0500</li>
+<li><em>Cc</em>: <a href="mailto:srfi-102@DOMAIN.HIDDEN">srfi-102@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-102@DOMAIN.HIDDEN">srfi-102@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:200911130158.nAD1ww8C007840@DOMAIN.HIDDEN">200911130158.nAD1ww8C007840@xxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:200911130158.nAD1ww8C007840@DOMAIN.HIDDEN">200911130158.nAD1ww8C007840@xxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.6; en-US; rv:1.9.1.5) Gecko/20091204 Thunderbird/3.0</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<tt>Thank you for the thoughtful proposal, Kent.  After considering it for 
+</tt><tt>some time, I've concluded it meets all of my requirements and is both 
+</tt><tt>simpler and an improvement over the current specification.  I think it 
+</tt><tt>should be adopted in place of the current SRFI 102 draft, so I will 
+</tt><tt>submit a revision soon.
+</tt><pre style="margin: 0em;">
+
+To respond to the issues you raised:
+
+</pre><tt>(1) I am inclined to drop the #f return value to indicate no information 
+</tt><tt>is available.  -1 and #f have the same meaning: it's unknown whether 
+</tt><tt>applying the procedure to any given number of arguments will fail. 
+</tt><tt>Eliminating #f simplifies the proposal and emphasizes the semantics of 
+</tt><tt>`procedure-arity': it only tells you what is not an acceptable number of 
+</tt><tt>arguments; it cannot tell you what is an acceptable number of arguments.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>(2) I don't have a strong feeling on the name clash with existing 
+</tt><tt>mechanisms.  Decent Schemes and Scheme standards deal with renaming, so 
+</tt><tt>it strikes me as a non-issue and I'm inclined to leave the name as 
+</tt><tt>`procedure-arity'.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>Finally, I just want to say that I do not think procedure arity 
+</tt><tt>inspection should be incorporated into future Scheme standards without a 
+</tt><tt>much more convincing rationale than this SRFI provides.  Basically, I 
+</tt><tt>think the bar for a SRFI has been met: authors have expressed a desire 
+</tt><tt>for such a mechanism and many Schemes provide such mechanisms albeit in 
+</tt><tt>different and incompatible ways.  This shouldn't be sufficient for 
+</tt><tt>something like the Scheme Report.
+</tt><pre style="margin: 0em;">
+
+David
+
+On 11/12/09 8:58 PM, R. Kent Dybvig wrote:
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+As David knows, I'm not a big fan of mechanisms to retrieve a procedure's
+arity.  If such a mechanism is going to be standardized, however, as a
+SRFI or in some future report, I'd prefer it be as small, simple, and
+efficient as possible.  I therefore propose the following simpler
+alternative to the mechanism described in the SRFI.  It consists of a
+single procedure, procedure-arity:
+
+--------
+(procedure-arity proc) -&gt;  bitmask | #f
+
+Bitmask is an exact integer.  Bit i is set in the two's complement
+representation of bitmask if proc accepts i arguments.  Conversely, bit i
+is reset if proc is certain to reject i arguments.  #f implies no arity
+information is available.
+--------
+
+This simpler proposal satisfies the requirements set forth in the first
+paragraph of the rationale.  It is also straightforwardly implemented
+using any of the mechanisms referenced in paragraph 2 of the rationale.
+It leverages the existing bit testing procedures in R6RS and many non-R6RS
+Scheme implementations, e.g., R6RS bitwise-bit-set?; it works for all
+procedures created by case-lambda; and it is uniquely specified, so there
+is no normalization issue.  For most procedures, the bitmask will be a
+fixnum.  In most implementations, this means computing it requires no
+allocation, and working with arities will be efficient.  Perhaps most
+importantly, the mechanism requires the addition of only one procedure to
+the language, and no data types, is simple to describe, and simple to use.
+
+Discussion:
+
+This simpler proposal does not allow an implementation to expose as much
+of the structure of a procedure's implementation as does the existing
+proposal.  For example:
+
+(procedure-arity (case-lambda [(x y) ---] [x ---]))
+
+might return (2 #(0)) with the existing proposal, where #(0) is an
+arity-at-least object representing zero or more arguments, hinting at the
+structure of the procedure argument.  Meanwhile, the same call returns -1
+with the simpler proposal.
+
+On the other hand, nothing in the existing proposal _requires_ an
+implementation of procedure-arity to expose the structure of the procedure
+argument, so the above call to procedure-arity might simply return #(0),
+or, due to some quirk of its optimized representation of the procedure,
+return, say, (0 1 2 3 4 5 #(4)), where #(4) is an arity-at-least object
+representing four or more arguments.
+
+Thus, I see this neither as a benefit of the existing proposal nor as a
+drawback of the simpler proposal.  It might even be considered a feature
+of the simpler proposal that no more of the internal structure of a
+procedure can be leaked than necessary.
+
+Issues:
+
+It might be better for procedure-arity to return -1 if no arity
+information is available, meaning the procedure might accept any number of
+arguments, just to keep it simple and given that the existence of arity
+information is no guarantee of its accuracy, as discussed in the Caveat
+Emptor section.
+
+A different name can be used to avoid conflict with existing mechanisms.
+
+Kent
+
+</pre></blockquote><pre style="margin: 0em;">
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00011" href="msg00011.html">proposing a simpler mechanism</a></strong>
+<ul><li><em>From:</em> R. Kent Dybvig</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00034.html">Re: proposing a simpler mechanism</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00032.html">Re: proposing a simpler mechanism</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00021.html">arity failures</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00035"><strong>Date</strong></a></li>
+<li><a href="threads.html#00035"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

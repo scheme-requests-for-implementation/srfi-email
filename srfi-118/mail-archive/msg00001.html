@@ -1,0 +1,146 @@
+<!-- MHonArc v2.6.18 -->
+<!--X-Subject: Re: What should other string&#45;returning procedures do? -->
+<!--X-From-R13: Bre Pbguare <creNobguare.pbz> -->
+<!--X-Date: Tue, 23 Dec 2014 18:26:20 +0000 (UTC) -->
+<!--X-Message-Id: 5499AEDB.8090701@bothner.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20141220162110.GE22447@mercury.ccil.org -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: What should other string-returning procedures do?</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00000.html">Date Prev</a>][<a href="msg00002.html">Date Next</a>][<a href="msg00000.html">Thread Prev</a>][<a href="msg00002.html">Thread Next</a>][<a href="maillist.html#00001">Date Index</a>][<a href="threads.html#00001">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: What should other string-returning procedures do?</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: John Cowan &lt;<a href="mailto:cowan@DOMAIN.HIDDEN">cowan@xxxxxxxxxxxxxxxx</a>&gt;, <a href="mailto:srfi-118@DOMAIN.HIDDEN">srfi-118@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: What should other string-returning procedures do?</li>
+<li><em>From</em>: Per Bothner &lt;<a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 23 Dec 2014 10:05:15 -0800</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-118@DOMAIN.HIDDEN">srfi-118@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="msg00000.html">20141220162110.GE22447@mercury.ccil.org</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="msg00000.html">20141220162110.GE22447@mercury.ccil.org</a>&gt;</li>
+<li><em>User-agent</em>: Mozilla/5.0 (X11; Linux x86_64; rv:31.0) Gecko/20100101 Thunderbird/31.3.0</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+On 12/20/2014 08:21 AM, John Cowan wrote:
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+I think this is an excellent SRFI, and I support it.
+
+However, it specifies only that `make-string` must return
+a variable-length string.  What about `string`, `string-*case`,
+`substring`, `string-copy`, and `string-map`?
+</pre></blockquote><pre style="margin: 0em;">
+
+Well, it does say:
+</pre><tt>  
+</tt><tt>   Standard Scheme functions that return mutable strings, such as make-string or
+</tt><pre style="margin: 0em;">
+   string-copy, are specified to return variable-size mutable strings by default.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+My notion is that `string` ought to be free to return either a
+variable-length or a fixed-length string, and that the others ought
+to be guaranteed to return variable-length strings if (not iff) their
+string argument is variable-length.
+</pre></blockquote><pre style="margin: 0em;">
+
+We could do something like that, but is the extra implementation flexibility
+justified by the extra complexity?  There is something to be said for just
+having two kinds of strings: immutable and mutable variable-sized.  If we
+allow some functions to return fixed-size mutable strings, I think it would be
+simpler to just specify some functions always return variable-sized strings,
+and some may return fixed-size mutable strings.
+
+In retrospect, it would have been cleaner if functions such as string-upcase
+or string-append were defined to return immutable strings, but for compatibility they
+must returns mutable strings, though not necessarily variable-sized ones.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Also, what about conversions between fixed-length and variable-length
+strings?  On Kawa, these would be no-ops, but on other systems they
+might not be.
+</pre></blockquote><pre style="margin: 0em;">
+
+If we specify that some functions (for example string-copy) always returns
+a variable-size string, then we don't need explicit conversion functions:
+string-copy will do.
+
+If we split up the r7rs string functions, I suggest:
+
+Procedures that may return a fixed-size string:
+  string string-upcase string-downcase string-foldcase substring string-append list-&gt;string
+
+(These are functions it would be plausible for a future RnRS to specify that they
+should return an immutable string.)
+
+Procedures that must return a variable-size string:
+  make-string string-copy
+--
+	--Per Bothner
+per@xxxxxxxxxxx   <a  rel="nofollow" href="http://per.bothner.com/">http://per.bothner.com/</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00002" href="msg00002.html">Re: What should other string-returning procedures do?</a></strong>
+<ul><li><em>From:</em> John Cowan</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00000" href="msg00000.html">What should other string-returning procedures do?</a></strong>
+<ul><li><em>From:</em> John Cowan</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00000.html">What should other string-returning procedures do?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00002.html">Re: What should other string-returning procedures do?</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00000.html">What should other string-returning procedures do?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00002.html">Re: What should other string-returning procedures do?</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00001"><strong>Date</strong></a></li>
+<li><a href="threads.html#00001"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

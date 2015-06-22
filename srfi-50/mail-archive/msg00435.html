@@ -1,0 +1,347 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Strings, one last detail. -->
+<!--X-From-R13: Fbz Zbeq <ybeqNrzs.arg> -->
+<!--X-Date: Sat, 31 Jan 2004 01:13:23 +0100 (MET) -->
+<!--X-Message-Id: 200401310027.QAA22421@morrowfield.regexps.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20040122.190329.579644543.shiro@lava.net -->
+<!--X-Reference: 200401240045.QAA28248@morrowfield.regexps.com -->
+<!--X-Reference: 20040123.172656.899859146.shiro@lava.net -->
+<!--X-Reference: 20040125.235807.67880629.shiro@lava.net -->
+<!--X-Reference: Pine.LNX.4.58.0401301237450.3363@bolt.sonic.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Strings, one last detail.</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00434.html">Date Prev</a>][<a href="msg00436.html">Date Next</a>][<a href="msg00434.html">Thread Prev</a>][<a href="msg00436.html">Thread Next</a>][<a href="maillist.html#00435">Date Index</a>][<a href="threads.html#00435">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Strings, one last detail.</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:bear@DOMAIN.HIDDEN">bear@xxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Strings, one last detail.</li>
+<li><em>From</em>: Tom Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 30 Jan 2004 16:27:41 -0800 (PST)</li>
+<li><em>Cc</em>: <a href="mailto:shiro@DOMAIN.HIDDEN">shiro@xxxxxxxx</a>, <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:Pine.LNX.4.58.0401301237450.3363@DOMAIN.HIDDEN">Pine.LNX.4.58.0401301237450.3363@xxxxxxxxxxxxxx</a>&gt; (message from	bear on Fri, 30 Jan 2004 13:12:09 -0800 (PST))</li>
+<li><em>References</em>: &lt;<a href="mailto:20040122.190329.579644543.shiro@DOMAIN.HIDDEN">20040122.190329.579644543.shiro@xxxxxxxx</a>&gt; &lt;<a href="mailto:200401240045.QAA28248@DOMAIN.HIDDEN">200401240045.QAA28248@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20040123.172656.899859146.shiro@DOMAIN.HIDDEN">20040123.172656.899859146.shiro@xxxxxxxx</a>&gt; &lt;<a href="mailto:20040125.235807.67880629.shiro@DOMAIN.HIDDEN">20040125.235807.67880629.shiro@xxxxxxxx</a>&gt; &lt;<a href="mailto:Pine.LNX.4.58.0401301237450.3363@DOMAIN.HIDDEN">Pine.LNX.4.58.0401301237450.3363@xxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+    &gt; From: bear &lt;bear@xxxxxxxxx&gt;
+
+    &gt; I can treat SCHEME_EXTRACT_STRING as a request to make a copy of
+    &gt; a string in a format acceptable to C code in some buffer,
+    &gt; register it as &quot;floating garbage&quot; with the GC, return a pointer
+    &gt; to that buffer, and lock the garbage collector until the scheme
+    &gt; runtime is reentered.  If the C code just wants to _read_ what's
+    &gt; there, that's necessary and sufficient.
+
+    [....]
+
+    &gt; What's missing is an explicit declaration that it is unspecified
+    &gt; whether or not values written into the buffer pointed at by the
+    &gt; result of SCHEME_EXTRACT_STRING mutate the scheme string that
+    &gt; was originally referred to,
+
+Interesting conlusion.  I conclude that EXTRACT must allocate string
+data which the C code must explicitly free.  I arrived at this through
+a fairly systematic exploration of the design space (described below).
+
+To motivate my design space exploration, let's observe that the draft
+currently says:
+
+  char * SCHEME_EXTRACT_STRING(scheme_value)
+  scheme_value SCHEME_ENTER_STRING(char *) (may GC)
+
+      SCHEME_EXTRACT_STRING returns a pointer to the actual storage
+      used by the Scheme string. If this is the case[sic], the pointer
+      is valid only until the next garbage collection. Note that this
+      string may not be null-terminated; SCHEME_STRING_LENGTH returns
+      the number of characters in the string.
+
+Does SCHEME_STRING_SET! modify the data that C is seeing?  It would
+seem so from &quot;returns a pointer to the actual storage[...]&quot; but
+in Pika, STRING-SET! can relocate a string (as when promoting an 8-bit
+to a 16-bit string representation).   UTF-8 implementations will
+sometimes relocate strings when replacing a character with a character
+of a different length encoding.
+
+We have one design question with four possible answers:
+
+1) Is the extracted data shared with Scheme?
+1a) Yes, for reading and writing
+1b) Yes, for reading
+1c) Unspecified
+1d) No
+
+and there is a dependent design question with six likely answers:
+
+2) Must C code &quot;explicitly free&quot; extracted string data?
+2a) Yes, using &quot;free()&quot;
+2b) Yes, using whatever function goes with the allocation function
+    that C passes as a parameter to EXTRACT
+2c) Yes, using &quot;SCHEME_STRING_DATA_FREE()&quot; which is up to the FFI
+    implementor to provide.
+2d) No, it's lifetime is that of the Scheme string
+2e) No, it's lifetime is up until the next GC point
+2f) No, it's lifetime is up until the next execution of any FFI
+    function which might mutate the string, including by GC.
+
+So we start with 24 possible designs (4 * 6).
+
+If you want to follow the arguments I give below carefully, I suggest
+that you get out some graph paper and make a table:
+
+             2a   2b   2c   2d   2e   2f
+	1a      |    |    |    |    |
+             ---|----|----|----|----|----
+        1b      |    |    |    |    |
+             ---|----|----|----|----|----
+        1c      |    |    |    |    |
+             ---|----|----|----|----|----
+	1d      |    |    |    |    |
+
+putting X's in boxes when you agree my arguments eliminate some
+possible design and ?'s in the one's where you think my arguments are
+bogus.  I'm going to try to argue you down to 23 boxes with X's and
+one left blank -- a &quot;first-principles&quot; string FFI.
+
+(I expect that most people who actually do this will come up with some
+question marks in their graph --- but those will be handy for
+organizing any subsequent discussion.)
+
+
+Not all 24 possibilities are coherent.   We can right-away eliminate:
+
+	1a + 2a
+        1a + 2b		All would involve C code using a
+        1b + 2a		non-FFI function to &quot;free&quot; string
+        1b + 2b		data that does or might belong to
+        1c + 2a		a Scheme object.
+        1c + 2b
+
+leaving 18.
+
+We can cut out all 4 possibilities that involve (2d) because I
+think everyone agrees that that unduly restricts GC and string
+representations.  For example, GC would be forbidden from relocating
+string data if that string data might ever have been EXTRACTed by C.
+
+That leaves 14.
+
+If strings are _not_ shared (1d), then surely string-data lifetime
+must be explicitly managed (not 2e, 2f), leaving 12 designs.
+
+In some quite plausible string representations (UTF-8, UTF-16, Pika's)
+mutation to a string can change it's length.   Changing a string's
+length means it's location in memory can change.   There may be hairy
+work-arounds but I think that these are reasons enough to eliminate
+
+  (1a+2c) because before the explicit free function is called
+    the string may be mutated by Scheme.
+
+  (1b+2c) for the same reason
+
+  (1a+2e) because a string mutation between GC-points can change
+          the string's length, hence location
+
+  (1b+2e) for the same reason
+
+leaving 8
+
+(1b+2f) has absolutely no advantage over (1c+2f).  From the point of
+the FFI-user, they are operationally equivalent.   From the point of
+view of the FFI-implementor, (1c+2f) leaves more implementation
+options.
+
+That leaves 7.
+
+Similarly, (1d+2c) has absolutely no advantage over (1d+2a) or
+(1d+2b).   If strings are _not_ shared and C must free them, then use
+either free() or let the C code specify how they are allocated in the
+first place.   There's no reason why the FFI should define how
+non-shared string data is freed.
+
+That leaves 6.
+
+These are:
+
+1a+2f) r/w sharing, Scheme-mutation-bound lifetime
+1c+2c) unspecified sharing, FFI free function
+1c+2e) unspecified sharing, GC-point lifetime
+1c+2f) unspecified sharing, Scheme-mutation-bound lifetime
+1d+2a) no sharing, use free()
+1d+2b) no sharing, C controls allocation and freeing
+
+I would argue that (1d+2b) is preferable to (1d+2a) because nothing
+else in the FFI already depends on malloc()/free().   (One could
+make the opposite decision, that 1d+2a is preferable to 1d+2b and the
+rest of this would still apply.)
+
+So that leaves 5:
+
+1a+2f) r/w sharing, Scheme-mutation-bound lifetime
+1c+2c) unspecified sharing, FFI free function
+1c+2e) unspecified sharing, GC-point lifetime
+1c+2f) unspecified sharing, Scheme-mutation-bound lifetime
+1d+2b) no sharing, C controls allocation and freeing
+
+There is nearly no advantage to (1c+2e) compared to (1c+2f).  In
+(1c+2e), if a C program crosses a Scheme-mutation-point between
+GC-points, while it can assume that the pointer to the string data
+remains valid, it can make no assumptions about the contents of that
+string data.   This isn't an absolute refutation of (1c+2e) but I
+would argue that it is near enough as to make for nevermind.
+
+An analogous argument applies to (1c+2c) compared to (1c+2f).  If C
+passes a Scheme-mutation point before calling the FFI free function,
+the data pointer may remain valid but it's contents are unspecified.
+
+Leaving:
+
+1a+2f) r/w sharing, Scheme-mutation-bound lifetime
+1c+2f) unspecified sharing, Scheme-mutation-bound lifetime
+1d+2b) no sharing, C controls allocation and freeing
+
+
+(1a+2f), Scheme-mutation-bound r/w sharing, must be rejected as well.
+This is because it constrains implementations to represent strings
+internally in the exactly the same format seen by C -- because between
+Scheme mutation points, C may modify the string and that should be
+apparent to Scheme code that _reads_ the string.
+
+That leaves:
+
+1c+2f) unspecified sharing, Scheme-mutation-bound lifetime
+1d+2b) no sharing, C controls allocation and freeing
+
+
+(1c+2f) requires us to make a distinction between functions in the FFI
+similar to, but not necessarily identical to the &quot;may GC&quot; distinction.
+It requires us to distinguish &quot;may mutate a string&quot; functions.
+
+Is there _any_ function in the FFI that we would not want to put in
+the &quot;may mutate a string&quot; category?   I'm not so sure that there is.
+In an Oaklisp-style implementation, for example, every FFI function
+can result in the execution of arbitrary Scheme code.
+
+Therefore, I think we can rephrase our remaining choices as:
+
+1c+2f) unspecified sharing, data lifetime bound by next FFI call
+1d+2b) no sharing, C controls allocation and freeing
+
+yet that would make even this simple FFI code _incorrect_:
+
+        /* Incorrect code:
+         */
+
+	s1 = STRING_EXTRACT_STRING (scheme_s1);
+	s2 = STRING_EXTRACT_STRING (scheme_s2);
+
+
+That every FFI function should be &quot;may mutate a string&quot; is, I think,
+controversial but not dismissable.   So let's call this 33% of a
+reason to reject (1c+2f).
+
+The benefit of (1c+2f) compared to (1d+2b) is that it doesn't
+_require_ allocation and copying of string data -- a potential
+performance benefit that will be available to _some_ implementations.
+But it is certain that _many_ (not all) uses of EXTRACT will be in a
+context in which the potential performance benefit does not apply
+because C will the string data lifetime to cross string mutation
+boundaries.  In those many cases, the C code will have to allocate
+space and copy the string data anyway, eliminating the performance
+advantage.  So let's call this another 33% of a reason to reject
+(1c+2f).
+
+Regardless of what _this_ SRFI does -- I think it certain that
+sometime in the future we will want a portable FFI which permits (in
+some form) r/w sharing of string data under constrained conditions.
+The &quot;internal intefaces for Pika&quot; that I posted earlier are a good
+example of what I think this should also look like in a portable FFI.
+The future appearence of those functions is not guaranteed (but not
+unlikely) -- and such appearence will eliminate nearly all remaining
+benefits of (1c+2f).   Can we call this 34% of a reason?
+
+So I think the choice is clear:
+
+   1d+2b) no sharing, C controls allocation and freeing
+
+That that answer is _also_ compatible with a GC-anytime and
+async/concurrent-Scheme-code-permitted FFI is just a happy
+non-coincidence.
+
+-t
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00436" href="msg00436.html">Re: Strings, one last detail.</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00365" href="msg00365.html">Re: strings draft</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+<li><strong><a name="00388" href="msg00388.html">Re: strings draft</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00391" href="msg00391.html">Re: strings draft</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+<li><strong><a name="00416" href="msg00416.html">Octet vs Char (Re: strings draft)</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+<li><strong><a name="00432" href="msg00432.html">Strings, one last detail.</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00434.html">Re: Strings, one last detail.</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00436.html">Re: Strings, one last detail.</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00434.html">Re: Strings, one last detail.</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00436.html">Re: Strings, one last detail.</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00435"><strong>Date</strong></a></li>
+<li><a href="threads.html#00435"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

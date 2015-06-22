@@ -1,0 +1,148 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: gratuitous optimization and benchmarking -->
+<!--X-From-R13: "Fnlybe D. Qnzcoryy" <pnzcoryyNzhzoyr.arg> -->
+<!--X-Date: Fri,  7 Apr 2006 18:54:47 +0200 (MST) -->
+<!--X-Message-Id: 20060407165444.6D35298554@pluto.mumble.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: u4q15hetj.fsf@iniTerm.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: gratuitous optimization and benchmarking</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00021.html">Date Prev</a>][<a href="msg00023.html">Date Next</a>][<a href="msg00021.html">Thread Prev</a>][<a href="msg00023.html">Thread Next</a>][<a href="maillist.html#00022">Date Index</a>][<a href="threads.html#00022">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: gratuitous optimization and benchmarking</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:init@DOMAIN.HIDDEN">init@xxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: gratuitous optimization and benchmarking</li>
+<li><em>From</em>: &quot;Taylor R. Campbell&quot; &lt;<a href="mailto:campbell@DOMAIN.HIDDEN">campbell@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 7 Apr 2006 16:54:44 +0000</li>
+<li><em>Cc</em>: <a href="mailto:srfi-86@DOMAIN.HIDDEN">srfi-86@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-86@DOMAIN.HIDDEN">srfi-86@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:u4q15hetj.fsf@DOMAIN.HIDDEN">u4q15hetj.fsf@xxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: IMAIL/1.21; Edwin/3.116; MIT-Scheme/7.7.90.+</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>I didn't see how you loaded the code in any of the systems, so I can't
+tell where the disparity is exactly, but here are my guesses:
+
+  1. In Scheme48, you probably neither set inline-values at the REPL
+     nor used the module system.  By default, the REPL will compile
+     code under the assumption that any binding can be redefined,
+     including standard R5RS ones, so it inhibits the compiler from
+     performing *any* kind of analyses on standard bindings.  This
+     means that it was given no chance to recognize CWV, and that it
+     must generate full, heap-allocated closures for the operands.
+     Either use the module system or type this at the REPL first:
+
+        ,set inline-values
+
+  2. I can't explain why MzScheme is slower because I haven't done any
+     work with it myself on this, but it would not surprise me to hear
+     that MzScheme's compiler also needs guarantees provided by the
+     module system and not the default REPL in order to recognize CWV.
+
+  3. Chicken's compiler does not appear to make any effort at all to
+     recognize CWV, and so the generated code is extremely similar in
+     the way it allocates closures, except that there is an
+     out-of-line call to C_call_with_values in TEST-V(V), which
+     involves a lot more effort than a direct procedure call, as in
+     TEST-M(M), particularly since the direct procedure call works
+     with known arities, whereas C_call_with_values &amp;c. dispatch on
+     the arity.
+
+For the record, this is how I ran the code:
+
+T: no special command-line options
+  (comfile 'soo)
+  (load 'soo)
+  (block (gc) (time (test-m)))
+  (block (gc) (time (test-v)))
+  (block (gc) (time (test-mm)))
+  (block (gc) (time (test-vv)))
+
+Scheme48: no special command-line options
+  ,set inline-values
+  ,load soo.scm
+  ,collect
+  ,time (test-m)
+  ,collect
+  ,time (test-v)
+  ,collect
+  ,time (test-mm)
+  ,collect
+  ,time (test-vv)
+
+Gauche: gosh -fcase-fold
+  (use srfi-19)
+  (define (time thunk)
+    (let ((t0 (current-time)))
+      (thunk)
+      (let ((t1 (current-time)))
+        (let ((delta (time-difference t1 t0)))
+          (+ (time-second delta)
+             (* .00000001 (time-nanosecond delta)))))))
+  (load &quot;./soo&quot;)
+  (begin (gc) (time test-m))
+  (begin (gc) (time test-v))
+  (begin (gc) (time test-mm))
+  (begin (gc) (time test-vv))
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00021" href="msg00021.html">Re: gratuitous optimization and benchmarking</a></strong>
+<ul><li><em>From:</em> Joo ChurlSoo</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00021.html">Re: gratuitous optimization and benchmarking</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00023.html">Re: gratuitous optimization and benchmarking</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00021.html">Re: gratuitous optimization and benchmarking</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00023.html">Re: gratuitous optimization and benchmarking</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00022"><strong>Date</strong></a></li>
+<li><a href="threads.html#00022"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

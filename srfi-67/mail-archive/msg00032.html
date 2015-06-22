@@ -1,0 +1,209 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: compare function return values -->
+<!--X-From-R13: orne <orneNfbavp.arg> -->
+<!--X-Date: Tue,  7 Jun 2005 00:55:56 +0200 (DFT) -->
+<!--X-Message-Id: Pine.LNX.4.58.0506061508360.18428@bolt.sonic.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20050510164111.GA11297@ling.helsinki.fi -->
+<!--X-Reference: Pine.LNX.4.58.0506041038160.19280@bolt.sonic.net -->
+<!--X-Reference: 20050606082249.GB9625@xandru.it.helsinki.fi -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: compare function return values</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00031.html">Date Prev</a>][<a href="msg00033.html">Date Next</a>][<a href="msg00030.html">Thread Prev</a>][<a href="msg00033.html">Thread Next</a>][<a href="maillist.html#00032">Date Index</a>][<a href="threads.html#00032">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: compare function return values</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Panu Kalliokoski &lt;<a href="mailto:atehwa@DOMAIN.HIDDEN">atehwa@xxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: compare function return values</li>
+<li><em>From</em>: bear &lt;<a href="mailto:bear@DOMAIN.HIDDEN">bear@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 6 Jun 2005 15:55:36 -0700 (PDT)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-67@DOMAIN.HIDDEN">srfi-67@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-67@DOMAIN.HIDDEN">srfi-67@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20050606082249.GB9625@DOMAIN.HIDDEN">20050606082249.GB9625@xxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:20050510164111.GA11297@DOMAIN.HIDDEN">20050510164111.GA11297@xxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:Pine.LNX.4.58.0506041038160.19280@DOMAIN.HIDDEN">Pine.LNX.4.58.0506041038160.19280@xxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20050606082249.GB9625@DOMAIN.HIDDEN">20050606082249.GB9625@xxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+On Mon, 6 Jun 2005, Panu Kalliokoski wrote:
+
+&gt;On Sat, Jun 04, 2005 at 11:07:15AM -0700, bear wrote:
+
+&gt;&gt; First, symbols, from an implementation POV, are a *lot* heavier
+&gt;&gt; than small integer numbers.  There are table lookups to do, and
+&gt;&gt; guarantees to make about symbols being eq? and hash functions to
+&gt;&gt; call and store the result of, etc.  Depending on the implementation,
+
+&gt; I'm surprised to see so much misunderstanding about symbols in the
+&gt; Scheme community... since symbols are _atomic_, their comparison by eq?
+&gt; is a pointer comparison in all implementations I know of.  The only time
+&gt; one needs to find a symbol by its string representation is when it is
+&gt; being (read).  For builtin functions, all symbols are already in their
+&gt; &quot;pointer&quot; form, that is, they're already references to the Unique Symbol
+&gt; With That Name.
+
+Yes, their comparison by eq? is a simple pointer compare.  That's not the
+problem.  But producing them means going to the symbol table to see if
+they already exist and returning an eq pointer to point at the existing
+one if so, and allocating them and inserting a reference to them in the
+global symbol table otherwise.  And at every GC, unless you simply don't
+reap symbols, which a lot of implementations don't, you're iterating over
+that table and eliminating symbols that are not currently bound to values
+in any scope nor referenced from anywhere in the program, which is a
+moderately expensive operation because it has to involve weak pointers.
+
+Now, I'm talking about my own toy scheme system here; and this is a
+good argument for creating a class of static symbols specifically for
+function-return constants, that somehow shortcut the garbage collection
+process.  So, yea, with a different implementation strategy most of the
+costs I'm worried about could be avoided.
+
+&gt; Symbols that are used by builtins are statically allocated.  In an
+&gt; average implementation, this means an overhead of something like 8 bytes
+&gt; in addition to the storage usage of the string representation of the
+&gt; symbol.
+
+Hooboy.  Is this an actual scheme implementation?  I haven't looked at
+others, but I can't store the overhead involved with a symbol (scopes,
+locations, lexical contours, contexts, variable values, weak references,
+etc) in less than 64 bytes.  Am I just doing something horribly wrong?
+
+&gt; The great thing about symbols is exactly that they show that symbolic
+&gt; (descriptive) expressions _are_ as efficient to process as their
+&gt; non-expressive counterparts (like numeric tags).
+
+Perhaps you can recommend a good book on handling symbols and
+symbol tables in lispy languages?  'Cause clearly, I'm not currently
+getting these benefits from symbols, and I'd like to know how.
+
+&gt; Now, I understand if people think that the long matured custom of
+&gt; mathematics to use (-1, 0, 1) is better.  But I think the original
+&gt; motivation for this codomain of signum was more likely the reluctance of
+&gt; adding new data types to mathematics than any real benefit these numbers
+&gt; convey.
+
+&gt;&gt; Second, small integers are useful in indexing arrays, and indexing
+&gt;&gt; arrays is a natural use of comparison results.  Indexing arrays with
+
+&gt; (Just to make sure: did you understand that preventing explicit indexing
+&gt; of arrays with comparison results was one of my original intentions in
+&gt; the proposal of using symbols?)
+
+Sorry if you find this offensive, but I'd really rather not have
+someone preventing me from doing something because without having
+ever seen my problem or application, they've decided ex cathedra
+that it's always and forever a bad idea.  The point of a good
+programming language is to make good code possible and natural.
+Preventing something you think is &quot;bad code&quot; contributes nothing
+to this goal. Don't make the bad stuff harder; make the good stuff
+easier.  If people want to index arrays with comparison results,
+and you think this is bad code because it blurs the semantics of
+comparison results, it's incumbent on you to provide a way to do
+it that doesn't blur the semantics of comparison results, rather
+than to put comparison results in a form that doesn't allow it.
+
+I agree that the numbers don't express the values you actually mean
+here, and I dislike that semantic untidiness.  To say &quot;-1&quot; when I
+mean &quot;increasing&quot; is as irritating as saying &quot;27&quot; when I mean &quot;escape&quot;
+or 'a' when I mean &quot;43&quot; or &quot;0&quot; when I mean &quot;false.&quot;  The only reason
+to put up with this semantic blurring, IMO, is because you can use
+numbers to index arrays or in further computations, and because doing
+so is the most straightforward and useful way to use those results.
+
+You're addressing the problem of further computation by providing
+additional functions to do most of the things that can be done with
+the numeric representations.  I don't know why you've skipped
+such functions for array creation and reference; they are just as
+important a part of the functionality as what you've provided.
+
+Honestly, I think the &quot;right thing to do&quot; here is to provide arrays
+with typed indices, so they can be indexed by *any* scalar without
+semantic blurring.  That would solve both this problem and many
+others, including indexing by characters and booleans. But this is
+a larger issue, and not properly within the scope of your proposal.
+
+&gt;&gt; Third, the limitation of array indexes to exact nonnegative integers
+&gt;&gt; only, and the requirement of starting at zero, is a problem that ought
+&gt;&gt; to be addressed first.  If arrays could be indexed by an arbitrary
+
+&gt; Aiee!  Maybe.  But I never found Scheme the language to do &quot;nifty
+&gt; tricks&quot; in, like indexing arrays with comparison results.  I think
+&gt; Scheme should remain simple, clean, powerful (in terms of tools it
+&gt; provides, not weird expressions it enables the programmer to use), and
+&gt; elegant.
+
+This isn't a &quot;trick.&quot;  It's an &quot;idiom,&quot; and a damned useful one.  If
+you disallow it or make it hard, without providing an equivalent that's
+as easy to use, you are making things worse, not better.
+
+				Bear
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00033" href="msg00033.html">Re: compare function return values</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00025" href="msg00025.html">Re: compare function return values</a></strong>
+<ul><li><em>From:</em> Panu A Kalliokoski</li></ul></li>
+<li><strong><a name="00028" href="msg00028.html">Re: compare function return values</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+<li><strong><a name="00029" href="msg00029.html">Re: compare function return values</a></strong>
+<ul><li><em>From:</em> Panu Kalliokoski</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00031.html">vector compare</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00033.html">Re: compare function return values</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00030.html">Re: compare function return values</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00033.html">Re: compare function return values</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00032"><strong>Date</strong></a></li>
+<li><a href="threads.html#00032"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

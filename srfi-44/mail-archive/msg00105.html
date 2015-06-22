@@ -1,0 +1,579 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Procedures (interfaces) -->
+<!--X-From-R13: "Penqq I. Embalr" <oenqq+fesvNfmbalr.pbz> -->
+<!--X-Date: Tue, 21 Oct 2003 09:20:56 +0200 (DFT) -->
+<!--X-Message-Id: 20031021072047.GB26398@loki.vpn.szonye.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20031016200629.GE2858@ogre.szonye.com -->
+<!--X-Reference: 20031020182528.GA26827@freenetproject.org -->
+<!--X-Reference: 20031020191331.GB4433@ogre.szonye.com -->
+<!--X-Reference: 20031020203620.GB28213@freenetproject.org -->
+<!--X-Reference: 20031021004429.GE4433@ogre.szonye.com -->
+<!--X-Reference: 20031021011250.GA26398@loki.vpn.szonye.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Procedures (interfaces)</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00104.html">Date Prev</a>][<a href="msg00106.html">Date Next</a>][<a href="msg00104.html">Thread Prev</a>][<a href="msg00109.html">Thread Next</a>][<a href="maillist.html#00105">Date Index</a>][<a href="threads.html#00105">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Procedures (interfaces)</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Procedures (interfaces)</li>
+<li><em>From</em>: &quot;Bradd W. Szonye&quot; &lt;<a href="mailto:bradd%2Bsrfi@DOMAIN.HIDDEN">bradd+srfi@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 21 Oct 2003 00:20:47 -0700</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20031021011250.GA26398@DOMAIN.HIDDEN">20031021011250.GA26398@xxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Mail-followup-to</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>References</em>: &lt;<a href="mailto:20031016200629.GE2858@DOMAIN.HIDDEN">20031016200629.GE2858@xxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20031020182528.GA26827@DOMAIN.HIDDEN">20031020182528.GA26827@xxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20031020191331.GB4433@DOMAIN.HIDDEN">20031020191331.GB4433@xxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20031020203620.GB28213@DOMAIN.HIDDEN">20031020203620.GB28213@xxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20031021004429.GE4433@DOMAIN.HIDDEN">20031021004429.GE4433@xxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20031021011250.GA26398@DOMAIN.HIDDEN">20031021011250.GA26398@xxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mutt/1.4i</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>As promised, here is my suggestion for revising the collection
+procedures. I tried to remain faithful to the original, and I tried to
+avoid even minor changes. No, really! Nevertheless, I'm sure that it
+will look like a big change. Therefore, let me preface my revision with
+some rationales. Feel free to question or reject them -- as you've
+already seen, I'm amenable to leaving things the way they are if you
+have a good reason to do so.
+
+Organization - With the new attributes like reversible, it was too
+difficult to organize procedures by collection type. Instead, I list
+them all by procedure type (constructor, accessor, etc.) with a &quot;defined
+for:&quot; clause below each usage example. I think I correctly specified all
+of the interfaces, but please double-check them if you decide to use
+this.
+
+Dictionaries - I generalized the collection-building procedures to work
+well with dictionaries. For example, *-add can now build a dictionary;
+just give it a (cons key value) pair, like you do in the dictionary
+constructor. Likewise, *-remove can remove a mapped value; it returns
+the removed key and value as a pair. There's also a specialized
+*-add-key (for convenience's sake) and *-remove-key (for necessity's
+sake). I removed the *-put function, but added a note to *-set-key that
+some dictionaries may permit key addition via that procedure. In other
+words, the &quot;add-or-set&quot; operation is optional.
+
+Removal and deletion - All remove-type procedures now return the
+modified collection and the removed value. If it's a dictionary, remove
+returns a key-value pair.
+
+Set! compatible with R5RS - The original specification for *-set! was
+incompatible with R5RS vector-set!, which modifies the vector in-place
+and returns an unspecified value. I changed *-set! to match that, and I
+changed *-set (the functional version) to return the modified collection
+and the previous value.
+
+*=? and &lt;=?: I added question marks for consistency with functions like
+string=?. I also removed the elt= argument and changed the definition so
+that it was no longer necessary. I was reluctant to make this change,
+but I felt that the original version just wasn't viable. The main
+problem, once again, is that a single equivalence predicate just doesn't
+work for dictionaries. I considered passing (cons key=? val=?) to the
+procedure, but that wouldn't work for non-dictionaries. In the end, I
+went with the *=? interface, partly because it makes for a trivial
+implementation of string=?.
+
+I think that's all of the major changes. Here's the revision:
+
+
+PROCEDURES
+
+Many procedures accept an optional procedure (thunk) to handle failure.
+If a procedure cannot perform the requested operation (because the
+collection has a fixed size, is immutable, does not permit duplicate
+values, does not contain a requested value, would become unordered,
+etc.), it returns the value of invoking the thunk with no arguments. The
+default thunk signals an error.
+
+
+CONSTRUCTORS
+
+procedure: make-% {key&lt;? | key=?} {val&lt;? | val=?} =&gt; %
+defined for: all collections
+
+Constructs a new % collection. Some collections may require ordering or
+equivalence functions during construction. Dictionaries may require
+comparison functions for both keys and values. (Ordered collections
+should derive their equivalence functions from the ordering function
+whenever possible.)
+
+procedure: % {key&lt;? | key=?} {val&lt;? | val=?} value ... =&gt; %
+defined for: all collections
+
+Constructs a new % collection with the values as its contents. Some
+collections may require ordering or equivalence functions during
+construction. Dictionaries may require comparison functions for both
+keys and values. (Ordered collections should derive their equivalence
+functions from the ordering function whenever possible.)
+
+procedure: *-copy * =&gt; *
+defined for: all collections
+
+Returns a new collection of the same type as the argument with the same
+contents but distinct storage. The copy is shallow; that is, it copies
+values in a way that preserves object identity.
+
+
+TYPE PREDICATES
+
+procedure: collection? value =&gt; value
+procedure: %? value =&gt; value
+defined for: all collections
+
+Returns a true value iff the provided value supports the interface for
+the type (%) named in the predicate.
+
+
+CARDINALITY OPERATORS
+
+procedure: *-empty? collection =&gt; boolean
+
+Returns a true value iff the collection is known to be empty. This
+function should return false if it is known that there are values within
+the collection, or if it is unknown whether any values exist.
+
+procedure: *-size collection =&gt; exact integer 
+defined for: all collections
+
+If the collection has a concept of size, this function returns the
+number of values or mappings in the collection. If it does not, #f must
+be returned. If possible, this should return the number of times
+collection-fold will call the fold-function before halting.
+
+procedure: *-count * value =&gt; exact integer 
+defined for: all collections
+
+Counts the number of times value occurs in the collection, according to
+the collection's equivalence function.
+
+procedure: *-key-count * value =&gt; exact integer 
+defined for: dictionaries
+
+Counts the number of times key occurs in the collection, according to
+the collection's key-equivalence function.
+
+
+EQUIVALENCE AND TOTAL ORDERING RELATIONS
+
+procedure: *=? *... =&gt; boolean
+defined for: all collections
+
+Returns a true value if all collections are equal. Two collections are
+equal if they have the same equivalence function (if any) and the same
+*-count for each value. Dictionaries must also have the same
+key-equivalence function (if any), the same *-key-count for each key,
+and the same value mapped to each key. Sequences and ordered collections
+must have the same ordering. When comparing types of collections with
+different equality rules, use the least strict rule.
+
+procedure: *&lt;? *... =&gt; boolean
+defined for: all collections
+
+Returns a true value if all collections are ordered from least to
+greatest, using an implementation-defined total order.
+
+procedure: *-equivalence-function * =&gt; procedure
+defined for: bags, sets, and dictionaries
+
+Returns the value equivalence function for the collection.
+
+procedure: *-key-equivalence-function * =&gt; procedure
+defined for: dictionaries
+
+Returns the key equivalence function for the dictionary.
+
+procedure: *-ordering-function * =&gt; procedure
+defined for: ordered bags, sets, and dictionaries
+
+Returns the value ordering function for the collection.
+
+procedure: *-key-ordering-function * =&gt; procedure
+defined for: ordered dictionaries
+
+Returns the key ordering function for the dictionary.
+
+
+ENUMERATIONS
+
+procedure: collection-fold collection f seed ... =&gt; seed ...
+defined for: all collections
+
+Enumerates all values in the sequence in an arbitrary order. For
+sequences and ordered collections, this may be the same as *-fold-left,
+or it may be the most efficient order.
+
+procedure: *-fold-left * f seed ... =&gt; seed ...
+defined for: sequences and ordered collections
+
+Enumerates all values from left to right (least to greatest, if ordered).
+
+procedure: *-fold-right * f seed ... =&gt; seed ...
+defined for: sequences and ordered collections
+
+Enumerates all values from right to left (greatest to least, if ordered).
+
+procedure: *-fold-keys * f seed ... =&gt; seed ...
+defined for: dictionaries
+
+Enumerates all dictionary keys and values in an arbitrary order.
+
+procedure: *-fold-keys-left * f seed ... =&gt; seed ...
+defined for: sequential and ordered dictionaries
+
+Enumerates all dictionary keys and values from left to right (least to
+greatest, if ordered).
+
+procedure: *-fold-keys-right * f seed ... =&gt; seed ...
+
+Enumerates all dictionary keys and values from right to left (greatest
+to least, if ordered).
+
+procedure: *-&gt;list collection =&gt; list
+defined for: all collections
+
+Returns a newly allocated list containing the collection's values. If
+the collection is a sequence or an ordered collection, the list must
+contain the values in the same order as a left enumeration.
+
+procedure: *-keys-&gt;list collection =&gt; list
+defined for: dictionaries
+
+Returns a newly allocated list containing the collection's keys. If the
+dictionary is also a sequence or an ordered collection, the list must
+contain the keys in the same order as a left key enumeration.
+
+
+ACCESSORS
+
+procedure: *-get * [thunk] =&gt; value
+defined for: all collections
+
+Returns an arbitrary value from a collection.
+
+procedure: *-get-key * key [thunk] =&gt; value
+defined for: dictionaries
+
+Returns the value mapped by the given key.
+
+procedure: *-get-left * [thunk] =&gt; value
+defined for: sequences and ordered collections
+
+Returns the leftmost value in the sequence or the least value in the
+ordered collection.
+
+procedure: *-get-right * [thunk] =&gt; value
+defined for: reversible sequences and reversible ordered collections
+
+Returns the rightmost value in the sequence or the greatest value in the
+ordered collection.
+
+procedure: *-ref * position [thunk] =&gt; value
+defined for: sequences and ordered collections
+
+Returns the value stored in the sequence in the given position, which
+must be an exact integer between 0 and one less than the collection's
+size. (Some sequences may extend the range of allowed positions.)
+
+procedure: *-contains? * value =&gt; boolean
+defined for: bags, sets, and dictionaries
+
+Returns a true value if the collection contains any instances of the
+requested value.
+
+
+VALUE MUTATORS
+
+procedure: *-set * position new-value [thunk] =&gt; * value
+procedure: *-set! * position new-value [thunk] =&gt; unspecified
+defined for: sequences and ordered collections
+
+Replaces the value stored in the sequence in the given position, which
+must be an exact integer between 0 and one less than the collection's
+size. (Some sequences may extend the range of allowed positions.)
+
+The *-set procedure returns two values: the modified collection and the
+position's previous value. The *-set! procedure modifies the original
+collection destructively and returns an unspecified value.
+
+procedure: *-set-key * key new-value [thunk] =&gt; * value
+procedure: *-set-key! * key new-value [thunk] =&gt; unspecified
+defined for: sequences and ordered collections
+
+Replaces the value mapped to the key, which must already exist.
+
+The *-set-key procedure returns two values: the modified collection and
+the key's previous mapped value. The *-set-key! procedure modifies the
+original collection destructively and returns an unspecified value.
+
+procedure: *-update * position f [thunk] =&gt; *
+procedure: *-update! * position f [thunk] =&gt; unspecified
+defined for: sequences and ordered collections
+
+Updates the value stored in the sequence in the given position to the
+result of applying the one-argument function f to the previous value.
+(An update may be more efficient than the equivalent get-f-set
+expression, and it may permit atomic or thread-safe operation.)
+
+The *-update procedure returns the modified collection. The *-update!
+procedure modifies the original collection and returns an unspecified
+value.
+
+procedure: *-update-key * key f [thunk] =&gt; *
+procedure: *-update-key! * key f [thunk] =&gt; unspecified
+defined for: sequences and ordered collections
+
+Updates the value mapped by key to the result of applying the
+one-argument function f to the previous value. (An update may be more
+efficient than the equivalent get-f-set expression, and it may permit
+atomic or thread-safe operation.)
+
+The *-update-key procedure returns the modified collection. The
+*-update-key! procedure modifies the original collection and returns an
+unspecified value.
+
+
+COLLECTION MUTATORS
+
+When adding or inserting a value into a dictionary, the new value must
+be a key-value pair, unless the procedure is specifically defined for
+dictionaries. Likewise, when removing or deleting a dictionary value,
+the returned value is a key-value pair. A key-value pair is a Scheme
+pair whose car is the key and whose cdr is the mapped value:
+(cons key value).
+
+procedure: *-clear[!] * [thunk] =&gt; *
+defined for: all collections
+
+Returns an empty collection of the same type as the argument.
+
+procedure: *-add[!] * new-value [thunk] =&gt; *
+defined for: all collections
+
+Returns a collection of the same type with the new value added.
+
+procedure: *-add-each[!] * source-collection [thunk] =&gt; *
+defined for: all collections
+
+As *-add, except that it adds each of the values in the source
+collection. If the source collection contains duplicate values, it adds
+each duplicate individually. If the destination collection is a
+dictionary, the source must provide key-value pairs.
+
+procedure: *-add-key[!] * new-key mapped-value [thunk] =&gt; *
+defined for: dictionaries
+
+Returns a collection of the same type with the new key mapped to the
+given value.
+
+procedure: *-remove[!] * value [thunk] =&gt; * value
+defined for: all collections except those with fixed size
+
+Removes a single instance of the given value. Returns the modified
+collection and the removed value.
+
+procedure: *-remove-every[!] * value =&gt; * list
+defined for: all collections
+
+Removes every instance of the given value. Returns the modified
+collection and the removed value. Note: If the collection contains no
+matching values, the procedure does not invoke the failure thunk; it
+returns (values * '()).
+
+procedure: *-remove-each-from[!] * source-collection [thunk] =&gt; % list
+procedure: *-remove-every-from[!] * source-collection [thunk] =&gt; % list
+defined for: all collections
+
+As *-remove and *-remove-every, repeated for each value in the source
+collection. If the source collection has duplicate values, the
+*-remove-each-from procedure will remove those values multiple times.
+Duplicate values have no effect on the *-remove-every-from procedure.
+
+procedure: *-remove-left[!] * [thunk] =&gt; * value
+defined for: flexible sequences and ordered collections
+
+Removes the leftmost value in the sequence or the least value in the
+ordered collection. Returns the updated collection and the value
+removed.
+
+procedure: *-remove-right[!] * [thunk] =&gt; * value
+defined for: reversible sequences and reversible ordered collections
+
+Removes the rightmost value in the sequence or the greatest value in the
+ordered collection. Returns the updated collection and the value
+removed.
+
+procedure: *-remove-key[!] * key [thunk] =&gt; * pair
+defined for: dictionaries
+
+Removes a single mapping with the given key. Returns the modified
+dictionary and the removed key-value pair.
+
+procedure: *-remove-every-key[!] * key [thunk] =&gt; * list
+defined for: dictionaries
+
+Removes every mapping with the given key. Returns the modified
+dictionary and a list of the removed key-value pairs. Like
+*-remove-every, this procedure returns an empty list instead of invoking
+the failure thunk.
+
+procedure: *-remove-each-key-from[!] * source [thunk] =&gt; * list
+procedure: *-remove-every-key-from[!] * source [thunk] =&gt; * list
+defined for: dictionaries
+
+As *-remove-key and *-remove every-key, except that they remove each key
+found in the source collection. If the source collection is another
+dictionary, use its keys as the source; otherwise, use the source
+collection's values. Examples:
+
+    (dictionary-remove-every-key-from dict1 dict2)
+    Removes every key from dict1 that is also a key of dict2.
+
+    (dictionary-remove-every-key-from my-dict my-bag)
+    Removes every key from my-dict that is a value of my-bag.
+
+    (dictionary-remove-every-key-from my-dict '(hello goodbye))
+    Removes the mappings keyed to 'hello and 'goodbye.
+
+These procedures return two values: The modified dictionary and a list
+of key-value pairs.
+
+procedure: *-insert[!] * position new-value [thunk] =&gt; *
+defined for: flexible sequences
+
+Returns a collection of the same type with the new value inserted before
+the given position, increasing the collection's size by one. If the
+position is not equal to the collection's initial size, the procedure
+will shift all previous values right by one, starting at the insertion
+point.
+
+procedure: *-insert-left * new-value [thunk] =&gt; *
+defined for: flexible sequences
+
+As *-insert, except that it inserts the new value at position 0.
+
+procedure: *-insert-right * new-value [thunk] =&gt; *
+defined for: reversible sequences
+
+As *-insert, except that it inserts the new value at the end of the
+sequence.
+
+procedure: *-delete[!] * n [thunk] =&gt; * value
+defined for: flexible sequences and ordered collections
+
+Deletes the nth position in the collection (which may shift subsequent
+values to the left). Returns the resulting collection and the value at
+the deleted position. The position must be an exact integer within the
+collection's range.
+
+procedure: *-delete-left * [thunk] =&gt; *
+defined for: flexible sequences and ordered collections
+
+As *-delete, except that it deletes the value at position 0.
+
+procedure: *-delete-right * [thunk] =&gt; *
+defined for: reversible sequences and reversible ordered collections
+
+As *-delete, except that it deletes the value at the end of the
+sequence.
+
+SET OPERATIONS
+
+procedure: *-union[!] * ... =&gt; *
+defined for: sets
+
+Returns the set union of one or more sets. The resulting set contains
+the values of all input sets.
+
+procedure: *-intersection[!] * ... =&gt; *
+defined for: sets
+
+Returns the set intersection of one or more sets. The resulting set
+contains the values common to all input sets.
+
+procedure: *-difference[!] * ... =&gt; *
+defined for: sets
+
+Returns the set difference between the first set and the union of all
+subsequent sets. The resulting set contains the values of the first set
+which appear in no subsequent set. Returns an empty set if given no
+arguments.
+-- 
+Bradd W. Szonye
+<a  rel="nofollow" href="http://www.szonye.com/bradd">http://www.szonye.com/bradd</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00109" href="msg00109.html">Re: Procedures (interfaces)</a></strong>
+<ul><li><em>From:</em> Taylor Campbell</li></ul></li>
+<li><strong><a name="00115" href="msg00115.html">Re: Procedures (interfaces)</a></strong>
+<ul><li><em>From:</em> scgmille</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00092" href="msg00092.html">s/-LEFT//g?</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+<li><strong><a name="00093" href="msg00093.html">Re: s/-LEFT//g?</a></strong>
+<ul><li><em>From:</em> scgmille</li></ul></li>
+<li><strong><a name="00095" href="msg00095.html">Re: s/-LEFT//g?</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+<li><strong><a name="00102" href="msg00102.html">Re: s/-LEFT//g?</a></strong>
+<ul><li><em>From:</em> scgmille</li></ul></li>
+<li><strong><a name="00103" href="msg00103.html">Re: s/-LEFT//g?</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+<li><strong><a name="00104" href="msg00104.html">Procedures (interfaces)</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00104.html">Procedures (interfaces)</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00106.html">Re: Traits, dictionaries</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00104.html">Procedures (interfaces)</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00109.html">Re: Procedures (interfaces)</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00105"><strong>Date</strong></a></li>
+<li><a href="threads.html#00105"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

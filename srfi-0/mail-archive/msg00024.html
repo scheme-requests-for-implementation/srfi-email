@@ -1,0 +1,163 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: a separate configuration language -->
+<!--X-From-R13: Dvpuneq Yryfrl <xryfrlNerfrnepu.aw.arp.pbz> -->
+<!--X-Date: Fri, 26 Feb 1999 14:00:24 &#45;0600 (CST) -->
+<!--X-Message-Id: 199902261959.OAA12390@kima.nj.nec.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: y9lzp619kfz.fsf@brabantio.informatik.uni&#45;tuebingen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: a separate configuration language</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00023.html">Date Prev</a>][<a href="msg00025.html">Date Next</a>][<a href="msg00023.html">Thread Prev</a>][<a href="msg00025.html">Thread Next</a>][<a href="maillist.html#00024">Date Index</a>][<a href="threads.html#00024">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: a separate configuration language</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: a separate configuration language</li>
+<li><em>From</em>: Richard Kelsey &lt;<a href="mailto:kelsey@DOMAIN.HIDDEN">kelsey@xxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 26 Feb 1999 14:59:55 -0500</li>
+<li><em>Cc</em>: <a href="mailto:srfi-0@DOMAIN.HIDDEN">srfi-0@xxxxxxxxxxxxxxxxx</a>, <a href="mailto:srfi-editors@DOMAIN.HIDDEN">srfi-editors@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:y9lzp619kfz.fsf@DOMAIN.HIDDEN">y9lzp619kfz.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	(<a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+   References: &lt;199902261636.LAA11953@xxxxxxxxxxxxxxx&gt;
+   From: sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx (Michael Sperber [Mr. Preprocessor])
+   Date: 26 Feb 1999 17:52:16 +0100
+
+   Sure, that's just not the way we intended it to be written.
+
+It's the way you wrote it in the revised SRFI.  I quote:
+
+ To demonstrate the utility of the conditional construct, consider the
+ following example: 
+
+    (cond-implements
+       (srfi-a ... aaa ...)
+       (srfi-b ... bbb ...))
+
+ where the programmer is implementing some abstraction that can use
+ function aaa from SRFI a or can use function bbb from SRFI b. However,
+ the semantic fit with aaa is substantially better, which the programmer
+ recognized by giving that implementation first.
+
+All I did was make srfi-a and srfi-b a little more concrete.
+
+   How about:
+
+   (cond-implements
+     (srfi-x 'good)
+     (else
+       (cond-implements
+	(srfi-y (display &quot;GIF only, sorry&quot;)
+		(newline)
+		... jpeg stubs that raise errors ...))
+
+   ?
+
+I don't see why this makes a difference.  Is the intent that the
+implementation not be allowed to choose the ELSE clause if it
+doesn't have to?  What if the ELSE clause has a more efficient
+implementation than any others?  The existence of a feature
+may make the program less efficient rather than more.
+
+What bothers me is that the programmer and user know so much and
+the implementation knows so little.  All the implementation knows
+about is the general efficiency of its SRFI implementations.
+It knows nothing about the semantic loss of a particular choice,
+or the actual efficieny gains.  What if the semantic loss is
+crucial to the user, or if the program only makes minimal use
+of an SRFI?  In neither case would the efficieny matter.
+
+   No, the way we thought it up, the implementation could indeed make
+   different choices from COND-IMPLEMENTS to COND-IMPLEMENTS.  I don't
+   see how this is awful.
+
+It makes it hard to determine what program is actually going to run.
+Suppose SRFI-Y defines function Y and SRFI-Z defines function Z and
+both require some kind of initialization.  My program leads off with:
+
+  (cond-implements ((and srfi-x srfi-y)
+                    ... initialize y using x ...)
+                   ((and srfi-x srfi-z)
+                    ... initialize z using x ...)
+                   (else
+                    (error &quot;insufficient implementation&quot;)))
+
+Later I do:
+
+  (cond-implements (srfi-y (y))
+                   (srfi-z (z)))
+
+If the implementation prefers SRFI-Z to SRFI-Y in the presence
+of SRFI-X, but the other way around without SRFI-X, then this will
+break because the second form will call the uninitialized SRFI.
+In fact, there is no COND-IMPLEMENTS form I can write which will
+necessarily call the correct function, if the implementation is
+free to ignore previous choices.
+                                      -Richard
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00025" href="msg00025.html">Re: a separate configuration language</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr. Preprocessor]</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00023" href="msg00023.html">Re: a separate configuration language</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr. Preprocessor]</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00023.html">Re: a separate configuration language</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00025.html">Re: a separate configuration language</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00023.html">Re: a separate configuration language</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00025.html">Re: a separate configuration language</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00024"><strong>Date</strong></a></li>
+<li><a href="threads.html#00024"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

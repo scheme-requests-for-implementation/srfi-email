@@ -1,0 +1,189 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: lazy string&#45;append and HTML generation -->
+<!--X-From-R13: byrtNcbobk.pbz -->
+<!--X-Date: Wed, 9 Feb 2000 14:50:47 &#45;0600 (CST) -->
+<!--X-Message-Id: 200002092047.UAA22519@fnmoc.navy.mil -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>lazy string-append and HTML generation</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00072.html">Date Prev</a>][<a href="msg00074.html">Date Next</a>][<a href="msg00085.html">Thread Prev</a>][<a href="msg00074.html">Thread Next</a>][<a href="maillist.html#00073">Date Index</a>][<a href="threads.html#00073">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>lazy string-append and HTML generation</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-13@DOMAIN.HIDDEN">srfi-13@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: lazy string-append and HTML generation</li>
+<li><em>From</em>: <a href="mailto:oleg@DOMAIN.HIDDEN">oleg@xxxxxxxxx</a></li>
+<li><em>Date</em>: Wed, 9 Feb 2000 20:47:58 GMT</li>
+<li><em>Cc</em>: <a href="mailto:cmwilson@DOMAIN.HIDDEN">cmwilson@xxxxxxxxxx</a></li>
+<li><em>Reply-to</em>: <a href="mailto:oleg@DOMAIN.HIDDEN">oleg@xxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+	Indeed, instead of applying string-append to a list of
+strings, one can &quot;assume&quot; string-append and leave the list as it
+is. If we need to append more strings, we can concatenate the
+corresponding lists. Better yet, rather than (append l1 l2) we can
+(list l1 l2), thus building a tree. When we're completely done,
+chances are we don't need any string-append. We can walk the whole
+tree and 'display' in-order.
+
+The following is an elaboration of this idea (using Shriram's
+example and making it more contrived):
+
+(SRV:send-reply 
+  (p
+    (table
+      (tr (td &quot;Talks &quot;) (td  &quot; = &quot;) (td  &quot; slides + transitions&quot;))
+      newline		; note, this is a procedure!
+      (and (positive? no-slides)  ; Note, #f is allowed and ignored
+        (tr (td) (td &quot;there are &quot; no-slides &quot; slides&quot;) (td)))
+      (list)		; an empty list is allowed and ignored
+			; Note how Scheme comments are allowed in this
+			; &quot;markup&quot;
+)))
+
+where:
+  (define (p . x) (list &quot;&lt;P&gt;&quot; x &quot;&lt;/P&gt;&quot;))
+  (define (table . x) (list &quot;&lt;TABLE&gt;&quot; x &quot;&lt;/TABLE&gt;&quot;))
+  (define (tr . x) (list &quot;&lt;TR&gt;&quot; x &quot;&lt;/TR&gt;&quot;))
+  (define (td . x) (list &quot;&lt;TD&gt;&quot; x &quot;&lt;/TD&gt;&quot;))
+
+the definitions above are so regular that they positively
+invite macrofication.
+
+By default, SRV:send-reply (see appendix below) writes onto the
+standard input. However, if the current output port happens to be a
+string port, SRV:send-reply will act as a string-append, or
+string-concat. However, unlike regular string-append, SRV:send-reply
+handles a tree rather than a flat list. It allows and forces
+&quot;promises&quot; (procedural values), it deals intelligently with #f and
+'(), it handles characters and numbers in addition to strings. This
+suggests that proposals to extend string-append to take characters,
+for example, might not be necessary.
+
+	I use the style above often in my code. Sometimes the whole
+module is a single application of SRV:send-reply to a large collection
+of lists, strings, procedure invocations, procedures, etc. This is
+very efficient as each atom is touched exactly twice (once when it is
+being put into a cell and another when it is being pulled for
+display). All actions (displaying, appending, splicing, flattening)
+are being delayed till the very end (when many of them may turn
+unnecessary). There is no intermediate garbage created.
+
+	This is very similar to a monadic style typical of
+Haskell. One can consider SRV:send-reply being &quot;main&quot;, a 'list' a
+monadic constructor that _denotes_ a string-append action (without
+actually executing it), and &quot;bind&quot; is, well, 'list' again. As we're
+dealing with output, all the monads in question are of a type IO ().
+
+	Definitions of procedures 'p', 'table', etc. can _easily_ be
+generalized to accept attributes. One can implement any style one
+prefers:
+	(p (('align &quot;CENTER&quot;)) &quot;text&quot; text&quot;)
+or
+	(p (attr align &quot;CENTER&quot;) (attr class &quot;myclass&quot;) &quot;text&quot; text&quot;)
+or
+	(p align: &quot;CENTER&quot; class: &quot;myclass&quot; &quot;text&quot; text&quot;)
+
+	I'm afraid this really has nothing to do with SRFI-13. I'm
+grateful to Olin that he tolerated this side discussion for as long as
+he did. If someone is interested, we can continue on comp.lang.scheme
+or privately. As to SRFI-13: no, I don't propose to add
+SRV:send-reply. However, its mere existence and simplicity shows that
+one doesn't probably need string-concat or generalized
+string-append. SRFI-13 looks great as it is.
+
+	SRV:send-reply _might_ be generalized to a &quot;string output&quot;
+SRFI (similar to a future string input SRFI Olin has alluded to). We
+can collaborate on elaborating this style (or elaborate on
+collaborating). Also, W3C has just recommended XHTML, HTML 4.0
+expressed in XML. As many people are doing their own HTML processing
+in Scheme, I wonder if there might be an interest in a unified
+&quot;(HTML)&quot; specification.
+
+
+Appendix:
+
+		; Output the 'fragments'
+		; The fragments are a list of strings, characters,
+		; numbers, thunks, #f -- and other fragments.
+		; The function traverses the tree inorder, writes out
+		; strings and characters, executes thunks, and ignores
+		; #f and '()
+		; The function returns #t if anything was written at all;
+		; otherwise the result is #f
+(define (SRV:send-reply . fragments)
+  (let loop ((fragments fragments) (result #f))
+    (cond
+      ((null? fragments) result)
+      ((not (car fragments)) (loop (cdr fragments) result))
+      ((null? (car fragments)) (loop (cdr fragments) result))
+      ((pair? (car fragments))
+        (loop (cdr fragments) (loop (car fragments) result)))
+      ((procedure? (car fragments))
+        ((car fragments))
+        (loop (cdr fragments) #t))
+      (else
+        (display (car fragments))
+        (loop (cdr fragments) #t)))))
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00074" href="msg00074.html">lazy string-append and HTML generation</a></strong>
+<ul><li><em>From:</em> Shriram Krishnamurthi</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00072.html">Re: shared-text substrings</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00074.html">lazy string-append and HTML generation</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00085.html">Re: shared-text substrings</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00074.html">lazy string-append and HTML generation</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00073"><strong>Date</strong></a></li>
+<li><a href="threads.html#00073"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

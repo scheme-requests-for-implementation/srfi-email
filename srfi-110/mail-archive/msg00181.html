@@ -1,0 +1,320 @@
+<!-- MHonArc v2.6.16 -->
+<!--X-Subject: Re: More comments, and the ANTLR code is too complex -->
+<!--X-From-R13: "Rnivq O. Iurryre" <qjurryreNqjurryre.pbz> -->
+<!--X-Date: Fri, 31 May 2013 19:03:15 +0200 (MST) -->
+<!--X-Message-Id: E1UiSjR&#45;0004mg&#45;NH@rmm6prod02.runbox.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 87sj1647r6.fsf@tines.lan -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: More comments, and the ANTLR code is too complex</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00180.html">Date Prev</a>][<a href="msg00182.html">Date Next</a>][<a href="msg00180.html">Thread Prev</a>][<a href="msg00182.html">Thread Next</a>][<a href="maillist.html#00181">Date Index</a>][<a href="threads.html#00181">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: More comments, and the ANTLR code is too complex</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &quot;mhw&quot; &lt;<a href="mailto:mhw@DOMAIN.HIDDEN">mhw@xxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: More comments, and the ANTLR code is too complex</li>
+<li><em>From</em>: &quot;David A. Wheeler&quot; &lt;<a href="mailto:dwheeler@DOMAIN.HIDDEN">dwheeler@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 31 May 2013 13:03:13 -0400 (EDT)</li>
+<li><em>Cc</em>: &quot;srfi-110&quot; &lt;<a href="mailto:srfi-110@DOMAIN.HIDDEN">srfi-110@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-110@DOMAIN.HIDDEN">srfi-110@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:87sj1647r6.fsf@DOMAIN.HIDDEN">87sj1647r6.fsf@xxxxxxxxx</a>&gt;</li>
+<li><em>Reply-to</em>: <a href="mailto:dwheeler@DOMAIN.HIDDEN">dwheeler@xxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Mark H Weaver:
+&gt; In the interest of encouraging implementors, I'd recommend making a
+&gt; serious effort to rewrite the grammar to be as conceptually simple and
+&gt; clear as possible.
+
+Agree.  As I replied earlier, we definitely want it as conceptually simple
+and clear as possible.
+
+Is part of the problem just the really long multiple-branch
+construct of it_expr (and maybe some similar cases)?
+I wrote it that way because that makes it easier to
+hand-translate to a recursive-descent implementation.
+But if that's confusing, it'd be trivial to split those up into smaller rules
+(where there are more BNF rules, but each one is simpler).
+
+If splitting the rules into more-and-smaller rules would help, that's important to know.
+
+Below are comments on the many specifics.  BTW, I *really* appreciate
+the specifics, they make it much easier to *act* on!
+
+
+
+&gt; * APOSW, QUASIQUOTEW, UNQUOTEW, and UNQUOTE_SPLICEW are not defined.
+
+They're defined in words above, e.g.:
+&quot;a traditional abbreviation followed by space, tab, or end-of-line is represented as
+APOSW, QUASIQUOTEW, UNQUOTE_SPLICEW, and UNQUOTEW respectively.&quot;
+
+We could define them more formally. The problem is an ANTLR limitation -
+I don't think ANTLR supports look-ahead assertions once a rule has started.
+If it doesn't, nothing prevents us from using the &quot;ANTLR plus useful goodies&quot; notation
+in the SRFI if it makes things clearer.  Then we could write:
+
+WWHITESPACE : SPACE | TAB | '\n' | '\r' ;
+
+APOSW           : {indent_processing()}? =&gt; '\'' (?= WWHITESPACE ) ;
+QUASIQUOTEW     : {indent_processing()}? =&gt; '\`'  (?= WWHITESPACE) ;
+...
+
+
+&gt; * Inconsistent syntax is used within {} in the ANTLR.  In most places
+&gt;   standard Scheme syntax is used, but in 'collecting_tail', the syntax
+&gt;   is more like C.
+
+As I mentioned in my previous post, that's my fault, sorry.
+Basically, my translator... didn't.  We can fix that.  Let me know of any
+other places where you noticed a screw-up, and we'll fix it.
+
+BTW, I really appreciate you catching that.  That's what peer review is all about.
+
+&gt; * Why are the action rules in 'n_expr' simply expressions that refer to
+&gt;   values such as '$n1', but the action rules of 'collecting_tail' are
+&gt;   instead assignment statements that refer to values such as '$more.v'?
+
+Same problem, a screwed-up automated translator.
+
+&gt; * Why is there special handling of (FF | VT)+ EOL ?
+
+The FF|VT line is to allow lines with formfeeds or vertical tabs... but only if
+they are the ONLY things on the line.  It'd be confusing if they were combined
+with other things on a line.
+
+The collecting_tail and it_expr rules, are separate because they are ended
+differently (it_expr is ended by a blank line, while collecting_tail is ended with &quot;*&gt;&quot;).
+Since FF|VT lines are handled the same way, the rule shows up both places.
+
+&gt; * What does 'isperiodp' do exactly?  What if the datum really is &quot;.&quot; or
+&gt;   the symbol whose name is a single period? (written #{.}# in Guile).
+
+Handling &quot;.&quot; is always a challenge, sounds like we need to define
+isperiodp more carefully.  &quot;isperiodp&quot; is only true when you have EXACTLY a
+period character, not preceded by another characters and not followed by
+additional symbol characters.  Thus, isperiodp would return FALSE for |.| or #{.}.
+
+The goal is to ensure that:
+aa1
+! bb
+! .
+! cc
+=&gt; (aa1 bb . cc), an improper list.
+
+While this is also true.
+aa2
+! bb
+! |.|
+! cc
+=&gt; (aa2 bb |.| cc), a proper list.
+
+
+&gt; * The non-terminals 'body' and 'it_expr' use the symbol 'same' even
+&gt;   though the text implies that no extra symbol is generated by the
+&gt;   preprocessing step in that case.  Where does 'same' come from?
+
+The paragraph beginning &quot;Indentation is not directly represented
+in the following syntax definition.&quot;.  But I think you're right, it's not well-defined.
+
+In the FULL ANTLR grammar it's defined as:
+same  : ;  // Emphasizes where neither indent nor dedent has occurred
+
+Transitions from one line to the next, with the same indentation,
+don't actually generate a token.  I added the &quot;same&quot; non-token
+as a comment to make it clear that's what is happening.
+This also makes it easy to implement in a recursive descent parser.
+
+&gt; And here are some comments about the tutorial:
+&gt; 
+&gt; * &quot;Scheme&#xE2;s datum comments (#;datum) comment out the next neoteric
+&gt;   expression, not the next sweet expression (and please don&#xE2;t follow the
+&gt;   semicolon with whitespace).&quot;
+&gt; 
+&gt;    I often put &quot;#;&quot; on the preceeding line, which you're now asking me
+&gt;    not to do.  What is the purpose of this request?  Also, &quot;#;&quot; becomes
+&gt;    much less useful if it cannot comment out an entire sweet expression.
+&gt;    Perhaps &quot;#;&quot; should have a similar rule as the traditional
+&gt;    abbreviations: if it is followed by whitespace, then the following
+&gt;    /sweet expression/ is ignored, otherwise the following /neoteric
+&gt;    expression/ is ignored.  What do you think?
+
+The &quot;please don't follow&quot; text was because I wanted to *reserve*
+&quot;#; WHITESPACE&quot; to comment out sweet-expressions, without
+requiring their implementation.
+
+Sounds like maybe we should just implement them and require them.
+I didn't expect that to be particularly *useful*, but I don't know of a
+reason we can't include them.
+
+
+&gt; * I'd like to see a few more examples for improper lists, such as:
+&gt; 
+&gt;      f
+&gt;        a .
+&gt;        b
+
+Currently that's not an improper list.
+Since the &quot;.&quot; is followed by EOL, the presumption is that this
+CAN'T be an improper list nothing follows!), so it's interpreted as
+(in guile syntax):
+
+(f (a #{.}#) b)
+
+&gt;      f
+&gt;        a b
+&gt;        . c
+
+That would also not be an improper list, but instead:
+(f (a b) c)
+
+
+In neoteric-expressions, (. x) maps to &quot;x&quot;, so that constructs like
+&quot;port(. options)&quot; make sense.  We mapped &quot;.&quot; at the beginning of a line,
+but followed by something else on that line, to have the same semantics.
+
+That doesn't mean they MUST have these semantics, discussion welcome,
+but we were trying to be consistent...!
+
+&gt; * In the tutorial, I found the examples of $ (SUBLIST) a bit confusing:
+&gt; 
+&gt;     a b $ c d          ==&gt;   (a b (c d))
+&gt; 
+&gt;     a b $ c d e f $ g  ==&gt;   (a b (c d e f g))
+&gt;                              ; Not (a b (c d e f (g)))
+&gt; 
+&gt;    This leaves me uncertain of whether the second case is somehow
+&gt;    caused by two $'s on one line, or because there's only one item
+&gt;    after the $.  I'd like to see an example like &quot;a b $ c&quot; or
+&gt;    &quot;a b $ c d e $ f g&quot; to clarify.
+
+Great point.
+
+&gt; * &quot;A sweet-expression reader MUST support three modes: indentation
+&gt;   processing, enclosed, and initial indent.&quot;
+&gt;   [...]
+&gt;   &quot;A marker MUST only have its special meaning when indentation
+&gt;   processing is enabled,&quot;
+&gt; 
+&gt;    This sounds as if &quot;*&gt;&quot; MUST not be recognized, because the reader
+&gt;    will be in &quot;enclosed&quot; mode at that point, no?
+
+No, not when indentation processing is enabled.
+&quot;Enclosed&quot; turns on only inside (...), [...], or {...}.  Once you
+close all matching parens, you're normally back to indent processing.
+
+
+&gt; * &quot;2. If top is the empty string and the indentation length is nonzero,
+&gt;    symbol INITIAL_INDENT is generated and the reader changes to initial
+&gt;    indent mode. When an end-of-line sequence is reached the mode changes
+&gt;    back to indentation processing.&quot;
+&gt; 
+&gt;    If the reader was in &quot;enclosed&quot; mode, then presumably the mode
+&gt;    should not change back to indentation processing, right?
+
+Yes, correct.  All that indentation processing stuff is ignored
+once you're in enclosed mode.
+
+Hm, that clearly needs clarifying, thanks.
+
+
+&gt; * &quot;1. If an end-of-line sequence immediately follows the indentation and
+&gt;       the indentation length is nonzero:
+&gt;        a. If the indentation contains &#xE2;!&#xE2;, it is ignored; an
+&gt;           implementation MUST consume the end-of-line sequence and start
+&gt;           applying these rules again, from the beginning, with the next
+&gt;           line.
+&gt;        b. If the indentation does not contain &#xE2;!&#xE2;, it is considered a
+&gt;           line with no characters (thus indentation has zero length) and
+&gt;           the rest of these rules are applied.&quot;
+&gt; 
+&gt;    I vaguely recall that the distinction here was going to be removed
+&gt;    as a simplification of the rules.  What that idea scrapped?
+
+Yes.  Originally any all-indent-char lines were treated the same.
+
+But recently there were several posted examples where it was pointed out that
+a line containing only indent chars, but at least one &quot;!&quot;, was CLEARLY
+distinct from a blank line and it seemed odd to treat them the same way.
+The goal of the new rule is to &quot;do what I expect it to do&quot; even if the
+rule is more complicated.
+
+
+&gt; * &quot;A marker MUST only have its special meaning when indentation
+&gt;   processing is enabled, it is preceded by indentation or hspace, it is
+&gt;   followed by an hspace or end-of-line, and when it starts with the
+&gt;   character shown (e.g., neither |$| nor '$ contains a marker).&quot;
+&gt; 
+&gt;    The last clause here, &quot;when it starts with the character shown&quot;, is
+&gt;    poorly worded IMO, and redundant with the requirement that &quot;it is
+&gt;    preceded by indentation or hspace&quot;.
+
+It's not redundant, but it may very well be poorly worded.
+The point is that |$| is not a marker, nor is #{$}.  The &quot;$&quot; marker
+MUST begin with the character &quot;$&quot;.
+
+Thanks for the critique!  It may be a few days before I can do very much
+with this (real life and all that), but I'll definitely take this to heart.
+
+--- David A. Wheeler
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00179" href="msg00179.html">More comments, and the ANTLR code is too complex</a></strong>
+<ul><li><em>From:</em> Mark H Weaver</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00180.html">Re: More comments, and the ANTLR code is too complex</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00182.html">Re: More comments, and the ANTLR code is too complex</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00180.html">Re: More comments, and the ANTLR code is too complex</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00182.html">Re: More comments, and the ANTLR code is too complex</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00181"><strong>Date</strong></a></li>
+<li><a href="threads.html#00181"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

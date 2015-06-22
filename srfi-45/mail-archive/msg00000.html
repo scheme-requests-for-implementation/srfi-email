@@ -1,0 +1,227 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Some Questions -->
+<!--X-From-R13: Buvy Prjvt <corjvtNfjoryy.arg> -->
+<!--X-Date: Sun,  5 Oct 2003 22:34:04 +0200 (DFT) -->
+<!--X-Message-Id: y9ld6dbqvcd.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Some Questions</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[Date Prev][<a href="msg00001.html">Date Next</a>][Thread Prev][<a href="msg00001.html">Thread Next</a>][<a href="maillist.html#00000">Date Index</a>][<a href="threads.html#00000">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Some Questions</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &quot;'<a href="mailto:srfi-45@DOMAIN.HIDDEN">srfi-45@xxxxxxxxxxxxxxxxx</a>'&quot; &lt;<a href="mailto:srfi-45@DOMAIN.HIDDEN">srfi-45@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Some Questions</li>
+<li><em>From</em>: Phil Bewig &lt;<a href="mailto:pbewig@DOMAIN.HIDDEN">pbewig@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 30 Sep 2003 16:35:26 -0500</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-45@DOMAIN.HIDDEN">srfi-45@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Reply-to</em>: &quot;<a href="mailto:pbewig@DOMAIN.HIDDEN">pbewig@xxxxxxxxxx</a>&quot; &lt;<a href="mailto:pbewig@DOMAIN.HIDDEN">pbewig@xxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Gnus/5.090019 (Oort Gnus v0.19) XEmacs/21.5 (cassava, berkeley-unix)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Good job!  In fact, I have already appropriated your delay/force
+primitives for my SRFI-40 streams reference implementation, and
+all seems to be working well.  I have some questions:
+
+1)  Given the minimalist spirit of Scheme, why did you decide to
+make lazy a primitive?  It doesn't have to be.  You could define
+delay and force by inlining the definitions of lazy and strict
+into delay:
+
+    (define-syntax delay
+      (syntax-rules ()
+        ((delay exp)
+          (cons 'suspension
+            (lambda () (cons 'value exp))))))
+
+    (define (force promise)
+      (case (car promise)
+        ((value)      (cdr promise))
+        ((suspension) (let ((val ((cdr promise))))
+                        (set-car! promise (car val))
+                        (set-cdr! promise (cdr val))
+                        (force promise)))))
+
+Then (lazy ...) is just the composition of delay and force, as in
+Wadler's transformation, and is no longer primitive.  In fact,
+(delay (force ...)) is so easy to write you may not even feel
+the need to provide lazy as derived syntax.  You also don't need
+to change your recipe.
+
+2)  R5RS suggests that calling force on an object that is not a
+promise may simply return the object instead of causing an error.
+In the reference implementation, something will eventually break
+if force is applied to an object that is not a promise, though
+the error may be signaled in a non-obvious way.  Did you consider
+allowing force to simply return if passed an object that is not a
+promise?  The advantage is that it eliminates a potential error
+message; the disadvantage is that it admits imprecision in dealing
+with types.
+
+3)  Since you have created a new data type of promises (or maybe
+it is better to say you have re-created an old type of promises),
+would you perhaps like to specify a (promise? obj) function that
+takes an object and returns #t if the object is a promise and #f
+otherwise?  Would you also perhaps like to specify two additional
+predicates (forced-promise? obj) and (suspended-promise? obj)
+that can distinguish between a forced promise and a suspended
+promise?  Note that given your current reference implementation
+it is possible to distinguish a promise from its forced value,
+which R5RS says is not necessary for a conforming implementation,
+though it allows the possibility.
+
+For purposes of your reference implementation you could create
+these predicates using SRFI-9 records.  In fact, you could even
+replace the cons-pairs in your implementation with the fields of
+records:
+
+    (define-record-type promise
+      (make-promise promise-status promise-value)
+      promise?
+      (promise-status get-promise-status set-promise-status!)
+      (promise-value get-promise-value set-promise-value!))
+
+    (define-syntax delay
+      (syntax-rules ()
+        ((delay exp)
+          (make-promise 'suspension
+            (lambda () (make-promise 'value exp))))))
+
+    (define (force promise)
+      (if (not (promise? promise))
+        promise ; or else raise an error
+        (case (get-promise-status promise)
+          ((value)      (get-promise-value promise))
+          ((suspension) (let ((val ((get-promise-value promise))))
+                          (set-promise-status! promise
+                            (get-promise-status val))
+                          (set-promise-value! promise
+                            (get-promise-value val))
+                          (force promise))))))
+
+    (define (forced-promise? obj)
+      (and (promise? obj)
+           (eq? (get-promise-status obj) 'value)))
+
+    (define (suspended-promise? obj)
+      (and (promise? obj)
+           (eq? (get-promise-status obj) 'suspension)))
+
+    ; (define-syntax lazy
+    ;   (syntax-rules ()
+    ;     ((lazy exp)
+    ;       (delay (force exp)))))
+
+4)  Could you please state explicitly how you have extended the
+semantics of R5RS force?  In particular, I am looking for a
+specific example where SRFI-45 force would give a different
+answer than R5RS force.  This is a hard question because different
+Scheme implementations give different semantics for R5RS force, as
+in the SRFI-40 discussion of my first reference implementation
+which worked in some Scheme implementations but not others (which
+of course begs the question of *exactly* what is the semantics of
+R5RS force).  When you answer, assume a Scheme implementation like
+scheme48 where my first reference implementation actually worked.
+A corollary to this question is: would any program that uses the
+R5RS definitions of delay and force break if replaced by the
+SRFI-45 definitions of delay and force?
+
+5)  In your Benchmarks, why did you decide to delay the result of
+stream-ref?  If you define stream-ref as
+
+    (define (stream-ref n s)
+      (cond ((null? (force s)) 'error)
+            ((zero? n) (car (force s)))
+            (else (stream-ref (- n 1) (cdr (force s))))))
+
+then you don't need to force the results of the expressions in your
+tests 6 and 7:
+
+    (stream-ref 0 (stream-filter zero? (from 0))) ==&gt; 0
+
+    (times3 7) ==&gt; 21
+
+By the way, although I generally like the combination of testing
+and variable binding that is done by pattern matchers, I think
+that in this particular case pattern matching harms more than
+helps by obscuring the simple fact that stream-ref has three
+possible outcomes; match makes me think it has two, and I have
+to read further -- to the if -- to see that it has three.  Of
+course, both versions of stream-ref ignore the possibility that
+n is negative. 
+
+6)  Why did you decide to order the arguments to stream-ref as
+(stream-ref index s) instead of (stream-ref s index)?  In SRFI-40,
+I struggled quite a while with the proper order of the arguments
+to this function.  (stream-ref index s) seems more natural, with
+the index parameter first and the stream last; most functions that
+operate on concrete data types write the parameters first and the
+data-type argument last.  But R5RS defines (list-ref list index)
+in the opposite order, and I decided in my SRFI to be consistent
+with the R5RS function.  The choice would matter more in a
+language like ML or Haskell that provides a more natural syntax
+for curried functions than Scheme does; there, you would have to
+decide between:
+
+    ref n s makes it easy to write a function that always
+    returns a specific n'th element of any stream s -- think
+    of the lisp functions first, second, third, and so on
+
+    ref s n makes it easy to write a function that always
+    returns any n'th element of a specific stream s -- think
+    of repeatedly indexing into the same stream
+
+I don't think there is any particularly right or wrong answer to
+this question, I'm just curious what other people think.
+
+Phil
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Next by Date:
+<strong><a href="msg00001.html">Some Questions</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00001.html">Some Questions</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00000"><strong>Date</strong></a></li>
+<li><a href="threads.html#00000"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

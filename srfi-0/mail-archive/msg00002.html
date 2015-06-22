@@ -1,0 +1,187 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Namespace management &#38; SRFI&#45;0 -->
+<!--X-From-R13: Rbabina Ybyoyl <qbabinaNefpurzr.bet> -->
+<!--X-Date: Tue, 5 Jan 1999 15:25:33 &#45;0600 (CST) -->
+<!--X-Message-Id: Pine.LNX.3.96.990105151134.3325J&#45;100000@wind.rscheme.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 199901052107.QAA31206@sarg.Ryerson.CA -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Namespace management &amp; SRFI-0</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00001.html">Date Prev</a>][<a href="msg00003.html">Date Next</a>][<a href="msg00001.html">Thread Prev</a>][<a href="msg00003.html">Thread Next</a>][<a href="maillist.html#00002">Date Index</a>][<a href="threads.html#00002">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Namespace management &amp; SRFI-0</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Dave Mason &lt;<a href="mailto:dmason@DOMAIN.HIDDEN">dmason@xxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Namespace management &amp; SRFI-0</li>
+<li><em>From</em>: Donovan Kolbly &lt;<a href="mailto:donovan@DOMAIN.HIDDEN">donovan@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 5 Jan 1999 15:25:30 -0600 (CST)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-0@DOMAIN.HIDDEN">srfi-0@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:199901052107.QAA31206@DOMAIN.HIDDEN">199901052107.QAA31206@xxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>On Tue, 5 Jan 1999, Dave Mason wrote:
+
+&gt; &gt;&gt;&gt;&gt;&gt; On Tue, 5 Jan 1999 13:40:02 -0600 (CST), Donovan Kolbly &lt;donovan@xxxxxxxxxxx&gt; said:
+&gt; 
+&gt; &gt; Is it permissible for an implementation to make available the
+&gt; &gt; definitions implied by a SRFI only within the body of a
+&gt; &gt; corresponding `if-implements'?
+&gt; 
+&gt; Not as it's currently (intended to be) written.  The problem as we
+&gt; envisioned it is that there may be alternative/conflicting SRFI's (and
+&gt; the editors will have a comment on some issues relating to this
+&gt; shortly).  So a programmer wanting to provide a foo function might say
+&gt; something like:
+&gt; 
+&gt; 	(if-implements SRFI-22
+&gt; 	   (define foo ....using.some.feature.from.SRFI-22...)
+&gt; 	   (if-implements SRFI-17
+&gt; 	      (define foo ....using.some.feature.from.SRFI-17...)
+&gt; 	      (define foo ....some.portable.way...)))
+&gt; 
+&gt; Would this be possible with your proposed implementation?  I assume
+&gt; the answer is yes, so it might resolve some of the other problems I
+&gt; have with SRFI-0 as it stands.
+
+Yes, and that's exactly how I am thinking it would be used.  In general, I
+imagine an application developer encapsulating their non-standard or
+low-level functionality into a set of procedures for which they can
+provide various &quot;adapter&quot; implementations based on which SRFI(s) are
+available.
+
+In my &quot;with-module&quot; implementation of if-implements, the local definitions
+(within the if-implements) can see the SRFI-specific variables, but the
+rest of the application doesn't and shouldn't -- the rest of the app
+should see only the definitions that the app developer provides.
+
+&gt; 
+&gt; More problematically, how would you implement this portably, in say,
+&gt; R5RS macros?
+
+Well, R5RS doesn't have much module support, so I'm not sure it'd be
+possible.
+
+&gt; 
+&gt; Without your restriction, an implementation could (almost) do this
+&gt; with the code from SRFI-0:
+&gt; 
+&gt; (define-syntax if-implements
+&gt;   (syntax-rules (SRFI-1 SRFI-5)
+&gt;     ((if-implements SRFI-1 yes)
+&gt;         (begin ...all.the.code.from.SRFI-1... yes))
+&gt;     ((if-implements SRFI-1 yes no)
+&gt;         (begin ...all.the.code.from.SRFI-1... yes))
+&gt;     ...)
+&gt; 
+&gt; But with your restriction, the ...all.the.code... part needs to
+&gt; provide definitions in a scope that only includes the ``yes'' code,
+&gt; but defines in the ``yes'' code must be publicly visible.  This may be
+&gt; problematic for other implementations.
+
+Good point.  Modulo syntax definitions, one would need a generalization of
+something like:
+
+  ...
+  ((if-implements SRFI-1 (define (name arg ...) body ...))
+   (define name
+    (letrec (...tweaked defns from SRFI-1...)
+     (lambda (arg ...)
+       body ...))))
+  ...
+
+the main trick just being to destructure any definitions inside the `yes'
+part and insert the SRFI-1 defns as a letrec in the middle.
+
+Sadly not possible in general, I don't think, and anyway syntax
+definitions wouldn't work because they're not first-class and can't
+percolate up past the letrec.
+
+I would be quite happy if the SRFI-0 spec _ALLOWED_ my approach, basically
+by ambiguating on whether the definitions from the named SRFI area
+available to code other than the `yes' code.  My implementation approach
+would say no, they're not available, wheras other implementations which
+incorporate all available SRFIs into the top-level would say yes.
+
+Clearly, there would still be lots of room for a program to depend on one
+approach or the other, but we could say that such a program was not SRFI-0
+compatible anyway.
+
+&gt; 
+&gt; &gt; My thinking is this: what I would like to do is map `if-implements'
+&gt; &gt; to RScheme's `with-module'.  ((with-module M B ...) provides access
+&gt; &gt; within its body, B ..., to the exported definitions of the given
+&gt; &gt; module M.)  I am planning on providing most SRFI implementations in
+&gt; &gt; the form of loadable modules with canonical names.  This should
+&gt; &gt; allow users to easily download new SRFI implementations, and
+&gt; &gt; propertly manage the namespace even of conflicting SRFIs.
+&gt; 
+&gt; I like these properties!
+
+And if I can write the right web agent, I'll build 'em automatically by
+default from the posted sample implementation!  (And if we had test suites
+in the same vein, I'd run those too automatically.)
+
+-- Donovan Kolbly                    (  RScheme Development Group
+                                     (  d.kolbly@xxxxxxxxxxx
+				     (  <a  rel="nofollow" href="http://www.rscheme.org/~donovan/">http://www.rscheme.org/~donovan/</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00001" href="msg00001.html">Re: Namespace management &amp; SRFI-0</a></strong>
+<ul><li><em>From:</em> Dave Mason</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00001.html">Re: Namespace management &amp; SRFI-0</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00003.html">Re: Namespace management &amp; SRFI-0</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00001.html">Re: Namespace management &amp; SRFI-0</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00003.html">Re: Namespace management &amp; SRFI-0</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00002"><strong>Date</strong></a></li>
+<li><a href="threads.html#00002"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,575 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Suggestion for SRFI 0 -->
+<!--X-From-R13: fcreoreNWasbezngvx.Gav&#45;Fhrovatra.Rr ([vpunry Ecreore M[e. Bercebprffbe]) -->
+<!--X-Date: Fri, 5 Feb 1999 14:14:53 &#45;0600 (CST) -->
+<!--X-Message-Id: y9lu2x0obf2.fsf@brabantio.informatik.uni&#45;tuebingen.de -->
+<!--X-Content-Type: multipart/mixed -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Suggestion for SRFI 0</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00012.html">Date Prev</a>][<a href="msg00014.html">Date Next</a>][<a href="msg00040.html">Thread Prev</a>][<a href="msg00015.html">Thread Next</a>][<a href="maillist.html#00013">Date Index</a>][<a href="threads.html#00013">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Suggestion for SRFI 0</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-0@DOMAIN.HIDDEN">srfi-0@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Suggestion for SRFI 0</li>
+<li><em>From</em>: <a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a> (Michael Sperber [Mr. Preprocessor])</li>
+<li><em>Date</em>: 05 Feb 1999 21:14:41 +0100</li>
+<li><em>Cc</em>: Marc Feeley &lt;<a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Sender</em>: <a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+Hi Marc,
+
+we have reviewed the issues surrounding SRFI 0 resulting from the
+discussion so far.  We've also studied a range of Scheme
+implementations for compatibility with the ideas of SRFI 0.  The
+current draft covers a lot of the ground, but not all of it.
+
+In particular, some Scheme implementations take the stance that no
+features beyond R5RS are present &quot;by default&quot;; any additional features
+require explicit imports.  It would be great if we could have a SRFI 0
+which would cater to this situation, without impeding its viability on
+more traditional systems.  This has turned out to be a complicated
+task; the mailing list discussion had already uncovered that there are
+non-trivial scoping issues to be worked out.
+
+Since the mailing list discussion has already shown most of the issues
+at hand, we decided to just go ahead and suggest a concrete revision
+of SRFI 0 which caters to these requirements.  It is implementable
+with essentially the same machinery as the current SRFI 0 draft, but
+allows for a wider range of implementation strategies, and thus maps
+more naturally to the various native language extension mechanisms of
+current Scheme systems.  Functionally, the revision suggestion
+subsumes the current draft.
+
+We hope you like it.  Let us know!
+
+Dave, Mike, and Shriram (The SRFI Editors)
+
+</pre><address>Title: <strong>SRFI 0: Feature import and feature-based conditional expansion</strong></address>
+
+
+  
+
+  
+
+<H1>Title</H1>
+
+Feature import and feature-based conditional expansion
+
+<H1>Author</H1>
+
+Marc Feeley
+
+<H1>Abstract</H1>
+
+<p>
+It is desirable that program which depend on additions to standard
+Scheme name those additions.  SRFIs provide the specifications of
+these additions ("features"), and SRFI 0 provides the means to
+actually check and handle their correct use.  It is anticipated that
+there will be two classes of features:
+</p>
+
+<p>
+<ul>
+<li>libraries of value and syntax bindings</li>
+<li>changes in reader syntax</li>
+</ul>
+</p>
+
+<p>
+("Reader syntax" refers to aspects of the syntax described by the
+grammars in the Scheme reports.)
+</p>
+
+<p> The former class of features will probably include most SRFIs,
+exemplified by the list library specified in <a rel="nofollow" href="../srfi-1/">SRFI
+1</a>.  The latter class includes Unicode and different kinds of
+parentheses.
+</p>
+
+<p>
+One of the goals of this SRFI is to have feature implementations
+map naturally to the module systems of the respective Scheme
+implementations, where such a module system exists.
+</p>
+
+<p>
+The scope of bindings for the provided features will vary over different
+implementations.  Thus, to achieve portability, a program should only
+use a feature after an appropriate import clause, even if some Scheme
+implementations provide it by default.
+</p>
+
+<p>
+SRFI 0, unlike other "require"-like library systems common in the Lisp
+world, separates between testing for the sheer existence of a
+feature and actually using it.  This allows programs to be written
+which function in a wide variety of different Scheme implementations.
+</p>
+
+<H1>Rationale</H1>
+
+<p>Most Scheme systems extend the language with some additional
+features (such as the ability to manipulate Unicode characters and
+strings, to do binary I/O, or to handle asynchronous interrupts).
+Such features may be provided in a variety of ways including new
+procedures, new program syntax, and extended behavior of standard
+procedures and special-forms.  A particular functionality may exist in
+several or even most Scheme systems but its API may be different (use
+of a procedure or special-form, name, number of parameters, etc).
+</p>
+
+<h2>Constructs</h2>
+
+<p>Different Scheme systems provide language extensions by different
+means: Some have them built-in by default, some provide them via
+on-demand loading of code, some provide them via module systems.
+Combinations of these approaches also exist.
+</p>
+
+<p>To
+write code that will run on several Scheme systems, it is useful to
+have common constructs to:
+</p>
+
+<p>
+<ul> <li>enable or disable sections of code based on the ``existence'' or
+absence of a feature in the Scheme system being used via a conditional
+construct,</li>
+
+<li>make the the actual feature ``available'' for use through loading
+its implementation, opening a module, or a no-op (if it is
+built-in).</li>
+</ul>
+</p>
+
+<p>Features are identified by <em>feature identifiers</em>.  In order
+for the semantics of this construct to be well-defined, the feature
+identifier must of course refer to a feature which has a well-defined
+meaning.  There is thus a need for a registry, independent of this
+SRFI, to keep track of the formal specification associated with each
+valid feature-identifier.  The SRFI registry is used for this purpose.
+</p>
+
+<p> Another issue is the binding time of this construct (i.e. the
+moment when it operates).  It is important that the binding time be
+early so that a compiler can discard the sections of code that are not
+needed, and perform better static analyses.  Expressing this construct
+through a procedure returning a boolean, such as
+<code>(feature-implemented?&nbsp;'srfi-5)</code>, would not achieve this
+goal, as its binding time is too late (i.e. program run-time).  A
+read-time construct, such as Common Lisp's <code>#+</code> read-macro,
+is very early but would require non-trivial changes to the reader of
+existing Scheme systems and the syntax is not particularly
+human-friendly.  Instead, a macro-expansion-time construct is used.
+</p>
+
+<p>It is desirable to separate the act of checking for the existence
+of a feature from actually making it available for a Scheme program to
+use.  This enables program to make more involved decisions about what
+features of the ones available it might use.  Hence, the SRFI also
+specifies an <code>IMPORT-IMPLEMENTATION</code> form which makes the
+bindings provided by a feature available.  Separating this from the
+conditional construct also makes for more readable programs,
+especially in cases where the program requires a fixed set of
+features, and the only decision it makes are is to determine if qthe
+features exist (and the program will run) or not (in which case it
+won't).<p>
+
+<p>Macro-expansion time may not be early enough to handle features
+which are effectively changes to the reader used by the Scheme
+implementation.  Therefore, a third construct,
+<code>IMPORT-READER-SYNTAX</code>, which may only occur at the
+beginning of a syntactic processing unit, specifies its syntax.</p>
+
+<h2><code>COND-IMPLEMENTS</code> design</h2>
+
+<p> One valid way to implement <code>COND-IMPLEMENTS</code> is in
+terms of a simpler <code>IF-IMPLEMENTS</code> construct with
+dependencies on just one feature at a time, and just one or two
+branches.  Why not specify <code>IF-IMPLEMENTS</code> instead?
+</p>
+
+<p>The <code>COND-IMPLEMENTS</code> construct specified here gives
+Scheme implementations more flexibility in implementing it.  The
+specification is intentionally ambiguous as to which clause will be
+expanded in a <code>COND-IMPLEMENTS</code> form.  This is in order to
+allow Scheme implementations to choose an especially convenient
+(fastest/least memory-intensive/...) combination of implementations.
+</p>
+
+<p> To demonstrate the utility of the conditional construct, consider
+the following example:
+</p>
+
+<p>
+<pre>
+    (cond-implements
+       (srfi-a ... aaa ...)
+       (srfi-b ... bbb ...))
+</pre>
+</p>
+
+<p>where the programmer is implementing some abstraction that can use
+function <code>aaa</code> from SRFI&nbsp;a or can use function
+<code>bbb</code> from SRFI&nbsp;b.  However, the semantic fit with
+<code>aaa</code> is substantially better, which the programmer
+recognized by giving that implementation first.  So if both SRFIs
+exist, and the "quality" of implementation is the comparable for SRFI
+a and SRFI&nbsp;b, then using the version with the better semantic fit
+is probably more efficient.  However if they both exist, but
+SRFI&nbsp;a must be compiled and loaded from a slow reference
+implementation, and SRFI&nbsp;b is implemented as a built-in
+native-code library, it is preferable that the Scheme implementation
+should use the second version.
+</p>
+
+<H1>Specification</H1>
+
+<h2>Syntax</h2>
+
+<p>
+<pre>
+&lt;_expression_&gt; --&gt; (COND-IMPLEMENTS &lt;cond-implements clause&gt;+)
+&lt;command or definition&gt;
+             --&gt; (IMPORT-IMPLEMENTATION &lt;feature identifier&gt;+)
+&lt;cond-implements clause&gt;
+             --&gt; (&lt;implementation requirement&gt; &lt;body&gt;)
+             --&gt; (ELSE &lt;body&gt;)
+&lt;implementation requirement&gt;
+             --&gt; &lt;feature identifier&gt;
+             --&gt; (AND &lt;implementation requirement&gt;*)
+             --&gt; (OR &lt;implementation requirement&gt;*)
+             --&gt; (NOT &lt;implementation requirement&gt;)
+&lt;feature identifier&gt;
+             --&gt; srfi-&lt;srfi number&gt;
+&lt;srfi number&gt; --&gt; &lt;nonzero digit 10&gt; &lt;digit 10&gt;*
+&lt;nonzero digit 10&gt; --&gt; 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
+
+&lt;program&gt;    --&gt; &lt;syntax import&gt;? &lt;command or definition&gt;*
+&lt;syntax import&gt; --&gt; (IMPORT-READER-SYNTAX &lt;feature identifier&gt;+)
+</pre>
+</p>
+
+<h2><code>COND-IMPLEMENTS</code></h2>
+
+<p>
+<code>COND-IMPLEMENTS</code> tests for the existence of feature implementations.
+It either expands into the body of one of its clauses or signals an
+error during syntactic processing.  <code>COND-IMPLEMENTS</code> expands into the
+body of a clause whose implementation requirement the underlying
+Scheme implementation can satisfy.
+</p>
+
+<p> An implementation requirement has an obvious interpretation as a
+logical formula, where the <code>&lt;feature identifier&gt;</code>
+variables have meaning TRUE if an implementation corresponding to the
+named feature exists in the underlying Scheme implementation, and
+FALSE otherwise.  An implementation requirement is satisfied if its
+formula is true under this interpretation.
+</p>
+
+<p>
+It is unspecified into which body the <code>COND-IMPLEMENTS</code> form expands if
+several clauses have satisfiable requirements.
+</p>
+
+<p>
+The existence of an implementation in no way implies that the bindings
+provided by it are actually visible.  (But it is possible that
+bindings provided by implementations are visible by default.)
+</p>
+
+<h2><code>IMPORT-IMPLEMENTATION</code></h2>
+
+<p>
+<code>IMPORT-IMPLEMENTATION</code> makes available value and syntactic
+bindings from feature implementations.  If a feature specified in an
+<code>IMPORT-IMPLEMENTATION</code> clause does not exist, an error is
+signalled during syntactic processing.  If the bindings relating to a
+feature implementation are already available,
+<code>IMPORT-IMPLEMENTATION</code> is a no-op.  It is an error for the
+bindings imported by one or several <code>IMPORT-IMPLEMENTATION</code>
+forms to conflict with each other.  The existence test here is the
+same as in <code>COND-IMPLEMENTS</code>.
+</p>
+
+It is an error for an <code>IMPORT-IMPLEMENTATION</code> to appear
+anywhere other than at toplevel.
+
+<h2><code>IMPORT-READER-SYNTAX</code></h2>
+
+<p>
+In Scheme implementations which implement alternate reader syntaxes,
+<code>IMPORT-READER-SYNTAX</code> allows stating that a syntactic
+processing unit is written in the syntax specified by a SRFI.  If a
+feature specified in an <code>IMPORT-READER-SYNTAX</code> clause does
+not have an implementation, an error is signalled during syntactic
+processing.  The alternative syntax will be in effect immediately
+following the closing parenthesis of the
+<code>IMPORT-READER-SYNTAX</code> form.  If the reader changes
+relating to a feature implementation are already in effect,
+<code>IMPORT-READER-SYNTAX</code> is a no-op.  It is an error for the
+syntaxes imported by one or several <code>IMPORT-READER-SYNTAX</code>
+forms to conflict with each other.  The existence test here is the
+same as in <code>COND-IMPLEMENTS</code>.
+</p>
+
+<p>
+It is an error for an <code>IMPORT-READER-SYNTAX</code> to appear
+anywhere but as the first form in a syntactic processing unit or
+within that first form, either literally or as a result of macro
+expansion.
+</p>
+
+<h1>Appendix: Implementation Issues</h1>
+
+<p>
+A feature implementation may be, for example:
+</p>
+
+<p>
+<ul>
+<li>present by default in a Scheme implementation</li>
+<li>implemented as a module in the Scheme implementation</li>
+<li>implemented as a source or object file in a standard location</li>
+</ul>
+</p>
+
+<p>
+The latter two possibilities allow loading or linking a feature
+implementation "on-demand" only for programs which actually use them.
+Some Scheme implementations might use the underlying package system to
+implement on-demand loading.  Batch implementations might process a
+program using SRFI 0 to generate link commands.  Other possibilities
+exist.
+</p>
+
+<p>
+It is the intention that, if the implementation has a choice between
+equivalent "quality," it will choose the first matching clause in
+left-to-right order.
+</p>
+
+<p>
+In Scheme implementations where feature implementations are loadable,
+<code>COND-IMPLEMENTS</code> by itself should
+merely test for the existence of implementations, but not actually
+load any code, import any bindings, or make any reader changes.  The
+actual loading/importing only happens through
+<code>IMPORT-IMPLEMENTATION</code> and
+<code>IMPORT-READER-SYNTAX</code>.
+</p>
+
+<p>
+In Scheme implementations where feature implementations are not loadable,
+<code>COND-IMPLEMENTS</code> is a simple feature test, and
+<code>IMPORT-IMPLEMENTATION</code> and
+<code>IMPORT-READER-SYNTAX</code> are no-ops if they do not signal an
+error.
+</p>
+
+<p>
+The issue of alternative reader syntax is the most difficult.  The
+specification of <code>IMPORT-READER-SYNTAX</code> makes the
+assumption that one syntactic processing unit has a single syntax
+throughout.  It is convenient to have the processing unit specify
+which syntax it is written in, rather than specifying the syntax
+externally.
+</p>
+
+<p>
+Since changing the reader syntax may have complex interactions with
+macro expansion and other syntactic processing, the
+<code>IMPORT-READER-SYNTAX</code> must appear at the beginning of a
+processing unit.  The intention is that a Scheme implementation can
+determine the syntax of a processing unit by retrieving the first form
+in a unit via <code>READ</code> and macro-expanding that form.  This
+makes the proposal compatible with Scheme implementations which depend
+on reading in a whole processing unit before macro expansion.
+</p>
+
+<p>
+A consequence of the specification is that an initial form specifying
+a syntax change can really only use <code>LET-SYNTAX</code>,
+<code>LETREC-SYNTAX</code>, uses of macros defined by them, and
+<code>COND-IMPLEMENTS</code>.
+</p>
+
+<p>
+Scheme implementations that do not support changable readers need not
+handle a <code>COND-IMPLEMENTS</code> that appears as the first form specially.
+Here, <code>IMPORT-READER-SYNTAX</code> may be a simple macro.
+</p>
+
+<H1>Implementation</H1>
+
+<p>
+The simplest implementation of SRFI 0 assumes that all existent
+features are built-in.
+</p>
+
+<p><b>Nota bene:</b> This implementation only demonstrates
+implementability under R5RS Scheme.  It is by no means a reference
+implementation to be used in actual Scheme systems.  Moreover, the
+behavior of this implementation is a significant restriction on the
+specification.</p>
+
+<p>
+<pre>
+(define-syntax import-implementation
+  (syntax-rules ()
+    ((import-implementation feature-id ...)
+     (cond-implements (and feature-id ...) 42))))
+
+(define-syntax import-reader-syntax
+  (syntax-rules ()
+    ((import-reader-syntax feature-id ...)
+     (cond-implements (and feature-id ...) 42))))
+</pre>
+</p>
+
+<p>(The specification requires a macro-expansion time error to be
+signalled if a COND-IMPLEMENTS has no fulfilled clause.  There is no
+standard way to so that, so this implementation uses the SYNTAX-ERROR
+form, with the assumption that an actual implementation would provide
+some way to do this.)</p>
+
+<p>
+<pre>
+(define-syntax cond-implements
+  (syntax-rules (and or not else srfi-0 srfi-5)
+    ((cond-implements) (syntax-error "Unfulfilled COND-IMPLEMENTS"))
+    ((cond-implements (else body ...))
+     (begin body ...))
+    ((cond-implements ((and) body ...) more-clauses ...)
+     (begin body ...))
+    ((cond-implements ((and req1 req2 ...) body ...) more-clauses ...)
+     (cond-implements
+       (req1
+         (cond-implements
+           ((and req2 ...) body ...)
+           more-clauses ...))
+       more-clauses ...))
+    ((cond-implements ((or) body ...) more-clauses ...)
+     (cond-implements more-clauses ...))
+    ((cond-implements ((or req1 req2 ...) body ...) more-clauses ...)
+     (cond-implements
+       (req1
+        (begin body ...))
+       (else
+        (cond-implements
+           ((or req2 ...) body ...)
+           more-clauses ...))))
+    ((cond-implements ((not req) body ...) more-clauses ...)
+     (cond-implements
+       (req
+         (cond-implements more-clauses ...))
+       (else body ...)))
+    ((cond-implements (srfi-0 body ...) more-clauses ...)
+       (begin body...))
+    ((cond-implements (srfi-5 body ...) more-clauses ...)
+       (begin body...))
+    ((cond-implements (feature-id body ...) more-clauses ...)
+       (cond-implements more-clauses ...))))
+</pre>
+</p>
+
+<H1>Copyright</H1>
+Copyright (C) Marc Feeley (1999). All Rights Reserved. 
+<p>
+This document and translations of it may be copied and furnished to
+others, and derivative works that comment on or otherwise explain it
+or assist in its implementation may be prepared, copied, published and
+distributed, in whole or in part, without restriction of any kind,
+provided that the above copyright notice and this paragraph are
+included on all such copies and derivative works. However, this
+document itself may not be modified in any way, such as by removing
+the copyright notice or references to the Scheme Request For
+Implementation process or editors, except as needed for the purpose of
+developing SRFIs in which case the procedures for copyrights defined
+in the SRFI process must be followed, or as required to translate it
+into languages other than English.
+<p>
+The limited permissions granted above are perpetual and will not be
+revoked by the authors or their successors or assigns.
+<p>
+This document and the information contained herein is provided on an
+"AS IS" basis and THE AUTHOR AND THE SRFI EDITORS DISCLAIM ALL
+WARRANTIES, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO ANY
+WARRANTY THAT THE USE OF THE INFORMATION HEREIN WILL NOT INFRINGE ANY
+RIGHTS OR ANY IMPLIED WARRANTIES OF MERCHANTABILITY OR FITNESS FOR A
+PARTICULAR PURPOSE.
+
+
+    <hr>
+    <address>Editor: <a rel="nofollow" href="mailto:srfi-editors@xxxxxxxxxxxx">Mike Sperber</a></address>
+<!---->
+<!---->
+Last modified: Fri Feb  5 21:10:35 MET 1999
+<!---->
+  
+
+
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00015" href="msg00015.html">Re: Suggestion for SRFI 0</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr. Preprocessor]</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00012.html">logical operations in if-implements</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00014.html">case sensitivity</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00040.html">Re: SRFI 0 philosophy [WAS: logical operations in if-implements]</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00015.html">Re: Suggestion for SRFI 0</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00013"><strong>Date</strong></a></li>
+<li><a href="threads.html#00013"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

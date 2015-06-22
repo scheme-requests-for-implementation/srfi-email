@@ -1,0 +1,215 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: the "Unicode Background" section -->
+<!--X-From-R13: Fubznf Zbeq <ybeqNrzs.arg> -->
+<!--X-Date: Fri, 22 Jul 2005 20:54:13 +0200 (DFT) -->
+<!--X-Message-Id: 1122058465.4478.69.camel@dev1.seyza.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: the &quot;Unicode Background&quot; section</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00199.html">Date Prev</a>][<a href="msg00201.html">Date Next</a>][<a href="msg00198.html">Thread Prev</a>][<a href="msg00214.html">Thread Next</a>][<a href="maillist.html#00200">Date Index</a>][<a href="threads.html#00200">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: the &quot;Unicode Background&quot; section</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-75@DOMAIN.HIDDEN">srfi-75@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: the &quot;Unicode Background&quot; section</li>
+<li><em>From</em>: Thomas Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 22 Jul 2005 11:54:25 -0700</li>
+<li><em>Cc</em>: <a href="mailto:mflatt@DOMAIN.HIDDEN">mflatt@xxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-75@DOMAIN.HIDDEN">srfi-75@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+me: [don't exclude surrogates from CHAR, make basic 
+     unicode algorithms easy.  Like what you ask?
+     Hmm... how about emitting a UTF-16 stream --
+     isn't that a job for UTF-16?]
+
+mflatt: [the plan is to add {WRITE,READ}-BYTE]
+
+Another example would be a procedure
+which reifies any number of the basic Unicode
+databases.   I think that if you exclude surrogates,
+you quickly get an Emacs Lisp-like situation of
+having to have many character APIs that also
+accept integers instead of characters.   Just seems
+to get quickly icky and to undermine the disjointness
+properties of the type system.
+
+(On the other hand, it's good to see that byte-oriented
+I/O will be added.)
+
+
+mflatt: I'm not concerned about how to implement characters
+        internally. I'm concerned with how to communicate
+        with the rest of the world. [Therefore, allowing
+        unpaired surrogates breaks interoperability --
+        they can't be read or written using only well-formed
+        standard encodings.]
+
+Permitting unpaired surrogates does not damage interoperability
+-- programs need only avoid trying to transmit them on channels
+where strictly well-formed UTF-* is called for.  There are
+many different approaches a program might take to that end -- 
+which is the point: it's the business of applications, not
+Scheme implementors.
+
+I think that mostly the issue won't show up.  A program would
+have to go out of its way to create an unpaired surrogate.
+If a program is reading characters only from well-formed 
+streams, and not creating unpaired surrogates on its own,
+then there is never an issue.   It also isn't hard to imagine
+applications which internally create unpaired surrogates with
+abandon (perhaps while doing character set computations, say)
+but which, by their nature, are in no danger of ever trying to
+transmit these on a strictly well-formed channel.
+
+Also: that none of the currently popular encoding forms permits
+unpaired surrogates is interesting but not normative to all
+possible encoding forms.   Either future standards or application
+specific encoding forms may, for good reasons, want to permit
+the encoding of unpaired surrogates.
+
+mflatt: This is another facet of how I was unclear. I'm less worried
+        about rejecting ill-formed input than having to do something
+        sensible on output. If standard Scheme allows programmers to
+        output a string &quot;\uD800&quot;, then my implementation will need to
+        handle that case somehow.
+
+In my view, DISPLAY (in R6RS, not forever) should be undefined in that
+case (and in all cases where a string contains a non-8-bit-character) --
+especially if you are adding {READ,WRITE}-BYTE and thereby enabling
+experimentation in Unicode I/O APIs.
+
+Of course, that leaves you with the question: what should *your*
+implementation do.  Alas, I don't think it will have to do anything
+it shouldn't be prepared to do otherwise.   Among the kinds of
+real-world ports your implementation should be prepared to support
+are ASCII-only and ISO-8859-*-only ports.   It would be about
+as bad to write other characters (whether in UTF-* or not) on
+those ports as it would to blindly apply the UTF-* encoding
+algorithm to input like your example string.   Either your
+implementation must have a DISPLAY which is strict -- in which
+case you can signal an error, given that string -- or lax --
+in which case it is up to implementations to avoid giving
+it such input.
+
+mflatt: [from anecdotes about experience]
+
+  In any case, I removed the surrogates, but left the range extended.
+  This first bit me when I started testing the GUI toolkit. For example,
+  MzScheme handed the Mac toolbox a &quot;UTF-8&quot; encoded string with the
+  &quot;code point&quot; #x10000000 in it, and the toolbox promptly complained,
+  because it wasn't well-formed UTF-8. Output remained a problem for the
+  same reason, of course, though that took me a little while longer to
+  discover.
+
+I don't see the problem there other than that other aspects of your
+toolkit may have had features that invited this mis-use of an API that
+is not total over the set of Scheme strings.
+
+As evidence that other factors in your toolkit may have been the real
+problem I'll cite GNU Emacs.  It, too, has &quot;extra bits&quot; in the character
+set and plenty of APIs that have no great interpretation for what to
+do with them.  The extra bits are fantastic for keymapping (translating
+keystrokes into commands) but horrid for lots of other purposes (like
+inserting a string into a text buffer).   My Emacs Lisp skills are
+rusty but, afair, the solutions are a mix of things: errors in some
+cases, brutally stripping extra bits in others, etc.   Seems to work 
+fine.
+
+  The problem here isn't really about UTF-8, but the mismatch in
+  definitions of character. 
+
+A more radical proposal for R6RS than mine would be to 
+add user-defined disjoint types, bytes and uniform arrays
+of bytes, and subtract out characters and strings entirely.
+
+As you say, &quot;character&quot; is a type with overloaded uses.  
+It's what keyboards and similar input devices produce.
+It's what used to represent linguistic text in algorithms.
+It's what used in transmissions including display to users.
+All three have very different requirements yet, by convention,
+we mush together a kind of &quot;union type&quot; out of their varying needs,
+mostly because a subset of data from and to those uses tends to flow
+from one of the uses to the others -- it's handy to have
+a disjoint type for this big, by-convention, enumerated
+type.
+
+  My choices seemed to be to define a subset
+  of strings that were allowed for GUI labels and such, or to fix the
+  definition of character. The former seemed error prone (it wasn't
+  clear how many places that would be necessary, both now and in the 
+  future), so I went with the latter.
+
+I've been aiming for (in my proposals here) R6RS tweaks that would
+at least come very close to leaving the implementation you describe
+as conforming.   Your choices there seem like sane ones, especially
+for a system chartered for education.
+
+At the same time: do you know Emacs Lisp?  I think it provides
+some insights about what can be &quot;relaxed&quot; and how without making
+the resulting environment a nightmare, even for students.
+
+-t
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00214" href="msg00214.html">Re: the &quot;Unicode Background&quot; section</a></strong>
+<ul><li><em>From:</em> John.Cowan</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00199.html">Re: new draft</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00201.html">Re: the &quot;Unicode Background&quot; section</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00198.html">Re: the &quot;Unicode Background&quot; section</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00214.html">Re: the &quot;Unicode Background&quot; section</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00200"><strong>Date</strong></a></li>
+<li><a href="threads.html#00200"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

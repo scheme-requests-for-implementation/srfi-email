@@ -1,0 +1,146 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: What #,(foo) does tell... include vs. load -->
+<!--X-From-R13: byrtNcbobk.pbz -->
+<!--X-Date: Thu, 7 Oct 1999 14:08:11 &#45;0500 (CDT) -->
+<!--X-Message-Id: 199910071904.TAA10509@fnmoc.navy.mil -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: What #,(foo) does tell... include vs. load</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00011.html">Date Prev</a>][<a href="msg00013.html">Date Next</a>][<a href="msg00011.html">Thread Prev</a>][<a href="msg00013.html">Thread Next</a>][<a href="maillist.html#00012">Date Index</a>][<a href="threads.html#00012">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: What #,(foo) does tell... include vs. load</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: What #,(foo) does tell... include vs. load</li>
+<li><em>From</em>: <a href="mailto:oleg@DOMAIN.HIDDEN">oleg@xxxxxxxxx</a></li>
+<li><em>Date</em>: Thu, 7 Oct 1999 19:04:46 GMT</li>
+<li><em>Cc</em>: <a href="mailto:kelsey@DOMAIN.HIDDEN">kelsey@xxxxxxxxxxxxxxxxxxx</a>, <a href="mailto:srfi-10@DOMAIN.HIDDEN">srfi-10@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Reply-to</em>: <a href="mailto:oleg@DOMAIN.HIDDEN">oleg@xxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+&gt; 	Now consider
+&gt; 	         (cond-expand
+&gt; 	          ((and srfi-4 srfi-10 srfi-10-4)
+&gt; 	           (define sample-vector '#,(f32 1.0 2.0 3.0))))
+&gt; Note that mixing &quot;cond-expand&quot; and &quot;#,(...)&quot; as in this example is not
+&gt; a good practice.  That is because &quot;#,&quot; operates at read-time and
+&gt; cond-expand operates later, at macro-expansion time.  So the
+&gt; constructor for f32 will be executed regardless of the presence of
+&gt; srfi-4, srfi-10, and srfi-10-4 (and if &quot;#,&quot; is not supported by the
+&gt; reader, you will get a reader error).
+
+You're absolutely right. I'm afraid I got carried away with the
+example and overlooked the timing problem. Sorry.
+
+	I'd like to note however that according to R5RS conventions, a
+phrase &quot;It is also an error if a reader-constructor associated with
+the tag cannot be located&quot; does not necessarily mean that a read-time
+application error should crash the program and generate a core
+dump. An implementation may choose to treat a #,(foo arg...) form for
+an unknown tag foo as being equivalent to #f, the result of (if #f #f)
+or a form (error &quot;read-time tag foo is unknown&quot;). The latter two
+choices report an error lazily, shifting the burden of dealing with
+the error to another phase. A macro-expansion may however re-write the
+expression so that the erroneous form disappears. Therefore, there
+exists an implementation that can handle the example above as it
+stands. Alas, SRFI-10 reference implementation does not do that.
+
+
+&gt; The &quot;#,&quot; mechanism requires the user to understand yet another level
+&gt; of compilation and the time when it is performed (and the model is
+&gt; already not that simple if you consider forms like &quot;(load ...)&quot;,
+&gt; &quot;(include ...)&quot;, and &quot;(eval ...)&quot;, and the REPL).
+
+That's an excellent point. Let's indeed consider load and include forms.
+
+Provided that the following function is defined
+	(define (read-all-as-a-begin-expr filename)
+	  (with-input-from-file filename
+	     (lambda ()
+	       (cons 'begin
+		(let loop ((datum (read)))
+	          (if (eof-object? datum) '()
+		    (cons datum (loop (read)))))))))
+
+and an 'include' reader-ctor is set up as
+	(define-reader-ctor 'include read-all-as-a-begin-expr)
+The following form
+	#,(include &quot;foo.scm&quot;)
+
+appears to have the same semantics as 
+	(include &quot;foo.scm&quot;)
+in Gambit. Furthermore, the load form can be defined as
+	(define (load filename)
+	   (eval (read-all-as-a-begin-expr filename)
+		(interaction-environment)))
+
+IMHO this illustrates rather well the difference and similarities
+between the include and load forms.
+
+	As a matter of fact, this is almost literally how the include and
+load forms are implemented in Gambit, as a file gambc30/lib/_eval.scm
+reveals. Both forms rely on a ##read-all-as-a-begin-expr-from-port
+procedure, which reads from a port rather than a file. 
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00013" href="msg00013.html">Re: What #,(foo) does tell... include vs. load</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00011.html">Re: What #,(foo) does tell, and what it does not</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00013.html">Re: What #,(foo) does tell... include vs. load</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00011.html">Re: What #,(foo) does tell, and what it does not</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00013.html">Re: What #,(foo) does tell... include vs. load</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00012"><strong>Date</strong></a></li>
+<li><a href="threads.html#00012"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

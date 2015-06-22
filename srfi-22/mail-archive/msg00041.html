@@ -1,0 +1,178 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Several comments -->
+<!--X-From-R13: [nep Trryrl <srryrlNWDA.G[bagerny.QO> -->
+<!--X-Date: Tue, 20 Mar 2001 10:14:06 &#45;0600 (CST) -->
+<!--X-Message-Id: 200103201614.f2KGE5r25621@dino02.IRO.UMontreal.CA -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200103100257.VAA24520@mongkok.cc.gt.atl.ga.us -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Several comments</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00040.html">Date Prev</a>][<a href="msg00042.html">Date Next</a>][<a href="msg00021.html">Thread Prev</a>][<a href="msg00042.html">Thread Next</a>][<a href="maillist.html#00041">Date Index</a>][<a href="threads.html#00041">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Several comments</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Several comments</li>
+<li><em>From</em>: Marc Feeley &lt;<a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 20 Mar 2001 11:14:05 -0500</li>
+<li><em>Cc</em>: <a href="mailto:srfi-22@DOMAIN.HIDDEN">srfi-22@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:200103100257.VAA24520@DOMAIN.HIDDEN">200103100257.VAA24520@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	(<a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxxxxx</a>)</li>
+<li><em>References</em>: &lt;<a href="mailto:200103100257.VAA24520@DOMAIN.HIDDEN">200103100257.VAA24520@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; 3. Your design essentially *requires* a /bin/sh trampoline. Which I find
+&gt;    annoying. Perl used to require this kind of trampoline, but as it
+&gt;    became a standard, that became unnecessary. Why not design a standard
+&gt;    with more &quot;legs&quot; for the future-- something that would also work well 
+&gt;    in a world where one can rely on scheme-script occuring in a particular
+&gt;    directory?
+&gt; 
+&gt;    All that is required is the introduction of the
+&gt;      \ &lt;filename&gt;
+&gt;    &quot;meta switch&quot; as described in scsh. Note that doing so still allows
+&gt;    for /bin/sh trampolines, so you can go either way -- it doesn't close
+&gt;    doors. But *not* specifying a meta-switch *does* close doors, since
+&gt;    the true Unix #! command line only allows *one* switch after the
+&gt;    interpreter name, and both interpreter &amp; switch must usually fit within
+&gt;    32 chars. Your design absolutely won't work with the true Unix kernel
+&gt;    #! mechanism; you *have* to trampoline through /bin/sh. Again, this is 
+&gt;    all handled by the meta-switch design, which is *much* cheaper than
+&gt;    a /bin/sh trampoline.
+
+I too would like to allow &quot;scheme-script&quot; to be called directly after
+the &quot;#!&quot; instead of having to use a /bin/sh trampoline.  I understand
+that this may be &quot;less portable&quot; than the /bin/sh trampoline approach
+in the short term.
+
+However I don't like the \ meta switch as proposed by Olin.  What
+bothers me most is that the second line of the script contains other
+command line options.
+
+But why do we need command line options for scheme-script?  If we
+ignore the &quot;--r5rs&quot;, etc switches which will go away when they are
+part of the scheme-script executable name, there only remains the
+&quot;--call &lt;identifier&gt;&quot; switch which indicates which procedure acts
+as the script's &quot;main&quot;.  But this could easily be avoided
+by relying on the script's top level expressions to do the work
+and have a procedure, such as &quot;command-line-arguments&quot;, to get
+a list of the command line arguments.  &quot;scheme-script&quot; would
+simply treat the first command line argument as the script filename
+and the rest as the script arguments.  So instead of writing
+
+  #! /bin/sh
+  &quot;exec&quot; &quot;scheme-script&quot; &quot;$0&quot; &quot;--call&quot; &quot;main&quot; &quot;$@&quot;
+  (define (main arg1 arg2)
+    (write (+ (string-&gt;number arg1) (string-&gt;number arg2))))
+
+one would write
+
+  #! /bin/sh
+  &quot;exec&quot; &quot;scheme-script&quot; &quot;$0&quot; &quot;$@&quot;
+  (define (main arg1 arg2)
+    (write (+ (string-&gt;number arg1) (string-&gt;number arg2))))
+  (apply main (command-line-arguments))
+
+or in a few years (!) simply
+
+  #! /bin/scheme-script
+  (define (main arg1 arg2)
+    (write (+ (string-&gt;number arg1) (string-&gt;number arg2))))
+  (apply main (command-line-arguments))
+
+The advantages of removing the &quot;--call&quot; switch are:
+
+1) it avoids the need for a special mechanism to read additional
+   command line options from the second line of the script.
+
+2) simple handling of &quot;#!&quot; by the load procedure: if the &quot;#!&quot; object is
+   the first datum read in a file, discard the rest of the line.
+
+3) the file can be compiled easily (the compiler only has to discard
+   the &quot;#!&quot; line like &quot;load&quot;, and the rest of the file is a normal
+   &quot;program&quot; which has all the control information (entry point)
+   in normal Scheme syntax).
+
+The only command line options I can foresee a need for, is to
+configure the Scheme system in a special way (set minimal/maximal size
+for the heap, debugging level, etc).  Gambit uses the prefix &quot;-:&quot; to
+introduce these options, and for example
+
+    gsi -:h1000,d2 foo.scm
+
+means: set the maximal heap size to 1MB and set the debugging flag to
+level 2 and then load &quot;foo.scm&quot;.
+
+Such options are clearly implementation dependent, and so a script
+that uses such options is not portable by definition.  It may however
+be useful for SRFI 22 to indicate restrictions on the syntax of the
+script filename so that systems supporting configuration options don't
+misinterpret a filename as an option.  This could be as simple as
+saying that a Scheme script filename must not start with a dash.
+
+Marc
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00042" href="msg00042.html">Re: Several comments</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr. Preprocessor]</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00014" href="msg00014.html">Several comments</a></strong>
+<ul><li><em>From:</em> shivers</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00040.html">Re: semantics and portability</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00042.html">Re: Several comments</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00021.html">Re: Several comments</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00042.html">Re: Several comments</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00041"><strong>Date</strong></a></li>
+<li><a href="threads.html#00041"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

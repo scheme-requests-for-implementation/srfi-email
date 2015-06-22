@@ -1,0 +1,314 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Request for Clarification on Rationale -->
+<!--X-From-R13: Xbb QuheyEbb <vavgNvavFrez.pbz> -->
+<!--X-Date: Wed,  5 Apr 2006 14:42:49 +0200 (MST) -->
+<!--X-Message-Id: uu098mbwt.fsf@iniTerm.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Request for Clarification on Rationale</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00002.html">Date Prev</a>][<a href="msg00004.html">Date Next</a>][<a href="msg00000.html">Thread Prev</a>][<a href="msg00018.html">Thread Next</a>][<a href="maillist.html#00003">Date Index</a>][<a href="threads.html#00003">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Request for Clarification on Rationale</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-86@DOMAIN.HIDDEN">srfi-86@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Request for Clarification on Rationale</li>
+<li><em>From</em>: Joo ChurlSoo &lt;<a href="mailto:init@DOMAIN.HIDDEN">init@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: 05 Apr 2006 21:42:26 +0900</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-86@DOMAIN.HIDDEN">srfi-86@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Gnus/5.09 (Gnus v5.9.0) Emacs/21.3</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+ *Abdulaziz Ghuloum &lt;aghuloum@xxxxxxxxxxxxxx&gt;
+ |I assume you mean &quot;other Scheme values&quot;, not expressions.  Doesn't the
+ |following code bind the evaluated result of VALUES to a single variable?
+ |
+ |(call-with-values (lambda () (values 1 2 3))
+ |  (lambda VALS
+ |    VALS))
+
+The VALS is not the evaluated result of (values 1 2 3) but a list which the
+evaluated result is converted into.
+
+ |QUOTE: Moreover, the pair of VALUES and CALL-WITH-VALUES is clumsy to use 
+ |Is this a fact or an opinion? A SRFI would be more appealing to implementors 
+ |if its rationale is based on facts.
+
+If it is an inconvenient way that &quot;decomposition of multiple values is done by
+simple application&quot;, it will be not a fact.
+
+
+
+ |QUOTE: and somewhat slow under some circumstances.
+ |How slow is &quot;somewhat slow&quot;?  How do you quantify it?  And what are the
+ |circumstances that make VALUES and CALL-WITH-VALUES somewhat slow?  Or
+ |do you really mean under some *implementations*?  Was the topic of
+ |Efficient Implementation of Multiple Return Values in Scheme ever
+ |discussed in the literature?
+
+Even in Chez Petite Scheme and Scheme48 that have VALUES/CALL-WITH-VLUES
+implemented with &quot;An Efficient Implementation of Multiple Return Values in
+Scheme (<a  rel="nofollow" href="http://citeseer.ist.psu.edu/27481.html">http://citeseer.ist.psu.edu/27481.html</a>)&quot;, VALUES/CALL-WITH-VALUES is
+somewhat slow under some circumstances.
+
+The following are the results of simple tests &quot;on REPL&quot;.(Intel 586, Debian or
+Windows)
+
+(define-syntax mu
+  (syntax-rules ()
+    ((mu argument ...) (lambda (f) (f argument ...)))))
+     
+(define m (mu 1 2 3))
+(define v (lambda () (values 1 2 3)))
+(define mm (lambda (x)
+	     (if (&lt; x 0)
+		 (mu 1 2 3)
+		 (if (= x 0)
+		     (mu 4 5 6)
+		     (mu 7 8 9)))))
+(define vv (lambda (x)
+	     (if (&lt; x 0)
+		 (values 1 2 3)
+		 (if (= x 0)
+		     (values 4 5 6)
+		     (values 7 8 9)))))
+
+(time (for-each (lambda (x) (m list)) (make-list 100000 1)))
+(time (for-each (lambda (x) (call-with-values v list)) (make-list 100000 1)))
+(time (for-each (lambda (x) ((mm x) list)) (make-list 100000 1)))
+(time (for-each (lambda (x) (call-with-values (lambda () (vv x)) list)) (make-list 100000 1)))
+
+1. Mzscheme
+Welcome to MzScheme version 301, Copyright (c) 2004-2005 PLT Scheme Inc.
+&gt; (time (for-each (lambda (x) (m list)) (make-list 100000 1)))
+cpu time: 230 real time: 230 gc time: 70
+&gt; (time (for-each (lambda (x) (call-with-values v list)) (make-list 100000 1)))
+cpu time: 270 real time: 281 gc time: 70
+&gt; (time (for-each (lambda (x) ((mm x) list)) (make-list 100000 1)))
+cpu time: 280 real time: 280 gc time: 70
+&gt; (time (for-each (lambda (x) (call-with-values (lambda () (vv x)) list)) (make-list 100000 1)))
+cpu time: 310 real time: 311 gc time: 80
+
+2. Chicken
+Version 1, Build 66 - linux-unix-gnu-x86
+(c)2000-2004 Felix L. Winkelmann
+Using hygienic macros
+; loading /usr/local/share/chicken/chicken-highlevel-macros.scm ...
+#;14&gt; (time (for-each (lambda (x) (m list)) (make-list 100000 1)))
+    0.23 seconds elapsed
+    0.03 seconds in (major) GC
+       0 mutations
+     974 minor GCs
+       1 major GCs
+#;15&gt; (time (for-each (lambda (x) (call-with-values v list)) (make-list 100000 1)))
+    0.31 seconds elapsed
+    0.03 seconds in (major) GC
+       0 mutations
+    1340 minor GCs
+       1 major GCs
+#;25&gt; (time (for-each (lambda (x) ((mm x) list)) (make-list 100000 1)))
+    0.44 seconds elapsed
+    0.02 seconds in (major) GC
+       0 mutations
+    2295 minor GCs
+       1 major GCs
+#;26&gt; (time (for-each (lambda (x) (call-with-values (lambda () (vv x)) list)) (make-list 100000 1)))
+    0.55 seconds elapsed
+    0.02 seconds in (major) GC
+       0 mutations
+    2661 minor GCs
+       1 major GCs
+       
+3. MIT Scheme
+Scheme Microcode Version 14.8
+MIT Scheme running under GNU/Linux
+Type `^C' (control-C) followed by `H' to obtain information about interrupts.
+Scheme saved on Friday March 15, 2002 at 12:00:53 AM
+  Release 7.7.0
+  Microcode 14.8
+  Runtime 15.0
+  SF 4.40
+  Liar (Intel i386) 4.115
+  Edwin 3.112
+1 ]=&gt; (with-timings
+           (lambda () (for-each (lambda (x) (m list)) (make-list 100000 1)))
+           (lambda (run-time gc-time real-time)
+             (write (internal-time/ticks-&gt;seconds run-time))
+             (write-char #\space)
+             (write (internal-time/ticks-&gt;seconds gc-time))
+             (write-char #\space)
+             (write (internal-time/ticks-&gt;seconds real-time))
+             (newline)))
+.27 .2 .47
+;Unspecified return value
+1 ]=&gt; (with-timings
+           (lambda () (for-each (lambda (x) (call-with-values v list)) (make-list 100000 1)))
+           (lambda (run-time gc-time real-time)
+             (write (internal-time/ticks-&gt;seconds run-time))
+             (write-char #\space)
+             (write (internal-time/ticks-&gt;seconds gc-time))
+             (write-char #\space)
+             (write (internal-time/ticks-&gt;seconds real-time))
+             (newline)))
+.56 .3 .873
+;Unspecified return value
+1 ]=&gt; (with-timings
+           (lambda () (for-each (lambda (x) ((mm x) list)) (make-list 100000 1)))
+           (lambda (run-time gc-time real-time)
+             (write (internal-time/ticks-&gt;seconds run-time))
+             (write-char #\space)
+             (write (internal-time/ticks-&gt;seconds gc-time))
+             (write-char #\space)
+             (write (internal-time/ticks-&gt;seconds real-time))
+             (newline)))
+.66 .3 .971
+;Unspecified return value
+1 ]=&gt; (with-timings
+           (lambda () (for-each (lambda (x) (call-with-values (lambda () (vv x)) list)) (make-list 100000 1)))
+           (lambda (run-time gc-time real-time)
+             (write (internal-time/ticks-&gt;seconds run-time))
+             (write-char #\space)
+             (write (internal-time/ticks-&gt;seconds gc-time))
+             (write-char #\space)
+             (write (internal-time/ticks-&gt;seconds real-time))
+             (newline)))
+.98 .3 1.294
+;Unspecified return value
+
+4. Scheme48
+Welcome to Scheme 48 1.3 (made by soo on Mon Jul 11 09:51:36     2005)
+Copyright (c) 1993-2005 by Richard Kelsey and Jonathan Rees.
+Please report bugs to scheme-48-bugs@xxxxxxxx
+Get more information at <a  rel="nofollow" href="http://www.s48.org/">http://www.s48.org/</a>.
+Type ,? (comma question-mark) for help.
+&gt; ,time (for-each (lambda (x) (m list)) (make-list 100000 1))
+Run time: 0.46 seconds; Elapsed time: 0.47 seconds
+#{Unspecific}
+&gt; ,time (for-each (lambda (x) (call-with-values v list)) (make-list 100000 1))
+Run time: 0.56 seconds; Elapsed time: 0.56 seconds
+#{Unspecific}
+&gt; ,time (for-each (lambda (x) ((mm x) list)) (make-list 100000 1))
+Run time: 0.62 seconds; Elapsed time: 0.65 seconds
+#{Unspecific}
+&gt; ,time (for-each (lambda (x) (call-with-values (lambda () (vv x)) list)) (make-list 100000 1))
+Run time: 0.73 seconds; Elapsed time: 0.76 seconds
+#{Unspecific}
+
+5. Petite Chez Scheme
+Petite Chez Scheme Version 7.0
+Copyright (c) 1985-2005 Cadence Research Systems
+Linked with Pthreads-Win32 under GNU LGPL
+ <a  rel="nofollow" href="http://sources.redhat.com/pthreads-win32/">http://sources.redhat.com/pthreads-win32/</a>
+ Copyright (c) 1998 John E. Bossom
+ Copyright (c) 1999,2002 Pthreads-win32 contributors
+&gt; (time (for-each (lambda (x) (m list)) (make-list 100000 1)))
+(time (for-each (lambda (...) ...) ...))
+    3 collections
+    90 ms elapsed cpu time, including 20 ms collecting
+    90 ms elapsed real time, including 20 ms collecting
+    3200680 bytes allocated, including 5678856 bytes reclaimed
+&gt; (time (for-each (lambda (x) (call-with-values v list)) (make-list 100000 1)))
+(time (for-each (lambda (...) ...) ...))
+    3 collections
+    100 ms elapsed cpu time, including 20 ms collecting
+    100 ms elapsed real time, including 20 ms collecting
+    3200680 bytes allocated, including 3271304 bytes reclaimed
+&gt; (time (for-each (lambda (x) ((mm x) list)) (make-list 100000 1)))
+(time (for-each (lambda (...) ...) ...))
+    4 collections
+    190 ms elapsed cpu time, including 40 ms collecting
+    190 ms elapsed real time, including 40 ms collecting
+    4000904 bytes allocated, including 3537112 bytes reclaimed
+&gt; (time (for-each (lambda (x) (call-with-values (lambda () (vv x)) list)) (make-list 100000 1)))
+(time (for-each (lambda (...) ...) ...))
+    4 collections
+    201 ms elapsed cpu time, including 50 ms collecting
+    210 ms elapsed real time, including 70 ms collecting
+    4800904 bytes allocated, including 5963232 bytes reclaimed
+
+
+ |QUOTE: A solution would be to enclose the arguments of VALUES expression
+ |QUOTE: in a procedure of one argument, a consumer procedure of QUOTE:
+ |CALL-WITH-VALUS.  How does this SRFI address the efficiency problem?  Looking
+ |at the implementation section, I see many calls to
+ |call-with-current-continuation. Is that not somewhat slow under some
+ |circumstances? Looking further down, there are many recursive procedures and
+ |many assignments that are performed at runtime.  Maybe your intension is to
+ |have a reference implementation outlining the concept and implementors are
+ |encouraged to provide their own implementations.  If that's the case, it may
+ |be a good idea to state it in the implementation section.
+
+How many calls to call-with-current-continuation are there?
+CALL-WITH-CURRENT-CONTINUATION is used only once in implementation of ALET[*]
+for escaspe function, so if you don't use the function, there will be no
+problem.
+Recursive procedures are the same.  They are used only for recursive function
+like named-let[*].
+There is only one additional assignment, in single value binding of ALET
+implementation.  It is for sequential binding from left to right. 
+
+Thanks for comments.
+-- 
+Joo ChurlSoo
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00018" href="msg00018.html">Re: Request for Clarification on Rationale</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00002.html">order of evaluation</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00004.html">Re: Unnecessary</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00000.html">Request for Clarification on Rationale</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00018.html">Re: Request for Clarification on Rationale</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00003"><strong>Date</strong></a></li>
+<li><a href="threads.html#00003"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,157 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Various comments -->
+<!--X-From-R13: qloNpf.vaqvnan.rqh -->
+<!--X-Date: Sun, 25 Jun 2006 02:17:58 +0200 (MST) -->
+<!--X-Message-Id: 449dd62f.xrT/TQAWMQgi9686%dyb@garbo.cs.indiana.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 449d51c5.5F3uvtSXqpMvQnZ8%dyb@garbo.cs.indiana.edu -->
+<!--X-Reference: 87irmqh8da.fsf@forcix.kollektiv&#45;hamburg.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Various comments</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00019.html">Date Prev</a>][<a href="msg00021.html">Date Next</a>][<a href="msg00017.html">Thread Prev</a>][<a href="msg00021.html">Thread Next</a>][<a href="maillist.html#00020">Date Index</a>][<a href="threads.html#00020">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Various comments</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-93@DOMAIN.HIDDEN">srfi-93@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Various comments</li>
+<li><em>From</em>: <a href="mailto:dyb@DOMAIN.HIDDEN">dyb@xxxxxxxxxxxxxx</a></li>
+<li><em>Date</em>: Sat, 24 Jun 2006 20:17:51 -0400</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-93@DOMAIN.HIDDEN">srfi-93@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:87irmqh8da.fsf@DOMAIN.HIDDEN">87irmqh8da.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:449d51c5.5F3uvtSXqpMvQnZ8%25dyb@DOMAIN.HIDDEN">449d51c5.5F3uvtSXqpMvQnZ8%dyb@xxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:87irmqh8da.fsf@DOMAIN.HIDDEN">87irmqh8da.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: nail 11.25 7/29/05</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; ... So far, in Scheme, I know that (foo ...)
+&gt; is a form that does something, and to find out what it does, I
+&gt; need to know what FOO does. If something does not show up at the
+&gt; first position in a list, it's a variable reference ...
+
+This is true only if you never enclose an expression in a macro call.  If
+you never do, and you never use variable transformers yourself, you won't
+have any worries.
+
+On the other hand, if you do enclose an expression in a macro call, say
+(M e), and the two forms x and (foo ...) appear somewhere in e, you have
+no idea what either does unless you understand what M does.  Even in R5RS
+with just syntax-rules, M may replace (foo ...) or x with arbitrary code,
+throw x back in as the first subform of some other form, or do anything
+else it wants to do with them.
+
+In particular, one can create, in R5RS, a define-class syntactic form that
+does (almost) exactly what one would use a variable transformer for.  That
+is, the R5RS transformer can convert the instance variable references and
+assignments within each method body to the appropriate instance accessor
+and mutator calls.  For example, it can convert the (+ x y) in:
+
+  (define-class point
+    (ivar x y)
+    (method mdist-from-origin () (+ x y)))
+
+to
+
+  (+ (instance-ref self 0) (instance-ref self 1))
+
+I say &quot;almost&quot; because it can replace the references only with a code walk,
+and a code walk can't be done reliably without knowing all of the forms
+that may appear in the body of the method, which is generally impossible
+unless interleaved with expansion.  For example, if it doesn't know that
+(frob x) expands to (quote x) then it won't know not to transform the x in
+(frob x) to an instance-ref call.
+
+Variable transformers let programmers get macros like define-class right. 
+As a bonus, it also makes such macros more transparent.
+
+&gt; Ditto here, this extension serves mostly to obscure code. It is
+&gt; not much of a problem to write (set! (id) e) or even (set! (class
+&gt; id) e), and be explicit in what you're doing here (using SRFI-17
+&gt; or something similar).
+
+This is basically addressed above, but I'll point out one more thing. 
+An abstraction that redefines what (set! id e) does can already be defined
+(in R5RS) without the code walk required for references, by creating a
+local binding for set!.  For example, the define-class form can transform
+the method body (set! x v) in
+
+  (define-class rememberer
+    (ivar x)
+    (method remember! (v) (set! x v))
+    (method recall () x))
+
+to
+
+  (let-syntax ([set! (syntax-rules (x)
+                       [(_ x e) (instance-set! self 0 e)])])
+    (set! x v))
+
+Variable transformers allow the same thing to be done more transparently.
+
+Kent Dybvig
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00021" href="msg00021.html">Re: Various comments</a></strong>
+<ul><li><em>From:</em> Jorgen Schaefer</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00007" href="msg00007.html">Re: Various comments</a></strong>
+<ul><li><em>From:</em> dyb</li></ul></li>
+<li><strong><a name="00008" href="msg00008.html">Re: Various comments</a></strong>
+<ul><li><em>From:</em> Jorgen Schaefer</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00019.html">Ellipses</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00021.html">Re: Various comments</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00017.html">Re: Various comments</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00021.html">Re: Various comments</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00020"><strong>Date</strong></a></li>
+<li><a href="threads.html#00020"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

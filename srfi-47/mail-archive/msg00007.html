@@ -1,0 +1,133 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: compatibility -->
+<!--X-From-R13: Bre Pbguare <creNobguare.pbz> -->
+<!--X-Date: Wed, 12 Nov 2003 21:04:25 +0100 (NFT) -->
+<!--X-Message-Id: 3FB2923F.6090205@bothner.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>compatibility</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00006.html">Date Prev</a>][<a href="msg00008.html">Date Next</a>][<a href="msg00013.html">Thread Prev</a>][<a href="msg00018.html">Thread Next</a>][<a href="maillist.html#00007">Date Index</a>][<a href="threads.html#00007">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>compatibility</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-47@DOMAIN.HIDDEN">srfi-47@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: compatibility</li>
+<li><em>From</em>: Per Bothner &lt;<a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 12 Nov 2003 12:04:15 -0800</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-47@DOMAIN.HIDDEN">srfi-47@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Mozilla/5.0 (Macintosh; U; PPC Mac OS X Mach-O; en-US; rv:1.5b) Gecko/20030827</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<tt>While the SRFI process allows alternative and incompatible 
+</tt><tt>implementations, a meta-goal is to define APIs that can be portable 
+</tt><tt>across Scheme implementations.  This new specification touches on 
+</tt><tt>existing SRFIs 4 and 25, both of which have been implemented by a number 
+</tt><tt>of Scheme systems.  While in theory it may be possible to implement both 
+</tt><tt>SRFIs 25 and 47 at the same time (by descriminating of the parameters to 
+</tt><tt>make-array), that would be a fragile hack.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>The new SRFI is deliberately incompatible with a prior SRFI, and one 
+</tt><tt>that is implemented in multiple Scheme systems.  It does not provide a 
+</tt><tt>rationale for why we need an incompatible SRFI.  It says it provides a 
+</tt><tt>&quot;richer set of features&quot; than SRFI-25, but it does not explain why it 
+</tt><tt>would be impossible or inferior to instead extend SRFI-25.  It also says 
+</tt><tt>the new SRFI has &quot;more compatibility with Common-Lisp&quot; but surely that 
+</tt><tt>is secondary compared to compatibility with existing Scheme implementations.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>An alternative (implemented in Kawa) is to allow the base array of 
+</tt><tt>SRFI-24's share-array to be a uniform vector:
+</tt><pre style="margin: 0em;">
+
+(share-array
+ (f64vector 1.0 2.0 3.0 4.0 5.0 6.0)
+ (shape 0 2 0 3)
+ (lambda (i j) (+ (* 2 i) j)))
+
+</pre><tt>This is may admittedly be a bit tedious, but we can provide an 
+</tt><tt>alternative make-array that takes a &quot;prototype&quot; of some kind.
+</tt><tt>A simple and general prototype mechanism that does not require us to 
+</tt><tt>define &quot;types&quot; and &quot;prototypes&quot; (but does not proclude a future SRFI 
+</tt><tt>that does that) is to use procedures.  I.e.
+</tt><pre style="margin: 0em;">
+
+(make-array shape [object [prototype]])
+
+</pre><tt>where 'prototype' is a 2-argument procedure that creates a vector, using 
+</tt><tt>it's first argument as the length and the second as the value.
+</tt><pre style="margin: 0em;">
+The default for the prototype is make-vector.
+
+So
+
+(make-array (shape 0 2 0 3) 99 make-s32vector)
+
+is equivalent to:
+
+(share-array (make-s32vector 6 99) (shape 0 2 0 3)
+  (lambda (i j) (+ (* 2 i) j)))
+
+If we later define &quot;type specifiers&quot; in a new SRFI, we can extend this:
+(make-array (shape 0 2 0 3) 99 &lt;sint32&gt;) ;; or whatever
+--
+	--Per Bothner
+per@xxxxxxxxxxx   <a  rel="nofollow" href="http://per.bothner.com/">http://per.bothner.com/</a>
+
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00006.html">Re: SRFI-47 -- types and declarations.</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00008.html">consider exclusive index ranges</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00013.html">Re: octothorpe array syntax; other comments</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00018.html">Re: compatibility</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00007"><strong>Date</strong></a></li>
+<li><a href="threads.html#00007"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

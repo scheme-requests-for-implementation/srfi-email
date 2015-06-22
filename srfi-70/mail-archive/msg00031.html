@@ -1,0 +1,221 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: [srfi&#45;70] Limit -->
+<!--X-From-R13: Ohoerl Xnssre <ntwNnyhz.zvg.rqh> -->
+<!--X-Date: Tue, 24 May 2005 19:56:31 +0200 (DFT) -->
+<!--X-Message-Id: 20050524175642.70E6D1B77B4@voluntocracy.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: OFA5592D77.3E0BC9AC&#45;ONC125700B.0027ECBB&#45;C125700B.003198FD@philips.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: [srfi-70] Limit</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00030.html">Date Prev</a>][<a href="msg00032.html">Date Next</a>][<a href="msg00029.html">Thread Prev</a>][<a href="msg00034.html">Thread Next</a>][<a href="maillist.html#00031">Date Index</a>][<a href="threads.html#00031">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: [srfi-70] Limit</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:sebastian.egner@DOMAIN.HIDDEN">sebastian.egner@xxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: [srfi-70] Limit</li>
+<li><em>From</em>: Aubrey Jaffer &lt;<a href="mailto:agj@DOMAIN.HIDDEN">agj@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 24 May 2005 13:56:42 -0400 (EDT)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-70@DOMAIN.HIDDEN">srfi-70@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-70@DOMAIN.HIDDEN">srfi-70@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: 	&lt;<a href="mailto:OFA5592D77.3E0BC9AC-ONC125700B.0027ECBB-C125700B.003198FD@DOMAIN.HIDDEN">OFA5592D77.3E0BC9AC-ONC125700B.0027ECBB-C125700B.003198FD@xxxxxxxxxxx</a>&gt;	(message from Sebastian Egner on Tue, 24 May 2005 11:00:58 +0200)</li>
+<li><em>References</em>: &lt;<a href="mailto:OFA5592D77.3E0BC9AC-ONC125700B.0027ECBB-C125700B.003198FD@DOMAIN.HIDDEN">OFA5592D77.3E0BC9AC-ONC125700B.0027ECBB-C125700B.003198FD@xxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre> | From: Sebastian Egner &lt;sebastian.egner@xxxxxxxxxxx&gt;
+ | Date: Tue, 24 May 2005 11:00:58 +0200
+ | 
+ | Jens Axel S&#xF8;gaard wrote:
+ | &gt; The draft says
+ | &gt; 
+ | &gt;    Function: limit proc z1 z2
+ | &gt;    Function: limit proc -1/0
+ | &gt;    Function: limit proc 1/0
+ | &gt; 
+ | &gt;      Proc must be a procedure taking a single inexact argument.
+ | &gt; 
+ | &gt;      Limit computes the mathematical limit of proc as its argument
+ | &gt;      approaches z1 from z1 + z2. Limit returns a complex number or
+ | &gt;      real infinity if the limit exists; and `#f' otherwise.
+ | &gt;
+ | &gt; Is this well defined?
+ | 
+ | No, of course it is not.
+ | 
+ | It is another smoke screen of the &quot;wish it were so&quot; type related to
+ | floating point representations of rational numbers.
+ | 
+ | But seriously...  The problem with LIMIT is that it tries to solve
+ | an unsolvable problem.  There is no &quot;finite-precision version&quot; of
+ | taking general limits.  For certain types of limits,
+ | e.g. integrals, there is a theory what you get and how useful that
+ | might be.  These computations are usually not limits of simple
+ | sequences but some sort of infinite summation with known
+ | convergence properties (e.g. all the standard transcendental
+ | functions, exp/log/sin/cos etc.)
+
+Here is a more serious specification for LIMIT:
+
+  Function: limit proc z1 z2
+
+      Proc must be a procedure taking a single inexact argument.
+
+      z2 should be chosen so that proc is expected to be monotonic or
+      constant on arguments between z1 and z1 + z2.
+
+      Limit computes the limit of proc as its argument approaches z1
+      from z1 + z2.  Limit returns a complex number or real infinity
+      or `#f'.
+
+  Function: limit proc -1/0
+
+      Computes the limit of proc as its its argument approaches -1/0
+      (from -179.76931348606807e306 if using IEEE-754 flonums).
+
+  Function: limit proc 1/0
+
+      Computes the limit of proc as its its argument approaches 1/0
+      (from 179.76931348606807e306 if using IEEE-754 flonums).
+
+      Limit examines the magnitudes of the differences between
+      successive values returned by proc called with a succession of
+      numbers ending with the second argument to limit.
+
+      If the magnitudes of differences are monotonically decreasing,
+      then the value of proc at the second argument is returned.  If
+      the magnitudes of differences are monotonically increasing, then
+      1/0 or -1/0 is returned if the values returned by proc are real;
+      otherwise #f.
+
+      If the magnitudes of differences are constant (within the
+      positive inexact number closest to 0), then the value of proc on
+      the second argument is returned, unless the magnitudes of
+      differences are zero; in which case the value of proc on the
+      second to last value is returned.  If the magnitudes of
+      differences are not monotonic, then #f is returned.
+
+  (limit / 0 1.0e-9)                              ==&gt; 1/0 
+  (limit / 0 -1.0e-9)                             ==&gt; -1/0 
+  (limit / -1/0)                                  ==&gt; 0.0 
+  (limit / 1/0)                                   ==&gt; 0.0 
+  (limit (lambda (x) (/ x x)) 0 1.0e-9)           ==&gt; 1.0 
+  (limit (lambda (x) (/ (log x) x)) 0 1.0e-9)     ==&gt; -1/0 
+  (limit (lambda (x) (/ (log x) x)) 0 -1.0e-9)    ==&gt; #f 
+  (limit (lambda (x) (/ (magnitude (log x)) x)) 0 -1.0e-9)
+						  ==&gt; -1/0 
+  (limit (lambda (x) (/ x (log x))) 0 1.0e-9)     ==&gt; 0.0 
+  (limit sin 1/0)                                 ==&gt; #f 
+  (limit (lambda (x) (sin (/ x))) 0 1.0e-9)       ==&gt; #f 
+  (limit (lambda (x) (sin (/ x))) 0 -1.0e-9)      ==&gt; #f 
+  (limit (lambda (x) (sin (/ x))) 1/0)            ==&gt; 0.0 
+  (limit (lambda (x) (/ (+ (exp (/ x)) 1))) 0 1.0e-9)
+						  ==&gt; 0.0 
+  (limit (lambda (x) (/ (+ (exp (/ x)) 1))) 0 -1.0e-9)
+						  ==&gt; 1.0 
+  (limit (lambda (x) (expt (tan x) (cos x))) (/ pi 2) 1.0e-18)
+						  ==&gt; 1.0000000000000022 
+
+ | A general LIMIT procedure on the other hand can only be specified
+ | as &quot;returns what the reference implementation computes.&quot;  Unless
+ | you want to redefine the meaning of &quot;mathematical limit&quot;, which
+ | might be exceptionally controversal.
+
+Because of:
+
+      z2 should be chosen so that proc is expected to be monotonic or
+      constant on arguments between z1 and z1 + z2.
+
+this new definition of LIMIT does not need the full mathematical power
+of analysis; and should serve as a specification more abstract than
+&quot;what the reference implementation computes&quot;.  It is possible to fool
+limit, but it is possible to fool any programmed transcendental
+function: (sin (* 1e18 (atan 1)))
+
+ | What I said until now is just the famous &quot;It might work in
+ | practice, but it will never work in theory.&quot; Now my real problem is
+ | that I missed which important problem the LIMIT procedure solves
+ | (satisfactorily or not) in Scheme.
+
+LIMIT was created so that static choices for limit cases like:
+
+  (expt 0 0)                                    ==&gt; 1
+or
+  (expt 0 0)                                    ==&gt; 0/0
+
+don't necessitate workarounds when computing with functions like
+(lambda (x) (expt x x)):
+
+  (limit (lambda (x) (expt x x)) 0 1e-9)        ==&gt; 1/0
+
+ | With the program you can select your favorite limiting value by
+ | varying c:
+ | 
+ |     (limit (lambda (x) (sin (/ 1.0 x))) 0 1) =&gt; #f          ; according to spec
+ |     (limit (lambda (x) (sin (/ 0.2 x))) 0 1) =&gt; 1/0
+ |     (limit (lambda (x) (sin (/ 0.3 x))) 0 1) =&gt; -1/0
+
+With smaller z2 values, these limits are well behaved:
+
+  (limit (lambda (x) (sin (/ 1.0 x))) 0 1e-9) ==&gt; #f
+  (limit (lambda (x) (sin (/ 0.2 x))) 0 1e-9) ==&gt; #f
+  (limit (lambda (x) (sin (/ 0.3 x))) 0 1e-9) ==&gt; #f
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00029" href="msg00029.html">Re: [srfi-70] Limit</a></strong>
+<ul><li><em>From:</em> Sebastian Egner</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00030.html">infinities reformulated [was Re: My ideas about infinity in Scheme (revised)]</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00032.html">Re: My suggestions to the R6RS committee about numerics</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00029.html">Re: [srfi-70] Limit</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00034.html">Re: [srfi-70] Limit</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00031"><strong>Date</strong></a></li>
+<li><a href="threads.html#00031"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

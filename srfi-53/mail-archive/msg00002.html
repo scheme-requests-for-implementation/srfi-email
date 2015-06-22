@@ -1,0 +1,254 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Initial comments &#38; questions -->
+<!--X-From-R13: Oaqer ina Fbaqre <naqerNurg.oebja.rqh> -->
+<!--X-Date: Sat, 20 Mar 2004 04:06:56 +0100 (NFT) -->
+<!--X-Message-Id: Pine.sola.4.10.10403192018560.10086&#45;100000@now.het.brown.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: Pine.LNX.4.44.0403171655370.9673&#45;100000@autodrip.bloodandcoffee.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Initial comments &amp; questions</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00001.html">Date Prev</a>][<a href="msg00003.html">Date Next</a>][<a href="msg00001.html">Thread Prev</a>][<a href="msg00013.html">Thread Next</a>][<a href="maillist.html#00002">Date Index</a>][<a href="threads.html#00002">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Initial comments &amp; questions</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:campbell@DOMAIN.HIDDEN">campbell@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Initial comments &amp; questions</li>
+<li><em>From</em>: Andre van Tonder &lt;<a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 19 Mar 2004 22:06:45 -0500 (EST)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-53@DOMAIN.HIDDEN">srfi-53@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-53@DOMAIN.HIDDEN">srfi-53@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:Pine.LNX.4.44.0403171655370.9673-100000@DOMAIN.HIDDEN">Pine.LNX.4.44.0403171655370.9673-100000@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>On Thu, 18 Mar 2004 campbell@xxxxxxxxxxxxxxxxxxxxxxxxxxx wrote:
+
+Thank you for your helpful comments!
+
+&gt;   - Having a new top-level definition form, DEFINE-SYNTAX-COMPUTATION,
+&gt;     is cumbersome and shouldn't be necessary; DEFINE-SYNTAX should be
+&gt;     universal for introducing syntax transformers, and the same should
+&gt;     go for LET-SYNTAX and LETREC-SYNTAX.  
+
+I couldn't agree with you more.  However, unfortunately, as you noted:
+
+&gt;     ... you can't
+&gt;     implement COMPUTATION-RULES to be a valid transformer keyword like
+&gt;     SYNTAX-RULES in straight R5RS, but I think that small price to pay
+&gt;     is OK, because, after all, this is a request for implementors to
+&gt;     implement what you propose here.
+
+I would say the advantage of the current specification is that it can be  
+essentially a library on top of syntax-rules, requiring no extra support
+from implementors nor anything beyond R5RS.
+
+&gt;   - You're going to hit the _exact_ same ellipsis problems that are
+&gt;     fixed by SRFI 46.  (My plans for SRFI 46 are to use CYOE, by the
+&gt;     way.)  Why not specify CYOE from the start?
+
+Yes, I have hit this problem.  I have found the somewhat standard
+(... ...) solution not to be good enough in cases where ellipses appear 
+in the syntactic continuation and where the continuation can be rewritten
+an arbitrary number of times during the computation, since each rewrite
+loses a level of ellipses-quotation.  I suspect that CYOE might resolve
+this problem, which would be another strong argument in favor of it.  I
+will look into it and if I can get it to work, with your permission I'll
+include it.  
+  
+&gt;   - Does COMPUTATION-RULES support tail patterns?
+
+If the underlying SYNTAX-RULES supports them, which is a question I'll
+leave to the implementors of the latter.  
+   
+&gt;   - More examples, please!  For instance, a LETREC implementation that
+&gt;     is much cleaner than R5RS's, or Oleg's example of a record definer
+&gt;     that 'generates identifiers' (cf. that thread somewhere on c.l.s).
+
+Okay - I'll include some more examples in the next draft.
+
+&gt;   - Very little is mentioned about hygiene, which I'm worried about.
+&gt;   - Very little is mentioned about shadowing.
+
+I'll see if I can come up with something intelligent to say about this.  
+
+&gt;   - I'd like some comments on the topic of efficiency of the system.
+
+My experience: On MzScheme very slow.  Much faster on Petite Chez.  I do
+suspect, however, that a much faster implementation can be written on
+systems supporting syntax-case, implementing syntax-do in terms of
+with-syntax as I allude to in the text.  It might be fun to try.   
+
+&gt;   - Is SYNTAX-INVOKE/C really necessary?  Couldn't the continuations be
+&gt;     regular syntax computations that just ignore their continuation?
+
+You're probably right.  Thank you for pointing that out.  I'll try it.
+
+&gt;   - Is pattern matching available in SYNTAX-DO's bindings?
+
+No.  I thought about it but it would probably significantly complicate
+syntax-apply to correctly handle them.  
+
+&gt;   - Are there provisions for multiple return values?  (This would be
+&gt;     unnecessary with 'yes' to the previous question.)
+
+No.  But you can return an s-expression and deconstruct it with
+syntax-match as I did for example in the match-record example: 
+
+             (syntax-match (name)
+               ((make-name labels) ..etc..))
+
+to extract the constructor and field labels returned by the
+computation (name).  
+
+&gt;   - Couldn't SYNTAX-ERROR be a _lot_ simpler? --
+&gt;       (define-syntax syntax-error (syntax-rules ()))
+
+I'll try it.   
+
+&gt;   - I fear that the syntactic list-processing routines may turn into
+&gt;     a complete reinvention of SRFI 1.  This is a much bigger issue
+&gt;     that I haven't thought much about yet.  More on this later...
+
+I was afraid of this.  I am seriously considering making only the core
+forms (and one or two of the derived forms) part of the SRFI, demoting
+all the rest to the status of examples, thus avoiding SRFI mission 
+creep... 
+
+&gt;   - Are there any operations on syntactic vectors?
+
+See previous answer.  
+
+&gt;   - I'm not entirely sure if it's a good idea, but I have a nagging
+&gt;     suspicion that macro writers may want a utility for generating
+&gt;     debugging messages.  It of course can't be implemented in terms of
+&gt;     plain SYNTAX-RULES, but it can trivially be defined with other
+&gt;     macro systems, e.g.:
+&gt;       (define-syntax syntax-debug-message
+&gt;          ....
+
+This would be useful, but can perhaps be left to the discretion of
+implementors.
+
+&gt;   - COMPUTATION-RULES -- I'd prefer SYNTAX-COMPUTATIONS or something.
+
+Yes.  I also prefer your suggestion.  I'll change it.  
+
+&gt;   - SYNTAX-DO -- I don't like this at all.  It's not very descriptive
+&gt;     and it clashes with the DO syntax in regular Scheme.  While it may
+&gt;     be a good point that it does nothing more than 'do' a computation,
+&gt;     and this is also what Haskell uses, it still isn't descriptive to
+&gt;     just say 'do,' and it still has the clash.
+
+Understood.  I haven't been able to come up with a better name, though.
+The advantage of the current syntax is that anyone familiar with
+Haskell-like imperative programming, based on the monadic do and return
+primitives used in much of the literature, will know immediately how to
+use them correctly.  (Actually, I have a gripe with the regular Scheme DO,
+which is not very descriptive, which I never use, and which clashes with
+my own nefarious purposes for DO...).  
+
+&gt;   - I _loathe_ the &lt;- bit of SYNTAX-DO.  It's there seemingly _only_
+&gt;     for consistency with Haskell; it serves no useful purpose other
+&gt;     than to bother people like me, and that purpose isn't very useful,
+&gt;     so it doesn't count.
+
+I concede that this is not very Schemely.  Probably syntax-do, as a
+binding construct, should follow the model of LET* (even if it may be a
+little less readable).  I'll modify that.
+
+&gt;   - SYNTAX-EQ? -- why that and not SYNTAX-EQUAL? ?  The name EQ? has
+&gt;     connotations of that of the Scheme procedure EQ?, which compares
+&gt;     for identity, so I'd avoid it for structural comparison.
+
+It is not structural comparison.  In any case, Oleg Kiselyov has drawn my
+attention to the fact that there is more than one type of equality of
+symbols, so I'll reorganise this bit of the interface.  
+
+&gt;   - SYNTAX-FOLDL &amp; SYNTAX-FOLDR: SRFIs 1, 13, and 43 all use FOLD &amp;
+&gt;     FOLD-RIGHT; SRFI 44 uses FOLD-LEFT &amp; FOLD-RIGHT.  Given these
+&gt;     traditions, I'd prefer FOLD &amp; FOLD-RIGHT, or at worst FOLD-LEFT &amp;
+&gt;     FOLD-RIGHT.
+
+Okay, I'll change them.  As I said above, though, I might demote these to 
+mere examples.
+
+&gt;   - Why abbreviate 'continuation' everywhere?  If you want brevity,
+&gt;     how about SYNTAX-CATCH &amp; SYNTAX-THROW instead of the much longer
+&gt;     SYNTAX-LET-CURRENT-CONTINUATION and SYNTAX-INVOKE-CONTINUATION?
+&gt;     (And SYNTAX-INVOKE/C may not even be necessary, either.)
+&gt;   - I don't like the name SYNTAX-LET/CC.  It implies that it's letting
+&gt;     the current continuation _be_ something, when in fact it's
+&gt;     _capturing_ the current continuation.
+
+Yes, but let/cc will be familiar to many in the Scheme community, and
+in this case fits more easily with the rest of the interface than
+call/cc.  Also, I'm not sure abbreviations are necessarily a bad thing,
+but I know opinions diverge on this...
+
+Thank you again 
+Andre   
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00013" href="msg00013.html">Re: Initial comments &amp; questions</a></strong>
+<ul><li><em>From:</em> campbell</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00000" href="msg00000.html">Initial comments &amp; questions</a></strong>
+<ul><li><em>From:</em> campbell</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00001.html">Re: Initial comments &amp; questions</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00003.html">Re: Initial comments &amp; questions</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00001.html">Re: Initial comments &amp; questions</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00013.html">Re: Initial comments &amp; questions</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00002"><strong>Date</strong></a></li>
+<li><a href="threads.html#00002"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

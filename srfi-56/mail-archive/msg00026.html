@@ -1,0 +1,169 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: binary vs non&#45;binary ports -->
+<!--X-From-R13: Bre Pbguare <creNobguare.pbz> -->
+<!--X-Date: Thu, 16 Sep 2004 08:54:59 +0200 (DFT) -->
+<!--X-Message-Id: 414938BB.8020703@bothner.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 41491BE0.50006@bothner.com -->
+<!--X-Reference: 86u0tyhj4m.wl@lain.inunome.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: binary vs non-binary ports</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00025.html">Date Prev</a>][<a href="msg00027.html">Date Next</a>][<a href="msg00025.html">Thread Prev</a>][<a href="msg00027.html">Thread Next</a>][<a href="maillist.html#00026">Date Index</a>][<a href="threads.html#00026">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: binary vs non-binary ports</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Alex Shinn &lt;<a href="mailto:foof@DOMAIN.HIDDEN">foof@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: binary vs non-binary ports</li>
+<li><em>From</em>: Per Bothner &lt;<a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 15 Sep 2004 23:54:51 -0700</li>
+<li><em>Cc</em>: <a href="mailto:srfi-56@DOMAIN.HIDDEN">srfi-56@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-56@DOMAIN.HIDDEN">srfi-56@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:86u0tyhj4m.wl@DOMAIN.HIDDEN">86u0tyhj4m.wl@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:41491BE0.50006@DOMAIN.HIDDEN">41491BE0.50006@xxxxxxxxxxx</a>&gt; &lt;<a href="mailto:86u0tyhj4m.wl@DOMAIN.HIDDEN">86u0tyhj4m.wl@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mozilla/5.0 (Macintosh; U; PPC Mac OS X Mach-O; en-US; rv:1.7.2) Gecko/20040803</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+Alex Shinn wrote:
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Ideally, as Bear mentioned earlier, I like to think of the byte-level
+operations as the only primitives on top of which character-level
+operations are defined, but that is an implementation detail.
+</pre></blockquote><pre style="margin: 0em;">
+
+Yes, but you don't want to force every Scheme implementor to have
+to manage this char&lt;-&gt;byte mapping in the Scheme run-time, as opposed
+to being able to use existing C/C++/Java APIs which don't work the
+way you want them to work.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+&quot;Complicated&quot; should not prevent us from adding language features, and
+I don't see this as any more complex than having additional primitive
+port types.
+</pre></blockquote><pre style="margin: 0em;">
+
+Byte&lt;-&gt;Char conversion is complicated.  Not conceptually, but
+there are big tables and and a good chunk of code if you want to
+support many languages.  Most operating systems and &quot;core libraries&quot;
+these days can do the translation.  You really don't want to implement
+this code in your Scheme runtime, but instead you want to build on
+existing libraries and APIs.
+
+Existing APIs (Java, C++, C) disinguish byte I/o from chracter I/O,
+generally using different types.  They may not support easy on-the-fly
+switching between binary mode and character mode.
+
+So the proposed model means Scheme run-times have to open ports in
+binary mode and do their own byte&lt;-&gt;char conversion.  That is not a
+nice to ask of Scheme implementors.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+It makes no sense to mix character and binary I/O on the same port.
+Anyone who tries it is in a state of sin.
+</pre></blockquote><pre style="margin: 0em;">
+
+I work very often with binary file formats, including Scheme libraries
+for handling ELF, TIFF, and the gettext .mo format among others.
+Every one of these mixes binary and character data.
+</pre></blockquote><pre style="margin: 0em;">
+
+I did not say character data - I said character I/O.  It is perfectly
+feasable to read/write character and string data from/to a binary
+stream - but then you have to define how they are encoded or do the
+mapping before/after you write/read them.  If you're in a Japanese
+locale, and write a string to an ELF file, what happens?  What happens
+when I call (newline) in a Windows environment - should it write &quot;\n&quot;
+or &quot;\r\n&quot;?
+
+&gt; Apparently almost
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+everyone who has ever designed a binary format is a sinner :)
+</pre></blockquote><pre style="margin: 0em;">
+
+Most of these formats don't support general characters.  Of course
+you can have general characters encoded in a ELF section, but ELF
+views that as just binary data.  ELF does know about labels and
+section names, but there is no support for multiple encodings or
+wide characters.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+3) Extract character data in binary ports as binary first then convert
+   with utility procedures to character/string.
+</pre></blockquote><pre style="margin: 0em;">
+
+Yes, conceptually that is what should be going on.  But if you want to
+be able to do binary I/O on an arbitary port (that was opened in default
+mode) then that constrains the implementation unacceptably.  Existing
+code that implements ports may have to be extensively rewritten.
+--
+	--Per Bothner
+per@xxxxxxxxxxx   <a  rel="nofollow" href="http://per.bothner.com/">http://per.bothner.com/</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00027" href="msg00027.html">Re: binary vs non-binary ports</a></strong>
+<ul><li><em>From:</em> Alex Shinn</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00024" href="msg00024.html">binary vs non-binary ports</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+<li><strong><a name="00025" href="msg00025.html">Re: binary vs non-binary ports</a></strong>
+<ul><li><em>From:</em> Alex Shinn</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00025.html">Re: binary vs non-binary ports</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00027.html">Re: binary vs non-binary ports</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00025.html">Re: binary vs non-binary ports</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00027.html">Re: binary vs non-binary ports</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00026"><strong>Date</strong></a></li>
+<li><a href="threads.html#00026"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

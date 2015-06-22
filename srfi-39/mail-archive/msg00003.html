@@ -1,0 +1,169 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Some comments -->
+<!--X-From-R13: [nep Trryrl <srryrlNWDA.G[bagerny.QO> -->
+<!--X-Date: Sun, 22 Dec 2002 03:51:22 +0100 (NFT) -->
+<!--X-Message-Id: 200212220251.gBM2p2Y14110@dino00.iro.umontreal.ca -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 3E050560.6090507@freenet.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Some comments</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00002.html">Date Prev</a>][<a href="msg00004.html">Date Next</a>][<a href="msg00001.html">Thread Prev</a>][<a href="msg00008.html">Thread Next</a>][<a href="maillist.html#00003">Date Index</a>][<a href="threads.html#00003">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Some comments</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:felixundduni@DOMAIN.HIDDEN">felixundduni@xxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Some comments</li>
+<li><em>From</em>: Marc Feeley &lt;<a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 21 Dec 2002 21:51:02 -0500</li>
+<li><em>Cc</em>: <a href="mailto:srfi-39@DOMAIN.HIDDEN">srfi-39@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-39@DOMAIN.HIDDEN">srfi-39@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:3E050560.6090507@DOMAIN.HIDDEN">3E050560.6090507@xxxxxxxxxx</a>&gt; (message from felix on Sun, 22 Dec	2002 01:20:48 +0100)</li>
+<li><em>References</em>: &lt;<a href="mailto:3E050560.6090507@DOMAIN.HIDDEN">3E050560.6090507@xxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; - Most existing versions of `parameterize' evaluate the
+&gt;    new parameter values in parallel (as in `let'). Is there
+&gt;    a particular reason why this SRFI insists on doing the
+&gt;    evaluation in `let*' fashion?
+
+Actually this is a choice that is motivated by my implementation in
+Gambit-C.  I'll admit however that it makes more sense to do the
+evaluation like `let' (I can't even make an argument that it is faster
+to do it `let*' style).  So unless there are strong objections I will
+change this aspect.
+
+&gt; - I'm not sure with this one, but (if I haven't overlooked
+&gt;    something in the SRFI-18 specification), is the definition
+&gt;    of `dynamic-bind' in the reference implementation reentrant?
+&gt;    It might be possible that `current-thread' in the before
+&gt;    thunk refers to a different thread than the one active in
+&gt;    the after thunk.
+
+I'm not sure what you mean by reentrant in this particular case.  But
+yes it is possible that the before and after thunks (of a particular
+call to dynamic-wind) are called by different threads.  This is
+consistent with SRFI 18, specifically with the concept that dynamic
+environments are attached to continuations (i.e. when a continuation
+is created the current dynamic environment is attached to it, when the
+continuation is resumed, possibly by another thread than the one that
+created the continuation, the dynamic environment will be restored).
+
+&gt; - Is it really desirable to separate parameters into two
+&gt;    classes (i.e. mutable and (perhaps) non-mutable)? The whole
+&gt;    specification is uncomfortably vague with respect to non-mutable
+
+During the preparation of this SRFI I first had only one kind of
+parameter object, that was mutable and was created with
+make-parameter.  However the semantics were not compatible with
+MzScheme's so I added the other kind of parameter to improve
+compatibility.
+
+When writing code, you really have to think of the parameters created
+by make-parameter as read-only, and those created by
+make-mutable-parameter as read-write.  It is only to simplify the
+migration of legacy code that the parameters created by make-parameter
+are possibly mutable (with an implementation dependent semantics).
+
+&gt;    parameters and I don't really see the advantage of having
+&gt;    the non-thread-local kind. Or is this just an attempt to
+&gt;    somehow cram some degree of portability in this SRFI?
+
+See my previous response to a comment by Matthew Flatt.
+
+&gt; I propose a much simpler and more portable solution:
+&gt; (and you won't like it ;-)
+&gt; 
+&gt; 1) Dump `make-mutable-parameter'. `make-parameter' returns
+&gt;     a mutable parameter object.
+
+I'm with you so far...
+
+&gt; 2) `parameterize' changes the parameters by &quot;swapping&quot;, as
+&gt;     in the traditional implementation.
+
+What do you mean by &quot;swapping&quot;?  Do you mean that parameterize does
+not create a new cell and simply saves the content of the cell,
+changes the content of the cell for the duration of the body, and then
+restores the cell?  This would be unbelievably difficult to use in a
+multithreaded system, unless of course thread creation copies the
+dynamic environment of the parent (which I guess is why you want point
+3).  Moreover, this implementation is expensive when using
+continuations to jump between different dynamic scopes (you have to
+undo a bunch of parameter mutations, and then redo a bunch of other
+mutations).
+
+&gt; 3) Make all parameters thread-local, child threads inherit
+&gt;     the parameter-settings of their parents.
+
+By thread-local you mean copy the dynamic environment (including the
+cells)?  Then see my previous response to a comment by Matthew Flatt
+(to summarize: it isn't clean and it is expensive when you create a
+thread).
+
+Marc
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00008" href="msg00008.html">Re: Some comments</a></strong>
+<ul><li><em>From:</em> felix</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00001" href="msg00001.html">Some comments</a></strong>
+<ul><li><em>From:</em> felix</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00002.html">Re: initial impressions/questions</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00004.html">Re: initial impressions/questions</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00001.html">Some comments</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00008.html">Re: Some comments</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00003"><strong>Date</strong></a></li>
+<li><a href="threads.html#00003"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

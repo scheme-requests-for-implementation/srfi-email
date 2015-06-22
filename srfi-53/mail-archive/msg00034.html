@@ -1,0 +1,172 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Initial comments &#38; questions -->
+<!--X-From-R13: Oyrk Euvaa <sbbsNflagupbqr.pbz> -->
+<!--X-Date: Wed, 31 Mar 2004 10:33:21 +0200 (DFT) -->
+<!--X-Message-Id: 87r7v9a01m.wl@strelka.synthcode.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: Pine.sola.4.10.10403192018560.10086&#45;100000@now.het.brown.edu -->
+<!--X-Reference: Pine.LNX.4.44.0403192146070.15122&#45;100000@autodrip.bloodandcoffee.net -->
+<!--X-Reference: 87smfpa2zw.wl@strelka.synthcode.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Initial comments &amp; questions</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00033.html">Date Prev</a>][<a href="msg00035.html">Date Next</a>][<a href="msg00033.html">Thread Prev</a>][<a href="msg00035.html">Thread Next</a>][<a href="maillist.html#00034">Date Index</a>][<a href="threads.html#00034">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Initial comments &amp; questions</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-53@DOMAIN.HIDDEN">srfi-53@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Initial comments &amp; questions</li>
+<li><em>From</em>: Alex Shinn &lt;<a href="mailto:foof@DOMAIN.HIDDEN">foof@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 31 Mar 2004 17:33:09 +0900</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-53@DOMAIN.HIDDEN">srfi-53@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:87smfpa2zw.wl@DOMAIN.HIDDEN">87smfpa2zw.wl@xxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:Pine.sola.4.10.10403192018560.10086-100000@DOMAIN.HIDDEN">Pine.sola.4.10.10403192018560.10086-100000@xxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:Pine.LNX.4.44.0403192146070.15122-100000@DOMAIN.HIDDEN">Pine.LNX.4.44.0403192146070.15122-100000@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:87smfpa2zw.wl@DOMAIN.HIDDEN">87smfpa2zw.wl@xxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Wanderlust/2.10.1 (Watching The Wheels) Emacs/21.3 Mule/5.0 (SAKAKI)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Sorry, this was a mix of two different ideas with a bug.  First is the
+straightforward syntax-rules implementation via temp variables:
+
+  (define-syntax with-slots
+    (syntax-rules ()
+      ((with-slots () obj . body) (begin . body))
+      ((with-slots (slot1 slot2 ...) obj . body)
+       (let ((slot1 (slot-ref obj 'slot1)))
+         (with-slots (slot2 ...) obj body)))))
+
+which is what the previous post ended up being.  This has two problems:
+
+1) it doesn't reflect updates to the object's slots, via slot-set! or
+other procedures which may mutate the object between the binding and the
+reference:
+
+  (with-slots (a b c) my-obj (slot-set! my-obj 'a 5) (+ a b c))
+  =&gt; 111
+
+2) it doesn't let us use CL-style setf:
+
+;; quick setf implementation
+
+(define (slot-set! obj slot val)
+  (vector-set! obj (case slot ((a) 0) ((b) 1) ((c) 2) ((d) 3)) val))
+
+(define (compute-setter proc)
+  (cond ((eq? proc car) set-car!)
+        ((eq? proc vector-ref) vector-set!)
+        ((eq? proc slot-ref) slot-set!)))
+
+(define-syntax setf
+  (syntax-rules ()
+    ((setf (proc args ...) val)
+     ((compute-setter proc) args ... val))
+    ((setf x val) (set! x val))))
+
+;; my-obj is unchanged
+(with-slots (a b) my-obj (setf a (+ a b)))
+
+The following version of with-slots-computation instead of using temp
+variables translates the symbols to direct calls to slot-ref:
+
+(define-syntax-computation with-slots-computation
+  (computation-rules ()
+    ((with-slots-computation () obj . body)
+     (syntax-return (begin . body)))
+    ((with-slots-computation (slot1 slot2 ...) obj . body)
+     (syntax-do (inner1 &lt;- (with-slots-computation (slot2 ...) obj . body))
+       (syntax-replace slot1 (slot-ref obj 'slot1) inner1)))))
+
+(syntax-inspect (with-slots-computation (a) my-obj (+ a 1)))
+=&gt; (begin (+ (slot-ref my-obj 'a) 1))
+
+And now intermediate mutations and setf work:
+
+(with-slots (a b c) my-obj (setf a (+ a b c)))
+my-obj
+#(111 10 100 1000)
+
+But after this the previous example re-binding a fails:
+
+(with-slots (a b) my-obj (let ((a 5)) (add a b)))
+
+Error: invalid syntax (let (((...) 5)) (add (slot-ref my-obj (...)) (slot-ref my-obj (...)))).
+
+We're blindly replacing &quot;a&quot; anywhere in the expression, even in a let
+binding.  To fix this we'd need to resort to code walking techniques,
+which really need the syntax-expand form Taylor suggested.  However, so
+long as you don't use the bound slot names for any other purpose in the
+literal, non-expanded body of the expression you're fine :)
+
+[Note: everything is still slow due to memory constraints and thrashing.
+I have no idea how it's sucking up &gt;200MB of my RAM.]
+
+-- 
+Alex
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00035" href="msg00035.html">Re: Initial comments &amp; questions</a></strong>
+<ul><li><em>From:</em> Andre van Tonder</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00002" href="msg00002.html">Re: Initial comments &amp; questions</a></strong>
+<ul><li><em>From:</em> Andre van Tonder</li></ul></li>
+<li><strong><a name="00013" href="msg00013.html">Re: Initial comments &amp; questions</a></strong>
+<ul><li><em>From:</em> campbell</li></ul></li>
+<li><strong><a name="00033" href="msg00033.html">Re: Initial comments &amp; questions</a></strong>
+<ul><li><em>From:</em> Alex Shinn</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00033.html">Re: Initial comments &amp; questions</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00035.html">Re: Initial comments &amp; questions</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00033.html">Re: Initial comments &amp; questions</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00035.html">Re: Initial comments &amp; questions</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00034"><strong>Date</strong></a></li>
+<li><a href="threads.html#00034"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

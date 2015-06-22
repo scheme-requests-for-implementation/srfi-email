@@ -1,0 +1,191 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: SRFI 33 vs SLIB -->
+<!--X-From-R13: Ohoerl Xnssre <ntwNnyhz.zvg.rqh> -->
+<!--X-Date: Mon, 10 Jan 2005 02:31:21 +0100 (NFT) -->
+<!--X-Message-Id: 20050110013136.686D71B772C@voluntocracy.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: Pine.LNX.4.44.0501071803240.10655&#45;100000@autodrip.bloodandcoffee.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: SRFI 33 vs SLIB</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00012.html">Date Prev</a>][<a href="msg00014.html">Date Next</a>][<a href="msg00007.html">Thread Prev</a>][<a href="msg00001.html">Thread Next</a>][<a href="maillist.html#00013">Date Index</a>][<a href="threads.html#00013">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: SRFI 33 vs SLIB</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:campbell@DOMAIN.HIDDEN">campbell@xxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: SRFI 33 vs SLIB</li>
+<li><em>From</em>: Aubrey Jaffer &lt;<a href="mailto:agj@DOMAIN.HIDDEN">agj@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun,  9 Jan 2005 20:31:36 -0500 (EST)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-60@DOMAIN.HIDDEN">srfi-60@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-60@DOMAIN.HIDDEN">srfi-60@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: 	&lt;<a href="mailto:Pine.LNX.4.44.0501071803240.10655-100000@DOMAIN.HIDDEN">Pine.LNX.4.44.0501071803240.10655-100000@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	(message from Taylor Campbell on Fri, 7 Jan 2005 18:45:45 -0800 (PST))</li>
+<li><em>References</em>: &lt;<a href="mailto:Pine.LNX.4.44.0501071803240.10655-100000@DOMAIN.HIDDEN">Pine.LNX.4.44.0501071803240.10655-100000@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>I have sent the updated srfi-60, which is quoted below, to the editor.
+
+ | Date: Fri, 7 Jan 2005 18:45:45 -0800 (PST)
+ | From: Taylor Campbell &lt;campbell@xxxxxxxxxxxxxxxxxx&gt;
+ | 
+ | On Fri, 7 Jan 2005, Aubrey Jaffer wrote:
+ | 
+ | &gt;  | If it is simply that SLIB was an easier starting point for you, I'd
+ | &gt;  | like to suggest a few name changes to bring what names you added
+ | &gt;  | closer to SRFI 33's conventions:
+ | &gt;  |
+ | &gt;  |   logical:ones       -&gt; bit-mask     (%MASK internally in SRFI 33)
+ | &gt;  |   logical:rotate     -&gt; bitwise-rotate
+ | &gt;
+ | &gt; BIT-MASK is a reasonable suggestion.  But why BIT-MASK and not
+ | &gt; BITWISE-MASK?
+ | 
+ | BIT-MASK returns a mask of N set bits.  BITWISE-MASK sounds like it
+ | performs the bitwise 'mask' operation.
+
+ | (If BIT-MASK sounds like it masks bits, perhaps MAKE-BIT-MASK might be
+ | a good alternative, though that might make it sound like there's a
+ | disjoint bit mask data type, like MIT Scheme's bit strings.)
+
+... logical:ones, which generated an integer with the least
+significant k bits set. Calls to bit-field could have replaced its
+uses . But the definition was so short that I just replaced its uses
+with:
+
+(lognot (ash -1 k))
+
+ | &gt;                             ROTATE doesn't work that way.
+ | 
+ | I just had another idea for the rotation operation, actually, which
+ | I think may be somewhat better than either BIT-ROTATE or
+ | BITWISE-ROTATE, since the operation is really just to rotate a
+ | field of bits: a procedure whose prototype is (ROTATE-BIT-FIELD
+ | &lt;size&gt; &lt;position&gt; &lt;i&gt; &lt;count&gt;).  Not only is this more general --
+ | it can rotate an arbitrary field of bits, not just the low N ones
+ | for some N,
+
+A procedure in slib/logical.scm, logical:rotate, rotated a given
+number of low-order bits by a given number of bits.  This function was
+quite servicable, but I could not name it adequately.  I have replaced
+it with rotate-bit-field with the addition of a start argument.  This
+new function rotates a given field (from positions start to end)
+within an integer; leaving the rest unchanged.
+
+_Function:_ *rotate-bit-field* /n count start end/
+    Returns n with the bit-field from start to end cyclically permuted
+    by count bits towards high-order.
+
+    Example:
+
+(number-&gt;string (rotate-bit-field #b0100 3 0 4) 2)
+    =&gt; &quot;10&quot;
+(number-&gt;string (rotate-bit-field #b0100 -1 0 4) 2)
+    =&gt; &quot;10&quot;
+(number-&gt;string (rotate-bit-field #b110100100010000 -1 5 9) 2)
+    =&gt; &quot;110100010010000&quot;
+(number-&gt;string (rotate-bit-field #b110100100010000 1 5 9) 2)
+    =&gt; &quot;110100000110000&quot;
+
+ | but the name and parameter ordering are more consistent with SRFI
+ | 33's conventions as well.
+
+SRFI-60 range arguments follow the SUBSTRING and array convention of
+start (inclusive) and end (exclusive) positions as the last arguments
+to the function.  I might choose differently if I were inventing a new
+language, but Scheme preceedent is there.
+
+ | &gt;  |   bit-reverse        -&gt; bitwise-reverse
+ | &gt;
+ | &gt; This one jumps bit-lanes.  I think bit-reverse is the better
+ | &gt; description.
+ | 
+ | Yes, it probably is.  However, thinking about it now, perhaps it would
+ | be better yet to offer a REVERSE-BIT-FIELD, like the ROTATE-BIT-FIELD I
+ | suggested above.  It would be extended similarly; its prototype would
+ | look like (REVERSE-BIT-FIELD &lt;size&gt; &lt;position&gt; &lt;i&gt;).
+
+The bit-reverse procedure was then the only one remaining which took a
+width argument. So I replaced it with reverse-bit-field.
+
+_Function:_ *reverse-bit-field* /n start end/
+    Returns n with the order of bits start to end reversed.
+
+(number-&gt;string (reverse-bit-field #xa7 0 8) 16)
+  =&gt; &quot;e5&quot;
+
+ | &gt;  |   bitwise:laminate   -&gt; bitwise-laminate
+ | &gt;  |   bitwise:delaminate -&gt; bitwise-delaminate
+ | &gt;
+ | &gt; I used bitwise because bits in corresponding lanes are extracted.
+ | &gt; BIT-LAMINATE and BIT-DELAMINATE might be better.
+ | 
+ | Er, I don't follow: shouldn't that make BITWISE-... more suitable?  On
+ | further consideration, however, I find myself wondering: in what sorts
+ | of applications are these operations, and the Gray codes, useful?  They
+ | seem fairly random to me for a general bitwise operations library.  All
+ | the other operations, however, are very widely applicable.  I could be
+ | wrong, of course, but even a quick grep through a number of your Scheme
+ | packages -- SCM, SLIB, JACAL, FreeSnell, &amp; synch -- reveals only one
+ | use of bit string lamination and Gray codes: in SLIB's phil-spc.scm,
+ | which could just have easily locally defined the operations.
+
+I moved the lamination procedures to phil-spc.scm.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00007" href="msg00007.html">Re: SRFI 33 vs SLIB</a></strong>
+<ul><li><em>From:</em> Taylor Campbell</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00012.html">Re: SRFI 33 vs SLIB</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00014.html">Re: another operation</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00007.html">Re: SRFI 33 vs SLIB</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00001.html">another operation</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00013"><strong>Date</strong></a></li>
+<li><a href="threads.html#00013"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

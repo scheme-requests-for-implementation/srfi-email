@@ -1,0 +1,99 @@
+<!-- MHonArc v2.6.18 -->
+<!--X-Subject: handling duplicate elements -->
+<!--X-From-R13: Yriva Ibegzna <xjbegznaNtznvy.pbz> -->
+<!--X-Date: Wed,  2 Jul 2014 17:05:33 +0000 (UTC) -->
+<!--X-Message-Id: CAD2CXevyaBF2kj&#45;KhTMn=_3VY=kL1OkUXSiCjn_=QDZ&#45;_12XgA@mail.gmail.com -->
+<!--X-Content-Type: multipart/alternative -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>handling duplicate elements</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00059.html">Date Prev</a>][<a href="msg00061.html">Date Next</a>][<a href="msg00056.html">Thread Prev</a>][<a href="msg00061.html">Thread Next</a>][<a href="maillist.html#00060">Date Index</a>][<a href="threads.html#00060">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>handling duplicate elements</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-113@DOMAIN.HIDDEN">srfi-113@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: handling duplicate elements</li>
+<li><em>From</em>: Kevin Wortman &lt;<a href="mailto:kwortman@DOMAIN.HIDDEN">kwortman@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 2 Jul 2014 10:05:12 -0700</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-113@DOMAIN.HIDDEN">srfi-113@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Dkim-signature</em>: v=1; a=rsa-sha256; c=relaxed/relaxed;        d=gmail.com; s=20120113;        h=mime-version:from:date:message-id:subject:to:content-type;        bh=/yK5w1otcTGzTB5K1pFezNVIsIzINYjnCYYBPFC5pOc=;        b=IRiYzL/76JEZWy3Z6Fs3rs8zKPFQZ9ODPbIulYmCK7Msdoe94ZyiJ0PvZjUyUY0N88         TVFxWpNHiojrZpj/By0mgrHn+y8P+L+fRGF+tw2KuQTIMpZfhrauXxsL9ehP2xN7hw3F         +fYUXcE+ECkguylaYKcDcNIM0g2sSLc0btS4RYOfFwxXaPQ7ny4cAcf97HvpLy9Nrymz         vvNKENCNvgT58db6BlxnVtKwy5HrndqJE0qM5zdO4m92Br4Qf1D2t9rvwAMuEvMBaRBA         533+RV8a48XcLcZsqze1Nt5fkcsMIqyc6uImFhoO8pLlVskS1JumXb3XRpcFaUwJfXN3         oqPw==</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<div dir="ltr"><div><div><div><div><div><div>Hi,<br><br></div>I have a proposal for how to support programmer control over duplicate elements.<br><br>By &quot;duplicate elements,&quot; I mean two objects inserted into a set (I will use &quot;set&quot; to refer to any of the set-like containers in this SRFI) that are equivalent according to the set&#39;s comparator, but not the same object according to e.g. eq?, e.g.<br>
+
+<br></div>(set some-comparator x y)<br><br></div><div>where (=? some-comparator x y) but (not (eq? x y)).<br><br></div><div>Only one of x and y will be contained in the resulting set. In many common use cases it doesn&#39;t matter which, but in some cases it does, and, as discussed previously, the programmer needs control over that behavior.<br>
+
+<br>The specific use case I am thinking of is implementing a &quot;map&quot; data structure on top of a set, where each entry is a pair with a key in car and value in cdr, as with an alist. I would like to be able to update an association with<br>
+
+</div><br></div>(set-adjoin association-set (cons same-key new-value))<br><br></div>but for that to work, I need a guarantee that the new pair will replace the old one in association-set.<br><br></div><div>My proposal is to create a disjoint type called &quot;selector&quot; inspired by the comparator type. A selector wraps one procedure, so that<br>
+
+<br></div><div>(selector-select selector-object left right)<br><br></div><div>chooses and returns one of the duplicates left and right to go into a set. We also define a default-selector that does something straightforward like always return the left argument (or maybe the right).<br>
+
+</div><div><br>Then, any of the set constructors accept up to two arguments called &quot;behaviorals.&quot; A behavioral may be a comparator, selector, or set object. If no behaviorals are supplied, a new set uses default-comparator and default-selector. If a comparator or selector is passed, it overrides the default. If a set is passed, its comparator and selector override both defaults.<br>
+
+<br></div><div>With this definition, conveniently, in the common use case of not caring about comparators and selectors, client code can omit them, e.g.<br><br></div><div>(set 1 2 3)<br><br></div><div>works with default-comparator and default-selector. Also conveniently, if one has a set s, they can create a new set with a compatible comparator with<br>
+
+<br></div><div>(set s &lt;elements ...&gt;) .<br><br>Currently you would either need visibility to s&#39; comparator, or to do<br><br></div><div>(set-adjoin (set-empty-copy s) &lt;elements...&gt;) .<br></div><div><br>In my map use case, I can do<br>
+
+<br></div><div>(set (make-car-comparator key-comparator) right-selector (cons key value)) .<br></div><div><br>Finally, the &quot;up to two behaviorals&quot; behavior means that it is still possible to insert comparators or selectors into a set, if one wanted to do that for some abstruse reason.<br>
+
+<br></div><div>Kevin Wortman<br><br></div></div>
+
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00061" href="msg00061.html">Re: handling duplicate elements</a></strong>
+<ul><li><em>From:</em> John Cowan</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00059.html">Re: New version of SRFI 113</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00061.html">Re: handling duplicate elements</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00056.html">Re: Hashtable related APIs</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00061.html">Re: handling duplicate elements</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00060"><strong>Date</strong></a></li>
+<li><a href="threads.html#00060"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

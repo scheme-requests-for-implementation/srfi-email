@@ -1,0 +1,225 @@
+<!-- MHonArc v2.6.16 -->
+<!--X-Subject: Re: lists in enclosed expression -->
+<!--X-From-R13: Bre Pbguare <creNobguare.pbz> -->
+<!--X-Date: Tue, 21 May 2013 02:40:00 +0200 (MST) -->
+<!--X-Message-Id: 519AC249.1040105@bothner.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 51914AD3.1080405@bothner.com -->
+<!--X-Reference: 20130513222514.GG28086@mercury.ccil.org -->
+<!--X-Reference: 51916C9C.9040500@bothner.com -->
+<!--X-Reference: 20130513225949.GH28086@mercury.ccil.org -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: lists in enclosed expression</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00067.html">Date Prev</a>][<a href="msg00069.html">Date Next</a>][<a href="msg00067.html">Thread Prev</a>][<a href="msg00069.html">Thread Next</a>][<a href="maillist.html#00068">Date Index</a>][<a href="threads.html#00068">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: lists in enclosed expression</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: John Cowan &lt;<a href="mailto:cowan@DOMAIN.HIDDEN">cowan@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: lists in enclosed expression</li>
+<li><em>From</em>: Per Bothner &lt;<a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 20 May 2013 17:39:37 -0700</li>
+<li><em>Cc</em>: <a href="mailto:srfi-108@DOMAIN.HIDDEN">srfi-108@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-108@DOMAIN.HIDDEN">srfi-108@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20130513225949.GH28086@DOMAIN.HIDDEN">20130513225949.GH28086@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:51914AD3.1080405@DOMAIN.HIDDEN">51914AD3.1080405@xxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20130513222514.GG28086@DOMAIN.HIDDEN">20130513222514.GG28086@xxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:51916C9C.9040500@DOMAIN.HIDDEN">51916C9C.9040500@xxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20130513225949.GH28086@DOMAIN.HIDDEN">20130513225949.GH28086@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mozilla/5.0 (X11; Linux x86_64; rv:17.0) Gecko/20130514 Thunderbird/17.0.6</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+On 05/13/2013 03:59 PM, John Cowan wrote:
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Per Bothner scripsit:
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Specially, do you like it:
+- as a special syntax for SRFI-10[789] should define for enclosed
+expression?
+</pre></blockquote><pre style="margin: 0em;">
+
+This.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+It is?  I see '@' listed as a &lt;special subsequent&gt; but not a
+&lt;special initial&gt;.
+</pre></blockquote></blockquote><pre style="margin: 0em;">
+
+The devil is in the details, but I think I've worked out
+(most of) the details.  This is somewhat long-winded ...
+
+First, the reader parses @FORM as ($splice$ FORM).  In the Kawa
+prototype, this is done pervasively.  (More on this later.)
+Alternatively, a SRFI-10[789] implementation may special-case
+the syntax of enclosed-part:
+
+enclosed-part ::=
+    &quot;&amp;&quot; enclosed-modifier &quot;[&quot; enclosed-expression*  &quot;]&quot;
+  | &quot;&amp;&quot; enclosed-modifier &quot;(&quot; expression+ &quot;)&quot;
+
+enclosed-expression ::= expression | &quot;@&quot; expression
+
+For Kawa I'm considering allowing '&quot;@&quot; expression' in general
+application context.  Thus:
+  (fexp @aexp)
+would be equivalent to:
+  (apply fexp aexp)
+except aexp can be a list *or* a vector.  Also, '@EXP' would only be
+allowed in application context - it is syntax, not expression.
+(Otherwise type-checking/-inference, code optimization, and
+readability are hurt too much, IMO.)
+
+For example the list function partially subsumes list, cons, append,
+and variants:
+  (list x @y) === (cons x (list-copy y))
+  (list @a @b @c) === (append a b (list-copy c))
+
+Of course the above is not part any of the current SRFIs;
+it's just motivation of why generalizing @ makes sense.
+
+Another issue is the interaction with format specifiers.
+These are not part of these SRFIs, but they are in the Kawa
+prototype, and may be in a followup SRFI, so we want to
+be confident $splice$ and format work together.  What
+makes it non-trivial is that format specifiers are
+optional, *and* that we want to allow the more complex
+Common Lisp format specifiers which are not in one-to-one
+correspondence with the argument values.
+
+Luckily, a simple solution appears sane and to work well:
+If no format specifier is given, an implicit specifier of
+&quot;~a&quot; is added for *each* sub-expression.  Thus:
+  &amp;[exp1 exp2 exp3]
+is equivalent to:
+  ~a[exp1]~a[exp2]~a[exp3]
+Similarly:
+  &amp;[@exp]
+is equivalent to:
+  &amp;~{~a~}[exp]
+I.e. &quot;~{~a~}&quot; is added to the format string.
+(Kawa allows multiple format specifiers before an
+enclosed expressions.)
+
+This handles what happens when producing a string.
+as in SRFI-109, or the 2-argument version of SRFI-108's
+define-simple-constructor.  In general, the reader-produced
+forms contain $splice$ forms - as do the init-args when using
+define-simple-constructor.
+
+Should define-simple-constructor handle &quot;de-sugaring&quot; $splice$
+forms?  If so how?  The issue is whether to *allow* the user-provided
+cname-maker and str-maker macros/functions to handle $splice$,
+or to *require* them to.  In the latter case, no problem to
+us Scheme implementors, but it complicates $construct$:foo
+implementations.  If we allow tcname-maker/str-maker to handle
+the desugaring, without requiring them to, then we need a
+post-processor phase to re-write the resulting form to an apply call,
+which is tricky and not always appropriate.
+
+This is not a problem for an implementation where ($splice$ args)
+is handled pervasively by the implicit apply done on each function
+call.  In that case it gets handled automatically.
+
+I'm leaning towards deferring the issue to a separate SRFI
+to handle $splice$ more generally.
+
+A possible compromise is partial solution/specification:
+(1) Define the reader to map @FORM to ($splice FORM),
+at least within an enclosed-part (i.e. inside &amp;[...]).
+(2) Specify that ($string$ ...) handle $splice, by
+appending the result.
+(3) Also SRFI-107 (XML constructor) forms should handle $splice$.
+(4) Leave it up to the implementation of each $construst$:foo
+to handle $splice$, except on implementations handle it pervasively.
+
+The final issue I'm dealing with is the Kawa-specific one where @foo
+conflicts with Java-style annotations.  However, this ambiguity isn't
+really a problem in practice because of 3 &quot;disambiguators&quot;:
+(1) When @foo is a splice then foo has to be list/vector value.  For
+annotations, foo has to be an annotation class.
+(2) Annotations are only used in function call position:
+  (@XmlAttribute required: #t)
+Splices are used for function arguments:
+  (func ... @splice ...)
+I guess in theory one could allow a compound function-call splice:
+  (define call (list func arg1 arg2 arg3))
+  (@call)  ;; equivalent to (func arg1 arg2 arg3)
+However, that doesn't seem terribly useful.
+(3) Annotations are always (almost always?) used in declaration
+forms (e.g. class declarations), in specific syntactic contexts.
+
+(The above is probably Too Much Information except for people
+who care about Kawa.)
+--
+	--Per Bothner
+per@xxxxxxxxxxx   <a  rel="nofollow" href="http://per.bothner.com/">http://per.bothner.com/</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00069" href="msg00069.html">Re: lists in enclosed expression</a></strong>
+<ul><li><em>From:</em> John Cowan</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00064" href="msg00064.html">lists in enclosed expression</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+<li><strong><a name="00065" href="msg00065.html">Re: lists in enclosed expression</a></strong>
+<ul><li><em>From:</em> John Cowan</li></ul></li>
+<li><strong><a name="00066" href="msg00066.html">Re: lists in enclosed expression</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+<li><strong><a name="00067" href="msg00067.html">Re: lists in enclosed expression</a></strong>
+<ul><li><em>From:</em> John Cowan</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00067.html">Re: lists in enclosed expression</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00069.html">Re: lists in enclosed expression</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00067.html">Re: lists in enclosed expression</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00069.html">Re: lists in enclosed expression</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00068"><strong>Date</strong></a></li>
+<li><a href="threads.html#00068"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

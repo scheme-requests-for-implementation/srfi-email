@@ -1,0 +1,258 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: strings draft -->
+<!--X-From-R13: orne <orneNfbavp.arg> -->
+<!--X-Date: Fri, 23 Jan 2004 08:04:18 +0100 (MET) -->
+<!--X-Message-Id: Pine.LNX.4.58.0401222141330.14934@bolt.sonic.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200401220511.VAA18432@morrowfield.regexps.com -->
+<!--X-Reference: Pine.LNX.4.58.0401220953470.29732@bolt.sonic.net -->
+<!--X-Reference: 200401230206.SAA23673@morrowfield.regexps.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: strings draft</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00366.html">Date Prev</a>][<a href="msg00368.html">Date Next</a>][<a href="msg00366.html">Thread Prev</a>][<a href="msg00368.html">Thread Next</a>][<a href="maillist.html#00367">Date Index</a>][<a href="threads.html#00367">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: strings draft</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Tom Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: strings draft</li>
+<li><em>From</em>: bear &lt;<a href="mailto:bear@DOMAIN.HIDDEN">bear@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 22 Jan 2004 23:04:11 -0800 (PST)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:200401230206.SAA23673@DOMAIN.HIDDEN">200401230206.SAA23673@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:200401220511.VAA18432@DOMAIN.HIDDEN">200401220511.VAA18432@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:Pine.LNX.4.58.0401220953470.29732@DOMAIN.HIDDEN">Pine.LNX.4.58.0401220953470.29732@xxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:200401230206.SAA23673@DOMAIN.HIDDEN">200401230206.SAA23673@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+On Thu, 22 Jan 2004, Tom Lord wrote:
+
+
+&gt;As you admit:
+&gt;
+&gt;    &gt; If we restrict discussion to the characters that can appear in
+&gt;    &gt; canonical string representation (meaning no ligatures)
+&gt;
+&gt;Which is fine for certain implementations but not for the standard.
+&gt;
+&gt;    &gt; Every
+&gt;    &gt; cased character in unicode, with the single exception of eszett,
+&gt;    &gt; has a lower-case and an upper-case;
+&gt;
+&gt;A single exception is an exception nonetheless.   I think that what we
+&gt;should take from such exceptions is not their singularity (who knows
+&gt;what tomorrow may bring) but rather the &quot;in general&quot; programmatic
+&gt;structure that they require.
+
+True, and this single exception means that I will need, like every
+other implementor, to caution users that case changing operations
+may change the length of a string and the indexes of codepoints after
+the problematic character.  However, I can make the actual occurrence
+of this relevant only to german-using audiences, for whom it will be
+well known and well understood.
+
+&gt;Yeah, I think you ought to alpha-rename STRING-REF and STRING-SET! and
+&gt;various other procedures in your code.  I think you want
+&gt;COMBINING-SEQUENCE? not CHAR? for this infinite set you have in mind.
+
+I'm pretty sure I don't.  I'm talking about characters, not codepoints.
+Codepoints are representation; characters are ideas.  Some characters
+take more than one codepoint to represent.
+
+&gt;    &gt; I would say that if the character set is not restricted to a known
+&gt;    &gt; width, I think it's handier with codepoint separators, especially
+&gt;    &gt; since most characters are in the 0...255 or 0..65535 range.
+&gt;
+&gt;    &gt; Instead of writing #\U+C32000000AF for a combining sequence
+&gt;
+&gt;I don't think you get to do that.   I don't think combining sequences
+&gt;can be CHAR?.  Sorry.   Useful data type -- yes.  CHAR? -- no.
+
+Eh, okay.  There's no real difference in what can be expressed.  The
+U+ notation strongly suggests unicode, but I can compatibly use it
+for a character set whose first 2^21 mappings are the same mappings as
+unicode.
+
+&gt;    &gt; &gt;  /=== R6RS Recommendation:
+&gt;
+&gt;    &gt; &gt;    R6RS should strongly encourage implementations to make the
+&gt;    &gt; &gt;    expected-case complexity of STRING-REF and STRING-SET! O(1).
+&gt;
+&gt;    &gt; &gt;  \========
+&gt;
+&gt;    &gt; I'd fail this. My strings are O(Log N) access where N is the length
+&gt;    &gt; of the string.
+
+&gt;
+&gt;Really?  You'd fail?   On small strings you almost certainly wouldn't,
+
+strings up to ~1000 general characters, or 4080 latin-1 chars - O(1).
+   These are a single vector or 'strand'.
+strings up to ~3000 general characters, or 12240 latin-1 chars - O(2).
+    Traverse root node, operate in one of three child node strands.
+strings up to ~9000 general characters, or 36720 latin-1 chars - O(3).
+    root node, branch node, strand.
+strings up to ~27000 general characters, or 110160 latin-1 chars - 0(4).
+    root node, branch node, branch node, strand.
+
+and so on.  It's a 2/3 B-tree of &quot;strands&quot; where each strand is
+a 4 kbyte vector.  4 32-bit values per strand are used for overhead.
+If the characters are in the latin-1 range, a strand can contain up
+to 4080 characters. But any strand which contains any characters outside
+latin-1 is represented using a 32-bit representation, and potentially
+several consecutive 32-bit values within such a strand may belong to the
+same character.
+
+The loss is that referring to an indexed character in a string is
+O(n).  The win is that inserting or deleting characters is also
+O(n) and I can avoid spending a lot of storage on copies and a lot
+of CPU on making copies since different strings can share strands.
+
+&gt;just because they're small.   If your trees are at all balanced, you
+&gt;probably wouldn't fail on &quot;medium&quot; strings either.
+
+It's a self-balancing tree structure, but the length of the path
+from root to strand is still proportional to the logarithm base 3
+of the string length. This is a law of the universe with trees.
+
+&gt;think you should look at some form of self-balancing tree -- then you
+&gt;won't fail at all.  (Assuming, that is, that you don't come away from
+&gt;&quot;STRING? is a tree&quot; as I think you probably should --- the tree is
+&gt;something else, not STRING?.)
+
+A string is a sequence of characters.  I looked at strings and
+the operations I'm doing on them in language processing.  I
+insert, delete, prepend, append, and copy strings a lot.  When
+insertion or deletion requires copying the rest of the string
+to shift it forward or back one or two places, and every string
+has to have its own storage for data 99% of which is copied
+wholesale from other strings, and you have to do all that copying,
+it's intolerably slow.  The balanced-tree representation with
+potentially shared leaves supports those operations better than
+the vector representation, _especially_ as strings grow larger
+than a few kilobytes. I'm working with text corpora, so the
+average string length is large - anything from a ten-kilobyte
+wall street journal article to a two-megabyte novel.
+
+I'll cheerfully create routines that copy an entire string into
+a single vector of a specific representation for an FFI to
+play with, and I'll create routines that copy them back into
+trees when the FFI says it's done playing, but I won't go back
+to using vectors internally and winding up waiting while
+megabytes of data get copied back and forth to move something
+up or down a few character spaces every time one word is
+inserted or deleted near the front.
+
+&gt;    &gt; &gt;   While R6RS should not require that CHAR? be a subset of Unicode,
+&gt;    &gt; &gt;   it should specify the semantics of string indexes for strings
+&gt;    &gt; &gt;   which _are_ subsets of Unicode.
+
+I'll go along with that, and I have no trouble conforming.  In
+that case the &quot;large characters&quot; may simply be regarded as lying
+outside unicode.
+
+&gt;    &gt; Computing the codepoint-index on demand would require a traversal
+&gt;    &gt; of the string, an O(N) operation, using my current representation.
+&gt;    &gt; That's clearly intolerable. But in the same tree structure where I
+&gt;    &gt; now just keep character indexes, I can add additional fields for
+&gt;    &gt; codepoint indexes as well, making it an O(log N) operation.
+&gt;
+&gt; And if you were to use self-balancing trees, it would be an
+&gt; expected-case O(1) operation.
+
+???  Balanced trees are still trees, and if the tree is exp(n) long
+there are still O(n) links to follow from the root to a leaf.  Can
+you explain what you mean?
+
+
+&gt; Only because you are in a mindset where you want CHAR? to be a
+&gt; combining char sequence.  There are so many problems with permitting
+&gt; that as a conformant Scheme that I think it has to be rejected.  You
+&gt; need to pick a different type for what you currently call CHAR?.
+
+I want char? to be a character, and to never have to care, on the
+scheme side of things, about how exactly it's represented, whether
+it's in unicode as a single codepoint or several, or etc.  I don't
+give a flying leap whether unicode regards it as a combining
+sequence or not, and I don't want to *have* to give a flying leap
+about whether it's represented as a combining sequence or not.  If
+it functions linguistically as a character, I want to be able to
+write scheme code that treats it as a character.  I don't want to
+ever have to worry or think about the representation, until I'm doing
+I/O or passing a value across an FFI and the representation becomes
+important.
+
+				Bear
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00368" href="msg00368.html">Re: strings draft</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+<li><strong><a name="00387" href="msg00387.html">Re: strings draft</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00342" href="msg00342.html">strings draft</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00345" href="msg00345.html">Re: strings draft</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+<li><strong><a name="00346" href="msg00346.html">Re: strings draft</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00366.html">READ-OCTET (Re: strings draft)</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00368.html">Re: strings draft</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00366.html">READ-OCTET (Re: strings draft)</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00368.html">Re: strings draft</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00367"><strong>Date</strong></a></li>
+<li><a href="threads.html#00367"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

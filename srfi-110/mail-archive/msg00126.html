@@ -1,0 +1,134 @@
+<!-- MHonArc v2.6.16 -->
+<!--X-Subject: Re: First cut at "curly&#45;write" and "neoteric&#45;write" with &#45;shared and &#45;cyclic versions -->
+<!--X-From-R13: "Rnivq O. Iurryre" <qjurryreNqjurryre.pbz> -->
+<!--X-Date: Fri,  3 May 2013 00:46:03 +0200 (MST) -->
+<!--X-Message-Id: E1UY2GI&#45;0007T2&#45;U6@rmm6prod02.runbox.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: CALJxeiLLV2tGn8vA&#45;nURF1CZw1Q8o87rs9+3YxXdD0dspokvvA@mail.gmail.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: First cut at &quot;curly-write&quot; and &quot;neoteric-write&quot; with -shared and -cyclic versions</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00125.html">Date Prev</a>][<a href="msg00127.html">Date Next</a>][<a href="msg00119.html">Thread Prev</a>][<a href="msg00139.html">Thread Next</a>][<a href="maillist.html#00126">Date Index</a>][<a href="threads.html#00126">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: First cut at &quot;curly-write&quot; and &quot;neoteric-write&quot; with -shared and -cyclic versions</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &quot;cben&quot; &lt;<a href="mailto:cben@DOMAIN.HIDDEN">cben@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: First cut at &quot;curly-write&quot; and &quot;neoteric-write&quot; with -shared and -cyclic versions</li>
+<li><em>From</em>: &quot;David A. Wheeler&quot; &lt;<a href="mailto:dwheeler@DOMAIN.HIDDEN">dwheeler@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 02 May 2013 18:46:02 -0400 (EDT)</li>
+<li><em>Cc</em>: &quot;srfi-110&quot; &lt;<a href="mailto:srfi-110@DOMAIN.HIDDEN">srfi-110@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-110@DOMAIN.HIDDEN">srfi-110@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:CALJxeiLLV2tGn8vA-nURF1CZw1Q8o87rs9%2B3YxXdD0dspokvvA@DOMAIN.HIDDEN">CALJxeiLLV2tGn8vA-nURF1CZw1Q8o87rs9+3YxXdD0dspokvvA@xxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Reply-to</em>: <a href="mailto:dwheeler@DOMAIN.HIDDEN">dwheeler@xxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Beni Cherniavsky-Paskin &lt;cben@xxxxxxxxxxxx&gt; wrote:
+
+&gt; I'm getting some errors [guile 2.0.7]:
+
+Thanks for the report!  I don't have guile 2.0.7 (yet); so this is a new problem to me.
+
+...
+
+&gt; -#0=(quote . #0#)
+&gt; +'x
+
+Hmm.. This report means that when (all) the writers were asked to
+write out &quot;(quote x)&quot;, they output:
+  #0=(quote . #0#)
+
+Instead of the correct:
+  'x
+
+Clearly the writers are getting it *completely* wrong.
+What's weird is that the code works on older versions of guile, and it's based on
+fairly well-tested code.  I'm also surprised the more complicated cases worked (!).
+
+My guess is that there's a semantics issue with the hash table implementation.
+If the hash table thought that the outer list and the symbol x were &quot;eq?&quot;... or used the
+wrong equality operator so they'd be considered equal... then the code would do this.
+
+Guile supports several hash table systems; I used the SRFI-69 hash tables because
+they are especially portable.  But I did have to use a special declaration to get srfi-69
+hash tables in guile without lots of spurious warnings.
+Perhaps that special declaration no longer works in guile 2.0.7.
+
+Can you replace the current lines:
+  (use-modules ((srfi srfi-69)
+               #:select ((make-hash-table . srfi-69-make-hash-table)
+                         (hash-table? . srfi-69-hash-table?)
+                         hash-table-set!
+                         hash-table-update!/default
+                         hash-table-ref
+                         hash-table-ref/default
+                         hash-table-walk
+                         hash-table-delete! )))
+
+with just:
+  (use-modules (srfi srfi-69))
+
+and try again with guile 2.0.7?
+The guile 2 manual says that this is the correct way to import srfi-69:
+<a  rel="nofollow" href="http://www.gnu.org/software/guile/manual/html_node/SRFI_002d69.html#SRFI_002d69">http://www.gnu.org/software/guile/manual/html_node/SRFI_002d69.html#SRFI_002d69</a>
+
+--- David A. Wheeler
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00119" href="msg00119.html">Re: First cut at &quot;curly-write&quot; and &quot;neoteric-write&quot; with -shared and -cyclic versions</a></strong>
+<ul><li><em>From:</em> Beni Cherniavsky-Paskin</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00125.html">Re: Why forbid ! in whitespace-only line?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00127.html">Re: scope of #!sweet and friends inside parens</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00119.html">Re: First cut at &quot;curly-write&quot; and &quot;neoteric-write&quot; with -shared and -cyclic versions</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00139.html">Re: First cut at &quot;curly-write&quot; and &quot;neoteric-write&quot; with -shared and -cyclic versions</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00126"><strong>Date</strong></a></li>
+<li><a href="threads.html#00126"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

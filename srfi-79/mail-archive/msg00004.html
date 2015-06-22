@@ -1,0 +1,189 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: General comments or SRFIs 79&#45;82 -->
+<!--X-From-R13: [vpunry Ecreore <fcreoreNvasbezngvx.hav&#45;ghrovatra.qr> -->
+<!--X-Date: Mon, 28 Nov 2005 19:44:39 +0100 (CET) -->
+<!--X-Message-Id: y9l4q5w39av.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 87lkzakpt1.fsf@qrnik.zagroda -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: General comments or SRFIs 79-82</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00003.html">Date Prev</a>][Date Next][<a href="msg00003.html">Thread Prev</a>][Thread Next][<a href="maillist.html#00004">Date Index</a>][<a href="threads.html#00004">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: General comments or SRFIs 79-82</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-79@DOMAIN.HIDDEN">srfi-79@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: General comments or SRFIs 79-82</li>
+<li><em>From</em>: Michael Sperber &lt;<a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 28 Nov 2005 19:40:40 +0100</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-79@DOMAIN.HIDDEN">srfi-79@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:87lkzakpt1.fsf@DOMAIN.HIDDEN">87lkzakpt1.fsf@xxxxxxxxxxxxx</a>&gt; (Marcin Kowalczyk's message of	&quot;Sun, 27 Nov 2005 17:39:54 +0100&quot;)</li>
+<li><em>References</em>: &lt;<a href="mailto:87lkzakpt1.fsf@DOMAIN.HIDDEN">87lkzakpt1.fsf@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Gnus/5.110003 (No Gnus v0.3) XEmacs/21.5-b21 (darwin)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+Many thanks for your long comments!
+
+Marcin 'Qrczak' Kowalczyk &lt;qrczak@xxxxxxxxxx&gt; writes:
+
+&gt; I don't like the separation into readers/writers, streams, and ports.
+&gt; Too many similar concepts are treated as completely disjoint types.
+
+Then I haven't explained things very well ...
+
+&gt; As I understand it:
+&gt;
+&gt; - readers/writers deal with physical I/O of blocks of bytes
+&gt;
+&gt; - streams provide encoding and newline conversion, buffering,
+&gt;   and scanning the same input multiple times
+&gt;
+&gt; - ports provide raw I/O of bytes, can convert UTF-8 to characters,
+&gt;   and can convert between characters and lines, or characters and
+&gt;   Scheme external representations
+&gt;
+&gt; This feels like a single package. There should be some overall
+&gt; description of the whole design somewhere, so one doesn't have to
+&gt; dig into four separate SRFIs.
+
+You do know it used to be a single package (SRFI 68), and the folks
+over on its discussion list were pretty unanimously for splitting it
+up?   I'm afraid you're outvoted ...
+
+But let me provide a different characterization:
+
+- Readers/writers are meant for people who *provide* new data
+  sources---it's easy to provide readers and writers, but they're not
+  meant to be used by user programs.
+
+- Ports and streams are convenient to use, but would be hard to
+  provide directly.  (Most Scheme systems that provide facilities for
+  creating new &quot;port types&quot; either sacrifice performance or simplicity
+  or offer something very similar to readers/writers.)
+
+  Pick the one that suits your application.  Ports are more what
+  Schemers are used to.  (Input) streams offer the advantage that it's
+  much easier to write transcoder-like facilities.
+
+In this light, they appear very different from one another.
+
+&gt; I don't quite understand the rationale for using UTF-8 as the
+&gt; intermediate format. 
+
+Could you be more specific as to what you don't understand?  There's
+an explanation in the end.
+
+&gt; For mixing textual and binary I/O (if the encoding is not known to
+&gt; be UTF-8) one has to put and remove a converter dynamically on every
+&gt; switch, and it's incompatible with block-conversion of input (it
+&gt; must be converted one character at a time, unless we can find the
+&gt; boundary between text and binary data when looking at the raw stream
+&gt; before the conversion).
+
+... or do the work in the one transcoder.  Allowing mixing of textual
+and binary I/O is always a matter of trade-offs between efficiency and
+functionality.  I can see how somebody else might come down in a
+different place, but I haven't seen a solution that addresses your
+problem.  (There was some discussion over on the SRFI 68 list.)  Maybe
+you can provide details on how you'd solve this problem---I'd love to
+improve upon this, but don't know how.
+
+&gt; EOL style doesn't include the possibility of accepting any of the
+&gt; three common conventions, which is used by Java and probably .NET.
+
+The problem is that this is only the case for input, not output, so
+you'd get three more EOL styles instead of one.  This is probably
+better handled by a tailored READ-LINE / INPUT-LINE procedure.
+
+&gt; Since on classic Macintosh Perl (and perhaps C too, haven't checked)
+&gt; exchanges the meanings of \n and \r (by actually changing their
+&gt; interpretation in the source instead of recoding), I guess it would be
+&gt; more useful to exchange them when recoding in the CR style, instead
+&gt; of by treating either as a newline on input and writing a newline for
+&gt; either on output.
+
+Interesting, I didn't know this.  Could you provide details or a web
+link?
+
+&gt; StdIn and StdOut can be seekable, and it's sometimes useful (e.g. Unix
+&gt; &quot;wc&quot; makes use of this). The reference implementation doesn't allow that.
+
+Sure---the underlying substrate doesn't allow it.  But you might in
+your implementation, and that shouldn't be hard.
+
+&gt; I don't understand input-string. How much does it read?
+
+However much the implementation feels like.  To be honest, I'm not
+positive that it's that useful (unlike INPUT-BLOB)---it's mainly there
+for symmetry with INPUT-BLOB.
+
+&gt; When reading from ports, it's not specified what happens when data are
+&gt; not valid UTF-8. Similarly for decoding from e.g. UTF-16 (unpaired
+&gt; surrogates), UTF-32 (too large values), or encoding to latin-1
+&gt; (characters above U+00FF).
+
+&gt; Here are various concrete stream types: [...]
+
+Above, you criticize the fact that I have different types for
+different levels of the system.  But how is your hierarchy of &quot;stream
+types&quot; different from that?  (I'm not trying to criticize you---I'm
+curious.)
+
+-- 
+Cheers =8-} Mike
+Friede, V&#xF6;lkerverst&#xE4;ndigung und &#xFC;berhaupt blabla
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00003" href="msg00003.html">General comments or SRFIs 79-82</a></strong>
+<ul><li><em>From:</em> Marcin 'Qrczak' Kowalczyk</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00003.html">General comments or SRFIs 79-82</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00003.html">General comments or SRFIs 79-82</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00004"><strong>Date</strong></a></li>
+<li><a href="threads.html#00004"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

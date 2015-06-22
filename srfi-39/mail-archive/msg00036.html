@@ -1,0 +1,196 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Delay and dynamic extent -->
+<!--X-From-R13: fcreoreNvasbezngvx.hav&#45;ghrovatra.qr ([vpunry Ecreore M[e. Bercebprffbe]) -->
+<!--X-Date: Wed,  2 Apr 2003 12:39:50 +0200 (DFT) -->
+<!--X-Message-Id: y9l4r5hfaj3.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Delay and dynamic extent</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00035.html">Date Prev</a>][<a href="msg00037.html">Date Next</a>][<a href="msg00035.html">Thread Prev</a>][<a href="msg00037.html">Thread Next</a>][<a href="maillist.html#00036">Date Index</a>][<a href="threads.html#00036">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Delay and dynamic extent</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-39@DOMAIN.HIDDEN">srfi-39@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Delay and dynamic extent</li>
+<li><em>From</em>: <a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a> (Michael Sperber [Mr. Preprocessor])</li>
+<li><em>Date</em>: Wed, 02 Apr 2003 12:39:44 +0200</li>
+<li><em>Approve</em>: <a href="mailto:srfi-admin@DOMAIN.HIDDEN">srfi-admin@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-39@DOMAIN.HIDDEN">srfi-39@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Old-date</em>: Thu, 27 Mar 2003 20:06:34 -0800 (PST)</li>
+<li><em>Reply-to</em>: <a href="mailto:oleg@DOMAIN.HIDDEN">oleg@xxxxxxxxx</a></li>
+<li><em>User-agent</em>: Gnus/5.090015 (Oort Gnus v0.15) XEmacs/21.5 (cabbage)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+&gt; Note that the lambda form does not close over the dynamic
+&gt; environment so why should it be different from delay?  Well if you
+&gt; did this the &quot;dynamic environment&quot; would in fact be the lexical
+&gt; environment so you would lose all the benefits of dynamic binding.
+&gt; When one writes a function with lambda there is an expectation that
+&gt; the dynamic environment is abstracted over.  However when using a
+&gt; DELAY the expectation is that only the evaluation time is changed,
+&gt; not the computation being performed (unless side-effects are
+&gt; performed that expose the evaluation order).
+
+I'm afraid I can see problems with that characterization of delay. I'd
+also like to show an example that seems to demonstrate why delay
+should _not_ be closed over the dynamic environment.
+
+It is sometimes convenient to invert an iteration &quot;inside-out&quot; --
+turn an iteration over a collection into a lazy list of the traversed
+elements. Generators in Icon, Ruby and now Python use a similar
+trick. Here's a generic iteration inverter:
+
+(define (foreach-&gt;lazy-list foreach-fn collection)
+  (delay
+    (call-with-current-continuation
+      (lambda (k-main)
+	(foreach-fn
+	  (lambda (val)
+	    (call-with-current-continuation
+	      (lambda (k-reenter)
+		(k-main (cons val
+			  (delay
+			    (call-with-current-continuation
+			      (lambda (k-new-main)
+				(set! k-main k-new-main)
+				(k-reenter #f)))))))))
+	  collection)
+	(k-main '())))))
+
+We can see how it works:
+
+(define (force-print lazy-lst)
+  (let ((lst (force lazy-lst)))
+    (if (pair? lst)
+      (begin (display (car lst)) (newline)
+	(force-print (cdr lst))))))
+
+(force-print (foreach-&gt;lazy-list for-each '(1 2 3)))
+
+
+We should point out the expression (delay (call/cc (lambda (k) ...))).
+It is critically important that 'k' be the continuation in the
+'forcing' expression rather than the continuation of the 'delay'
+expression. Indeed, it is the former. That seems to contradict to
+the quoted assertion that 'delay' merely delays the time the computation
+is performed. If it were, in 
+	(let* ((x (delay (call-with-current-continuation (lambda (k) (k 1)))))
+	       (_ (display &quot;once&quot;))
+               (y (force x) ))
+	      (list (integer? x) y)
+	)
+'k' would have been the continuation that delivers the result to x. In
+reality, 'k' delivers the result to 'force'.
+
+&gt; This is consistent with the concept of delaying the
+&gt; computation (you only want to change **when** the computation is
+&gt; performed, not **what** the computation performs)
+
+In the case of call/cc, it is important *what* is performed (and
+*where* it is performed).
+
+Let us consider what happens when we try the following:
+
+(define (for-each-str iteratee str)
+  (with-input-from-string str
+    (lambda () 
+      (do ((val (read) (read))) ((eof-object? val))
+	(iteratee val)))))
+
+(force-print
+  (foreach-&gt;lazy-list for-each-str &quot;4 5 6 7&quot;))
+
+
+The following subexpression of foreach-&gt;lazy-list
+
+	(k-main (cons val
+		   (delay
+		        (call-with-current-continuation
+			   (lambda (k-new-main)
+				(set! k-main k-new-main)
+				(k-reenter #f))))))
+
+executes in the dynamic context when (current-input-port) is the
+string port. Therefore, 'delay' is evaluated in this context. Suppose
+delay is closed over the dynamic environment. Our delay thus captures
+the fact that (current-input-port) is the string port. After the delay
+and cons are evaluated, k-main is invoked, which switches
+(current-input-port) to that of the main program. The main program
+later on forces the cdr of the lazy list. This forces our delay --
+which restores the binding of (current-input-port) to the string
+port. Then k-reenter is executed, which re-enters the scope
+of with-input-from-string and swaps the current binding for
+the input port with that for the string port. Both bindings however
+are the same. Therefore, when we re-escape after the iteration, the
+input port remains bound to the string port. Thus the act of forcing
+a lazy list has corrupted the binding of the input port in the main
+program!
+
+
+&gt; If this inheritance did not happen, the DELAY form would lose modularity (in
+&gt; the sense that the one writing the DELAY expression would have to take
+&gt; into account all the possible places where the promise is forced).
+
+I guess that is the reason why a non-strict functional language must be pure.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00037" href="msg00037.html">Re: Delay and dynamic extent [previous message was by Oleg Kiselyov]</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr. Preprocessor]</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00035.html">Re: Moving ahead</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00037.html">Re: Delay and dynamic extent [previous message was by Oleg Kiselyov]</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00035.html">Re: Moving ahead</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00037.html">Re: Delay and dynamic extent [previous message was by Oleg Kiselyov]</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00036"><strong>Date</strong></a></li>
+<li><a href="threads.html#00036"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

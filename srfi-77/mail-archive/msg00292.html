@@ -1,0 +1,156 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Error objects in general -->
+<!--X-From-R13: orne <orneNfbavp.arg> -->
+<!--X-Date: Sat, 29 Oct 2005 21:46:28 +0200 (MST) -->
+<!--X-Message-Id: Pine.LNX.4.58.0510291208400.15039@bolt.sonic.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: BF893602.BF1D%schlie@comcast.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Error objects in general</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00291.html">Date Prev</a>][<a href="msg00293.html">Date Next</a>][<a href="msg00297.html">Thread Prev</a>][<a href="msg00293.html">Thread Next</a>][<a href="maillist.html#00292">Date Index</a>][<a href="threads.html#00292">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Error objects in general</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Paul Schlie &lt;<a href="mailto:schlie@DOMAIN.HIDDEN">schlie@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Error objects in general</li>
+<li><em>From</em>: bear &lt;<a href="mailto:bear@DOMAIN.HIDDEN">bear@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 29 Oct 2005 12:46:23 -0700 (PDT)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:BF893602.BF1D%25schlie@DOMAIN.HIDDEN">BF893602.BF1D%schlie@xxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:BF893602.BF1D%25schlie@DOMAIN.HIDDEN">BF893602.BF1D%schlie@xxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+I've been thinking about the behavior of error objects. And
+here are my thoughts....
+
+I think that when a &quot;live&quot; error object is stored or written, it
+should be possible to read it back and get a value that says
+an error object was stored or written.  But what you read back
+should be a &quot;stale&quot; error object, so you can tell the difference
+between a &quot;live&quot; error and a &quot;stored and recovered&quot; error.  This
+sorta implies that there are two cases of most error objects,
+&quot;Live&quot; and &quot;stale&quot;, the same way there are two cases of letters
+in the Roman alphabet.  When you write a &quot;stale&quot; error and read
+it back, it should be the same &quot;stale&quot; error.
+
+So, for example:
+
+(define plag (/ #e1 #e0)) ;; the result of the error expression itself.
+
+(set! bar plag)  ;; the result of referring to it.
+(define gref (cons plag 'foo))  ;; ditto.
+
+(error-object? plag) ==&gt; #t
+(error-object? bar) ==&gt; #t
+(error-object? (car gref)) ==&gt; #t
+(live-error? plag) ==&gt; #t
+(live-error? bar) ==&gt; #f
+(live-error? (car gref)) ==&gt; #f
+
+This would preserve read/write invariance for (stale) errors,
+and provides a framework that allows the preservation of error
+information through write/read cycles even for live errors
+(although they will become stale during the write/read cycle)
+while enabling people to tell the difference between an error
+originating in the reader and an error read by the reader.
+
+The behavior I'd most like for error objects in a language
+would be that any routine recieving an error object as an
+argument, unless it has an error-handler specified, immediately
+returns that error object without actually running any of its
+own code.
+
+NaNs work mostly this way, except that the abort happens only at
+the level of fundamental operations like + and - rather than
+through the entire language.  If we think that this aspect of
+NaNs is a good idea, we should consider the possibility of including
+it in ordinary function call semantics for user-defined functions as
+well.  If we don't think that it's a good idea, we should mask
+it in the math operations.  And finally, if we think it's a good
+idea for the few fundamental math operations where IEEE defines
+it and not otherwise, we need to decide why.
+
+And, for what it's worth, this is a simple, clean, general error-
+handling and error-signalling mechanism that's straightforward to
+implement and simple to specify and prove things about, and I think
+it's possibly a better model than most I've seen advanced.
+
+There are several viable implementation strategies, including
+compilation to routines that use throw/catch, or stepwise handling
+where each procedure call would now have to iterate through the
+arguments to find any error objects, and, on finding one, check
+for a handler.  And it would require some way of managing the
+association of error handlers with particular routines.
+
+				Bear
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00293" href="msg00293.html">Re: Error objects in general</a></strong>
+<ul><li><em>From:</em> Marcin 'Qrczak' Kowalczyk</li></ul></li>
+<li><strong><a name="00295" href="msg00295.html">Re: Error objects in general</a></strong>
+<ul><li><em>From:</em> Alan Watson</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00289" href="msg00289.html">Re: NaN's</a></strong>
+<ul><li><em>From:</em> Paul Schlie</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00291.html">Re: NaN's</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00293.html">Re: Error objects in general</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00297.html">Re: NaN's</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00293.html">Re: Error objects in general</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00292"><strong>Date</strong></a></li>
+<li><a href="threads.html#00292"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

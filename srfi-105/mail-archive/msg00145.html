@@ -1,0 +1,155 @@
+<!-- MHonArc v2.6.16 -->
+<!--X-Subject: Re: Two minor last&#45;minute tweaks -->
+<!--X-From-R13: "Rnivq O. Iurryre" <qjurryreNqjurryre.pbz> -->
+<!--X-Date: Fri, 19 Oct 2012 16:54:13 +0000 (UTC) -->
+<!--X-Message-Id: E1TPFpt&#45;0002Rt&#45;Db@fenris.runbox.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 87sj9bnqia.fsf@tines.lan -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Two minor last-minute tweaks</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00144.html">Date Prev</a>][<a href="msg00146.html">Date Next</a>][<a href="msg00144.html">Thread Prev</a>][<a href="msg00147.html">Thread Next</a>][<a href="maillist.html#00145">Date Index</a>][<a href="threads.html#00145">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Two minor last-minute tweaks</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:mhw@DOMAIN.HIDDEN">mhw@xxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Two minor last-minute tweaks</li>
+<li><em>From</em>: &quot;David A. Wheeler&quot; &lt;<a href="mailto:dwheeler@DOMAIN.HIDDEN">dwheeler@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 19 Oct 2012 12:54:13 -0400 (EDT)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-105@DOMAIN.HIDDEN">srfi-105@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-105@DOMAIN.HIDDEN">srfi-105@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:87sj9bnqia.fsf@DOMAIN.HIDDEN">87sj9bnqia.fsf@xxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:87sj9bnqia.fsf@DOMAIN.HIDDEN">87sj9bnqia.fsf@xxxxxxxxx</a>&gt;</li>
+<li><em>Reply-to</em>: <a href="mailto:dwheeler@DOMAIN.HIDDEN">dwheeler@xxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Mark H Weaver:
+&gt; First, a small typo:
+&gt; 
+&gt;  6. These MUST recurse within lists and vectors, so any list or vector
+&gt;     in a position that accepts a neoteric expression MUST accept a
+&gt;     sequence of zero or more neoteric expressions, not just
+&gt;     s-expressions. (Note that this occurs if they are directly or
+&gt;     directly within a curly-infix list or a neoteric-expression.) [...]
+&gt;     ^^^^^^^^
+&gt; 
+&gt; Presumably that should be &quot;directly or indirectly&quot;, not &quot;directly or
+&gt; directly&quot;.
+
+Absolutely correct.  Typo fixed.
+
+&gt;     An implementation of this SRFI MUST accept the marker #!curly-infix
+&gt;     followed by a whitespace character in its standard datum readers
+&gt;     (e.g., read and, if applicable, the default implementation
+&gt;     REPL). This marker (including the trailing whitespace character)
+&gt;     MUST be consumed and considered whitespace. After reading this
+&gt;     marker, the reader MUST accept curly-infix expressions in subsequent
+&gt;     datums until it reaches an end-of-file or some other conflicting
+&gt;     marker (no conflicting marker is specified here).
+&gt; 
+&gt; I'd prefer to change the language &quot;[...] in subsequent datums until it
+&gt; reaches an end-of-file [...]&quot; to something closer to &quot;[...] in
+&gt; subsequent datums read from the same port [...]&quot;.  This is based on the
+&gt; text in section 2.1 of R7RS (draft 6) that describes #!fold-case and
+&gt; #!no-fold-case:
+&gt; 
+&gt;     #!fold-case
+&gt;     #!no-fold-case
+&gt;     
+&gt;     These directives may appear anywhere comments are per- mitted (see
+&gt;     section 2.2) and are treated as comments, except that they affect
+&gt;     the reading of subsequent data.  The #!fold-case directive causes
+&gt;     the read procedure to case-fold (as if by string-foldcase; see
+&gt;     section 6.7) each identifier and character name subsequently read
+&gt;     from the same port. (It has no effect on character literals.) The
+&gt;     #!no-fold-case directive causes the read procedure to return to the
+&gt;     default, non-folding behavior.
+&gt; 
+&gt; There is a functional difference between the two formulations when
+&gt; reading from a terminal.  On POSIX systems, a terminal device will
+&gt; return EOF when CTRL-D is pressed, but then subsequent reads may
+&gt; continue to read more data.
+&gt; 
+&gt; This raises the question of whether the #!curly-infix read option should
+&gt; be reset to the Scheme implementation default when CTRL-D is pressed at
+&gt; a terminal.  I interpret the current language to mean that the flag
+&gt; should be reset, but I would prefer that the flag retains its setting as
+&gt; long as the port exists.
+&gt; 
+&gt; Following the R7RS language also simplifies the handling of reader
+&gt; directives by giving them uniform behavior, and also makes it crystal
+&gt; clear that the flag should be set on a per-port basis (as opposed to a
+&gt; global flag for the process or thread).
+&gt; 
+&gt; What do you think?
+
+Sounds like a great rationale to me.  In general, we want to be consistent with how other things are done unless there's a strong reason not to be.
+
+New text:
+
+&quot;After reading this marker, the reader &lt;em&gt;MUST&lt;/em&gt; accept
+curly-infix expressions in subsequent datums
+read from the same port until some other conflicting marker is given
+(no conflicting marker is specified here).&quot;
+
+--- David A. Wheeler
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00144" href="msg00144.html">Two minor last-minute tweaks</a></strong>
+<ul><li><em>From:</em> Mark H Weaver</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00144.html">Two minor last-minute tweaks</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00146.html">Please update SRFI-105</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00144.html">Two minor last-minute tweaks</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00147.html">Please update SRFI-105 (bug in reference implementation)</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00145"><strong>Date</strong></a></li>
+<li><a href="threads.html#00145"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

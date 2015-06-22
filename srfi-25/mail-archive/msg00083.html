@@ -1,0 +1,130 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Can array&#45;ref return (values ...) ? -->
+<!--X-From-R13: Penq Zhpvre <yhpvreNWDA.G[bagerny.QO> -->
+<!--X-Date: Thu, 21 Feb 2002 04:23:15 +0100 (NFT) -->
+<!--X-Message-Id: 200202210323.g1L3N0b05233@vor.iro.umontreal.ca -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Can array-ref return (values ...) ?</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00082.html">Date Prev</a>][<a href="msg00084.html">Date Next</a>][<a href="msg00082.html">Thread Prev</a>][<a href="msg00084.html">Thread Next</a>][<a href="maillist.html#00083">Date Index</a>][<a href="threads.html#00083">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Can array-ref return (values ...) ?</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-25@DOMAIN.HIDDEN">srfi-25@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Can array-ref return (values ...) ?</li>
+<li><em>From</em>: Brad Lucier &lt;<a href="mailto:lucier@DOMAIN.HIDDEN">lucier@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 20 Feb 2002 22:23:00 -0500 (EST)</li>
+<li><em>Cc</em>: <a href="mailto:lucier@DOMAIN.HIDDEN">lucier@xxxxxxxxxxxxxxxx</a> (Brad Lucier)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-25@DOMAIN.HIDDEN">srfi-25@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Full-name</em>: Brad Lucier</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&lt;David Rush topic=&quot;(values ...)&quot;&gt;
+Ok, it's a procedure that accesses the current continuation
+then. It is a very odd procedure in since it can only be called in
+tail position. It *still* does not construct a data object, so it
+cannot be the &quot;contents&quot; of an array element. IOW,
+
+        (vector-set! v n (values 4 3 2))
+
+is completely meaningless. Therefore the contents of a single element
+cannot be (values a b).
+&lt;/ David Rush&gt;
+
+When vectors were introduced to Scheme, there were no (values ...) and
+(call-with-values ...).  Now there are.  There were no macros.  Now there
+are.  So now we can use these procedures and macros to build new data
+abstractions if we want.
+
+So we could have (array-ref a i) and (array-set! a i v)
+be special forms (macros) that expand to
+
+(call-with-values
+    (lambda () i)
+  (lambda indices
+    (array-body-ref a indices)))
+
+and
+
+(call-with-values
+    (lambda () i)
+  (lambda indices
+    (call-with-values
+	(lambda () v)
+      (lambda vals
+	(array-body-set! a indices vals)))))
+
+All of a sudden, (array-ref a (values 1 2 3)) and
+(array-set! a (values 1 2 3) (values #t #f)) make
+sense.  And it also makes sense that array-ref can return
+multiple values.  You, as the programmer, just have to be sure
+that if array-ref returns zero or more than one value that
+it's in a continuation built with (call-with-values ...).
+
+So I don't believe these vehement denials that this is possible.
+
+I can believe that someone (or everyone but I) might say &quot;I
+don't want to do this&quot;.
+
+Brad
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00084" href="msg00084.html">Re: Can array-ref return (values ...) ?</a></strong>
+<ul><li><em>From:</em> David Rush</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00082.html">Re: Can array-ref return (values ...) ?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00084.html">Re: Can array-ref return (values ...) ?</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00082.html">Re: Can array-ref return (values ...) ?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00084.html">Re: Can array-ref return (values ...) ?</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00083"><strong>Date</strong></a></li>
+<li><a href="threads.html#00083"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

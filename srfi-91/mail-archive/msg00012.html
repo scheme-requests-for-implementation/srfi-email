@@ -1,0 +1,194 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Why are byte ports "ports" as such? -->
+<!--X-From-R13: "Fnlybe D. Qnzcoryy" <pnzcoryyNzhzoyr.arg> -->
+<!--X-Date: Fri, 14 Apr 2006 16:53:35 +0200 (MST) -->
+<!--X-Message-Id: 20060414145332.1DEDE98B50@pluto.mumble.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 97488D15&#45;DBD1&#45;4EB5&#45;8808&#45;51743F5AD40E@iro.umontreal.ca -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Why are byte ports &quot;ports&quot; as such?</title>
+<link rev="made" href="mailto:campbell@mumble.net">
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00011.html">Date Prev</a>][<a href="msg00013.html">Date Next</a>][<a href="msg00013.html">Thread Prev</a>][<a href="msg00014.html">Thread Next</a>][<a href="maillist.html#00012">Date Index</a>][<a href="threads.html#00012">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Why are byte ports &quot;ports&quot; as such?</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:feeley%40iro.umontreal.ca">feeley@iro.umontreal.ca</a></li>
+<li><em>Subject</em>: Re: Why are byte ports &quot;ports&quot; as such?</li>
+<li><em>From</em>: &quot;Taylor R. Campbell&quot; &lt;<a href="mailto:campbell%40mumble.net">campbell@mumble.net</a>&gt;</li>
+<li><em>Date</em>: Fri, 14 Apr 2006 14:53:31 +0000</li>
+<li><em>Cc</em>: <a href="mailto:cowan%40ccil.org">cowan@ccil.org</a>, <a href="mailto:srfi-91%40srfi.schemers.org">srfi-91@srfi.schemers.org</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-91%40srfi.schemers.org">srfi-91@srfi.schemers.org</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:97488D15-DBD1-4EB5-8808-51743F5AD40E%40iro.umontreal.ca"><a href="msg00008.html">97488D15-DBD1-4EB5-8808-51743F5AD40E@iro.umontreal.ca</a></a>&gt; (<a href="mailto:feeley%40iro.umontreal.ca">feeley@iro.umontreal.ca</a>)</li>
+<li><em>User-agent</em>: IMAIL/1.21; Edwin/3.116; MIT-Scheme/7.7.90.+</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>   Date: Fri, 14 Apr 2006 09:37:23 -0400
+   From: Marc Feeley &lt;feeley@iro.umontreal.ca&gt;
+
+   On 14-Apr-06, at 8:49 AM, John Cowan wrote:
+
+   &gt; Marc Feeley scripsit:
+   &gt;
+   &gt;&gt; It is a pain to carry those two ports around in the code when the
+   &gt;&gt; program needs to communicate bidirectionally with some other entity
+   &gt;&gt; (another process, a user at a terminal, a socket, etc).  Moreover the
+   &gt;&gt; separation of a conceptually bidirectional channel into distinct
+   &gt;&gt; ports (input and output) destroys the conceptual link that they
+   &gt;&gt; have.  This hinders program understanding.  For example, with
+   &gt;&gt; bidirectional ports (close-port port) will close both sides of the
+   &gt;&gt; bidirectional port (i.e. the link between the input and output port
+   &gt;&gt; is preserved).  With two unidirectional ports you have to duplicate
+   &gt;&gt; some operations (closing ports, changing port settings, ...).
+   &gt;
+   &gt; I find this rationale convincing (and think it should be added to the
+   &gt; SRFI).
+
+   OK.
+
+I find this rational unconvincing: I see no reason why introducing a
+third object (say socket, tty, &amp;c.) would hinder program understanding
+any more than the bidirectional ports do -- personally, I think
+bidirectional ports do more to hinder it.
+
+If we introduce this third object, then we can simplify the model of
+input and output ports very much, so that an input port is purely a
+source and an output port purely a sink, and we can specify any
+options common to the resource that they are both associated with on
+the third object; for instance, we could have a (SET-SOCKET-OPTION
+socket level option value).  This furthermore simplifies issues about
+closing; see below.
+
+Continuing on the socket theme, port I/O doesn't even make sense for
+some sockets, such as stream listener sockets and unconnected datagram
+sockets.  In these cases it would be absurd to represent the socket as
+a port, while it makes very much sense to represent it as a distinct
+`socket' object, from which in certain cases (specifically, connected
+sockets) one can obtain ports.
+
+   &gt;   However, the socket API does permit closing input and output
+   &gt; sides of the socket separately, and there are use cases for this,  
+   &gt; so it
+   &gt; should be at least permitted though not the default.
+   &gt;
+   &gt; For example, when you want to send an arbitrary-length undecorated
+   &gt; document to a server and retrieve an arbitrary-length undecorated  
+   &gt; document
+   &gt; back, the simplest way to convey &quot;end of document&quot; is to close the  
+   &gt; output
+   &gt; side, while leaving the input side open in order to receive the reply.
+   &gt;
+
+   That was the intent of the passage:
+
+        When an operation is said to apply to an input port it also applies to a
+        bidirectional port.  When an operation is said to apply to an output port
+        it also applies to a bidirectional port.
+
+   but I guess it is not clear that this also applies to the port  
+   closing operations so I will add a note to that effect.  So yes you can:
+
+       (let ((tty (open-file &quot;/dev/tty&quot;))) ; bidirectional port
+         ...
+         (close-input-port tty)
+         ...
+         (close-output-port tty))
+
+   And similarly for any bidirectional port (presumably sockets when  
+   they are specified by another SRFI).  For the record Gambit has:
+
+       (open-tcp-client
+         (list server-address: &quot;www.apple.com&quot;
+               port-number: 80
+               eol-encoding: 'cr-lf)))
+
+I think this is actually a bad idea.  It's not entirely clear when the
+resource itself gets closed, versus when individual directions are
+closed.  CLOSE-PORT, it seems, cannot be defined as
+
+  (define (close-port port)
+    (if (input-port? port) (close-input-port port))
+    (if (output-port? port) (close-output-port port))),
+
+if it does more than just CLOSE-INPUT-PORT and CLOSE-OUTPUT-PORT;
+either that or both CLOSE-INPUT-PORT and CLOSE-OUTPUT-PORT must have
+complicated definitions in order to close the resource only if both
+directions are closed -- but even then that doesn't work very well
+with sockets.  If we were to introduce a third kind of object, and to
+disjoin input ports from output ports, then this ambiguity would be
+gone.  For instance, if we have a socket, and two ports for the two
+directions of communication, then we can have
+
+  (CLOSE-SOCKET socket), to actually close the socket and release any
+    resources in the operating system for it;
+  (CLOSE-INPUT-PORT inport), to shutdown the socket in the receive
+    direction; and
+  (CLOSE-OUTPUT-PORT outport), to force any buffered output and such,
+    and to shutdown the socket in the send direction.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00014" href="msg00014.html">Re: Why are byte ports &quot;ports&quot; as such?</a></strong>
+<ul><li><em>From:</em> &lt;cowan@ccil.org&gt;</li></ul></li>
+<li><strong><a name="00015" href="msg00015.html">Re: Why are byte ports &quot;ports&quot; as such?</a></strong>
+<ul><li><em>From:</em> Marc Feeley &lt;feeley@iro.umontreal.ca&gt;</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00008" href="msg00008.html">Re: Why are byte ports &quot;ports&quot; as such?</a></strong>
+<ul><li><em>From:</em> Marc Feeley &lt;feeley@iro.umontreal.ca&gt;</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00011.html">Re: Why are byte ports &quot;ports&quot; as such?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00013.html">Re: Why are byte ports &quot;ports&quot; as such?</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00013.html">Re: Why are byte ports &quot;ports&quot; as such?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00014.html">Re: Why are byte ports &quot;ports&quot; as such?</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00012"><strong>Date</strong></a></li>
+<li><a href="threads.html#00012"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

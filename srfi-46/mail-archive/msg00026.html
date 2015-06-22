@@ -1,0 +1,181 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Fwd: Beyond SYNTAX&#45;RULES -->
+<!--X-From-R13: Fnlybe Qnzcoryy <pnzcoryyNriqri.ngu.pk> -->
+<!--X-Date: Mon,  1 Dec 2003 22:22:09 +0100 (NFT) -->
+<!--X-Message-Id: 7BD06E41&#45;2444&#45;11D8&#45;92C6&#45;000A95CCCEE4@evdev.ath.cx -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Fwd: Beyond SYNTAX-RULES</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00025.html">Date Prev</a>][<a href="msg00027.html">Date Next</a>][<a href="msg00025.html">Thread Prev</a>][<a href="msg00027.html">Thread Next</a>][<a href="maillist.html#00026">Date Index</a>][<a href="threads.html#00026">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Fwd: Beyond SYNTAX-RULES</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-46@DOMAIN.HIDDEN">srfi-46@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Fwd: Beyond SYNTAX-RULES</li>
+<li><em>From</em>: Taylor Campbell &lt;<a href="mailto:campbell@DOMAIN.HIDDEN">campbell@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 1 Dec 2003 16:22:36 -0500</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-46@DOMAIN.HIDDEN">srfi-46@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+
+
+Begin forwarded message:
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+From: oleg@xxxxxxxxx
+Date: Mon Dec 1, 2003  15:29:29 US/Eastern
+To: campbell@xxxxxxxxxxxx
+Subject: Re: Beyond SYNTAX-RULES
+Reply-To: oleg@xxxxxxxxx
+
+Taylor Campbell wrote:
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+    You might also be thinking 'um, why not just use SYNTAX-CASE?'
+There are several reasons:  (1) Do you really _need_ full Scheme at
+macro-expand-time?  Probably not, but you _might_ need some of the
+directives, such as UNHYGIENE.  (2) Does the _implementor_ want to
+allow for arbitrary Scheme code at macro-expand-time?  Maybe, maybe
+not: it introduces lots of problems regarding phase separation and
+syntactic environment towers.
+...
+SYNTAX-RULES is sufficient for 90% of all of the macros you will
+ever need to write.  Of the remaining 10%, SYNTAX-RIASTRADH probably
+solves 9%.  The remaining 1% is solvable only through low-level macro
+systems such as R4RS's low-level system, SYNTAX-CASE, explicit
+renaming, syntactic closures, et cetera, and to try to specify them in
+a standard would open up a huge can of worms that no one wants to try
+opening.
+</pre></blockquote><pre style="margin: 0em;">
+
+Amen. Frankly, I can't think of any way to put it better.
+
+
+Now that the Christmas season is upon us, perhaps I may be permitted
+to profess a few wishes. For one thing, it would be nice to clarify
+some gray areas in syntax-rules, for example, the one mentioned in
+	<a  rel="nofollow" href="http://pobox.com/~oleg/ftp/Scheme/macros.html#syntax-rule-dark-corner">http://pobox.com/~oleg/ftp/Scheme/macros.html#syntax-rule-dark-corner</a>
+
+It has been mentioned that such an undefined behavior is a consequence
+of an incomplete specification for a top-level define (it is left
+unspecified if the top-level define binds or merely sets). It should
+be pointed out that two different syntax-rule macro-expanders may have
+different behavior on the same Scheme system. It seems what matters
+not what a Scheme system thinks define does, but what a macro-expander
+thinks the Scheme system thinks define does. Perhaps we can
+deterministically fix the macro-expander's thinking.
+
+Another wish is for the body of a top-level let-syntax and
+letrec-syntax to behave as the body of a top-level begin. For example,
+
+	(let-syntax () (define foo 1))
+	(display foo)
+should print 1. Actually, it does so on Petite Chez Scheme, but not on
+many Scheme system. The above feature would make it possible to write
+</pre><tt>modular macros that expand into definitions. Otherwise, such macros 
+</tt><tt>must
+</tt><pre style="margin: 0em;">
+be either monolithic or top-level-namespace-polluting. I vaguely
+remember that something like that was discussed on Scheme 1998
+workshop and agreed upon.
+	<a  rel="nofollow" href="http://www.schemers.org/Events/Workshops/Sep1998/minutes">http://www.schemers.org/Events/Workshops/Sep1998/minutes</a>
+Perhaps we can standardize this practice in the SRFI.
+
+
+Regarding unhygiene.
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+      - (unhygiene UNHYGIENIC-GENERATOR-IDENTIFIER)
+          Specifies an identifier to be used in the template to
+          unhygienically produce identifiers.  See the examples later
+          for how to use this.  There is no default if this directive
+          is not specified.
+</pre></blockquote><pre style="margin: 0em;">
+
+The original Kohlbecker algorithm (described in the paper &quot;Hygienic
+Macro expansion&quot; by Kohlbecker, Friedman, Felleisen and Duba) had a
+provision for unhygienic identifiers. Their discussion is quite
+illuminating. Two paragraphs of the second column of p. 157 (beginning
+with the sentence &quot;Now that we have a hygienic expansion algorithm, we
+can think about the implementation of exceptions to the HC/ME rule&quot;)
+are very illuminating. They point out dangers in capturing identifiers
+and describe their design choice, which seems sensible. Of course,
+their system did not support macros generating macros (i.e.,
+let-syntax). Incidentally, we can still use their design decision if
+we require that (unhygiene ...) may occur only in top-level macros.
+
+Al Petrofsky wrote:
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+In practice (assuming we do not allow identifier concatenation), I
+think the first argument to the unhygiene operator will always be the
+identifier that was used to invoke the macro.  (That statement might
+be way off: someone with more syntax-case experience please correct me
+if so, and provide motivation for other first arguments to
+datum-&gt;syntax-object.)
+</pre></blockquote><pre style="margin: 0em;">
+
+macros in Dan Friedman's paper &quot;Object-Oriented Style&quot; show
+non-trivial uses of the first argument to datum-&gt;syntax-object.
+	<a  rel="nofollow" href="http://www.cs.indiana.edu/hyplan/dfried/ooo.pdf">http://www.cs.indiana.edu/hyplan/dfried/ooo.pdf</a>
+	<a  rel="nofollow" href="http://www.cs.indiana.edu/hyplan/dfried/ooo.ss">http://www.cs.indiana.edu/hyplan/dfried/ooo.ss</a>
+
+Please see with-implicit, extend-shadow, and especially
+if-shadowed.
+
+</pre></blockquote><pre style="margin: 0em;">
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00025.html">SYNTAX-ATTACKS!</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00027.html">moving on</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00025.html">SYNTAX-ATTACKS!</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00027.html">moving on</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00026"><strong>Date</strong></a></li>
+<li><a href="threads.html#00026"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,214 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Counting [was Re: Meta&#45;test suite] -->
+<!--X-From-R13: Rbabina Ybyoyl <qbabinaNefpurzr.bet> -->
+<!--X-Date: Thu, 10 Mar 2005 16:02:56 +0100 (NFT) -->
+<!--X-Message-Id: Pine.LNX.4.44.0503091727050.19219&#45;100000@localhost.localdomain -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 422F6CE4.3090703@bothner.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Counting [was Re: Meta-test suite]</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00025.html">Date Prev</a>][<a href="msg00027.html">Date Next</a>][<a href="msg00025.html">Thread Prev</a>][<a href="msg00022.html">Thread Next</a>][<a href="maillist.html#00026">Date Index</a>][<a href="threads.html#00026">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Counting [was Re: Meta-test suite]</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Per Bothner &lt;<a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Counting [was Re: Meta-test suite]</li>
+<li><em>From</em>: Donovan Kolbly &lt;<a href="mailto:donovan@DOMAIN.HIDDEN">donovan@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 10 Mar 2005 09:02:46 -0600 (CST)</li>
+<li><em>Cc</em>: SRFI 64 &lt;<a href="mailto:srfi-64@DOMAIN.HIDDEN">srfi-64@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-64@DOMAIN.HIDDEN">srfi-64@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:422F6CE4.3090703@DOMAIN.HIDDEN">422F6CE4.3090703@xxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>On Wed, 9 Mar 2005, Per Bothner wrote:
+
+&gt; Donovan Kolbly wrote:
+&gt; &gt; So that, suppose:
+&gt; &gt; 
+&gt; &gt;    (test-begin &quot;a&quot;)
+&gt; &gt;    (test-begin &quot;b&quot;)
+&gt; &gt;    (test-assert &quot;x&quot; #t)
+&gt; &gt; 
+&gt; &gt; then in an on-test hook executing for the test-assert, we have:
+&gt; &gt; 
+&gt; &gt;    (test-runner-test-name runner) ==&gt; &quot;x&quot;
+&gt; &gt;    (test-runner-group-path runner) ==&gt; (&quot;a&quot; &quot;b&quot;)
+&gt; 
+&gt; Yes.
+
+I've added `test-runner-group-path' to my implementation and some tests 
+for it.
+
+&gt; 
+&gt; I do think we should have call-back routins for test-begin/test-end [...]
+
+In consistency with the other callbacks in the spec, I'd guess you imagine
+something like `test-runner-on-test-{begin,end}[!]'.  Other ideas?  You
+could make test-group have a seperate callback, or define it in terms of
+begin/end.
+
+
+&gt; &gt; Furthermore, note that the tests within an
+&gt; &gt; explicit test group may be skipped using test-skip, but this is not true
+&gt; &gt; for tests within an implicit test group.
+&gt; &gt; 
+&gt; &gt; [I think it's wierd that you can't skip an implicit test group, just for 
+&gt; &gt; symmetry.  Although I can't see implementing it so that all the forms are 
+&gt; &gt; skipped, it might make sense to actually skip *tests* inside a skippable
+&gt; &gt; implicit group.]
+&gt; 
+&gt; I'm inclined to agree.  I don't think the reference implementation does
+&gt; it this way, but it should be difficult to fix.
+&gt; 
+&gt; For test-match-nth, should be count both the test-group/test-begin *and*
+&gt; (assuming the test-group/test-begin is not skipped) the tests in it?
+&gt; 
+&gt; (test-skip 2) ;; Define this to mean skipping the 2nd following test.
+&gt; (test-begin &quot;a&quot;)
+&gt; (test-assert &quot;x1&quot;)
+&gt; (test-assert &quot;x2&quot;)
+&gt; (test-end &quot;a&quot;)
+&gt; (test-assert &quot;x3&quot;)
+&gt; 
+&gt; Should we skip &quot;x2&quot; or &quot;x3&quot;?  I.e. do we count 1 for &quot;a&quot; as a unit, or 1
+&gt; for &quot;a&quot; and 1 each for &quot;x1&quot;...&quot;x3&quot;.  The latter might be a little strange,
+&gt; but perhaps more convenient - and easier to implement, since we can use
+&gt; a single global counter.
+
+I could see implementing it either way; I think it would be a matter of
+whether you check the &quot;are-we-in-a-skipped-implicit-group?&quot; flag before or
+after you call to check the specifiers in the current skip list.
+
+I don't have a good intuition as to the use of test-match-nth -- is this 
+something you've used elsewhere before?
+
+In the absence of prior art, I'd suggest consistency with the use of 
+test-group.  In other words, I'd like to preserve as much as possible the 
+similarity between
+
+   (test-begin &quot;a&quot;)
+   ...
+   (test-end &quot;a&quot;)
+
+and
+
+   (test-group &quot;a&quot; ...)
+
+And clarify in the spec that the only reason they aren't equivalent (i.e.,
+(1) the evaluation of non-test forms in the implicit-group case, and (2)  
+the execution of the test-end in case of an exception) is to preserve the
+sanity of the implementor.
+
+In that case, we'd skip &quot;x3&quot;, since all of &quot;a&quot; would count as the 1st.
+
+&gt; 
+&gt; &gt; For the purposes of test counting as checked by test-end, a test group (of
+&gt; &gt; either variety) counts as a single test.
+&gt; 
+&gt; I'm open to discussion on this: perhaps it should count as a single test
+&gt; *if it is skipped*.
+
+I think I'm getting confused by the multiple ways of counting.  So, to 
+clarify, there are three places that counting happens:
+
+  (1) the counting of (usually) test cases, as reported by 
+      `test-runner-*-count'.
+
+  (2) the counting of substructures, as checked by `test-end' with
+      the count option
+
+  (3) the counting of skip candidates, as checked by the 
+      stateful predicate `test-match-nth'.
+
+The RScheme implementation notwithstanding, I'm thinking the following 
+makes sense:
+
+(2) and (3) should be unified and (1) should be clarified to count only
+test cases and never test groups.
+
+Furthermore, (3) does *not* involve short-circuited evaluation, and we
+should introduce a new accessor, `test-runner-count-in-group' which
+returns the position (1,2,3...) of the current test case in it's group.
+
+Then test-match-nth looks more like:
+
+(define (test-match-nth n #optional (count default: 1))
+  (let ((i (test-runner-count-in-group (test-runner-current))))
+    (and (&gt;= i n) (&lt;= i (+ n count -1)))))
+
+[Although some tweak is necessary to suspend the processing during 
+subgroups; you only want the skip to match at the same structural level.  
+Maybe it should be `test-runner-count-in-group-path' and return the path 
+of positions.]
+
+This approach implies that test groups (explicit or implicit) should
+always count at one structural element and never appear in
+(test-runner-skip-count).
+
+-- 
+-- Donovan Kolbly                    (  d.kolbly@xxxxxxxxxxx
+				     (  <a  rel="nofollow" href="http://www.rscheme.org/~donovan/">http://www.rscheme.org/~donovan/</a>
+
+
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00025" href="msg00025.html">Re: Meta-test suite</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00025.html">Re: Meta-test suite</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00027.html">testing syntax</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00025.html">Re: Meta-test suite</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00022.html">Re: Meta-test suite</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00026"><strong>Date</strong></a></li>
+<li><a href="threads.html#00026"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

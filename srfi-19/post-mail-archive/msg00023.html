@@ -1,0 +1,214 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Bug?: date <&#45;> time&#45;monotonic roundtrip (and fixes) -->
+<!--X-From-R13: @bezna Uenl <abeznaNnfgeb.tyn.np.hx> -->
+<!--X-Date: Mon,  7 Aug 2006 13:54:00 +0200 (MST) -->
+<!--X-Message-Id: 33669C40&#45;5CBC&#45;4932&#45;9E02&#45;696B05F30395@astro.gla.ac.uk -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Bug?: date &lt;-&gt; time-monotonic roundtrip (and fixes)</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00022.html">Date Prev</a>][<a href="msg00024.html">Date Next</a>][<a href="msg00022.html">Thread Prev</a>][<a href="msg00024.html">Thread Next</a>][<a href="maillist.html#00023">Date Index</a>][<a href="threads.html#00023">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Bug?: date &lt;-&gt; time-monotonic roundtrip (and fixes)</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-19@DOMAIN.HIDDEN">srfi-19@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Bug?: date &lt;-&gt; time-monotonic roundtrip (and fixes)</li>
+<li><em>From</em>: Norman Gray &lt;<a href="mailto:norman@DOMAIN.HIDDEN">norman@xxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 6 Aug 2006 19:53:11 +0100</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-19@DOMAIN.HIDDEN">srfi-19@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+
+Greetings.
+
+</pre><tt>A little while ago I reported a problem with the SRFI-19 reference  
+</tt><tt>implementation (see &lt;<a  rel="nofollow" href="http://srfi.schemers.org/srfi-19/post-mail-">http://srfi.schemers.org/srfi-19/post-mail-</a> 
+</tt><tt>archive/msg00023.html).
+</tt><pre style="margin: 0em;">
+
+</pre><tt>I include below fixes for TIME-MONOTONIC-&gt;DATE, COPY-TIME and DATE- 
+</tt><tt>&gt;JULIAN-DAY (as discussed by John Clements in &lt;http:// 
+</tt><tt>srfi.schemers.org/srfi-19/post-mail-archive/msg00016.html&gt;).  I also  
+</tt><tt>include some test code.
+</tt><pre style="margin: 0em;">
+
+COPY-TIME should be:
+
+(define (copy-time time)
+  (make-time (time-type time)
+             (time-nanosecond time)
+             (time-second time)))
+
+The seconds and nanoseconds are the wrong way round in the RI.
+
+
+
+</pre><tt>In the RI's TM:CURRENT-TIME-UTC, TM:CURRENT-TIME-TAI, TM:CURRENT-TIME- 
+</tt><tt>MS-TIME, and TM:CURRENT-TIME-MONOTONIC, there appear to be 10000  
+</tt><tt>nanoseconds in a second.  Unless mzscheme's CURRENT-MILLISECONDS  
+</tt><tt>actually reports in units of 10^-5 seconds, I think there might be an  
+</tt><tt>error here.
+</tt><pre style="margin: 0em;">
+
+
+
+DATE-&gt;JULIAN-DATE should I think be:
+
+(define (date-&gt;julian-day date)
+  (let ( (nanosecond (date-nanosecond date))
+         (second (date-second date))
+         (minute (date-minute date))
+         (hour (date-hour date))
+         (day (date-day date))
+         (month (date-month date))
+         (year (date-year date))
+         (offset (date-zone-offset date)) )
+    (+ (tm:encode-julian-day-number day month year)
+       (- 1/2)
+       (/ (+ (* hour 60 60)
+             (* minute 60)
+             second
+             (/ nanosecond tm:nano)
+             (- offset))
+          tm:sid))))
+
+</pre><tt>As John Clements notes, what's in the RI causes a division-by-zero  
+</tt><tt>error whenever the time-zone offset is zero.
+</tt><pre style="margin: 0em;">
+
+
+
+TIME-MONOTONIC-&gt;DATE should, I believe, be
+
+(define (time-monotonic-&gt;date time . tz-offset)
+  (let ((copy-tai (copy-time time)))
+    (set-time-type! copy-tai time-tai)
+</pre><tt>    (time-tai-&gt;date copy-tai (:optional tz-offset (tm:local-tz- 
+</tt><tt>offset)))))
+</tt><pre style="margin: 0em;">
+
+...for the reasons described in the earlier message
+
+
+
+</pre><tt>These aren't in the form of a simple patch, I'm afraid: I'm testing  
+</tt><tt>this in the context of SISC's SRFI-19 port, which includes a certain  
+</tt><tt>amount of reordering demanded by its module system.
+</tt><pre style="margin: 0em;">
+
+
+
+</pre><tt>Can I also suggest a couple of additions to the test suite, one  
+</tt><tt>testing DATE-&gt;JULIAN-DAY and the other the various date-&gt;time round  
+</tt><tt>trips:
+</tt><pre style="margin: 0em;">
+
+(define-s19-test! &quot;Date-JD conversions&quot;
+  (lambda ()
+</pre><tt>    (and (= (date-&gt;julian-day (make-date 0 0 0 12 25 2 1996 0)) ;  
+</tt><tt>zero TZ offset
+</tt><pre style="margin: 0em;">
+            2450139)
+         ;; ...and the same civil time, 6 hours further east
+</pre><tt>         (= (date-&gt;julian-day (make-date 0 0 0 12 25 2 1996 (* 6  
+</tt><tt>3600)))
+</tt><pre style="margin: 0em;">
+            (- 2450139 1/4)))))
+
+(define-s19-test! &quot;Time to date round-trips&quot;
+  (lambda ()
+    (let ((zero-diff (make-time 'time-duration 0 0)))
+      (and (let ((x (current-time 'time-monotonic)))
+             (time=? zero-diff
+                     (time-difference
+                      x
+</pre><tt>                      (date-&gt;time-monotonic ;round-trip monotonic- 
+</tt><tt>date-monotonic
+</tt><pre style="margin: 0em;">
+                       (time-monotonic-&gt;date x)))))
+           (let ((x (current-time 'time-tai)))
+             (time=? zero-diff
+                     (time-difference
+                      x
+                      (date-&gt;time-tai
+                       (time-tai-&gt;date x)))))
+           (let ((x (current-time 'time-utc)))
+             (time=? zero-diff
+                     (time-difference
+                      x
+                      (date-&gt;time-utc
+                       (time-utc-&gt;date x)))))))))
+
+
+
+I hope these are helpful.
+
+Best wishes,
+
+Norman
+
+
+--
+</pre><tt>------------------------------------------------------------------------ 
+</tt><tt>----
+</tt><pre style="margin: 0em;">
+Norman Gray  /  <a  rel="nofollow" href="http://nxg.me.uk">http://nxg.me.uk</a>
+eurovotech.org  /  University of Leicester, UK
+
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00022.html">Re: Upcoming leap second</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00024.html">Join our pharmacy</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00022.html">Re: Upcoming leap second</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00024.html">Join our pharmacy</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00023"><strong>Date</strong></a></li>
+<li><a href="threads.html#00023"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

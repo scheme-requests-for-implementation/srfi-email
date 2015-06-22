@@ -1,0 +1,154 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: finishing output translating stream -->
+<!--X-From-R13: Euveb Ynjnv <fuvebNynin.arg> -->
+<!--X-Date: Wed,  8 Jun 2005 11:08:17 +0200 (DFT) -->
+<!--X-Message-Id: 20050607.230814.960003208.shiro@lava.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: y9lacm19uya.fsf@sams.informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: 20050607.213706.675960358.shiro@lava.net -->
+<!--X-Reference: y9l7jh58evy.fsf@sams.informatik.uni&#45;tuebingen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: finishing output translating stream</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00021.html">Date Prev</a>][<a href="msg00023.html">Date Next</a>][<a href="msg00020.html">Thread Prev</a>][<a href="msg00023.html">Thread Next</a>][<a href="maillist.html#00022">Date Index</a>][<a href="threads.html#00022">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: finishing output translating stream</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-68@DOMAIN.HIDDEN">srfi-68@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: finishing output translating stream</li>
+<li><em>From</em>: Shiro Kawai &lt;<a href="mailto:shiro@DOMAIN.HIDDEN">shiro@xxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 07 Jun 2005 23:08:14 -1000 (HST)</li>
+<li><em>Cc</em>: <a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-68@DOMAIN.HIDDEN">srfi-68@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:y9l7jh58evy.fsf@DOMAIN.HIDDEN">y9l7jh58evy.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:y9lacm19uya.fsf@DOMAIN.HIDDEN">y9lacm19uya.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:20050607.213706.675960358.shiro@DOMAIN.HIDDEN">20050607.213706.675960358.shiro@xxxxxxxx</a>&gt;	&lt;<a href="mailto:y9l7jh58evy.fsf@DOMAIN.HIDDEN">y9l7jh58evy.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>From: Michael Sperber &lt;sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx&gt;
+Subject: Re: finishing output translating stream
+Date: Wed, 08 Jun 2005 09:52:01 +0200
+
+&gt; I think I'm beginning to get it---by character conversion buffer, you
+&gt; mean stuff left in the &quot;state&quot; variable kept around by the stream
+&gt; translation layer, right?
+
+Yes.
+
+&gt; Now, I can see how that may happen in theory---but in practice, aren't
+&gt; you likely to always translate as far as possible into the data handed
+&gt; to you?  (Maybe this should be mentioned in the SRFI.)   Because if
+&gt; you do, then knowing about a flush is not going to help you if you
+&gt; don't get more data along with it (which you don't currently).
+
+In the example like the string packet, I'd think &quot;flushing&quot;
+marks that the string is self-contained by that point, so that
+the translator can (or should) reset its state to a neutral
+position.
+
+Example: suppose my application writes out a log file.  I'm
+a bit sloppy so the application just opens the log file and
+seeks to the end at the startup time, and keep the file open
+during execution.  The log messages are written out occasionary.
+
+For some reason, I need to store the log file in ISO-2022-JP
+format.  It is a stateful encoding, so when non-ascii character
+sequence appears an escape sequence ESC '$' 'B' is written out,
+and when non-ascii character sequence ends another escape sequence
+ESC '(' 'B' is written out to mark the state is back to ascii.
+
+It may be possible that the application gets killed without
+a chance to cleanup, so I call flush-output-stream every time
+after the log message, hoping as much logs remains on the disk
+even in the case of accident.
+
+If the translate-proc doesn't know about flush-output-stream,
+and a log message happen to end with a non-ascii character,
+it won't write out the closing escape sequence ESC '(' 'B' 
+at the end of log message, for it doesn't know if more non-ascii
+character is coming or not.   If the application crashes then,
+the log file remains in the non-ascii state.  Subsequent run
+of the applicaion starts adding messages, assuming the file begins
+with ascii state---resulting that the first ascii portion of
+the new message becomes illegible.
+
+I admit this is just a bad design.  Still, the character encoding
+stuff is so complicated that I appreciate anything that adds
+more certainty and control.
+
+--shiro
+
+
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00023" href="msg00023.html">Re: finishing output translating stream</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+<li><strong><a name="00025" href="msg00025.html">Re: finishing output translating stream</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+<li><strong><a name="00027" href="msg00027.html">Re: finishing output translating stream</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00017" href="msg00017.html">Re: finishing output translating stream</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+<li><strong><a name="00019" href="msg00019.html">Re: finishing output translating stream</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+<li><strong><a name="00020" href="msg00020.html">Re: finishing output translating stream</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00021.html">Re: closing reader / writer</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00023.html">Re: finishing output translating stream</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00020.html">Re: finishing output translating stream</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00023.html">Re: finishing output translating stream</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00022"><strong>Date</strong></a></li>
+<li><a href="threads.html#00022"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

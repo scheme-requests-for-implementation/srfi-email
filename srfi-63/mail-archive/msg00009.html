@@ -1,0 +1,173 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Update, near finalization -->
+<!--X-From-R13: orne <orneNfbavp.arg> -->
+<!--X-Date: Wed, 13 Apr 2005 20:44:34 +0200 (DFT) -->
+<!--X-Message-Id: Pine.LNX.4.58.0504131103250.23150@bolt.sonic.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 4256AF0C.60703@cs.uvm.edu -->
+<!--X-Reference: 4256C0BE.8030904@bothner.com -->
+<!--X-Reference: 20050408201628.D40251B77A8@voluntocracy.org -->
+<!--X-Reference: 4256F5DB.9000701@bothner.com -->
+<!--X-Reference: 20050410210908.B247E1B77A8@voluntocracy.org -->
+<!--X-Reference: 425A17C9.6080808@bothner.com -->
+<!--X-Reference: 20050411163810.C2EF71B77A8@voluntocracy.org -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Update, near finalization</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00008.html">Date Prev</a>][<a href="msg00010.html">Date Next</a>][<a href="msg00008.html">Thread Prev</a>][<a href="msg00010.html">Thread Next</a>][<a href="maillist.html#00009">Date Index</a>][<a href="threads.html#00009">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Update, near finalization</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Aubrey Jaffer &lt;<a href="mailto:agj@DOMAIN.HIDDEN">agj@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Update, near finalization</li>
+<li><em>From</em>: bear &lt;<a href="mailto:bear@DOMAIN.HIDDEN">bear@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 13 Apr 2005 11:44:07 -0700 (PDT)</li>
+<li><em>Cc</em>: <a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a>, <a href="mailto:srfi-63@DOMAIN.HIDDEN">srfi-63@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-63@DOMAIN.HIDDEN">srfi-63@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20050411163810.C2EF71B77A8@DOMAIN.HIDDEN">20050411163810.C2EF71B77A8@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:4256AF0C.60703@DOMAIN.HIDDEN">4256AF0C.60703@xxxxxxxxxx</a>&gt; &lt;<a href="mailto:4256C0BE.8030904@DOMAIN.HIDDEN">4256C0BE.8030904@xxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20050408201628.D40251B77A8@DOMAIN.HIDDEN">20050408201628.D40251B77A8@xxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:4256F5DB.9000701@DOMAIN.HIDDEN">4256F5DB.9000701@xxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20050410210908.B247E1B77A8@DOMAIN.HIDDEN">20050410210908.B247E1B77A8@xxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:425A17C9.6080808@DOMAIN.HIDDEN">425A17C9.6080808@xxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20050411163810.C2EF71B77A8@DOMAIN.HIDDEN">20050411163810.C2EF71B77A8@xxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+On Mon, 11 Apr 2005, Aubrey Jaffer wrote:
+
+&gt;But this pissing contest should be largely irrelevant to R6RS --
+&gt;SRFI-63 is more capable (uniform arrays), better integrated with R5RS
+&gt;(specifying vector, string, and EQUAL? behavior), compatible with
+&gt;SRFI-58 array syntax, and better designed than SRFI-25.
+
+Actually, I think that specifying string behavior in a document
+about arrays is a mistake.
+
+The operations we want to do on strings are in many cases
+fundamentally different from the operations that are efficient to do
+on arrays.  For example, inserting or deleting text at an arbitrary
+point in the string are two of the most fundamental operations in text
+editing, and if strings are represented as arrays, they require the
+program to touch all subsequent characters in the string every time
+one character is inserted or deleted.
+
+The results can be clearly seen in many editors.  Load something even
+a little bit hefty like, say, Unidata.txt, into your favorite editor
+and, even with a nice fast cpu, inserting or deleting text near the
+beginning will lag significantly.
+
+This happens because the authors of text editors, mostly, looked
+around for the fundamental abstraction that most closely matched the
+data they wanted to work with, and found strings.  Rather than
+reinvent the (in this case square) wheel, they blithely abstracted
+operations that hide gross inefficiencies and use them to build yet
+higher and more grossly inefficient abstractions, because, hey,
+strings are &quot;free&quot; in terms of implementation effort, and nobody wants
+to reinvent the wheel, even if it's a square wheel.  So strings, which
+the authors of the language probably thought about in terms of a
+thousand characters or less, are increasingly used to represent
+multi-million character documents, and array strings simply don't fit
+the requirements.
+
+If you specify that strings must be arrays, you are forbidding
+implementors from using more appropriate data structures (such as
+balanced trees) to represent them.  You are also strongly implying
+that characters must be of a fixed bit width, which forbids
+implementors from creating characters at a level of abstraction higher
+than individual codepoints. In the case of unicode, codepoints
+frequently aren't proper characters at all, but modifier letters or
+nonspacing accents that make no semantic sense by themselves.  Thus,
+operations like taking or inserting a substring, if it cuts between
+codepoints that belong to the same character, can easily create
+apparent nonsense at the beginning or end of the substring.  This is
+an error, easy to make, that ought not be the default behavior.  Also,
+there are many different sequences of unicode codepoints that express
+the same actual character, and these are also either needless code
+complexity or mistakes waiting to happen, or both, in string equality
+comparisons and similar operations.
+
+These are, IMO, errors that people ought to be, at least by default,
+protected from making.  These should not be the normal behavior of
+strings; And in asserting that strings must be arrays, you are
+requiring an implementation that requires these error-prone situations
+to be exposed to the programmer.
+
+				Bear
+
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00010" href="msg00010.html">Re: Update, near finalization</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+<li><strong><a name="00011" href="msg00011.html">Re: Update, near finalization</a></strong>
+<ul><li><em>From:</em> Aubrey Jaffer</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00001" href="msg00001.html">Update, near finalization</a></strong>
+<ul><li><em>From:</em> David Van Horn</li></ul></li>
+<li><strong><a name="00002" href="msg00002.html">Re: Update, near finalization</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+<li><strong><a name="00003" href="msg00003.html">Re: Update, near finalization</a></strong>
+<ul><li><em>From:</em> Aubrey Jaffer</li></ul></li>
+<li><strong><a name="00004" href="msg00004.html">Re: Update, near finalization</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+<li><strong><a name="00005" href="msg00005.html">Re: Update, near finalization</a></strong>
+<ul><li><em>From:</em> Aubrey Jaffer</li></ul></li>
+<li><strong><a name="00006" href="msg00006.html">Re: Update, near finalization</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+<li><strong><a name="00007" href="msg00007.html">Re: Update, near finalization</a></strong>
+<ul><li><em>From:</em> Aubrey Jaffer</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00008.html">R6RS process</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00010.html">Re: Update, near finalization</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00008.html">R6RS process</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00010.html">Re: Update, near finalization</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00009"><strong>Date</strong></a></li>
+<li><a href="threads.html#00009"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

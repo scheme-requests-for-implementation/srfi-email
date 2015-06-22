@@ -1,0 +1,192 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: define&#45;immutable and threads -->
+<!--X-From-R13: Oaqerj Ivypbk <fpurzrNnaqerjjvypbk.anzr> -->
+<!--X-Date: Fri,  1 Apr 2005 10:04:07 +0200 (DFT) -->
+<!--X-Message-Id: y9loecyhqiy.fsf@sams.informatik.uni&#45;tuebingen.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>define-immutable and threads</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[Date Prev][<a href="msg00001.html">Date Next</a>][Thread Prev][<a href="msg00001.html">Thread Next</a>][<a href="maillist.html#00000">Date Index</a>][<a href="threads.html#00000">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>define-immutable and threads</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-65@DOMAIN.HIDDEN">srfi-65@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: define-immutable and threads</li>
+<li><em>From</em>: Andrew Wilcox &lt;<a href="mailto:scheme@DOMAIN.HIDDEN">scheme@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 01 Apr 2005 10:04:05 +0200</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-65@DOMAIN.HIDDEN">srfi-65@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Old-date</em>: Thu, 31 Mar 2005 08:42:41 -0800 (PST)</li>
+<li><em>User-agent</em>: Gnus/5.110002 (No Gnus v0.2) XEmacs/21.5 (chives, berkeley-unix)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Consider a typical multi-CPU desktop or server computer.  There are
+two or more CPU's, each with their own local cache on the CPU chip,
+and all the CPU's are connected to the same main memory.
+
+If a thread running in one CPU wants to make use of a value produced
+by a thread running on another CPU, then the following needs to
+happen:
+
+    1. The second thread produces the value, which is stored in the
+       second CPU's local cache.
+
+    2. The second CPU flushes its cache out to main memory.
+
+    3. The first CPU is signaled that the value is now available.
+
+    4. The first CPU refreshes its local cache from main memory.
+
+    5. The first thread makes use of the value.
+
+A Scheme implementation that supports SRFI 18 Multithreading Support
+with threads running on multiple CPU's would typically perform such a
+CPU cache flush and reload when a mutex was locked or unlocked.
+
+Thus we can see that the cost *communicating* a value from one thread
+to another may be a lot more expensive *producing* that value in the
+first place.
+
+Given a DEFINE-IMMUTABLE definition such as
+
+    (define-immutable identifier expression)
+
+The current draft define-immutable SRFI says that &quot;Evaluating the
+identifier causes the expression to be evaluated, and the value of the
+identifier is the result of evaluating the expression.  The expression
+is not evaluated unless and until the identifier is evaluated, and the
+expression is evaluated only once.&quot;
+
+So if evaluating the identifier the first time causes the expression
+to be evaluated, and the expression must be evaluated *only once*, and a
+programmer wishes to use a DEFINE-IMMUTABLE identifier with multiple
+threads with multiple CPU's, then whichever thread evaluates the
+identifier *first* must then communicate that unique value to the
+other threads.
+
+I can think of two ways of doing this, both bad.
+
+    1. Suppose the DEFINE-IMMUTABLE SRFI is published in its current
+       form.  Then programmers who wished to use SRFI 18
+       Multithreading Support together with SRFI 65 DEFINE-IMMUTABLE
+       would know that they need to protect any concurrent
+       modification of a data structure with a mutex lock.  Since any
+       use of a DEFINE-IMMUTABLE identifier might be the *first* usage
+       which triggers the storage of the unique value, then each and
+       every usage of a DEFINE-IMMUTABLE identifier should be
+       performed only when a mutex lock is held.
+
+       OK, that's really atrocious.
+
+    2. Or we could say, you should define the identifier and use it at
+       least once in one thread, and then the immutable value can be
+       used by other threads without locking.
+
+       Which, while it works, unfortunately defeats the entire purpose
+       of the DEFINE-IMMUTABLE form, which is to free the programmer
+       from having to worry about the order of evaluation.
+
+Now, if the value produced by the DEFINE-IMMUTABLE expression really
+needs to be unique, then we're stuck with this.  For example, if the
+expression returns a pair (such as the first pair in a list), and the
+programmer is going to be using EQ? or SET-CAR! on that pair, then
+that particular unique pair is going to have to be communicated to
+other threads that use it.
+
+But is this really necessary?  Suppose as a programmer, I don't care
+if the expression is evaluated more than once.  Naturally I don't want
+it to be evaluated *all the time*, because that would be terribly
+inefficient, but I might not mind if it got evaluated a few times.  If
+the expression produces a list, I might only care that the list had
+the same elements in the sense of EQUAL?.  Or, if the expression
+returned a procedure, that it was an equivalent procedure in the sense
+that if I call it with the same arguments I'm going to get the same
+result back.
+
+So the specification could say &quot;the expression is evaluated only once
+in any given thread&quot;.  Then different threads would end up with values
+that that might be different by EQ?, but would be equivalent by how the
+program used them.
+
+Yet, going further, what if DEFINE-IMMUTABLE wasn't a contract by the
+Scheme implementation to *make* the value immutable by evaluating the
+expression only once, but instead a contract by the *programmer* that
+any evaluation of the expression will produce a value that is
+equivalent as far as the rest of the program is concerned.
+
+Suppose the programmer writes:
+
+    (define-immutable a (list 1 2 3))
+
+Now this could be a valid assertion by the programmer depending on how
+A is used.  It's not a valid assertion if the program contains code
+such as (EQ? A B) or (SET-CAR! A 5) etc., but would be a valid
+assertion if the program only had code such as (EQUAL? A B) or (+ 10
+(CAR A)).
+
+If the program only ever referenced (CAR T), a silly (but still
+valid!) example would be:
+
+    (define-immutable t (cons 14 (current-system-time)))
+
+So now the Scheme implementation is free to evaluate the expression
+any time that it would be more efficient to do so, or to use a cached
+value when that is available.
+
+And, this also gives the Scheme implementation the option of
+discarding cached values when memory is low.
+
+    (define-immutable image (produce-very-large-bitmap-image))
+
+Here the programmer is saying to the Scheme implementation, &quot;cache
+this image if you can, but if you run out of memory you can go ahead
+and recompute it later if you need to&quot;.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Next by Date:
+<strong><a href="msg00001.html">recommendation to withdraw DEFINE-IMMUTABLE</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00001.html">recommendation to withdraw DEFINE-IMMUTABLE</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00000"><strong>Date</strong></a></li>
+<li><a href="threads.html#00000"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,124 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Internal defines/reference implementations -->
+<!--X-From-R13: revx uvyfqnyr <uvyfqnyrNcnep.krebk.pbz> -->
+<!--X-Date: Tue, 13 Jul 1999 17:44:20 &#45;0500 (CDT) -->
+<!--X-Message-Id: 199907132243.PAA00824@localhost.localdomain -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 012d01becd65$0c6529e0$7a01a8c0@intranet -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Internal defines/reference implementations</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00014.html">Date Prev</a>][<a href="msg00016.html">Date Next</a>][<a href="msg00014.html">Thread Prev</a>][<a href="msg00016.html">Thread Next</a>][<a href="maillist.html#00015">Date Index</a>][<a href="threads.html#00015">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Internal defines/reference implementations</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &quot;Sergei Egorov&quot; &lt;<a href="mailto:esl@DOMAIN.HIDDEN">esl@xxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Internal defines/reference implementations</li>
+<li><em>From</em>: erik hilsdale &lt;<a href="mailto:hilsdale@DOMAIN.HIDDEN">hilsdale@xxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 13 Jul 1999 15:43:52 PDT</li>
+<li><em>Cc</em>: <a href="mailto:srfi-9@DOMAIN.HIDDEN">srfi-9@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: Message from &quot;Sergei Egorov&quot; &lt;<a href="mailto:esl@DOMAIN.HIDDEN">esl@xxxxxxxxxxxxxxx</a>&gt;    of &quot;Tue, 13 Jul 1999 15:22:29 EDT.&quot; &lt;<a href="mailto:012d01becd65%240c6529e0%247a01a8c0@DOMAIN.HIDDEN"><a href="msg00014.html">012d01becd65$0c6529e0$7a01a8c0@intranet</a></a>&gt; </li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+    esl&gt; I don't think the problem with internal record definitions is in
+    esl&gt; implementation complexity - it's in generativity. If you define
+    esl&gt; a new record type inside a procedure, it is natural to expect
+    esl&gt; the same record type each time you enter the procedure; otherwise
+    esl&gt; the objects you created before won't be recognized by record
+    esl&gt; type predicate:
+
+    esl&gt; ;; sample enumeration protocol for nonempty sequences:
+    esl&gt; (define (enumerate-stuff state) ;=&gt; obj, {next-state or #f}
+    esl&gt;     (define-record-type my-enum-state ...)
+    esl&gt;     (if (eq? state #f) 
+    esl&gt;         ;; start enumeration
+    esl&gt;         (values obj1 (make-my-enum-state ...))
+    esl&gt;         ;; continue enumeration
+    esl&gt;         (let ((next-state (if (has-next? state) 
+    esl&gt;                               (next-state state) 
+    esl&gt;                               #f)))
+    esl&gt;             (values (state-obj state) next-state))))
+
+Actually, I hesitated to make the comment about internal defines until
+I realzed that the datatypes were already generative.  I think
+generativity is one of those things well-meaining people simply
+disagree on.  For me, I _want_ datatypes internal to procedures to be
+generative on procedure application.  It just seems natural.  If you
+rewrite enumerate-stuff without the MIT-define, it seems clear to me
+that the define-record-type belongs outside of the lambda and inside
+of the define:
+
+;; sample enumeration protocol for nonempty sequences:
+(define enumerate-stuff
+  (let ()
+    (define-record-type my-enum-state ...)
+    (lambda (state) ;=&gt; obj, {next-state or #f}
+      (if (eq? state #f) 
+          ;; start enumeration
+          (values obj1 (make-my-enum-state ...))
+          ;; continue enumeration
+          (let ((next-state (if (has-next? state) (next-state state) #f)))
+              (values (state-obj state) next-state))))))
+
+-erik
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00014" href="msg00014.html">Re: Internal defines/reference implementations</a></strong>
+<ul><li><em>From:</em> Sergei Egorov</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00014.html">Re: Internal defines/reference implementations</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00016.html">updated version of SRFI 9</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00014.html">Re: Internal defines/reference implementations</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00016.html">updated version of SRFI 9</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00015"><strong>Date</strong></a></li>
+<li><a href="threads.html#00015"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

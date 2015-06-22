@@ -1,0 +1,163 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Simple symbols as keywords -->
+<!--X-From-R13: [nep Trryrl <srryrlNveb.hzbagerny.pn> -->
+<!--X-Date: Tue,  9 May 2006 13:31:48 +0200 (MST) -->
+<!--X-Message-Id: 734A91A5&#45;99F7&#45;47F7&#45;8EEA&#45;299CDEC71AB9@iro.umontreal.ca -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 000001c66f4d$09e16850$8a85093b@INITERM -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Simple symbols as keywords</title>
+<link rev="made" href="mailto:feeley@iro.umontreal.ca">
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00066.html">Date Prev</a>][<a href="msg00068.html">Date Next</a>][<a href="msg00050.html">Thread Prev</a>][<a href="msg00068.html">Thread Next</a>][<a href="maillist.html#00067">Date Index</a>][<a href="threads.html#00067">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Simple symbols as keywords</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: soo &lt;<a href="mailto:init%40iniTerm.com">init@iniTerm.com</a>&gt;</li>
+<li><em>Subject</em>: Re: Simple symbols as keywords</li>
+<li><em>From</em>: Marc Feeley &lt;<a href="mailto:feeley%40iro.umontreal.ca">feeley@iro.umontreal.ca</a>&gt;</li>
+<li><em>Date</em>: Tue, 9 May 2006 03:31:36 -0400</li>
+<li><em>Cc</em>: <a href="mailto:srfi-89%40srfi.schemers.org">srfi-89@srfi.schemers.org</a>, <a href="mailto:srfi-88%40srfi.schemers.org">srfi-88@srfi.schemers.org</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-88%40srfi.schemers.org">srfi-88@srfi.schemers.org</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:000001c66f4d%2409e16850%248a85093b%40INITERM">000001c66f4d$09e16850$8a85093b@INITERM</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:000001c66f4d%2409e16850%248a85093b%40INITERM">000001c66f4d$09e16850$8a85093b@INITERM</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+On 4-May-06, at 3:33 AM, soo wrote:
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+I wonder why a new data type such as keyword object is necessary to
+implement named optional parameters.
+Aren't simple symbols enough to use as keywords?
+</pre></blockquote><pre style="margin: 0em;">
+
+</pre><tt>I think it is important for the named parameter markers to be easily  
+</tt><tt>distinguished from normal parameters, both for the humans reading the  
+</tt><tt>code and the compiler and interpreter.  Compare
+</tt><pre style="margin: 0em;">
+
+  (buy 'apple 'day 'low 'price 71.89 'qty 1000)
+
+and
+
+  (buy 'apple 'day 'low price: 71.89 qty: 1000)
+
+</pre><tt>In the second case, using SRFI 88 keywords, the reader gets a visual  
+</tt><tt>clue that ``apple'', ``day'' and ``low'' are certainly not named  
+</tt><tt>parameters, and ``price:'' and ``qty:'' are probably named  
+</tt><tt>parameters.  Note that there is uncertainty on the nature of the last  
+</tt><tt>four parameters but not on the first three.  In the first case, which  
+</tt><tt>uses plain symbols as named parameter markers, many different  
+</tt><tt>combinations are possible.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>So it is important for humans reading the code that the named  
+</tt><tt>parameter markers are visually different from other parameters: they  
+</tt><tt>contain a colon at the end and are self-evaluating.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>Keyword objects could be viewed as a distinct type as specified in  
+</tt><tt>SRFI 88.  They could also be viewed as a subtype of symbols, i.e.
+</tt><pre style="margin: 0em;">
+
+(define (keyword? obj)
+  (and (symbol? obj)
+       (let ((s (symbol-&gt;string obj)))
+         (and (&gt; (string-length s) 1)
+              (char=? #\: (string-ref s (- (string-length s) 1)))))))
+
+</pre><tt>But the ``keyword as subtype of symbol'' view has problems because it  
+</tt><tt>does not clearly distinguish keywords and symbols.  When is the  
+</tt><tt>object ``foo:'' supposed to be treated as a keyword and when should  
+</tt><tt>it be treated as a symbol?  The human readers of the code, the  
+</tt><tt>compiler, the interpreter, the syntax transformers (macros) must all  
+</tt><tt>ask this question and their answers may be inconsistent (treating it  
+</tt><tt>as a symbol in some cases and sometimes as a keyword).  This will  
+</tt><tt>make code understanding more difficult than if keywords are a  
+</tt><tt>distinct type.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>Here's a simple example.  Say you write a macro ``defstruct'' to  
+</tt><tt>define records which generates the accessor function names  
+</tt><tt>automatically by joining the name of the record type and the name of  
+</tt><tt>the field.  Then consider the definition
+</tt><pre style="margin: 0em;">
+
+  (defstruct foo bar baz:)
+
+</pre><tt>This will define, among other things, a function for accessing field  
+</tt><tt>``baz:'' which is bound to the variable ``foo-baz:''.  But when you  
+</tt><tt>call it like this
+</tt><pre style="margin: 0em;">
+
+  (foo-baz: (make-foo 111 222))
+
+</pre><tt>is the compiler supposed to treat ``foo-baz:'' as a self evaluating  
+</tt><tt>keyword or as a variable?  You could say that the bug is in the  
+</tt><tt>definition of the macro ``defstruct'' which was not coded to refuse  
+</tt><tt>keywords as field names.  Bugs like this may go undetected for a long  
+</tt><tt>time to the point of becoming a feature of the macro when the author/ 
+</tt><tt>maintainer of the code has vanished.  Errors like this are a  
+</tt><tt>consequence of not making a clean distinction between symbols and  
+</tt><tt>keywords.  The situation is very similar for other Scheme objects.   
+</tt><tt>Why does Scheme distinguish symbols, characters and strings, why does  
+</tt><tt>it distinguish the empty list and #f, etc.?
+</tt><pre style="margin: 0em;">
+
+Marc
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00066.html">Re: Prefix, not postfix</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00068.html">Any scheme objects as keywords</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00050.html">Re: Alternative formulations of keywords</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00068.html">Any scheme objects as keywords</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00067"><strong>Date</strong></a></li>
+<li><a href="threads.html#00067"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

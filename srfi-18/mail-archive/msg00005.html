@@ -1,0 +1,144 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: continuations and threads -->
+<!--X-From-R13: Xvz Pynaql <wvzoNerq&#45;orna.pbz> -->
+<!--X-Date: Fri, 18 Feb 2000 11:11:02 &#45;0600 (CST) -->
+<!--X-Message-Id: m3n1oy77xq.fsf@savonarola.red&#45;bean.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200002180039.TAA13065@savonarola.red&#45;bean.com -->
+<!--X-Reference: 200002180506.AAA18935@trex.IRO.UMontreal.CA -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: continuations and threads</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00004.html">Date Prev</a>][<a href="msg00006.html">Date Next</a>][<a href="msg00004.html">Thread Prev</a>][<a href="msg00006.html">Thread Next</a>][<a href="maillist.html#00005">Date Index</a>][<a href="threads.html#00005">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: continuations and threads</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Marc Feeley &lt;<a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: continuations and threads</li>
+<li><em>From</em>: Jim Blandy &lt;<a href="mailto:jimb@DOMAIN.HIDDEN">jimb@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: 18 Feb 2000 12:10:41 -0500</li>
+<li><em>Cc</em>: <a href="mailto:srfi-18@DOMAIN.HIDDEN">srfi-18@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: Marc Feeley's message of &quot;Fri, 18 Feb 2000 00:06:38 -0500&quot;</li>
+<li><em>References</em>: &lt;<a href="mailto:200002180039.TAA13065@DOMAIN.HIDDEN">200002180039.TAA13065@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:200002180506.AAA18935@DOMAIN.HIDDEN">200002180506.AAA18935@xxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+&gt; &gt; I think this is pretty gross, but it does allow a natural
+&gt; &gt; correspondence between C function calls and Scheme function calls:
+&gt; &gt; continuations preserve active calls to C functions, as well as Scheme
+&gt; &gt; functions.  If it's important to your users to be able to write C
+&gt; &gt; functions that can call and be called by Scheme functions, I think
+&gt; &gt; this is a plausible implementation choice.  I'm not aware of any other
+&gt; &gt; implementation that does this while requiring so little distortion of
+&gt; &gt; your C code.  (But if you know of one, I'd love to hear about it!)
+&gt; 
+&gt; There is another way (I have not implemented it yet though)... but it
+&gt; is too complex to describe at this hour of the night!
+
+:)
+
+Now that you mention it, there is something I remember Roland McGrath
+implementing for SMLNJ, while working for Olin Shivers.
+
+I think the basic idea was that frames (activation records) for ML
+functions were kept on the heap (as normal), while frames for C
+functions were kept on a C stack.  You let the ML frames behave like
+the first-class objects they are --- you can call/cc to your heart's
+content --- but if you try to return to a C frame in a non-stacklike
+order, the ML/C boundary code detects this and throws an exception.
+
+I think he even arranged it so that if you returned early to an older
+C frame, the younger frames would be popped appropriately (via
+longjmp), and any references to younger C frames would be marked
+invalid, so you'd get an error if you tried to use them.
+
+The nice thing about this arrangement is that you only pay for what
+you use.  If your code is pure ML, call/cc is completely unaffected
+--- you can do everything you used to.  If you call some C functions,
+then you can do everything C can do with those frames, but no more.
+If you have a call sequence like this:
+
+   C func A   --&gt;   ML func X --&gt; C func B --&gt; ML func Y
+            (calls)
+
+it's perfectly okay for control to jump (via continuations) from Y
+back into X, and then back out to Y, and then return back to B.  The
+only frames being used in a non-stacklike fashion are those for X and
+Y, where the language implementation is prepared for this.
+
+I'm being terse here; if it sounds like nonsense, let me know, and I
+can explain more carefully.
+
+The analogous arrangement in the context of multi-threaded Scheme
+would allow Scheme frames to be used in any order by any thread, but
+allow C frames to be used only in a stack-like order, on a single
+thread.
+
+Is this similar at all to your idea?
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00006" href="msg00006.html">Re: continuations and threads</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr. Preprocessor]</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00003" href="msg00003.html">continuations and threads</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+<li><strong><a name="00004" href="msg00004.html">Re: continuations and threads</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00004.html">Re: continuations and threads</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00006.html">Re: continuations and threads</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00004.html">Re: continuations and threads</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00006.html">Re: continuations and threads</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00005"><strong>Date</strong></a></li>
+<li><a href="threads.html#00005"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,177 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Simplified, Limited, Easy FFI: Useful? -->
+<!--X-From-R13: orne <orneNfbavp.arg> -->
+<!--X-Date: Wed, 24 Dec 2003 19:08:37 +0100 (NFT) -->
+<!--X-Message-Id: Pine.LNX.4.58.0312240917280.23603@bolt.sonic.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200312222122.NAA06270@morrowfield.regexps.com -->
+<!--X-Reference: vt2d6agcztq.fsf@zenia.home -->
+<!--X-Reference: 200312222210.OAA06590@morrowfield.regexps.com -->
+<!--X-Reference: vt2smjcbidh.fsf@zenia.home -->
+<!--X-Reference: 200312232304.PAA18640@morrowfield.regexps.com -->
+<!--X-Reference: vt2n09ia9wo.fsf@zenia.home -->
+<!--X-Reference: 200312241734.JAA22237@morrowfield.regexps.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Simplified, Limited, Easy FFI: Useful?</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00058.html">Date Prev</a>][<a href="msg00060.html">Date Next</a>][<a href="msg00056.html">Thread Prev</a>][<a href="msg00060.html">Thread Next</a>][<a href="maillist.html#00059">Date Index</a>][<a href="threads.html#00059">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Simplified, Limited, Easy FFI: Useful?</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Tom Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Simplified, Limited, Easy FFI: Useful?</li>
+<li><em>From</em>: bear &lt;<a href="mailto:bear@DOMAIN.HIDDEN">bear@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 24 Dec 2003 10:08:29 -0800 (PST)</li>
+<li><em>Cc</em>: <a href="mailto:jimb@DOMAIN.HIDDEN">jimb@xxxxxxxxxx</a>, <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:200312241734.JAA22237@DOMAIN.HIDDEN">200312241734.JAA22237@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:200312222122.NAA06270@DOMAIN.HIDDEN">200312222122.NAA06270@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;        &lt;<a href="mailto:vt2d6agcztq.fsf@DOMAIN.HIDDEN">vt2d6agcztq.fsf@xxxxxxxxxx</a>&gt;        &lt;<a href="mailto:200312222210.OAA06590@DOMAIN.HIDDEN">200312222210.OAA06590@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;        &lt;<a href="mailto:vt2smjcbidh.fsf@DOMAIN.HIDDEN">vt2smjcbidh.fsf@xxxxxxxxxx</a>&gt;        &lt;<a href="mailto:200312232304.PAA18640@DOMAIN.HIDDEN">200312232304.PAA18640@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:vt2n09ia9wo.fsf@DOMAIN.HIDDEN">vt2n09ia9wo.fsf@xxxxxxxxxx</a>&gt; &lt;<a href="mailto:200312241734.JAA22237@DOMAIN.HIDDEN">200312241734.JAA22237@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+
+Let's consider the possibilities of a radically different approach.
+
+This is admittedly quite limited, but I think it represents a
+&quot;low-hanging fruit&quot; of useful FFI that offers a quite easy
+implementation to all POSIX schemes.
+
+I limit my discussion to POSIX environments here, and limit the
+proposal to handling scheme calls into other languages, just because
+POSIX  provides an easy way to do that and scheme calls into C
+code are what I find most useful about FFI's.
+
+What if there was a program running, in a completely separate
+process and memory space from the scheme program, that listened
+for connections on a port, responded to connections with the
+addresses of input and output pipes, took input for a given
+call on the input pipe, and wrote results back on the output
+pipe?
+
+You could have a scheme function that starts the named program if
+it isn't already running, gets the input pipe and writes its args
+directly to that port (in some C-friendly data format), and
+returns an input port corresponding to the c program's output
+pipe, where you can read the result.
+
+This would nail portability, behave correctly with threads, get
+the C and Scheme calling disciplines out of each other's hair,
+wouldn't screw with garbage collection or continuations, and would
+provide an easy point of attachment for any and all C routines.
+Additionally, accomodating it would be a small and bounded
+problem for implementors, not requiring major redesign of their
+runtime.
+
+It would also be straightforward to use the same mechanism to
+implement FFI calls to fortran or FORTH or CommonLisp or whatever
+other languages, as long as those languages understand ports.
+
+Scheme routines implementing an external call would look
+something like....
+
+;; assumes that the program 'cport' can be found on the
+;; current path and knows how to do 'foobar arg1 arg2.
+(define foobar (lambda (arg1 arg2)
+   (with-input-port (FFI_write &quot;cport&quot; 'foobar arg1 arg2)
+	(read))))
+
+;; assumes that the program 'forthport' can be found on
+;; the current path and knows how to do 'foobaz arg1 arg2.
+(define foobaz (lambda (arg1 arg2)
+   (with-input-port (FFI_write &quot;forthport&quot; 'foobaz arg1 arg2)
+	(read))))
+
+
+I'll admit freely that it wouldn't provide the flexibility of a
+&quot;native&quot; FFI, and wouldn't provide callbacks.  Also, there's a
+design choice to be made about whether the 'port' programs can
+time out and just terminate themselves, or whether you want them
+around to hold persistent state.   But it would be completely
+easy to use and so completely easy to understand.  Anybody
+could (and would) use it.
+
+I'll also admit freely that if you're going to other languages
+for speed this is not likely to satisfy you; the synchronization
+and communication will introduce delays.  But usually I find that
+I am going to other languages for operating-system calls rather
+than faster execution.
+
+				Bear
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00060" href="msg00060.html">Re: Simplified, Limited, Easy FFI: Useful?</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00006" href="msg00006.html">GC safety and return values</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00007" href="msg00007.html">Re: GC safety and return values</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+<li><strong><a name="00008" href="msg00008.html">Re: GC safety and return values</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00014" href="msg00014.html">Re: GC safety and return values</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+<li><strong><a name="00037" href="msg00037.html">Re: GC safety and return values</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00050" href="msg00050.html">Re: GC safety and return values</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+<li><strong><a name="00056" href="msg00056.html">Re: GC safety and return values</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00058.html">target applications</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00060.html">Re: Simplified, Limited, Easy FFI: Useful?</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00056.html">Re: GC safety and return values</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00060.html">Re: Simplified, Limited, Easy FFI: Useful?</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00059"><strong>Date</strong></a></li>
+<li><a href="threads.html#00059"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,170 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Update, near finalization -->
+<!--X-From-R13: Ohoerl Xnssre <ntwNnyhz.zvg.rqh> -->
+<!--X-Date: Fri,  8 Apr 2005 22:16:41 +0200 (DFT) -->
+<!--X-Message-Id: 20050408201628.D40251B77A8@voluntocracy.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 4256AF0C.60703@cs.uvm.edu -->
+<!--X-Reference: 4256C0BE.8030904@bothner.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Update, near finalization</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00002.html">Date Prev</a>][<a href="msg00004.html">Date Next</a>][<a href="msg00002.html">Thread Prev</a>][<a href="msg00004.html">Thread Next</a>][<a href="maillist.html#00003">Date Index</a>][<a href="threads.html#00003">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Update, near finalization</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Update, near finalization</li>
+<li><em>From</em>: Aubrey Jaffer &lt;<a href="mailto:agj@DOMAIN.HIDDEN">agj@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri,  8 Apr 2005 16:16:28 -0400 (EDT)</li>
+<li><em>Cc</em>: <a href="mailto:dvanhorn@DOMAIN.HIDDEN">dvanhorn@xxxxxxxxxx</a>, <a href="mailto:srfi-63@DOMAIN.HIDDEN">srfi-63@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-63@DOMAIN.HIDDEN">srfi-63@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:4256C0BE.8030904@DOMAIN.HIDDEN">4256C0BE.8030904@xxxxxxxxxxx</a>&gt; (message from Per Bothner on Fri,	08 Apr 2005 10:34:54 -0700)</li>
+<li><em>References</em>: &lt;<a href="mailto:4256AF0C.60703@DOMAIN.HIDDEN">4256AF0C.60703@xxxxxxxxxx</a>&gt; &lt;<a href="mailto:4256C0BE.8030904@DOMAIN.HIDDEN">4256C0BE.8030904@xxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre> | Date: Fri, 08 Apr 2005 10:34:54 -0700
+ | From: Per Bothner &lt;per@xxxxxxxxxxx&gt;
+ | 
+ | David Van Horn wrote:
+ | &gt; The draft of SRFI 63 Homogeneous and Heterogeneous Arrays has been 
+ | &gt; updated to resolve the Issues section (cf previous drafts).  This draft 
+ | &gt; will be finalized if there are no concerns raised in the next couple of 
+ | &gt; days.
+ | &gt; 
+ | &gt;    <a  rel="nofollow" href="http://srfi.schemers.org/srfi-63/srfi-63.html">http://srfi.schemers.org/srfi-63/srfi-63.html</a>
+ | 
+ | I strongly object.  array-set! is inconsistent with srfi-25, and you
+ | cannot distinguish between the variants by their arguments types.
+
+This works by the implementation knowing the difference between
+SRFI-25 arrays and SRFI-63 arrays.  This difference can be hidden
+entirely from the user.
+
+I claim that SRFI-25 and SRFI-63 can coexist -- not that they
+interoperate!
+
+ | This is a recipe for disaster.
+ | 
+ | STFI-25:
+ | (array-set! array k ... obj)
+ | (array-set! array index obj)
+ | SRFI-63:
+ | (array-set! array obj k1 ...)
+ | 
+ | It is claimed that &quot;Type dispatch on the first argument to
+ | array-set!  could support both SRFIs simultaneously.&quot;  I don't
+ | believe that.
+ | How would you handle:
+ | (define array (vector 'a 'b))
+ | (set! array 1 0)
+ | Is the result #(a 0) or #(1 b)?
+
+SRFI-25 says:
+
+  It is not required that vectors not be arrays.  It is not required
+  that they be, either.
+
+For your example to be ambiguous, you would be depending on
+unspecified behavior of SRFI-25.
+
+But vectors are mandated to be arrays in SRFI-63.  So the result of
+your example would be #(1 b).
+
+ | make-array is also inconsistent:
+ | SRFI-25:
+ | (make-array shape)
+ | (make-array shape obj)
+ | SRFI-63:
+ | (make-array prototype k1 ...)
+ | It is claimed that: &quot;Type dispatch on the first argument to
+ | make-array could support both SRFIs simultaneously.&quot;  I don't
+ | believe that is correct, as written, since a SRFI-25 shape is a d*2
+ | array, and a SRFI-67 prototype can also be an array.  Thus they can
+ | conflict.
+
+By vectors being SRFI-63 arrays, not SRFI-25 arrays; and by the
+implementation knowing the difference between SRFI-25 arrays and
+SRFI-63 arrays, there is no conflict.
+
+ | Consider:
+ | (define v (shape 0 1))
+ | (make-array v 10)
+
+Shape returns a SRFI-25 array, not a vector.  Your example would
+return a SRFI-25 array.
+
+ | The conflict can be avoided by requiring that prototypes have rank 0
+ | or 1, which seems a reasonable restriction.
+ | 
+ | Much cleaner would be to choose a different name.
+
+Bawden arrays predate SRFI-25 by a decade.  SRFI-25 should have chosen
+other names.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00004" href="msg00004.html">Re: Update, near finalization</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00001" href="msg00001.html">Update, near finalization</a></strong>
+<ul><li><em>From:</em> David Van Horn</li></ul></li>
+<li><strong><a name="00002" href="msg00002.html">Re: Update, near finalization</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00002.html">Re: Update, near finalization</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00004.html">Re: Update, near finalization</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00002.html">Re: Update, near finalization</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00004.html">Re: Update, near finalization</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00003"><strong>Date</strong></a></li>
+<li><a href="threads.html#00003"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,165 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Comments on SRFI&#45;39 -->
+<!--X-From-R13: fuvirefNpp.tngrpu.rqh -->
+<!--X-Date: Sun, 26 Jan 2003 09:45:58 +0100 (NFT) -->
+<!--X-Message-Id: 200301260845.h0Q8joW4021279@mongkok.dyndns.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Comments on SRFI-39</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00020.html">Date Prev</a>][<a href="msg00022.html">Date Next</a>][<a href="msg00020.html">Thread Prev</a>][<a href="msg00022.html">Thread Next</a>][<a href="maillist.html#00021">Date Index</a>][<a href="threads.html#00021">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Comments on SRFI-39</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-39@DOMAIN.HIDDEN">srfi-39@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Comments on SRFI-39</li>
+<li><em>From</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxxxxx</a></li>
+<li><em>Date</em>: Sun, 26 Jan 2003 03:45:50 -0500</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-39@DOMAIN.HIDDEN">srfi-39@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Reply-to</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Hello, guys.
+
+I'm coming to this discussion somewhat late. Bravo, Marc, for tackling this one.
+
+SRFI says:
+    A parameter object created by the procedure make-mutable-parameter is
+    a procedure which accepts zero or one argument (what happens
+    when two or more arguments is given is completely
+    implementation dependent). A parameter object created by the
+    procedure make-parameter is a procedure which accepts no argument
+    (what happens when one or more argument is given is completely
+    implementation dependent). 
+
+Why do we say extra args to a parm object is undefined? Why not error?
+
+Why is PARAMETERIZE syntax? Make it a function, and render all issues
+of eval-order irrelevant. Having captured the core idea as a procedure,
+then define a litle piece of binding syntax in terms of it:
+  (paramterize param val thunk)				; Procedure
+  (let-parameter  ((param val) ...) body ...)		; Derived syntax
+  (let-parameter* ((param val) ...) body ...)		; Derived syntax
+Or punt the macros and just stick to basic functionality.
+
+Why is the PROMPT mutable param implementation-dependent when passed &quot;&gt; &quot;? It
+seems like it's definitely defined, since it's a mutable parameter, to alter
+the binding to &quot;&gt; &quot;. Am I missing something here?
+
+Matthew asked &quot;Why mutable params?&quot; I support them, with the *exact* semantics
+Marc provides -- threads *inherit* the dynamic bindings. This allows thread
+code to be written that interacts w/other threads via shared state accessed
+from a parameter. The agent that forks off the threads controls the degree of
+sharing or insulation by arranging sharing of parameter cells.
+
+For example, consider a cursor-like object, such as a &quot;current working
+directory&quot; or a pointer into a database table. Two threads might want to
+move around in the directory structure or the table by altering the cursor.
+One thread changes the cursor, the other sees it. You arrange this by
+(1) binding the param to a fresh cell, then (2) spawning two threads in the
+single dynamic scope of that binding.
+
+Suppose, however, you want *independent* thread groups. No trouble there, 
+either. You just spawn each thread or cooperating thread group in a
+different dynamic-parameter binding.
+
+So you have complete control of this kind of thing, and the degree of sharing
+doesn't show up in the thread code itself. You can take the same code, and run
+it in isolated solitude, in a group of two, a group of twenty, whatever you
+like. In general, *any* kind of thread-global shared resource (like the
+typical radix &amp; standard-io examples) fits nicely into this scheme.
+
+I know Mike S &amp; Kelsey prefer to reset dynamic bindings to fresh
+bindings with top-level values at thread-spawn boundaries. I think this
+is completely broken. Spawning a thread, calling a function -- it's a
+dynamic nesting. 
+
+I readily admit you can implement mutable params with immutable params and a
+one-elt vector. But I also buy Marc's story that this is not &quot;the way of
+Scheme&quot; -- you could also &quot;implement&quot; mutable *variables* with immutable vars
+&amp; one-elt vectors, but Scheme doesn't. Also, if you emulate mutable params
+with immutable params + mutable cells, you *expose the cell to parameter
+clients* -- when you just want to expose the *value of the cell*. This can
+lead to bugs, in the general way bugs happen when you expose the underlying
+encoding of a thing (e.g., you encode a structure as a three-element list or
+something like that). Providing mutable params as a primitive locks up the
+internal cell so buggy clients can't accidentally fetch it out, store it away,
+pass it around, reference it outside of scope, etc.
+
+Sound like an abstract objection? It's pretty concrete, actually, by which I
+mean that it's not an unrealistic bug -- it's the kind of bug you would expect
+to see in real code. The bug will be someone fetching the cell from the param
+and forgetting to dereference it, so the mutable cell, intended to be internal
+to the param, will propagate through the program the way the cell's value was
+intended to propagate.
+
+I do not like the whole idea of packaging up this functionality as
+procedures; I'd rather they be a new data type. But Marc has motivated
+his decision to do this -- staying close to existing APIs while focussing
+on the tricky semantic decisions. I can roll with that, and won't even
+complain about how much I hate the ambiguous, confusing term &quot;parameter.&quot;
+    -Olin
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00022" href="msg00022.html">Re: Comments on SRFI-39</a></strong>
+<ul><li><em>From:</em> Matthew Flatt</li></ul></li>
+<li><strong><a name="00023" href="msg00023.html">Re: Comments on SRFI-39</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr.  Preprocessor]</li></ul></li>
+<li><strong><a name="00025" href="msg00025.html">Re: Comments on SRFI-39</a></strong>
+<ul><li><em>From:</em> Richard Kelsey</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00020.html">Re: Purpose of SRFI 39</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00022.html">Re: Comments on SRFI-39</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00020.html">Re: Purpose of SRFI 39</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00022.html">Re: Comments on SRFI-39</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00021"><strong>Date</strong></a></li>
+<li><a href="threads.html#00021"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

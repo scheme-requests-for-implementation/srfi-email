@@ -1,0 +1,352 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Questions about srfi&#45;77 Generic Arithmetic -->
+<!--X-From-R13: Ivyyvnz R Qyvatre <jvyyNppf.arh.rqh> -->
+<!--X-Date: Sat, 18 Feb 2006 20:19:07 +0100 (CET) -->
+<!--X-Message-Id: E1FAVnP&#45;0004sp&#45;0w@adara.ccs.neu.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Questions about srfi-77 Generic Arithmetic</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00405.html">Date Prev</a>][<a href="msg00407.html">Date Next</a>][<a href="msg00433.html">Thread Prev</a>][<a href="msg00407.html">Thread Next</a>][<a href="maillist.html#00406">Date Index</a>][<a href="threads.html#00406">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Questions about srfi-77 Generic Arithmetic</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Questions about srfi-77 Generic Arithmetic</li>
+<li><em>From</em>: William D Clinger &lt;<a href="mailto:will@DOMAIN.HIDDEN">will@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 18 Feb 2006 12:22:59 -0500</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Bradley Lucier wrote:
+&gt; I'm trying to understand the R5RS-style Generic Arithmetic
+&gt; and I have some questions.
+
+Those were excellent questions indeed.  Thank you, Brad.
+
+You have spotted many miskates (!).  I agree with you and
+with Mike's reply to you with regard to questions 4, 5, 6,
+7, 11, and 15.  I have a little more to say about the others.
+
+&gt; 1.  In the first paragraph it says &quot;The generic operations all  
+&gt; implement inexact operations.&quot;  What does that mean?
+
+I don't know either.  I propose the following change in wording:
+Replace
+
+    A number is inexact if it was written as an inexact
+    constant, if it was derived using inexact ingredients,
+    or if it was derived using inexact operations.  The
+    generic operations all implement inexact operations.
+    Thus inexactness is a contagious property of a number.
+
+by
+
+    A number is inexact if it was written as an inexact
+    constant or was derived from inexact numbers.  Thus
+    inexactness is contagious.  The generic operations
+    generally return the correct exact result when all
+    of their arguments are exact and the result is
+    mathematically well-defined, but return an inexact
+    result when any argument is inexact.  As indicated
+    in the specification of individual operations, some
+    exceptions to this rule are allowed (but not required).
+
+    One general exception to the rule above is that an
+    implementation may return an exact result despite
+    inexact arguments if that exact result would be
+    the correct result for all possible substitutions
+    of exact arguments for the inexact ones.
+
+While I'm at it, let me propose another correction.  The
+current draft of SRFI 77 says &quot;If two implementations produce
+exact results for a computation that did not involve inexact
+intermediate results or the results of numerical predicates,
+the two ultimate results will be mathematically equivalent.&quot;
+
+That is both untrue and misleading.  In SRFI 77, the fixnum
+operations may return different exact results in different
+implementations.  I regard that as a strong argument against
+having the fixnum operations in the core language; I would
+prefer they be banished to a library, so we can claim
+implementation-independence for results of exact computations
+that use only the core.  If fixnum? is banished from the core,
+then the numerical predicates should return the same results
+in every implementation when given exact arguments, so it is
+misleading to mention them here.  I therefore propose to revert
+the sentence quoted above to its R5RS form:  &quot;If two
+implementations produce exact results for a computation that
+did not involve inexact intermediate results, the two ultimate
+results will be mathematically equivalent.&quot;
+
+Although that sentence will not hold for the core augmented
+by certain libraries, e.g. the fixnum library, the reason for
+that is that the libraries will be implemented differently in
+different implementations.  I think people can understand that.
+
+&gt; 2.  In the first paragraph it says &quot;A number is inexact if it is  
+&gt; infinite, if it was written as an inexact constant, if it was derived  
+&gt; using inexact ingredients, or if it was derived using inexact  
+&gt; operations.&quot;
+&gt;     (a) I prefer some other word to &quot;ingredients&quot;.
+&gt;     (b) What is an inexact operation?  The in* functions?  Or, do  
+&gt; you mean every operation in this section?
+
+In my reply to question 1 above, I proposed wording that
+would remove the references to &quot;ingredients&quot; and &quot;inexact
+operations&quot;.  Mike suggested an alternative fix that
+would involve some explanation of how &quot;operations&quot; are
+distinct from &quot;procedures&quot;.  I think Mike's fix would
+create more confusion that it would resolve.  I prefer
+the wording I proposed above.
+
+&gt;     (c) If 0 denotes exact 0 and 1 denotes exact 1, I prefer
+&gt;         (log 1) = (sin 0)=(asin 0)=(atan 0)=(tan 0)=...=0
+&gt;         and
+&gt;         (cos 0) = (exp 0)=1,
+&gt;         in the same way that I prefer (sqrt 4) = 2 (where 4 denotes  
+&gt; exact 4 and 2 denotes exact 2).  Is this allowed in your proposal?
+
+Not as written, but I regard that as a mistake.  See my
+answer to question 3 below.
+
+&gt; 3. Paragraph 6 says &quot;With the exception of inexact-&gt;exact,
+&gt; the operations described in this section must return inexact
+&gt; results when given any inexact arguments.&quot;
+
+I think we should just delete that sentence, and rely on
+the wording I proposed in my answer to question 1.
+
+&gt; 8.  Integer Divison.
+&gt; (a) I think it is a really bad design to have the basic
+&gt; operation of div+mod change when the second argument changes sign.
+
+I don't have much problem with that.  These mathematical
+operations aren't defined at zero, so they have to compare
+against zero anyway.  To quote Egner et al, &quot;the sign of
+the modulus y determines which system of representatives
+of the residue class ring Z/yZ is being chosen, either
+non-negative (y &gt; 0), symmetric around zero (y &lt; 0), or
+the integers (y = 0).&quot;  Using the sign of y is ad hoc,
+but it's an ad hoc choice anyway.
+
+&gt;    (b) I think it is a really bad design to have
+&gt;        (div x1 0) =&gt; 0
+&gt; It conflicts with the requirement in quotient+remainder,
+&gt; quotient, remainder, and modulo that &quot;n2 should be nonzero&quot;.
+&gt; (Unless I read &quot;should&quot; here in the language lawyer sense,
+&gt; i.e., that it is totally nonprescriptive.) The only way I can
+&gt; think of making division by exact 0 make sense is by divorcing
+&gt; the meaning of &quot;div&quot; from any notion of mathematical division.
+
+I don't have a strong opinion about this.  It is totally
+ad hoc, but the alternative is a principled (not ad hoc)
+hole in the domain of div.  I'm inclined to think that
+passing 0 as the second argument to div is, in practice,
+most likely an error for which it would be more useful
+to signal an error than to return 0, but I'm willing to
+listen to an argument for returning 0.  So far as I can
+see, no such argument has been made.  In particular, the
+paper by Egner et al contains no such argument.
+
+&gt; (c) This is one place where the Rationale says to refer to
+&gt; Egner et al. to see an argument why these procedures &quot;are
+&gt; better suited than quotient and remainder to implement
+&gt; modular reduction.&quot; As a point of procedure, I would really
+&gt; prefer to have the arguments included in this document; I
+&gt; don't want to have to discuss my opinions of Egner et al.
+&gt; just to discuss my opinions of this specific proposal.
+
+If Egner et al actually contained a rationale for this,
+it would be completely proper to refer to that paper by
+reference instead of including its rationale in the SRFI.
+Since Egner et al do not actually offer a rationale for
+defining (div x 0) to be 0, however, it is extremely
+misleading for this SRFI to refer readers to that paper
+for the rationale.  The reference to Egner et al should
+certainly be dropped, and some rationale (if anyone can
+come up with one) added to this SRFI.
+
+&gt; 9.  I don't agree that +inf.0, -inf.0, and +nan.0 should be in the  
+&gt; domain of floor, round, ceiling, and truncate; returning these values  
+&gt; as results implies, to me, that they are integers, and I believe they  
+&gt; aren't integers, since they aren't rational.
+
+The current draft of SRFI 77 says &quot;These procedures return
+inexact integers on inexact arguments that are not infinities
+or NaNs, and exact integers on exact rational arguments.&quot;
+I believe the intent of this was to exclude non-rational
+arguments from the domain of floor, round, ceiling, and
+truncate.  It would be simpler to replace the x in their
+templates by q, thereby implying it is an error to pass
+them a non-rational argument.  I believe the last two
+examples, for (floor +inf.0) and (ceiling -inf.0), are
+just mistakes.
+
+Mike Sperber wrote:
+&gt; This is on the issues list---I'm almost convinced, but wonder what
+&gt; happens in representations where the argument isn't infinite or NaN,
+&gt; and the result still can't be represented as an inexact integer.
+
+That is something to worry about, all right, but that has
+to do with the range, not the domain.  I think we should
+exclude non-rational arguments from the domain.
+
+Back to Brad Lucier's questions:
+&gt; 12. (a) You give the examples:
+&gt;        (log +inf.0) =&gt; +inf.0
+&gt;        (log -1.0+0.0i) =&gt; 0.0+pii
+&gt;        (log -1.0-0.0i) =&gt; 0.0-pii
+&gt;        yet
+&gt;        (log -inf.0) =&gt; unspecified
+&gt;        Given the previous examples, shouldn't
+&gt;        (log -inf.0) =&gt; +inf.0+pii
+
+Yes.  That was a mistake, which we'll fix.
+
+&gt;     (b) You don't say what (log 0) evaluates to; I would prefer it  
+&gt; to be an error.
+
+Me too.  In general, passing exact arguments for which
+the exact result is not mathematically well-defined
+should be an error.  We shouldn't require implementations
+to return an inexact result (e.g. -inf.0) when given
+exact arguments, and we shouldn't allow implementations
+to return some random exact result.
+
+&gt; 13.  For sqrt:  Is your intention to no longer have sqrt return exact  
+&gt; results when possible given exact arguments?  
+
+The language I proposed in my answer to question 1 would
+*require* sqrt to return exact results when given exact
+arguments.  Inasmuch as most implementations cannot
+represent the mathematically correct result in most cases,
+the description of sqrt should explicitly allow (but not
+require) it to return inexact results even when given exact
+arguments.
+
+A similar exception to the general rule should be stated
+for exp, log, sin, cos, tan, asin, acos, atan, expt,
+make-polar, magnitude, and angle.  I'd argue for making
+this exception for make-rectangular as well, to avoid
+making rectangular coordinates privileged over polar.
+
+Which brings up a larger question:  If neither make-polar
+nor make-rectangular are required to return an exact
+result when given exact arguments, what requires
+implementations to provide non-real exact numbers?
+I think the only requirement of that sort follows from
+the ability to write things like 3+4i and to compute with
+them.  Do we actually need to require implementations to
+represent 3+4i exactly and to perform exact arithmetic
+on non-real numbers?
+
+&gt; Or will
+&gt;      (sqrt 4) =&gt; 2
+&gt;      be allowed?  Your definition
+&gt;      (sqrt z) =&gt; (exp (/ (log z) 2.0))
+&gt;      seems to preclude it by putting in that inexact 2.  Do you mean  
+&gt; the right hand side of this formula literally, with exp and log being  
+&gt; Scheme procedures, or do you mean to represent the mathematical  
+&gt; formula $e^{\log(z)/2}$ (in TeX notation).
+
+When the meaning is mathematical, as here, we should use
+mathematical notation instead of Scheme's syntax.
+      
+&gt; 13 bis: Again for sqrt, why is
+&gt;         (sqrt -inf.0) =&gt; unspecified
+&gt;         and not
+&gt;         (sqrt -inf.0) =&gt; +inf.0i
+&gt;         You didn't have any problem with
+&gt;         (log 0.0) =&gt; -inf.0
+
+That, too, was a mistake.  (sqrt -inf.0) should return
++inf.0i.
+
+&gt; 14. About expt: In contrast to my comments about sqrt, I note
+&gt; that your definition of expt uses mathematical notation to
+&gt; define it, so
+&gt; 
+&gt;      (expt 5 3)  =&gt; 125, not 125.0
+&gt;      is not only allowed, but required?  Is
+&gt;      (expt 125 1/3) =&gt; 5
+&gt;      allowed?
+
+As mentioned in my answer to question 13, I think expt
+should be explicitly excepted from the general requirement
+that operations return exact results when given exact
+arguments.  I think, however, that expt should be explicitly
+required to return exact results when both arguments are
+exact, and the second argument is an integer.
+
+Thus (expt 5 -3) would be required to evaluate to 1/125,
+but (expt 125 1/3) would be allowed but not required to
+evaluate to 5.
+
+&gt; 16.  About magnitude: Following Kahan, I think it should be required  
+&gt; that
+&gt;      (magnitude z) =&gt; +inf.0
+&gt;      if either the real or imaginary part of z is infinite (even if  
+&gt; the other part is a NaN).  Here Kahan is following the argument that,  
+&gt; if the real or imaginary part is infinite, you would get the same  
+&gt; answer no matter the (finite) value of the other part, so you should  
+&gt; give that answer even if the other part is infinite or NaN.
+
+I agree with you and Kahan on this.
+
+Will
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00405.html">Re: Questions about srfi-77 Generic Arithmetic</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00407.html">Re: Questions about srfi-77 Generic Arithmetic</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00433.html">Re: div and mod.</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00407.html">Re: Questions about srfi-77 Generic Arithmetic</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00406"><strong>Date</strong></a></li>
+<li><a href="threads.html#00406"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

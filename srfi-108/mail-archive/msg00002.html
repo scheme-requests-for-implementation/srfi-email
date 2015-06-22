@@ -1,0 +1,202 @@
+<!-- MHonArc v2.6.16 -->
+<!--X-Subject: Re: SRFI&#45;108/SRFI&#45;109 special characters -->
+<!--X-From-R13: Bre Pbguare <creNobguare.pbz> -->
+<!--X-Date: Sun, 11 Nov 2012 03:47:33 +0000 (UTC) -->
+<!--X-Message-Id: 509F1FBD.5060303@bothner.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 509E85D4.1050404@bothner.com -->
+<!--X-Reference: 20121110.150217.969976734314565582.shiro@lava.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: SRFI-108/SRFI-109 special characters</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00001.html">Date Prev</a>][<a href="msg00003.html">Date Next</a>][<a href="msg00001.html">Thread Prev</a>][<a href="msg00003.html">Thread Next</a>][<a href="maillist.html#00002">Date Index</a>][<a href="threads.html#00002">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: SRFI-108/SRFI-109 special characters</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-108@DOMAIN.HIDDEN">srfi-108@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: SRFI-108/SRFI-109 special characters</li>
+<li><em>From</em>: Per Bothner &lt;<a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 10 Nov 2012 19:47:09 -0800</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-108@DOMAIN.HIDDEN">srfi-108@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20121110.150217.969976734314565582.shiro@DOMAIN.HIDDEN">20121110.150217.969976734314565582.shiro@xxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:509E85D4.1050404@DOMAIN.HIDDEN">509E85D4.1050404@xxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20121110.150217.969976734314565582.shiro@DOMAIN.HIDDEN">20121110.150217.969976734314565582.shiro@xxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mozilla/5.0 (X11; Linux x86_64; rv:16.0) Gecko/20121029 Thunderbird/16.0.2</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+On 11/10/2012 05:02 PM, Shiro Kawai wrote:
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+There's one thing that confused me, though.
+(Maybe because of the arrangement of the document).
+</pre></blockquote><pre style="margin: 0em;">
+
+Yes - there is a lot of information and ideas in the document,
+and not always presented as clearly as it could be.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+The document appears to propose a new literal syntax, for
+it mentions adding new literals for new types and then
+goes on to compare it to srfi-10.  However, what follows
+is not a syntax of literals, but a new reader syntax
+of a list, with a certain assumed format and function.
+(Well, it's quasi-literal, so it is not exactly about literals,
+nevertheless I found the flow of discussion a bit confusing.)
+</pre></blockquote><pre style="margin: 0em;">
+
+Correct.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+The difference between literals and proposed quasi-literals
+is mostly visible when they appear within literals.  Srfi-10
+works for those cases:
+
+   '(1 2 #,(URL &quot;<a  rel="nofollow" href="http://example.com&quot">http://example.com&quot</a>;))  =&gt; list of 1, 2 and URL object
+
+   (case x
+     ((#,(char-code #\a) #,(char-code #\b)) (do-a-or-b x))
+     ...)
+
+    ;; Suppose #,(char-code #\a) reads as the ascii code value
+    ;; of #\a.
+
+I assume srfi-108 can't be used for these contexts.
+</pre></blockquote><pre style="margin: 0em;">
+
+The former is of course easy:
+
+  `(1 2 `#&amp;URL[<a  rel="nofollow" href="http://example.com">http://example.com</a>])
+
+The case example doesn't seem terribly convincing.  Or perhaps
+it can be viewed as an argument for an &quot;evaluating case&quot; that
+care the clauses take expressions rather than datums.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Srfi-10 can also be used as an external representation of
+objects of user-defined datatypes, since if you define an
+appropriate writer, you can make those objects written out
+and then read back to get the object of the same type/attributes.
+I assume srfi-108 doesn't work like that---if you write an
+object in srfi-108 syntax and then read it back, you'll get
+a list ($quasi-value$ ...), not the object of the written type.
+</pre></blockquote><pre style="margin: 0em;">
+
+Right.  The main reason SRFI-108 defines quasi-literal rather
+than true literals is covered (very tersely) in the paragraph
+starting with &quot;SRFI-10 has a number of problems&quot;: For modularity.
+R6RS and R7RS are moving Scheme towards static bindings and
+modules/libraries.  You can important a macro from a library
+but there is no support for importing reader syntax.  It's
+valuable to be able to import type-specific concise syntax
+from a library.  Another problem is that SRFI-10 doesn't
+support unquoting for or all of the components so it doesn't
+handle quasi-quotation, which I think is important.    Finally,
+the fact that SRFI-10 *does* change the reader syntax leads
+to some security and control issues which it's not clear
+how to deal with.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+The &quot;Readtable literals&quot; section kind of opens the door for
+implementations to make srfi-108 work like true literals, but
+if that's the purpose, it needs more explanations.  For
+example, the resulting value of $quasi-value$ must be self-evaluating
+object, otherwise the following expression will behave differently
+whether the syntax is converted to objects at read-time or not.
+
+    (list #&amp;myobj[xyz])
+</pre></blockquote><pre style="margin: 0em;">
+
+True - there are some issues there.  Readtime expansion works
+best for objects that are self-evaluating.  Either that, readtime
+expansion would have to be context-dependent - maybe disabled
+when reading by a Scheme parser, but not for a top-level call
+to read.  Somewhat ugly - but then I think the way Scheme and
+Lisp handle quote vs evaluation is awkward to say the least.
+SRFI-10 or any other read-time syntax has same issue:
+#,(URL &quot;<a  rel="nofollow" href="http://example.com&quot">http://example.com&quot</a>;) needs to be a &lt;constant&gt;.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+To allow read-time object construction, it might also be better
+to mention that the value of quasi-liteal without unquoting
+shouldn't be affected by the dynamic environment---it must yield
+the same value whenever the quasi-literal is evaluated (it also
+consistency in whether the value is constructed at macro-expansion
+time or at evaluation time.)
+
+I felt that it may be easier to mention at first that srfi-108
+is really about a shorthand notation of an S-expression for
+calling a constructor.   It can compare to literal syntax
+like srfi-10, but it would also be nice to refer to the
+difference between quasi-literals and literals.
+</pre></blockquote><pre style="margin: 0em;">
+
+That makes sense.
+--
+	--Per Bothner
+per@xxxxxxxxxxx   <a  rel="nofollow" href="http://per.bothner.com/">http://per.bothner.com/</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00003" href="msg00003.html">Literals vs Quasi-literals (Was: SRFI-108/SRFI-109 special characters)</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00000" href="msg00000.html">SRFI-108/SRFI-109 special characters</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+<li><strong><a name="00001" href="msg00001.html">Re: SRFI-108/SRFI-109 special characters</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00001.html">Re: SRFI-108/SRFI-109 special characters</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00003.html">Literals vs Quasi-literals (Was: SRFI-108/SRFI-109 special characters)</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00001.html">Re: SRFI-108/SRFI-109 special characters</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00003.html">Literals vs Quasi-literals (Was: SRFI-108/SRFI-109 special characters)</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00002"><strong>Date</strong></a></li>
+<li><a href="threads.html#00002"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

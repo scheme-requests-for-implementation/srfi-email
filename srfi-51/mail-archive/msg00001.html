@@ -1,0 +1,165 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: extended caller -->
+<!--X-From-R13: fbb <gvyqrNgvyqr.pb.xe> -->
+<!--X-Date: Sat, 31 Jan 2004 13:59:18 +0100 (MET) -->
+<!--X-Message-Id: 8765es9srl.fsf@tilde.co.kr -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>extended caller</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00000.html">Date Prev</a>][<a href="msg00002.html">Date Next</a>][<a href="msg00000.html">Thread Prev</a>][<a href="msg00002.html">Thread Next</a>][<a href="maillist.html#00001">Date Index</a>][<a href="threads.html#00001">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>extended caller</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-51@DOMAIN.HIDDEN">srfi-51@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: extended caller</li>
+<li><em>From</em>: soo &lt;<a href="mailto:tilde@DOMAIN.HIDDEN">tilde@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: 31 Jan 2004 22:01:18 +0900</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-51@DOMAIN.HIDDEN">srfi-51@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Sender</em>: soo &lt;<a href="mailto:soo@DOMAIN.HIDDEN">soo@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Gnus/5.09 (Gnus v5.9.0) Emacs/21.2</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+The &lt;caller&gt; of the current spec of rest-values is only a procedure.  If the
+&lt;caller&gt; can be any scheme expression like arg-and(s) macros, the rest-values
+will be more useful.
+Modifying the spec of rest-values makes it possible:
+  from
+  (REST-VALUES [&lt;caller&gt;] &lt;rest-list&gt; [&lt;args-number-limit&gt;] &lt;default&gt; ...)
+  to
+  (REST-VALUES [&lt;caller&gt;] &lt;rest-list&gt; [&lt;args-number-limit&gt; &lt;default&gt; ...])
+
+The following is the modified version of rest-values.  How about this?
+
+(define (rest-values rest-list . default-list)
+  (let* ((caller (if (or (null? default-list)
+			 (boolean? (car default-list))
+			 (number? (car default-list)))
+		     '()
+		     (if (string? rest-list) rest-list (list rest-list))))
+	 (rest (if (null? caller) rest-list (car default-list)))
+	 (rest-length (if (list? rest)
+			  (length rest)
+			  (error &quot;bad rest list&quot; rest
+				 `(rest-values ,rest-list ,@default-list))))
+	 (default (if (null? caller) default-list (cdr default-list)))
+	 (number
+	  (and (not (null? default))
+	       (let ((d (car default)))
+		 (or (and (number? d)
+			  (or (and (&gt; rest-length (abs d))
+				   (if (string? caller)
+				       (error caller rest
+					      `(&lt;= (length ,rest) ,(abs d)))
+				       (apply error &quot;too many arguments&quot; rest
+					      `(&lt;= (length ,rest) ,(abs d))
+					      caller)))
+			      (and (&gt; (length (cdr default)) (abs d))
+				   (error &quot;too many defaults&quot; (cdr default)
+					  `(rest-values ,rest-list
+							,@default-list)))
+			      d))
+		     (and (eq? d #f) 'false)
+		     (eq? d #t)
+		     (error &quot;neither number nor boolean&quot; d
+			    `(rest-values ,rest-list ,@default-list))))))
+	 (default (if number (cdr default) default))
+	 (default-length (length default)))
+    (if (or (and (number? number) (&gt; number 0))
+	    (eq? number #t))
+	(let ((number (min rest-length default-length)))
+	  (for-each (lambda (r d)
+		      (cond
+		       ((list? d)
+			(if (not (member r d))
+			    (if (string? caller)
+				(error caller r `(member ,r ,d))
+				(apply error &quot;unmatched argument&quot;
+				       r `(member ,r ,d) caller))))
+		       ((pair? d)
+			(let ((p (cdr d)))
+			  (if (procedure? p)
+			      (if (not (p r))
+				  (if (string? caller)
+				      (error caller r `(,p ,r))
+				      (apply error &quot;incorrect argument&quot;
+					     r `(,p ,r) caller)))
+			      (error &quot;bad predicate&quot; p
+				     `(rest-values ,rest-list
+						   ,@default-list)))))
+		       (else
+			(error &quot;bad default&quot; d
+			       `(rest-values ,rest-list ,@default-list)))))
+		    (take rest number) (take default number))
+	  (apply values
+		 (if (&gt; default-length rest-length)
+		     (append rest
+			     (map (lambda (x)
+				    (if (pair? x)
+					(car x)
+					(error &quot;bad default&quot; x
+					       `(rest-values ,rest-list
+							     ,@default-list))))
+				  (list-tail default rest-length)))
+		     rest)))
+	(apply values (if (&gt; default-length rest-length)
+			  (append rest (list-tail default rest-length))
+			  rest)))))
+-- 
+INITTERM
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00000.html">Revision of SRFI 51 available</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00002.html">SRFI 51 revision available</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00000.html">Revision of SRFI 51 available</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00002.html">SRFI 51 revision available</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00001"><strong>Date</strong></a></li>
+<li><a href="threads.html#00001"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

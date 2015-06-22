@@ -1,0 +1,246 @@
+<!-- MHonArc v2.6.16 -->
+<!--X-Subject: Re: Proposal: make $ serve as GROUP, leave \ to always be SPLIT -->
+<!--X-From-R13: "Rnivq O. Iurryre" <qjurryreNqjurryre.pbz> -->
+<!--X-Date: Sat,  4 May 2013 05:13:34 +0200 (MST) -->
+<!--X-Message-Id: E1UYSuh&#45;0001G2&#45;Sv@rmm6prod02.runbox.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: CALJxei+hNybSvtz5=_=tMsZ4krU&#45;5TVOu1VnRLz2Byjsp6p81A@mail.gmail.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Proposal: make $ serve as GROUP, leave \ to always be SPLIT</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00133.html">Date Prev</a>][<a href="msg00135.html">Date Next</a>][<a href="msg00120.html">Thread Prev</a>][<a href="msg00135.html">Thread Next</a>][<a href="maillist.html#00134">Date Index</a>][<a href="threads.html#00134">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Proposal: make $ serve as GROUP, leave \ to always be SPLIT</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &quot;cben&quot; &lt;<a href="mailto:cben@DOMAIN.HIDDEN">cben@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Proposal: make $ serve as GROUP, leave \ to always be SPLIT</li>
+<li><em>From</em>: &quot;David A. Wheeler&quot; &lt;<a href="mailto:dwheeler@DOMAIN.HIDDEN">dwheeler@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 03 May 2013 23:13:31 -0400 (EDT)</li>
+<li><em>Cc</em>: &quot;srfi-110&quot; &lt;<a href="mailto:srfi-110@DOMAIN.HIDDEN">srfi-110@xxxxxxxxxxxxxxxxx</a>&gt;, &quot;readable-discuss&quot; &lt;<a href="mailto:readable-discuss@DOMAIN.HIDDEN">readable-discuss@xxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-110@DOMAIN.HIDDEN">srfi-110@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:CALJxei%2BhNybSvtz5%3D_%3DtMsZ4krU-5TVOu1VnRLz2Byjsp6p81A@DOMAIN.HIDDEN">CALJxei+hNybSvtz5=_=tMsZ4krU-5TVOu1VnRLz2Byjsp6p81A@xxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Reply-to</em>: <a href="mailto:dwheeler@DOMAIN.HIDDEN">dwheeler@xxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>On Thu, 2 May 2013 01:46:16 -0700, Beni Cherniavsky-Paskin &lt;cben@xxxxxxxxxxxx&gt; wrote:
+
+&gt; This is kinda late to say this, and I'm not at all sure it's an
+&gt; improvement.  But the thought won't leave me, so better now than never...
+
+I'm a little skeptical, but it's important that we think this through *now* vs. later.
+
+
+&gt; \\'s dual duty is nagging me.  Intuitively, I grasp the operators like this:
+&gt; - SPLIT prevents creation of lists (&quot;a \\ b&quot;) or at least fractures them
+&gt; (&quot;a b \\ c d&quot;).
+&gt; - GROUP's sole reason[*] for existence is to express a list of child lines.
+&gt; - SUBLIST (usually) creates lists.
+
+&gt; Which leads me to feel that \\'s two meanings are opposite &#xE2; SPLIT is
+&gt; &quot;anti-list&quot;, GROUP is &quot;pro-list&quot;.
+
+Well... that's not really the original intent.
+
+But let's go with that thought and see where it takes us!
+
+&gt; =&gt; What if we make a lone $ on a line serve as GROUP, making $ always &quot;pro-list&quot;?
+&gt; Then we'd write:
+&gt; 
+&gt; let
+&gt; ! $
+&gt; ! ! x foo()
+&gt; ! ! y bar()
+&gt; ! do-stuff(x y ...)
+&gt; 
+&gt; [this currently isn't legal (trailing $), and would produce a spurious (((x
+&gt; ...) (y ...))) level if it were legal.]
+
+One immediately consequence is that we could not to later add semantics for &quot;$&quot; at the end of the line, such as the &quot;Beni lite&quot; semantics.  Currently a &quot;$&quot; at the end-of-the-line is an error, making it easy to define a later extension using it without fear of interfering with existing sweet-expressions.
+
+That's not a disaster, but worth noting.
+
+&gt; I don't really think the &quot;pro-list vs anti-list&quot; argument is critical; the
+&gt; more important criteria are:
+&gt; * Can this unify the handling of leading $ vs head $ rest?
+&gt;   If this can reduce us from 3 central constructs to 2, it's a major win.
+&gt;   If leading $ remains a special case, just subtler, maybe it's a loss.
+
+I don't think so.  From a quick look at the BNF (the it_expr production), it looks like it'd create a slightly more complicated BNF.
+
+Currently leading GROUP_SPLIT and &quot;scomments&quot; (e.g., #|...|#) are actually handled by exactly the same branch of the same rule; there's actually no difference in how they work.  If we make *only* &quot;$&quot; do this, we'd have to have more branches to distinguish them, because a leading scomment like &quot;#;(x y) z&quot; would have to be treated differently than &quot;$ z&quot;.  And if it's *added* to &quot;$&quot;, while retaining leading \\ semantics, then we'd have copy several BNF lines to make leading &quot;$&quot; do that as well with no obvious reason to allow both.  In either case, it creates more sub-branches of the BNF.
+
+I think it's very *doable*, but I don't think it &quot;unifies&quot; anything, and it eliminates certain symmetries discussed below.
+
+
+
+&gt; * Is this consistent with $ in haskell?  [don't know if this Q even means anything]
+
+In Haskell, &quot;$&quot; *requires* a left-hand-side.  So &quot;$&quot; at the beginning of a line is an extension beyond Haskell.
+
+You can blame me for that extension; my primary goal was to make it easy to write one-line lists of one element, where the element is also a list.  This happens in some common constructs like &quot;let&quot; and &quot;do&quot;.  It also makes the &quot;$&quot; construct more regular:
+
+a b $ c d =&gt; (a b (c d))
+a $ b c d =&gt; (a (b c d))
+$ a b c d =&gt; ((a b c d))
+
+Presumably, if you start an expression with a &quot;$&quot; you intend for something different to happen, vs:
+a b c d =&gt; (a b c d)
+
+I *have* used it in real code, so it's not an unusable feature.
+
+&gt; Another issue I see with the current leading $ behavior is this
+&gt; inconsistency:
+&gt; 
+&gt; foo (a b) ==&gt; (foo (a b))
+&gt; foo $ a b ==&gt; (foo (a b))
+&gt; (a b) ==&gt; (a b)
+&gt; $ a b ==&gt; ((a b))  ; huh?!
+
+Not inconsistent.  If you view the $ operator as &quot;add the RHS as one element to the end of LHS list&quot;, and presume that the LHS is () if it's empty, then that's the semantics you end up with.
+
+a b ==&gt; (a b)
+$ (a b) ==&gt; ((a b))
+
+&gt; foo a ==&gt; (foo a)
+&gt; foo $ a ==&gt; (foo a)
+&gt; a ==&gt; a
+&gt; $ a ==&gt; (a)  ; huh?!
+
+Again, the &quot;$&quot; makes the RHS the &quot;last element of the list on the left-hand-side... even if the left-hand-side list is empty.&quot;
+
+&gt; In other words, I feel that since &quot;$ ...&quot; always produces one object
+&gt; (whether atom or list), it should be exempt from wrapping in a list if &quot;$
+&gt; ...&quot; is the first thing on a line.
+&gt; This implies that &quot;$ $ $ a&quot; ==&gt; a.  I'm not sure I love that, but that's
+&gt; how &quot;\\ \\ \\ a&quot; works now.
+
+True, but we don't need TWO no-op operators.
+
+
+&gt; [*] I've  ignored the do-nothing leading \\ usage for stylisitically
+&gt; indenting some things, e.g. Arc's flat if and keyword args:
+&gt; 
+&gt; if
+&gt; ! cond1
+&gt; ! \\ then1 ...
+&gt; func
+&gt; ! kw:
+&gt; ! \\ arg ...
+&gt; 
+&gt; IIRC this is currently ascribed to GROUP's disappearing act, but the same
+&gt; effect with \\ could also be explained as a SPLIT with nothing on one side.
+
+Absolutely.
+
+&gt; Alternatively, you can drop the behavior from \\ and use $ instead:
+&gt; 
+&gt; if
+&gt; ! cond1
+&gt; ! $ then1 ...
+&gt; func
+&gt; ! kw:
+&gt; ! $ arg ...
+&gt; 
+&gt; but that'd miss the symmetry that now exists with one-liner form:
+&gt; 
+&gt; if
+&gt; ! cond1 \\ then1 ...
+&gt; func
+&gt; ! kw: \\ arg ...
+
+Right.  There's another symmetry, also; note that these are equivalent:
+foo
+! a
+! \\
+! b
+&lt;==&gt;
+foo
+! a \\ b
+
+It even works at the top level, e.g.:
+cos(0)
+\\
+sin(0)
+&lt;==&gt;
+cos(0) \\ sin(0)
+
+... which is intriguing because we don't even have to store state to make it work, it just falls out from the rules.
+
+These symmetries fall out because of the way GROUP and SPLIT are defined... moving their functions to a different operator would make the symmetries fail.
+
+
+&gt; P.S. Cosmetic points:
+&gt; 
+&gt; - We'd lose the diagonal look of \\ which felt appropriate for GROUP.
+
+Yes.  Which is why it's that character sequence.
+
+&gt; + The remaining sense of \\ will be familiar to TeX users ;-|
+&gt;   Curiously, the blank-line semantics (comment = not blank) also match.
+
+--- David A. Wheeler
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00135" href="msg00135.html">Re: [Readable-discuss] Proposal: make $ serve as GROUP, leave \ to always be SPLIT</a></strong>
+<ul><li><em>From:</em> Arne Babenhauserheide</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00120" href="msg00120.html">Proposal: make $ serve as GROUP, leave \\ to always be SPLIT</a></strong>
+<ul><li><em>From:</em> Beni Cherniavsky-Paskin</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00133.html">Re: spaces and tabs confused?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00135.html">Re: [Readable-discuss] Proposal: make $ serve as GROUP, leave \ to always be SPLIT</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00120.html">Proposal: make $ serve as GROUP, leave \\ to always be SPLIT</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00135.html">Re: [Readable-discuss] Proposal: make $ serve as GROUP, leave \ to always be SPLIT</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00134"><strong>Date</strong></a></li>
+<li><a href="threads.html#00134"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

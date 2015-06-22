@@ -1,0 +1,179 @@
+<!-- MHonArc v2.6.16 -->
+<!--X-Subject: Re: SRFI 105: Curly&#45;infix&#45;expressions -->
+<!--X-From-R13: "Rnivq O. Iurryre" <qjurryreNqjurryre.pbz> -->
+<!--X-Date: Tue, 28 Aug 2012 01:11:23 +0000 (UTC) -->
+<!--X-Message-Id: E1T6AKv&#45;00020J&#45;Ma@fenris.runbox.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: CAF+kUQWBRMkf48gjQdp9GoEhiv9t209=f_t=iWtxCd5m_Zv5zw@mail.gmail.com -->
+<!--X-Reference: 20120826.213139.1108322852317673718.shiro@lava.net -->
+<!--X-Reference: E1T5yPU&#45;0002vK&#45;HK@fenris.runbox.com -->
+<!--X-Reference: 20120827.132321.714642731706132049.shiro@lava.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: SRFI 105: Curly-infix-expressions</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00027.html">Date Prev</a>][<a href="msg00029.html">Date Next</a>][<a href="msg00027.html">Thread Prev</a>][<a href="msg00033.html">Thread Next</a>][<a href="maillist.html#00028">Date Index</a>][<a href="threads.html#00028">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: SRFI 105: Curly-infix-expressions</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:shiro@DOMAIN.HIDDEN">shiro@xxxxxxxx</a></li>
+<li><em>Subject</em>: Re: SRFI 105: Curly-infix-expressions</li>
+<li><em>From</em>: &quot;David A. Wheeler&quot; &lt;<a href="mailto:dwheeler@DOMAIN.HIDDEN">dwheeler@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 27 Aug 2012 21:11:21 -0400 (EDT)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-105@DOMAIN.HIDDEN">srfi-105@xxxxxxxxxxxxxxxxx</a>, <a href="mailto:almkglor@DOMAIN.HIDDEN">almkglor@xxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-105@DOMAIN.HIDDEN">srfi-105@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20120827.132321.714642731706132049.shiro@DOMAIN.HIDDEN">20120827.132321.714642731706132049.shiro@xxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:CAF%2BkUQWBRMkf48gjQdp9GoEhiv9t209%3Df_t%3DiWtxCd5m_Zv5zw@DOMAIN.HIDDEN">CAF+kUQWBRMkf48gjQdp9GoEhiv9t209=f_t=iWtxCd5m_Zv5zw@xxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20120826.213139.1108322852317673718.shiro@DOMAIN.HIDDEN">20120826.213139.1108322852317673718.shiro@xxxxxxxx</a>&gt; &lt;<a href="mailto:E1T5yPU-0002vK-HK@DOMAIN.HIDDEN">E1T5yPU-0002vK-HK@xxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20120827.132321.714642731706132049.shiro@DOMAIN.HIDDEN">20120827.132321.714642731706132049.shiro@xxxxxxxx</a>&gt;</li>
+<li><em>Reply-to</em>: <a href="mailto:dwheeler@DOMAIN.HIDDEN">dwheeler@xxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Shiro Kawai:
+&gt; My concern is actually in the &quot;implementation dependent&quot; part.
+&gt; I generally like specs that allows implementations to explore
+&gt; more possibilities, but in this case, it's tempting to assume it
+&gt; would work similarly as `{,x op ,y op ,z}; some implementation
+&gt; supports it and some not may cause more confusion than other
+&gt; implementation-dependent edge-case extensions.
+
+Fair enough.  Our current implementation just uses &quot;eq?&quot; and requires them to be symbols.
+
+It'd be easy for it to *say* &quot;equal?&quot;, and recommend checking for cycles.  That does complicate the implementation slightly, though not badly. R6RS, and R7RS draft 7, have equal? check for cycles but don't say what happens if there ARE cycles :-(, which makes it hard to use portably.  R5RS and before explicitly don't claim cycle checking. For portability the sample implementation would probably have to roll its own check, to make sure it actually works widely on real systems.
+
+Do you think it's worth supporting &quot;equal?&quot;?  It is slightly more complicated to implement (it's hard to beat &quot;eq?&quot;).  However, it would be much more general, e.g., it'd allow the use of ,op.
+
+&gt; OTOH, I do have applications that already use {} for different
+&gt; custom semantics, and if I support C-exprs in Gauche I'd like to
+&gt; have a way to switch the lexical syntax, at least per-source-file
+&gt; basis.   It's inevitable that I have to deal with sources with
+&gt; different lexical syntax, so curly-foo convention won't work.
+&gt; 
+&gt; I'd like to avoid using procedures to switch, since the timing
+&gt; that the evaluation takes effect to the reader is ambiguous,
+&gt; especially when batch-compiling and incremental compiling are
+&gt; mixed.   I have enough headache in Common Lisp.
+
+I completely sympathize.  But it's not obvious what the alternatives would be.  Infix is such a common circumstance that it's worth burning a single character for, and they really need to be paired.  {..} is literally the only ASCII symbol pair left.  #{...} is uglier, and other implementations use that up too so it's no advantage.
+
+&gt; Curly-infix-read allows you to read a source with C-exprs,
+&gt; but you _have_to_ know that the source contains C-exprs beforehand.
+&gt; Same as the procedure 'load', or module imports, even if they have
+&gt; switches.
+
+My hope in the long term is that it's just standard on any Scheme, just like supporting &quot;(...)&quot; is supported everywhere.  I can hope, right :-)?
+
+
+&gt; R6RS #!-switch is the closest I can think of that can make a
+&gt; source file self-descriptive about the lexical syntax it uses.
+&gt; Did you think about using something like #!c-expr ?
+
+A switch might work, though I think the #! syntax for switches is absurd; the #! sequence is ALREADY reserved by most Unix/Linux systems, and they will not change it for Scheme :-(.
+
+&gt; Of course you can argue that it's Gauche's responsibility to
+&gt; provide a switch to non-standard syntax, e.g. #!gauche-curly-syntax,
+&gt; which is reasonable.
+
+That's exactly what I'll argue.  If there's a way we can simplify transition, though, I'd love to hear it.
+
+&gt;  But the srfi suggests some mechanisms for
+&gt; implementations to extend c-expr (nfx and transform-mixed-infix),
+&gt; which looks to me very ad-hoc.
+
+&gt;  I'd rather like to hear the srfi says:
+&gt; 
+&gt;   &quot;This is C-expr: 0, 1, 2-ary and simple cases.  Other cases
+&gt;    are undefined and we don't care.  It's up to implementations what
+&gt;    they want to do in other cases by whatever underlying mechanism
+&gt;    they like.  However, when you have multiple extensions, we suggest
+&gt;    using #!c-expr and alike to make the source self-descriptive
+&gt;    and easy to exchange between implementations.&quot;
+
+The real intent was, if it's not 0-, 1-, 2-, or simple, it returns (nfx LIST).
+
+&gt; &gt; The &quot;transform-mixed-infix&quot; should NEVER be changed by the user, as documented in the SRFI.  That is intended as a trapdoor for future SRFIs.  Note that &quot;transform-mixed-infix&quot; is NOT a requirement, it's just that an implementation MAY define it.
+&gt; 
+&gt; It's kind of contradictory, for in Lisp languages users and language
+&gt; developers (including SRFI designers) overlap largely.   I don't think
+&gt; it's necessary to mention a specific procedure (transform-mixed-infix)
+&gt; inside the normative srfi document.   If future srfi writers need to
+&gt; extend srfi-105, they can do so no matter whether transform-mixed-infix
+&gt; hook is provided or not.  The srfi-105 reference implementation can
+&gt; provide it, and if implementor sees it's useful then they would
+&gt; follow the convention; the future srfi writers can say &quot;this reference
+&gt; implementation assumes the hook provided by srfi-105's reference
+&gt; implementation.&quot;
+
+Okay, that's good advice.  We could easily do that.  In fact, I'd be glad to drop &quot;transform-mixed-infix&quot;; it's clearly causing confusion with no real benefit.  We certainly never use it.
+
+So I'd propose a much simpler rule: For a mixed curly-infix list, the reader replies with &quot;(nfx LIST)&quot;.  That is in fact the rule in the &quot;readable&quot; list. When we create the SRFI we thought these extras might help, but obviously not :-).  The point of the &quot;nfx&quot; symbol is to give application developers a chance to process it further.
+
+--- David A. Wheeler
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00033" href="msg00033.html">Re: SRFI 105: Curly-infix-expressions</a></strong>
+<ul><li><em>From:</em> John Cowan</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00017" href="msg00017.html">Re: SRFI 105: Curly-infix-expressions</a></strong>
+<ul><li><em>From:</em> Alan Manuel Gloria</li></ul></li>
+<li><strong><a name="00018" href="msg00018.html">Re: SRFI 105: Curly-infix-expressions</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+<li><strong><a name="00021" href="msg00021.html">Re: SRFI 105: Curly-infix-expressions</a></strong>
+<ul><li><em>From:</em> David A. Wheeler</li></ul></li>
+<li><strong><a name="00027" href="msg00027.html">Re: SRFI 105: Curly-infix-expressions</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00027.html">Re: SRFI 105: Curly-infix-expressions</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00029.html">Re: SRFI 105: Curly-infix-expressions</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00027.html">Re: SRFI 105: Curly-infix-expressions</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00033.html">Re: SRFI 105: Curly-infix-expressions</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00028"><strong>Date</strong></a></li>
+<li><a href="threads.html#00028"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,157 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: (stream&#45;cons (1) stream&#45;null) => stream -->
+<!--X-From-R13: OaqerinaFbaqre <naqerNurg.oebja.rqh> -->
+<!--X-Date: Sat, 11 Nov 2006 15:19:32 +0100 (MET) -->
+<!--X-Message-Id: Pine.SOC.4.64.0611110836570.5034@oow.het.brown.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 45550D79.9050006@cs.brandeis.edu -->
+<!--X-Reference: 45550F67.7020202@cs.brandeis.edu -->
+<!--X-Reference: Pine.SOC.4.64.0611101901500.3905@oow.het.brown.edu -->
+<!--X-Reference: 45553389.90606@cs.brandeis.edu -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: (stream-cons (1) stream-null) =&gt; stream</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00022.html">Date Prev</a>][<a href="msg00024.html">Date Next</a>][<a href="msg00021.html">Thread Prev</a>][<a href="msg00024.html">Thread Next</a>][<a href="maillist.html#00023">Date Index</a>][<a href="threads.html#00023">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: (stream-cons (1) stream-null) =&gt; stream</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: David Van Horn &lt;<a href="mailto:dvanhorn@DOMAIN.HIDDEN">dvanhorn@xxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: (stream-cons (1) stream-null) =&gt; stream</li>
+<li><em>From</em>: AndrevanTonder &lt;<a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 11 Nov 2006 09:16:12 -0500 (EST)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-40@DOMAIN.HIDDEN">srfi-40@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-40@DOMAIN.HIDDEN">srfi-40@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:45553389.90606@DOMAIN.HIDDEN">45553389.90606@xxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:45550D79.9050006@DOMAIN.HIDDEN">45550D79.9050006@xxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:45550F67.7020202@DOMAIN.HIDDEN">45550F67.7020202@xxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:Pine.SOC.4.64.0611101901500.3905@DOMAIN.HIDDEN">Pine.SOC.4.64.0611101901500.3905@xxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:45553389.90606@DOMAIN.HIDDEN">45553389.90606@xxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+On Fri, 10 Nov 2006, David Van Horn wrote:
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><tt>[*] You might want to delay the cons for things like referring to the current 
+</tt><tt>stream, but this is precisely what stream-delay is used for in the examples 
+</tt><tt>of the SRFI:
+</tt><pre style="margin: 0em;">
+
+(define from0
+ (let loop ((x 0))
+   (stream-delay
+    (stream-cons x (loop (+ x 1))))))
+</pre></blockquote><pre style="margin: 0em;">
+
+</pre><tt>By the way, the document has some issues and inconsistencies that make 
+</tt><tt>it confusing to the uninitiated.  This example could perfectly well also be 
+</tt><tt>written as
+</tt><pre style="margin: 0em;">
+
+ (define from0
+  (let loop ((x 0))
+    (stream-cons x (loop (+ x 1)))))
+
+</pre><tt>Having the stream-delay there will do no harm, but is not necessary. 
+</tt><tt>Illustrating the usefulness of stream-delay by using an example where it is 
+</tt><tt>not needed is not helpful at all.  The same goes for the countdown 
+</tt><tt>examples in the rationale, which have an unnecessary (delay (force ---)).
+</tt><pre style="margin: 0em;">
+
+The primitive (stream-delay ---) is really supposed to correspond to
+</pre><tt>the (delay (force ---)) mentioned in the rationale section that reproduces the 
+</tt><tt>meaning of SML/NJ &quot;lazy&quot; and SRFI-45 &quot;lazy&quot;.  The reference 
+</tt><tt>implementation uses srfi-45 (lazy ---) instead of (delay (force ---)).
+</tt><pre style="margin: 0em;">
+This is required for space safety.
+
+</pre><tt>In my opinion, the usage of stream-delay is never adequately explained.  See 
+</tt><tt>srfi-45 for a more general explanation of the usage of the corresponding
+</tt><pre style="margin: 0em;">
+&quot;lazy&quot;.
+
+</pre><tt>Another inconsistency:  The rationale section refers to &quot;stream-define&quot;, which 
+</tt><tt>is never taken up in the specification (for good reason - stream-define is not 
+</tt><tt>a good abstraction).  The rationale section should be changed to use, instead 
+</tt><tt>of
+</tt><pre style="margin: 0em;">
+
+  (stream-define (f ---) ----)
+
+the correct
+
+  (define (f ---) (stream-delay -----))
+
+</pre><tt>The encoding of srfi-45, which corresponds to Wadler's, gives an easy 
+</tt><tt>recipe for any lazy data type (not just streams), and might clear up some 
+</tt><tt>confusion if read in conjuction with srfi-40.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>I would say that in its current form, the above inconsistencies subtract 
+</tt><tt>signficantly from the usefullness of the srfi-40 text.
+</tt><pre style="margin: 0em;">
+
+Cheers
+Andre
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00017" href="msg00017.html">(stream-cons (1) stream-null) =&gt; stream</a></strong>
+<ul><li><em>From:</em> David Van Horn</li></ul></li>
+<li><strong><a name="00018" href="msg00018.html">Re: (stream-cons (1) stream-null) =&gt; stream</a></strong>
+<ul><li><em>From:</em> David Van Horn</li></ul></li>
+<li><strong><a name="00019" href="msg00019.html">Re: (stream-cons (1) stream-null) =&gt; stream</a></strong>
+<ul><li><em>From:</em> AndrevanTonder</li></ul></li>
+<li><strong><a name="00021" href="msg00021.html">Re: (stream-cons (1) stream-null) =&gt; stream</a></strong>
+<ul><li><em>From:</em> David Van Horn</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00022.html">Re: (stream-cons (1) stream-null) =&gt; stream</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00024.html">stream? issue</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00021.html">Re: (stream-cons (1) stream-null) =&gt; stream</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00024.html">stream? issue</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00023"><strong>Date</strong></a></li>
+<li><a href="threads.html#00023"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

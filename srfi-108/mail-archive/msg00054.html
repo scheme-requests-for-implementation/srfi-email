@@ -1,0 +1,226 @@
+<!-- MHonArc v2.6.16 -->
+<!--X-Subject: optional user&#45;specified end&#45;delimiters -->
+<!--X-From-R13: Bre Pbguare <creNobguare.pbz> -->
+<!--X-Date: Tue, 16 Apr 2013 21:32:04 +0200 (MST) -->
+<!--X-Message-Id: 516DA727.109@bothner.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>optional user-specified end-delimiters</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00053.html">Date Prev</a>][<a href="msg00055.html">Date Next</a>][<a href="msg00053.html">Thread Prev</a>][<a href="msg00055.html">Thread Next</a>][<a href="maillist.html#00054">Date Index</a>][<a href="threads.html#00054">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>optional user-specified end-delimiters</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-108@DOMAIN.HIDDEN">srfi-108@xxxxxxxxxxxxxxxxx</a>, <a href="mailto:srfi-109@DOMAIN.HIDDEN">srfi-109@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: optional user-specified end-delimiters</li>
+<li><em>From</em>: Per Bothner &lt;<a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 16 Apr 2013 12:31:51 -0700</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-108@DOMAIN.HIDDEN">srfi-108@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Mozilla/5.0 (X11; Linux x86_64; rv:17.0) Gecko/20130402 Thunderbird/17.0.5</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+This is a proposed syntax for optional user-specified
+end tokens for both SRFI-108 and SRFI-109.
+First the proposal, then a discussion comparing alternatives.
+
+PROPOSAL
+
+A string quasi-literal may have an optional end-label,
+specified by a '!' followed by an label.  For example:
+
+&amp;!END{
+  &amp;|line1
+  &amp;|line2
+}!END
+
+Syntax:
+
+label ::= tagname-subsequent+
+
+It seems reasonable to allow an integer label, so we allow
+starting with a digit.  Thus for simplicity we also allow
+hyphen, underscore, or period.
+(In an unrelated change, I think tagname-subsequent should
+allow periods.  XML compatibility is one reason.)
+
+extended-string-literal ::= &quot;&amp;&quot; string-starttag?
+   &quot;{&quot; initial-ignored? string-literal-part* &quot;}!&quot; string-endtag?
+string-starttag ::= &quot;!&quot; label
+string-endtag ::= &quot;!&quot; label
+
+The string-endtag is required if the string-starttag is specified,
+and of course the labels must much.
+Note this chance means that an extended-string-literal must be
+followed by a delimiter or end of input.
+
+For a named quasi-literal, we can use the constructor-name as an end-tag:
+
+&amp;example{
+  &amp;|line1
+  &amp;|line2
+}example
+
+DISCUSSION: Should we require a final &quot;!&quot; if there is no
+explicit label?  Make it optional?  I.e.:
+
+}example!
+
+You can add an explicit label:
+
+&amp;example!23{
+  &amp;|line1
+  &amp;|line2
+}example!23
+
+or:
+
+&amp;example!23{
+  &amp;|line1
+  &amp;|line2
+}!23
+
+(It's not clear all these options are all that useful.)
+
+extended-datum-body ::=
+</pre><tt>    &quot;&amp;&quot; cname datum-start-label? &quot;{&quot; initial-ignored? 
+</tt><tt>named-literal-part* &quot;}&quot; datum-end-label?
+</tt><tt>  | &quot;&amp;&quot; cname datum-start-label? &quot;[&quot; expression* &quot;]{&quot; initial-ignored? 
+</tt><tt>named-literal-part* &quot;}&quot; datum-end-label?
+</tt><pre style="margin: 0em;">
+
+datum-start-label ::= &quot;!&quot; label
+datum-end-label :=
+    cname &quot;!&quot;?
+  | cname? &quot;!&quot; label
+
+If may occasionally be useful to make labels available for
+semantic information.  One  example is as implicit &quot;id&quot; attributes.
+To do that we modify the translation:
+
+&amp;cname!label[init-args...]{content}cname!label ==&gt;
+</pre><tt>  ($construct$:cname init-args... $&gt;&gt;$ &quot;content&quot; ($construct-label$ 
+</tt><tt>&quot;label&quot;))
+</tt><pre style="margin: 0em;">
+
+I.e. we add ($construct-label$ &quot;label&quot;) as the final operand
+of the $construct$:foo.  We also add a standard definition:
+  (define ($construct-label$ label) &quot;&quot;)
+This way the $construct-label$ by default becomes a no-op,
+including when using define-simple-constructor.
+
+ALTERNATIVES
+
+There are some plausible alternatives.  For example we can put the
+end-tag just before the right brace.
+For named constructors we could use:
+
+&amp;cname{
+line1
+line2
+&amp;cname}
+
+This works and parses unambiguously.  However, it's difficult
+to come up with a &quot;compatible&quot; syntax for strings,
+as discussed below.  Also, the start-of-literal and the
+end-of-literal both start with the same prefix &quot;&amp;cname&quot;, which
+makes visual scanning slower.
+
+We could add the &quot;!&quot; as also used for strings:
+
+&amp;!cname}
+
+or:
+
+&amp;cname!}
+
+The former appears incompatible with optional explicit
+labels (i.e. &quot;cname!tag&quot;), while the latter doesn't
+help much with the visual scanning problem.
+
+For strings we don't need the &quot;&amp;&quot; since the end-delimiter
+is required if specified:
+
+&amp;!END{
+  &amp;|line1
+  &amp;|line2
+!END}
+
+This is a little tricky to parse, since you don't know that !END if
+an end-tag until you see the right-brace.  (For the same reason
+it's not very human-readable.)  However, it doesn't feel very
+consistent with the named-constructor case.
+
+We could avoid this by requiring a '&amp;' before the end-tag, either:
+
+&amp;END}
+
+or:
+
+&amp;!END}
+
+The former feels inconsistent with named constructors (it seems
+to preclude explicit labels); the latter seems excessive.
+--
+	--Per Bothner
+per@xxxxxxxxxxx   <a  rel="nofollow" href="http://per.bothner.com/">http://per.bothner.com/</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00055" href="msg00055.html">Re: optional user-specified end-delimiters</a></strong>
+<ul><li><em>From:</em> John Cowan</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00053.html">optional end delimiters</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00055.html">Re: optional user-specified end-delimiters</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00053.html">optional end delimiters</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00055.html">Re: optional user-specified end-delimiters</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00054"><strong>Date</strong></a></li>
+<li><a href="threads.html#00054"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

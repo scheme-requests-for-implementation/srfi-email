@@ -1,0 +1,108 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: simpler srfi 45 implementation -->
+<!--X-From-R13: "Buvy Prjvt" <corjvtNtznvy.pbz> -->
+<!--X-Date: Wed, 14 Nov 2007 08:29:03 +0100 (MET) -->
+<!--X-Message-Id: y9l1wat9tfo.fsf@deinprogramm.de -->
+<!--X-Content-Type: multipart/alternative -->
+<!--X-Reference: 001001c825de$11b10380$2101a8c0@jos -->
+<!--X-Reference: 18233.39965.878836.78458@portuguese.ccs.neu.edu -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: simpler srfi 45 implementation</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00019.html">Date Prev</a>][<a href="msg00021.html">Date Next</a>][<a href="msg00022.html">Thread Prev</a>][<a href="msg00023.html">Thread Next</a>][<a href="maillist.html#00020">Date Index</a>][<a href="threads.html#00020">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: simpler srfi 45 implementation</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-45@DOMAIN.HIDDEN">srfi-45@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: simpler srfi 45 implementation</li>
+<li><em>From</em>: &quot;Phil Bewig&quot; &lt;<a href="mailto:pbewig@DOMAIN.HIDDEN">pbewig@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 14 Nov 2007 08:28:59 +0100</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-45@DOMAIN.HIDDEN">srfi-45@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:18233.39965.878836.78458@DOMAIN.HIDDEN">18233.39965.878836.78458@xxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:001001c825de%2411b10380%242101a8c0@DOMAIN.HIDDEN">001001c825de$11b10380$2101a8c0@jos</a>&gt;	 &lt;<a href="mailto:18233.39965.878836.78458@DOMAIN.HIDDEN">18233.39965.878836.78458@xxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Gnus/5.110006 (No Gnus v0.6) XEmacs/21.5-b28 (darwin)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+Here is the code for stream-type, extracted from the latest version of SRFI-45 (at this writing, that version has been submitted to the editors but has not yet appeared on <a rel="nofollow" href="http://srfi.schemers.org">srfi.schemers.org
+</a>).<br><br>&nbsp; (define-record-type (stream-type make-stream stream?)<br>&nbsp;&nbsp;&nbsp; (fields (mutable box stream-promise stream-promise!)))<br><br>&nbsp; (define-syntax stream-lazy<br>&nbsp;&nbsp;&nbsp; (syntax-rules ()<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ((stream-lazy exp) (make-stream (lambda () exp)))))
+<br><br>&nbsp; (define-syntax stream-delay<br>&nbsp;&nbsp;&nbsp; (syntax-rules ()<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ((stream-delay exp) (stream-lazy (make-stream (list exp))))))<br><br>&nbsp; (define (stream-force prom)<br>&nbsp;&nbsp;&nbsp; (let ((p (stream-promise prom)))<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (cond ((pair? p)&nbsp;&nbsp; (car p))
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ((stream? p)<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (let ((x (stream-force p)))<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (let ((content (stream-promise prom)))<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (if (pair? content) (cdr content)<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (begin (stream-promise! prom (list x)) x)))))
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ((procedure? p)<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (let ((prom* (p)))<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (if (not (pair? (stream-promise prom)))<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (if (stream? prom*)<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (begin (stream-promise! prom (stream-promise prom*))
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (stream-promise! prom* prom))<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (stream-promise! prom (list prom*))))<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (stream-force prom)))<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (else (error &#39;stream-force &quot;invalid promise&quot;)))))
+<br><br><div class="gmail_quote">On Nov 13, 2007 6:44 AM, Eli Barzilay &lt;<a rel="nofollow" href="mailto:eli@xxxxxxxxxxxx">eli@xxxxxxxxxxxx</a>&gt; wrote:<br><blockquote class="gmail_quote" style="border-left: 1px solid rgb(204, 204, 204); margin: 0pt 0pt 0pt 0.8ex; padding-left: 1ex;">
+<div class="Ih2E3d">On Nov 13, Jos Koot wrote:<br>&gt; Eli wrote the following version:<br>&gt;<br></div>&gt; [...]<br><div class="Ih2E3d">&gt; &nbsp; (define (force promise)<br>&gt; &nbsp; &nbsp; (let ([p (promise-p promise)])<br>&gt; &nbsp; &nbsp; &nbsp; (cond [(procedure? p)
+<br>&gt; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;(let ([promise* (p)])<br>&gt; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;(unless (pair? (promise-p promise))<br>&gt; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;(if (promise? promise*)<br>&gt; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;(begin (set-promise-p! promise (promise-p promise*))
+<br>&gt; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; (set-promise-p! promise* promise))<br>&gt; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;(set-promise-p! promise (list promise*))))<br>&gt; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;(force promise))]<br>&gt; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; [(pair? p) &nbsp; &nbsp;(car p)]
+<br>&gt; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; [(promise? p) (force p)] &lt;----<br>&gt; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; [else &nbsp; &nbsp; &nbsp; &nbsp; (error &quot;Invalid promise, contains&quot; p)]))))<br></div>&gt; [...]<br><br>Actually, I use a variation of that, which you can see at
+<br><br> &nbsp;<a rel="nofollow" href="http://svn.plt-scheme.org/plt/trunk/collects/lazy/promise.ss" target="_blank">http://svn.plt-scheme.org/plt/trunk/collects/lazy/promise.ss</a><br><br>(The file has four versions of `force&#39; : the first is like the above,
+<br>the second deals with multiple values, the third deals with multiple<br>values only for the delay/force case, and the last adds exception<br>catching.)<br><br>The differences between this and the version that you quoted are
+<br>mostly technicalities, and the code that I have can still use this<br>optimization. &nbsp;I couldn&#39;t verify that the version I&#39;m using enjoys the<br>same speedup -- Phil: do you have the code needed to run Jos&#39;s example?
+<br><br>... and there&#39;s a &quot;BUT&quot;:<br><br>I was aware of the possible optimization at the time, but didn&#39;t find<br>any example where it mattered. &nbsp;However, if you do put it in:<br><div class="Ih2E3d"><br>&gt; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; [(promise? p)
+<br>&gt; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;(let* ((v (force p)))<br>&gt; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; (if (not (pair? (promise-p prom)))<br>&gt; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; (set-promise-p! prom (list v)))<br>&gt; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; (car (promise-p prom)))]<br><br></div>then you do the recursive forcing of `p&#39; in a non-tail conext. &nbsp;My
+<br>(vague, not formal at all) feeling about these &quot;referral promises&quot; is<br>that they do happen in places where the original code had a tail call,<br>so it might be a bad idea to break it.<br><br>So I don&#39;t know whether it should be included or not -- do you see
+<br>that it&#39;s not doing any damage?<br><font color="#888888"><br>--<br> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;((lambda (x) (x x)) (lambda (x) (x x))) &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;Eli Barzilay:<br> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;<a rel="nofollow" href="http://www.barzilay.org/" target="_blank">http://www.barzilay.org/
+</a> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; Maze is Life!<br></font></blockquote></div><br>
+
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00023" href="msg00023.html">Re: simpler srfi 45 implementation</a></strong>
+<ul><li><em>From:</em> AndrevanTonder</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00017" href="msg00017.html">Re: simpler srfi 45 implementation</a></strong>
+<ul><li><em>From:</em> Eli Barzilay</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00019.html">simpler srfi 45 implementation</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00021.html">Re: simpler srfi 45 implementation</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00022.html">Re: simpler srfi 45 implementation</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00023.html">Re: simpler srfi 45 implementation</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00020"><strong>Date</strong></a></li>
+<li><a href="threads.html#00020"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

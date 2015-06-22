@@ -1,0 +1,329 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: [Chicken&#45;users] Which eggs to migrate from Chicken 3 first? -->
+<!--X-From-R13: Oyrwnaqeb Tbereb Qhreib <nmhyNsernxf&#45;havqbf.arg> -->
+<!--X-Date: Thu,  7 May 2009 06:31:27 +0000 (UTC) -->
+<!--X-Message-Id: y9lws8tmnjy.fsf@deinprogramm.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20090422161112.GA721@mercury.ccil.org -->
+<!--X-Reference: da4fbdb30904220916y46def0e6y48d69ebbe2a679d2@mail.gmail.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: [Chicken-users] Which eggs to migrate from Chicken 3 first?</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00007.html">Date Prev</a>][<a href="msg00009.html">Date Next</a>][<a href="msg00010.html">Thread Prev</a>][Thread Next][<a href="maillist.html#00008">Date Index</a>][<a href="threads.html#00008">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: [Chicken-users] Which eggs to migrate from Chicken 3 first?</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-41@DOMAIN.HIDDEN">srfi-41@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: [Chicken-users] Which eggs to migrate from Chicken 3 first?</li>
+<li><em>From</em>: Alejandro Forero Cuervo &lt;<a href="mailto:azul@DOMAIN.HIDDEN">azul@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 07 May 2009 08:31:29 +0200</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-41@DOMAIN.HIDDEN">srfi-41@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:da4fbdb30904220916y46def0e6y48d69ebbe2a679d2@DOMAIN.HIDDEN">da4fbdb30904220916y46def0e6y48d69ebbe2a679d2@xxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:20090422161112.GA721@DOMAIN.HIDDEN">20090422161112.GA721@xxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:da4fbdb30904220916y46def0e6y48d69ebbe2a679d2@DOMAIN.HIDDEN">da4fbdb30904220916y46def0e6y48d69ebbe2a679d2@xxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Gnus/5.110011 (No Gnus v0.11) XEmacs/21.5-b28 (darwin)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; SRFI-40 is deprecated due to a memory leak.  Please port SRFI-41 instead,
+&gt; and adapt any code that uses SRFI-40 to the new interface.
+
+Did you, during the design of srfi-41, consider the existance of the
+stream-ext library, which implements a lot of stream functions on top
+of srfi-40?
+
+<a  rel="nofollow" href="http://chicken.wiki.br/eggref/3/stream-ext">http://chicken.wiki.br/eggref/3/stream-ext</a>
+
+It's first version was released a long time before srfi-41 and only
+small changes have been made since then.  The naming conventions and
+the semantics match those of srfi-1 as close as possible, to make
+things as consistent as possible.
+
+I've used the stream-ext library in many applications that represent
+strings as streams of characters throughout.  The largest of these is
+probably Svnwiki.
+
+I'm worried about the incompatibilities I see between stream-ext and
+srfi-41.  My concerns are the following:
+
+1. srfi-41 provides a very small subset of the functionality that I
+think that any program that uses streams significantly will need.  As
+such, I think it fails significantly at providing &quot;syntax derived from
+those primitives that permits convenient expression of stream
+operations&quot;.  Most of the functions I list below can be implemented in
+a portable manner, as stream-ext does.  To be fair, srfi-41 does seem
+to provide some functions that stream-ext does not.
+
+2. More importantly (the previous concern can be solved with an
+additional library), a small portion of the interface exported by
+srfi-41 differs from that in the stream-ext library.  I provide some
+cases below and explain why I believe the semantics from stream-ext
+are slightly preferable, mostly because of consistency with the srfi-1
+list-based counterparts.  I quite like the interface of srfi-1 and I
+find that, by providing inconsistent counterparts, srfi-41 is making
+it slightly harder to use streams than stream-ext.
+
+I may be the person who has written the most Scheme code using srfi-40
+streams.  I've put special care into the design of the interface of
+the stream-ext library.  This interest I have in using streams in
+Scheme makes the fact that srfi-41 offers an inferior interface rather
+frustrating for me.
+
+Now onto the differences and similarities:
+
+The following is a list of symbols provided by stream-ext and srfi-41
+with apparently the exact same semantics:
+
+  list-&gt;stream
+  stream-ref
+  stream-length
+  stream-append
+  stream-take-while
+  stream-drop-while
+
+The following is a list of symbols available in stream-ext but not in
+srfi-41, which I believe most software using streams would benefit
+from:
+
+  stream-xcons
+  stream-cons*
+  stream-tabulate
+  stream-iota
+  make-infinite-stream
+
+    I think these should be included as counterparts to the srfi-1
+    versions for lists.  The make-infinite-stream should probably be
+    added (see stream-ext's make-stream, discussed bellow).
+
+  stream-&gt;string
+  string-&gt;stream
+  stream-downcase, stream-upcase
+  stream-lines
+  stream-unlines
+
+    I think these should be included: if one does include
+    port-&gt;stream, encouraging the use of streams of characters to
+    represent ports/streams, why not go the extra mile of simplifying
+    conversion to and from strings and handling of streams of
+    characters?
+
+  stream-&gt;vector
+  vector-&gt;stream
+  number-&gt;stream
+  stream-&gt;number
+  stream-&gt;symbol
+  symbol-&gt;stream
+
+    And if we include the stream-&gt;string and string-&gt;stream symbols,
+    encouraging the programmer to use streams throughout his program
+    to represent strings, these should probably also be included,
+    specially the vector ones.  I don't think we should force all
+    programs that use streams to define this compositions directly.
+
+  iterator-&gt;stream
+
+    This is a fundamental block for turning iterators into streams.
+    I've found it extremely useful in my programs that use streams.
+    For example, list-&gt;stream can be trivially implemented as:
+
+      (define (list-&gt;stream l)
+        (iterator-&gt;stream
+          (lambda (return stop)
+            (for-each return l))))
+
+    Among *many* other things, this makes it trivial to do things like
+    'with-output-to-stream', given the right support from the
+    implementation (for creating special ports).  Also,
+    iterator-&gt;stream does not depend on anything non-portable, simply
+    on call/cc.
+
+  write-stream
+
+    The counter-part to port-&gt;stream.  Most of my programs have a lot
+    of functions that generate streams (see for example my html-stream
+    library).  A lot of these will be wrapped in a simple call to
+    write-stream, to output these to the right port.  I think it
+    should be included in a general purpose streams library.
+
+  stream=
+  stream-prefix=
+  stream&gt;, stream&lt;
+  stream-caar ... stream-cddddr
+  stream-first ... stream-tenth
+  stream-intersperse
+  stream-split
+  stream-last
+  stream-last-n
+  stream-butlast
+  stream-butlast-n
+  stream-length&gt;=
+  stream-count
+  stream-partition
+  stream-remove
+  stream-sort
+  stream-find
+  stream-find-tail
+  stream-any
+  stream-every
+
+    I'm using all these quite often.  I feel all of them deserve
+    inclussion in a general purpose for construction of streams.  I
+    think this is obvious enough that I won't waste my time justifying
+    it.  If you think a given one of these should not be included, ask
+    me and I'll explain why I think it should.
+
+    I find it a bit surprising that stream-partition, stream-remove,
+    stream-find and stream-sort were not included in the library, even
+    though they were considered general enough that they were defined
+    as examples (though stream-sort is implemented using merge-sort).
+
+  with-output-to-stream
+
+    Very convenient for turning code that generates output to its
+    current-output-port into code that builds a (lazy, obviously)
+    stream.  However, I suppose this can't be implemented in a
+    portable manner. :-/
+
+  with-input-from-stream
+
+    The rationale is very similar to that of with-output-to-stream.
+    However, I've found this procedure a bit less useful than the
+    other.
+
+The following is a list of symbols provided by stream-ext with
+semantics incompatible with those of srfi-41.  I believe the
+definition in stream-ext is more adequate for the reasons I explain.
+
+  make-stream
+
+    stream-ext's definition matches the counterpart from srfi-1's
+    make-list.  srfi-41 defines this but, fortunately, does not export
+    it.
+
+  stream-&gt;list
+  
+    I don't like the idea of the optional number-of-elements
+    arguments.  This should simply work only on finite streams (and
+    one should use stream-take for infinite streams).  I think
+    stream-ext's definition is more adequate as it more commonly
+    reflects the expectation from the programmer (of just converting a
+    stream to its corresponding list); taking the head of the list
+    should not be done by this function.  I also tend to dislike
+    optional parameters preceeding mandatory parameters.
+
+  port-&gt;stream
+
+    The interface described in srfi-41 is a subset of that in
+    stream-ext: stream-ext adds two optional parameters that make this
+    procedure a lot more flexible/usable, without any disadvantages.
+
+  stream-take, stream-take-safe
+  stream-drop, stream-drop-safe
+
+    These are *almost* compatible.  The only difference is that, in
+    consistence with srfi-1, I've decided to make it an error to take
+    more elements than the stream has.  srfi-41, instead, has decided
+    to not make it an error.  I prefer the stream-ext behavior simply
+    for being consistent with what the srfi-1 counterparts do.  I want
+    to make the streams and lists libraries as compatible as possible.
+
+  stream-concatenate
+
+    srfi-41 decided to call this stream-concat, which is inconsistent
+    with srfi-1.  I prefer stream-ext's consistent naming convention.
+
+  stream-reverse
+
+    This is *almost* compatible, but stream-ext allows the caller to
+    pass a list to be appended to the result, which I think makes the
+    procedure slightly more useful.
+
+The following are other symbols in stream-ext that I haven't had time
+to compare with those in srfi-41:
+
+  stream-fold
+  stream-fold-right
+  stream-fold-right-delay
+  stream-span, stream-break
+  stream-index
+  stream-member, stream-memq, stream-memv
+  stream-format
+  stream-delete
+  stream-delete-duplicates
+
+I suspect the fold procedures provided by stream-ext are far more
+usable than those in srfi-41, but, as I said, I haven't had time to
+compare them.
+
+The following are symbols in srfi-41 and not in srfi-40 that I haven't
+had time to compare with those in stream-ext:
+
+  stream-lambda
+  define-stream
+  stream-constant
+  stream-fold
+  stream-from
+  stream-iterate
+  stream-let
+  stream-match
+  stream-of
+  stream-range
+  stream-scan
+  stream-unfold
+  stream-unfolds
+  stream-zip
+
+Thanks.
+
+Alejo.
+<a  rel="nofollow" href="http://azul.freaks-unidos.net/">http://azul.freaks-unidos.net/</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00007.html">Re: [Chicken-users] Which eggs to migrate from Chicken 3 first?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00009.html">Re: [Chicken-users] Which eggs to migrate from Chicken 3 first?</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00010.html">Re: [Chicken-users] Which eggs to migrate from Chicken 3 first?</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00008"><strong>Date</strong></a></li>
+<li><a href="threads.html#00008"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,131 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: performance tuning of srfi&#45;57 implementations -->
+<!--X-From-R13: Bre Pbguare <creNobguare.pbz> -->
+<!--X-Date: Mon, 20 Dec 2004 08:44:06 +0100 (NFT) -->
+<!--X-Message-Id: 41C682B8.4020208@bothner.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>performance tuning of srfi-57 implementations</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00078.html">Date Prev</a>][<a href="msg00080.html">Date Next</a>][<a href="msg00083.html">Thread Prev</a>][<a href="msg00080.html">Thread Next</a>][<a href="maillist.html#00079">Date Index</a>][<a href="threads.html#00079">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>performance tuning of srfi-57 implementations</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-57@DOMAIN.HIDDEN">srfi-57@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: performance tuning of srfi-57 implementations</li>
+<li><em>From</em>: Per Bothner &lt;<a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 19 Dec 2004 23:43:52 -0800</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-57@DOMAIN.HIDDEN">srfi-57@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Mozilla/5.0 (Macintosh; U; PPC Mac OS X Mach-O; en-US; rv:1.7.2) Gecko/20040803</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+As others have pointed out: the srfi-57 implementation is dog slow.
+In the case of Kawa, this may be indicating Kawa bugs I haven't
+tracked down yet and profiling may find places where my
+ implementation is doing something silly.
+
+In addition, I think it should be possible to tweak the code to
+make it run faster on all/mot implementations.  Unfortuantely,
+I don't pretend to understand the code (at least not yet),
+but here are some ideas:
+
+* The build-record macros seems to be always used with a
+fixed integer first argument. Why not split it up into
+multiple macros: (build-record 0 ...) -&gt; (build-record-0 ...)
+and so on.  This is likely to be a win, since implementations
+spend less time searching through the clauses.  (Not a huge win,
+assuming non-matching clauses will quickly fail quickly, but still
+likely to be an improvement.)
+
+* Avoid taking apart lists.  Instead of:
+(define-syntax meta
+  (syntax-rules (meta quasiquote unquote)
+    ((meta `(meta ,(function . arguments)) k)
+     (meta `(argument ...) (syntax-apply-to function k)))
+do:
+(define-syntax meta
+  (syntax-rules (meta quasiquote unquote)
+    ((meta `(meta ,(function . arguments)) k)
+     (meta `argument (syntax-apply-to function k)))
+I.e. replace &quot;argument ...&quot; by &quot;. arguments&quot; which
+is likely to be much faster.
+
+* I don't understand how the meta rule works, but would
+it be possible to remove the outer layer of quasiquote?
+I.e.:
+(define-syntax meta-qq
+  (syntax-rules (meta-unquote)
+    ((meta-qq (meta-unquote function . arguments) k)
+     (meta-qq arguments (syntax-apply-to function k)))
+    ((meta-qq (a . b) k)
+     (meta-qq a (descend-right b k)))
+    ((meta-qq whatever k) (syntax-apply k whatever))
+    ((meta-qq arg)
+     (meta-qq arg (syntax-id)))))
+
+* Avoid comparing string literals like &quot;is-scheme?&quot;.
+(No specific suggestion here.)
+--
+	--Per Bothner
+per@xxxxxxxxxxx   <a  rel="nofollow" href="http://per.bothner.com/">http://per.bothner.com/</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00080" href="msg00080.html">Re: performance tuning of srfi-57 implementations</a></strong>
+<ul><li><em>From:</em> Andre van Tonder</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00078.html">records all have same internal-name</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00080.html">Re: performance tuning of srfi-57 implementations</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00083.html">Re: records all have same internal-name</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00080.html">Re: performance tuning of srfi-57 implementations</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00079"><strong>Date</strong></a></li>
+<li><a href="threads.html#00079"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

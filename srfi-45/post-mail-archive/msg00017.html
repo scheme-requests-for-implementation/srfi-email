@@ -1,0 +1,142 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: simpler srfi 45 implementation -->
+<!--X-From-R13: Syv Pnemvynl <ryvNonemvynl.bet> -->
+<!--X-Date: Tue, 13 Nov 2007 14:04:21 +0100 (MET) -->
+<!--X-Message-Id: 18233.39965.878836.78458@portuguese.ccs.neu.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 001001c825de$11b10380$2101a8c0@jos -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: simpler srfi 45 implementation</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00016.html">Date Prev</a>][<a href="msg00018.html">Date Next</a>][<a href="msg00015.html">Thread Prev</a>][<a href="msg00018.html">Thread Next</a>][<a href="maillist.html#00017">Date Index</a>][<a href="threads.html#00017">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: simpler srfi 45 implementation</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &quot;Jos Koot&quot; &lt;<a href="mailto:jos.koot@DOMAIN.HIDDEN">jos.koot@xxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: simpler srfi 45 implementation</li>
+<li><em>From</em>: Eli Barzilay &lt;<a href="mailto:eli@DOMAIN.HIDDEN">eli@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 13 Nov 2007 07:44:13 -0500</li>
+<li><em>Cc</em>: &quot;Phil Bewig&quot; &lt;<a href="mailto:pbewig@DOMAIN.HIDDEN">pbewig@xxxxxxxxx</a>&gt;,    &lt;<a href="mailto:srfi-45@DOMAIN.HIDDEN">srfi-45@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-45@DOMAIN.HIDDEN">srfi-45@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:001001c825de%2411b10380%242101a8c0@DOMAIN.HIDDEN">001001c825de$11b10380$2101a8c0@jos</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:001001c825de%2411b10380%242101a8c0@DOMAIN.HIDDEN">001001c825de$11b10380$2101a8c0@jos</a>&gt;</li>
+<li><em>Sender</em>: Eli Barzilay &lt;<a href="mailto:eli@DOMAIN.HIDDEN">eli@xxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>On Nov 13, Jos Koot wrote:
+&gt; Eli wrote the following version:
+&gt; 
+&gt; [...]
+&gt;   (define (force promise)
+&gt;     (let ([p (promise-p promise)])
+&gt;       (cond [(procedure? p)
+&gt;              (let ([promise* (p)])
+&gt;                (unless (pair? (promise-p promise))
+&gt;                  (if (promise? promise*)
+&gt;                    (begin (set-promise-p! promise (promise-p promise*))
+&gt;                           (set-promise-p! promise* promise))
+&gt;                    (set-promise-p! promise (list promise*))))
+&gt;                (force promise))]
+&gt;             [(pair? p)    (car p)]
+&gt;             [(promise? p) (force p)] &lt;----
+&gt;             [else         (error &quot;Invalid promise, contains&quot; p)]))))
+&gt; [...]
+
+Actually, I use a variation of that, which you can see at
+
+  <a  rel="nofollow" href="http://svn.plt-scheme.org/plt/trunk/collects/lazy/promise.ss">http://svn.plt-scheme.org/plt/trunk/collects/lazy/promise.ss</a>
+
+(The file has four versions of `force' : the first is like the above,
+the second deals with multiple values, the third deals with multiple
+values only for the delay/force case, and the last adds exception
+catching.)
+
+The differences between this and the version that you quoted are
+mostly technicalities, and the code that I have can still use this
+optimization.  I couldn't verify that the version I'm using enjoys the
+same speedup -- Phil: do you have the code needed to run Jos's example?
+
+... and there's a &quot;BUT&quot;:
+
+I was aware of the possible optimization at the time, but didn't find
+any example where it mattered.  However, if you do put it in:
+
+&gt;             [(promise? p)
+&gt;              (let* ((v (force p)))
+&gt;               (if (not (pair? (promise-p prom)))
+&gt;                   (set-promise-p! prom (list v)))
+&gt;               (car (promise-p prom)))]
+
+then you do the recursive forcing of `p' in a non-tail conext.  My
+(vague, not formal at all) feeling about these &quot;referral promises&quot; is
+that they do happen in places where the original code had a tail call,
+so it might be a bad idea to break it.
+
+So I don't know whether it should be included or not -- do you see
+that it's not doing any damage?
+
+-- 
+          ((lambda (x) (x x)) (lambda (x) (x x)))          Eli Barzilay:
+                  <a  rel="nofollow" href="http://www.barzilay.org/">http://www.barzilay.org/</a>                 Maze is Life!
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00018" href="msg00018.html">Re: simpler srfi 45 implementation</a></strong>
+<ul><li><em>From:</em> AndrevanTonder</li></ul></li>
+<li><strong><a name="00020" href="msg00020.html">Re: simpler srfi 45 implementation</a></strong>
+<ul><li><em>From:</em> Phil Bewig</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00016.html">Exceptions</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00018.html">Re: simpler srfi 45 implementation</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00015.html">stream? issue</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00018.html">Re: simpler srfi 45 implementation</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00017"><strong>Date</strong></a></li>
+<li><a href="threads.html#00017"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

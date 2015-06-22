@@ -1,0 +1,141 @@
+<!-- MHonArc v2.6.18 -->
+<!--X-Subject: Re: Last call -->
+<!--X-From-R13: Xbua Qbjna <pbjnaNzrephel.ppvy.bet> -->
+<!--X-Date: Wed, 22 Apr 2015 00:01:49 +0000 (UTC) -->
+<!--X-Message-Id: 20150422000138.GA17214@mercury.ccil.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 5533DD41.3000206@ymail.com -->
+<!--X-Reference: 20150419185129.GC26194@mercury.ccil.org -->
+<!--X-Reference: 5535374D.7070206@ymail.com -->
+<!--X-Reference: 0fe608a9f9da2cc9a78d28d5d09b3826.squirrel@www.ccil.org -->
+<!--X-Reference: 55369C28.9070708@ymail.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Last call</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00008.html">Date Prev</a>][<a href="msg00010.html">Date Next</a>][<a href="msg00008.html">Thread Prev</a>][<a href="msg00010.html">Thread Next</a>][<a href="maillist.html#00009">Date Index</a>][<a href="threads.html#00009">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Last call</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Takashi Kato &lt;<a href="mailto:ktakashi@DOMAIN.HIDDEN">ktakashi@xxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Last call</li>
+<li><em>From</em>: John Cowan &lt;<a href="mailto:cowan@DOMAIN.HIDDEN">cowan@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 21 Apr 2015 20:01:39 -0400</li>
+<li><em>Cc</em>: <a href="mailto:cowan@DOMAIN.HIDDEN">cowan@xxxxxxxx</a>, <a href="mailto:srfi-120@DOMAIN.HIDDEN">srfi-120@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-120@DOMAIN.HIDDEN">srfi-120@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="msg00008.html">55369C28.9070708@ymail.com</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="msg00002.html">5533DD41.3000206@ymail.com</a>&gt; &lt;20150419185129.GC26194@mercury.ccil.org&gt; &lt;<a href="msg00004.html">5535374D.7070206@ymail.com</a>&gt; &lt;<a href="msg00005.html">0fe608a9f9da2cc9a78d28d5d09b3826.squirrel@www.ccil.org</a>&gt; &lt;<a href="msg00008.html">55369C28.9070708@ymail.com</a>&gt;</li>
+<li><em>Sender</em>: John Cowan &lt;<a href="mailto:cowan@DOMAIN.HIDDEN">cowan@xxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mutt/1.5.20 (2009-06-14)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Takashi Kato scripsit:
+
+&gt; In that sense, should it run in the dynamic environment when timer is
+&gt; created?
+
+That sounds like the right idea.  Because the thunks run concurrently
+with the main Scheme program, they have to capture the dynamic
+environment so that, for example, if the main program changes the
+value of current-output, the thunk isn't affected.
+
+&gt; Maybe it's better to back to the
+&gt; original suggestion on c.l.s which is creating time delta passing time
+&gt; unit (e.g. ms, ns) so that at least the SRFI can guarantee smaller unit
+&gt; of period. And if it's a mere integer, then it can treat as if it's a
+&gt; millisecond delta. Any opinion?
+
+Well, a simple approach would be to use a pair of fixnums (a . b)
+such that the value is a * 10 ^ -b, so (30 . 9) would mean 30
+nanoseconds.  Just having a nanosecond count is problematic,
+because 2^30 ns is only a little more than 1 second.
+
+Another thing to explain is what happens if a task is still running
+when it is rescheduled.  I assume that it just goes on running,
+but the SRFI should say so.
+
+Here's an idea to simplify things: have only one task per timer, and if
+you want to execute more than one thunk, have more than one timer.
+Right now it seems to make no difference if you have many tasks on a
+timer or many timers, but using the second approach allows you
+to simplify the API to (make-timer thunk when [period]), timer?,
+timer-cancel!, and (timer-reschedule! when [period]).
+
+-- 
+John Cowan          <a  rel="nofollow" href="http://www.ccil.org/~cowan">http://www.ccil.org/~cowan</a>        cowan@xxxxxxxx
+Consider the matter of Analytic Philosophy.  Dennett and Bennett are well-known.
+Dennett rarely or never cites Bennett, so Bennett rarely or never cites Dennett.
+There is also one Dummett.  By their works shall ye know them.  However, just as
+no trinities have fourth persons (Zeppo Marx notwithstanding), Bummett is hardly
+known by his works.  Indeed, Bummett does not exist.  It is part of the function
+of this and other e-mail messages, therefore, to do what they can to create him.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00010" href="msg00010.html">Re: Last call</a></strong>
+<ul><li><em>From:</em> Takashi Kato</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00002" href="msg00002.html">Last call</a></strong>
+<ul><li><em>From:</em> Takashi Kato</li></ul></li>
+<li><strong><a name="00004" href="msg00004.html">Re: Last call</a></strong>
+<ul><li><em>From:</em> Takashi Kato</li></ul></li>
+<li><strong><a name="00005" href="msg00005.html">Re: Last call</a></strong>
+<ul><li><em>From:</em> cowan</li></ul></li>
+<li><strong><a name="00008" href="msg00008.html">Re: Last call</a></strong>
+<ul><li><em>From:</em> Takashi Kato</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00008.html">Re: Last call</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00010.html">Re: Last call</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00008.html">Re: Last call</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00010.html">Re: Last call</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00009"><strong>Date</strong></a></li>
+<li><a href="threads.html#00009"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

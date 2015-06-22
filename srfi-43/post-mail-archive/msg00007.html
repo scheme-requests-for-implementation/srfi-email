@@ -1,0 +1,164 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: a bug in srfi&#45;43 -->
+<!--X-From-R13: Rnivq Hna Vbea <qinaubeaNpf.hiz.rqh> -->
+<!--X-Date: Mon, 28 Feb 2005 06:56:00 +0100 (NFT) -->
+<!--X-Message-Id: 1109570126.4222b24ee4467@webmail.cem.uvm.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20050228011400.5867D851@srfi.schemers.org -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: a bug in srfi-43</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00006.html">Date Prev</a>][<a href="msg00008.html">Date Next</a>][<a href="msg00006.html">Thread Prev</a>][<a href="msg00008.html">Thread Next</a>][<a href="maillist.html#00007">Date Index</a>][<a href="threads.html#00007">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: a bug in srfi-43</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Zhu Chongkai &lt;<a href="mailto:mathematica@DOMAIN.HIDDEN">mathematica@xxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: a bug in srfi-43</li>
+<li><em>From</em>: David Van Horn &lt;<a href="mailto:dvanhorn@DOMAIN.HIDDEN">dvanhorn@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 28 Feb 2005 00:55:26 -0500</li>
+<li><em>Cc</em>: srfi-43 &lt;<a href="mailto:srfi-43@DOMAIN.HIDDEN">srfi-43@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-43@DOMAIN.HIDDEN">srfi-43@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20050228011400.5867D851@DOMAIN.HIDDEN">20050228011400.5867D851@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:20050228011400.5867D851@DOMAIN.HIDDEN">20050228011400.5867D851@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Internet Messaging Program (IMP) 3.2.1</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Quoting Zhu Chongkai &lt;mathematica@xxxxxxxxx&gt;:
+&gt; Actually, I just finished porting SRFI-43 to PLT and now 
+&gt; it is available at <a  rel="nofollow" href="http://webhost.5ewy.com/kellyjm/SRFI-43.zip">http://webhost.5ewy.com/kellyjm/SRFI-43.zip</a>
+&gt; 
+&gt; During the porting, I find several bugs in both the document 
+&gt; and reference implementation of SRFI-43. The document in 
+&gt; <a  rel="nofollow" href="http://webhost.5ewy.com/kellyjm/SRFI-43.zip">http://webhost.5ewy.com/kellyjm/SRFI-43.zip</a> is bug-fixed 
+&gt; version by me. The details are:
+&gt; 
+&gt; Besides (vector-fold (lambda (index counter n) , the two 
+&gt; bugs in the document is: 
+&gt; 
+&gt; (vector-fold-right (lambda (index elt tail) (cons elt tail))
+&gt; 
+&gt; should be 
+&gt; 
+&gt; (vector-fold-right (lambda (index tail elt) (cons elt tail))
+&gt; 
+&gt; and
+&gt; 
+&gt; (let ((count 0)) 
+&gt;    (vector-map (lambda (ignored-index ignored-elt) 
+&gt;                  (set! count (+ count 1)) 
+&gt;                  count))) 
+&gt;                '#(a b)
+&gt; 
+&gt; should be
+&gt; 
+&gt; (let ((count 0)) 
+&gt;    (vector-map (lambda (ignored-index ignored-elt) 
+&gt;                  (set! count (+ count 1)) 
+&gt;                  count) 
+&gt;                '#(a b))) 
+
+Zhu, thank you for the close reading of the document.  I fixed these two errors
+in the SRFI document.  If there are other typos, please let me know.
+
+&gt; And in the reference implementation:
+&gt; 
+&gt; (define (vector-reverse-copy!
+&gt;   ...
+&gt;   (between? sstart (+ tstart (- send sstart))
+&gt;                                   send)
+&gt; ...
+&gt; 
+&gt; should be 
+&gt; 
+&gt; (between? tstart sstart (+ tstart (- send sstart)))
+&gt; 
+&gt; If run the reference implementation, the example
+&gt; 
+&gt; (vector-map (lambda (i x) (* x x)) 
+&gt;             (vector-unfold (lambda (i x) (values x (+ x 1))) 4 1)) 
+&gt; 
+&gt; returns 
+&gt; 
+&gt; #(1 4 9 &lt;unspecified&gt;)
+&gt; 
+&gt; instead of
+&gt; 
+&gt; #(1 4 9 16)
+
+Perhaps you, or Taylor, could provide a patch which I could apply to the current
+reference implementation to fix these problems.
+
+&gt; And the second half of the document, there are no examples,
+&gt; which is totally different from the first half. 
+
+There is little to be done about that at this point.  You could write examples,
+or better, a test suite and post it to this list.
+
+&gt; (There may be more bugs in the reference implementation because 
+&gt; after finding so many bugs, I distrust it and write my own code 
+&gt; without reading it carefully. )
+
+It's a large document and a large source file.  It's quite reasonable to expect
+a few small kinks.
+
+David
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00006" href="msg00006.html">Re: a bug in srfi-43</a></strong>
+<ul><li><em>From:</em> Zhu Chongkai</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00006.html">Re: a bug in srfi-43</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00008.html">Srfi-43 bug</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00006.html">Re: a bug in srfi-43</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00008.html">Srfi-43 bug</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00007"><strong>Date</strong></a></li>
+<li><a href="threads.html#00007"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

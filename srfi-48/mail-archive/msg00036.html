@@ -1,0 +1,232 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: LAMBDA: The Ultimate Formatter (was Re: Format strings are wrong) -->
+<!--X-From-R13: Fnlybe Qnzcoryy <pnzcoryyNriqri.ngu.pk> -->
+<!--X-Date: Sun, 28 Dec 2003 08:17:22 +0100 (NFT) -->
+<!--X-Message-Id: DA186BB6&#45;3905&#45;11D8&#45;8C98&#45;000A95CCCEE4@evdev.ath.cx -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: y9lekur77gi.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: 20031228043744.GA30222@synthcode.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>LAMBDA: The Ultimate Formatter (was Re: Format strings are wrong)</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00035.html">Date Prev</a>][<a href="msg00037.html">Date Next</a>][<a href="msg00035.html">Thread Prev</a>][<a href="msg00040.html">Thread Next</a>][<a href="maillist.html#00036">Date Index</a>][<a href="threads.html#00036">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>LAMBDA: The Ultimate Formatter (was Re: Format strings are wrong)</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-48@DOMAIN.HIDDEN">srfi-48@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: LAMBDA: The Ultimate Formatter (was Re: Format strings are wrong)</li>
+<li><em>From</em>: Taylor Campbell &lt;<a href="mailto:campbell@DOMAIN.HIDDEN">campbell@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 28 Dec 2003 02:17:10 -0500</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-48@DOMAIN.HIDDEN">srfi-48@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20031228043744.GA30222@DOMAIN.HIDDEN">20031228043744.GA30222@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:y9lekur77gi.fsf@DOMAIN.HIDDEN">y9lekur77gi.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20031228043744.GA30222@DOMAIN.HIDDEN">20031228043744.GA30222@xxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+;; Requires some non-R5RS utilities:
+;;   - (CALL-WITH-OUTPUT-STRING &lt;consumer&gt;) -&gt; string
+;;         (CONSUMER &lt;output-port&gt;)
+;;   - (ERROR &lt;message&gt; &lt;irritant&gt; ...)
+;;       Used in one place to signal a 'too many arguments' error.
+;;   - (ASCII-LIMIT) -&gt; exact, nonnegative integer
+;;       The maximum number of ASCII characters.
+;;   - (CHAR-&gt;ASCII &lt;char&gt;) -&gt; exact, nonnegative integer
+;;       The ASCII numeric value for CHAR.
+;;       (CHAR-&gt;INTEGER doesn't mandate ASCII.)
+
+(define (format formatter write-char)
+  (formatter write-char))
+
+(define (format/string formatter)
+  (call-with-output-string
+    (lambda (out)
+      (format formatter (lambda (c) (write-char c out))))))
+(define (format/port formatter . maybe-out)
+  (format formatter
+    (cond ((null? maybe-out)
+           write-char)
+          ((null? (cdr maybe-out))
+           (let ((out (car maybe-out)))
+             (lambda (c) (write-char c out))))
+          (else
+           (error &quot;Too many arguments&quot;
+                  (cons format/port (cons formatter maybe-out)))))))
+(define (format/char-list formatter)
+  (let ((l '()))
+    (format formatter (lambda (c) (set! l (cons c l))))
+    (reverse l)))
+
+(define (sequence-formatter . formatters)
+  (lambda (write-char)
+    (for-each (lambda (f) (format f write-char)) formatters)))
+
+(define (string-formatter string)
+  (let ((len (string-length string)))
+    (lambda (write-char)
+      (do ((i 0 (+ i 1))) ((= i len))
+        (write-char (string-ref string i))))))
+(define (string-literal-formatter string)
+  (let ((f (string-formatter string)))
+    (lambda (write-char)
+      (write-char #\&quot;)
+      (format f write-char)
+      (write-char #\&quot;))))
+
+(define (symbol-formatter symbol)
+  (string-formatter (symbol-&gt;string symbol)))
+
+</pre><tt>;; This is just a simple example using NUMBER-&gt;STRING; there should, of 
+</tt><tt>course,
+</tt><tt>;; be real numeric formatting routines with a lot more power than just 
+</tt><tt>over the
+</tt><pre style="margin: 0em;">
+;; radix.
+(define (number-formatter number radix)
+  (string-formatter (number-&gt;string number radix)))
+
+(define (boolean-formatter boolean)
+  (string-formatter (if boolean &quot;#t&quot; &quot;#f&quot;)))
+
+(define (char-formatter char)
+  (lambda (write-char)
+    (write-char char)))
+(define (char-literal-formatter char)
+  (let ((f (cond ((char-name char)
+                  =&gt; (lambda (x)
+</pre><tt>                       ((if (string? x) string-formatter 
+</tt><tt>symbol-formatter)
+</tt><pre style="margin: 0em;">
+                        x)))
+                 (else
+                  (char-formatter char)))))
+    (lambda (write-char)
+      (write-char #\#)
+      (write-char #\\)
+      (format f write-char))))
+;; Make the named characters print more nicely.
+(define *char-names* (make-vector (ascii-limit) #f))
+(define (char-name char)
+  (vector-ref  *char-names* (char-&gt;ascii char)))
+(define (define-char-name char name)
+  (vector-set! *char-names* (char-&gt;ascii char) name))
+(define-char-name #\space 'space)
+(define-char-name #\newline 'newline)
+;; Does R5RS define any other named characters?
+
+;; Handles proper &amp; dotted lists, but not circular lists.
+(define (list-formatter l x-&gt;formatter)
+  (cond ((null? l)
+         ;; Empty proper list case
+         (string-formatter &quot;()&quot;))
+        ((not (pair? l))
+         ;; Empty dotted list case
+         (x-&gt;formatter l))
+        (else
+         ;; Nonempty either list kind case
+</pre><tt>         (apply sequence-formatter (build-formatter-list l 
+</tt><tt>x-&gt;formatter)))))
+</tt><pre style="margin: 0em;">
+
+(define (build-formatter-list l x-&gt;formatter)
+  (cons (char-formatter #\()
+        (cons (x-&gt;formatter (car l))
+              (let recur ((l (cdr l)))
+                (cond ((null? l)
+                       (list (char-formatter #\))))
+                      ((not (pair? l))
+                       (list (string-formatter &quot; . &quot;)
+                             (x-&gt;formatter l)
+                             (char-formatter #\))))
+                      (else
+                       (cons (char-formatter #\space)
+                             (cons (x-&gt;formatter (car l))
+                                   (recur (cdr l))))))))))
+
+(define (vector-formatter vec x-&gt;formatter)
+</pre><tt>  ;; This is a cheat.  A real implementation would use a 
+</tt><tt>straightforward vector
+</tt><pre style="margin: 0em;">
+  ;; element formatter.
+  (sequence-formatter (char-formatter #\#)
+                      (list-formatter (vector-&gt;list vec) x-&gt;formatter)))
+
+</pre><tt>;; These two could be a bit more efficient if the formatting library 
+</tt><tt>were to be
+</tt><tt>;; integrated with the implementations of DISPLAY &amp; WRITE, by not 
+</tt><tt>allocating an
+</tt><pre style="margin: 0em;">
+;; intermediate string and generating the formatter for that.
+(define (write-formatter object)
+  (string-formatter (call-with-output-string
+                      (lambda (out) (write object out)))))
+
+(define (display-formatter object)
+  (string-formatter (call-with-output-string
+                      (lambda (out) (display object out)))))
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00040" href="msg00040.html">Re: LAMBDA: The Ultimate Formatter (was Re: Format strings are wrong)</a></strong>
+<ul><li><em>From:</em> Alex Shinn</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00031" href="msg00031.html">Re: Format strings are wrong</a></strong>
+<ul><li><em>From:</em> Paul Schlie</li></ul></li>
+<li><strong><a name="00035" href="msg00035.html">Re: Format strings are wrong</a></strong>
+<ul><li><em>From:</em> Alex Shinn</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00035.html">Re: Format strings are wrong</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00037.html">Re: Format strings are wrong</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00035.html">Re: Format strings are wrong</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00040.html">Re: LAMBDA: The Ultimate Formatter (was Re: Format strings are wrong)</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00036"><strong>Date</strong></a></li>
+<li><a href="threads.html#00036"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,141 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Connection between runtime and expand&#45;time -->
+<!--X-From-R13: Bnah Ynyyvbxbfxv <ngrujnNfnatr.sv> -->
+<!--X-Date: Mon, 15 Aug 2005 09:46:31 +0200 (DFT) -->
+<!--X-Message-Id: 20050815074614.GA10429@xandru.it.helsinki.fi -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Connection between runtime and expand-time</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00067.html">Date Prev</a>][<a href="msg00069.html">Date Next</a>][<a href="msg00094.html">Thread Prev</a>][<a href="msg00079.html">Thread Next</a>][<a href="maillist.html#00068">Date Index</a>][<a href="threads.html#00068">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Connection between runtime and expand-time</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-72@DOMAIN.HIDDEN">srfi-72@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Connection between runtime and expand-time</li>
+<li><em>From</em>: Panu Kalliokoski &lt;<a href="mailto:atehwa@DOMAIN.HIDDEN">atehwa@xxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 15 Aug 2005 10:46:14 +0300</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-72@DOMAIN.HIDDEN">srfi-72@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Mutt/1.5.9i</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Many of the issues raised recently seem to me to point to a common basic
+question: how intimately runtime and expand-time should be coupled.  At
+the other extreme, we would have a separate language for manipulating
+syntax, not accessible to the runtime environment in any way; at the
+other extreme, macros and syntax objects are first-class runtime objects
+and the runtime environment provides reflective facilities for working
+with those.
+
+Different aspects where we need to take a stance in this include:
+
+ - the separateness of syntax and runtime namespaces;
+ - the opaqueness of syntax objects;
+ - the interface of the expander;
+ - specifying the situation(s) where the expander is invoked.
+
+My personal view is that Lisp was always meant to be its own
+metalanguage, and that property should be preserved as long as it is
+possible and practical.  Thus, we should seek a way to bring the syntax
+language and the runtime language as close to each other as possible.
+
+SRFI 72 seems to bring abstraction to traditional Lisp macros by
+separating the concepts of identifier and symbol.  This has widespread
+ramifications, because a program's external representation no longer is
+a representation of its syntax tree, but an impoverished version where
+identifiers are replaced by symbols.  I think we should redefine the
+relationship between (eval), (load) and the toplevel of a Scheme
+program.
+
+For example, what (eval) handles should probably be syntax objects, not
+data.  But this would break the current interface.  Maybe we could
+define (in the SRFI) the primitive operations datum-&gt;syntax (together
+with syntax-&gt;datum), syntax-expand, and syntax-eval.  Then, expressions
+on toplevel of the program would be defined to run through read,
+datum-&gt;syntax, syntax-expand and syntax-eval; and eval would effectively
+be the composition of datum-&gt;syntax and syntax-eval.  This way, users
+could call syntax-expand by themselves, syntax-expand wouldn't make an
+implicit syntax-&gt;datum.
+
+I think new macros definitions should be registered in the evaluator, so
+that the expander will not have any side effects of its own.  This would
+require us to define that toplevel expressions are expanded and eval'd
+one at a time, otherwise one could not count on a macro being available
+after its definition.
+
+I also wish that the syntax and runtime namespaces could be unified.
+But there should probably be a way to find out whether a given binding
+is a macro binding or not.  Could we have a macro? predicate?
+
+And yes, of course I support transparent syntax objects.
+
+I know this increases the burden of the SRFI, specifying not only the
+definition mechanisms of macros but also how they are invoked.  There is
+the risk that the design of the interaction between the runtime
+environment and the expander is bad and everyone will suffer.  But if we
+manage to make it right, macros will become a concrete part of the
+language, programmers will gain introspective abilities to the macro
+system, and everyone will be happy. :)
+
+Panu
+
+-- 
+personal contact: atehwa@xxxxxx, +35841 5323835, +3589 85619369
+work contact: panu.kalliokoski@xxxxxxxxxxx, +35850 3678003
+kotisivu (henkkoht):	<a  rel="nofollow" href="http://www.iki.fi/atehwa/">http://www.iki.fi/atehwa/</a>
+homepage (technical):	<a  rel="nofollow" href="http://sange.fi/~atehwa/">http://sange.fi/~atehwa/</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00067.html">Re: Namespaces</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00069.html">Re: Namespaces</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00094.html">Re: The power of Lists</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00079.html">question on the opaque syntax object debate</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00068"><strong>Date</strong></a></li>
+<li><a href="threads.html#00068"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

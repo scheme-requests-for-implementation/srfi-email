@@ -1,0 +1,123 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: building other EQUIV?&#45;like predicates -->
+<!--X-From-R13: Ivyyvnz R Qyvatre <jvyyNppf.arh.rqh> -->
+<!--X-Date: Sat, 11 Mar 2006 03:55:19 +0100 (CET) -->
+<!--X-Message-Id: E1FHuGC&#45;0006Y4&#45;0G@adara.ccs.neu.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: building other EQUIV?-like predicates</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00002.html">Date Prev</a>][<a href="msg00004.html">Date Next</a>][<a href="msg00004.html">Thread Prev</a>][<a href="msg00001.html">Thread Next</a>][<a href="maillist.html#00003">Date Index</a>][<a href="threads.html#00003">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: building other EQUIV?-like predicates</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-85@DOMAIN.HIDDEN">srfi-85@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: building other EQUIV?-like predicates</li>
+<li><em>From</em>: William D Clinger &lt;<a href="mailto:will@DOMAIN.HIDDEN">will@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 10 Mar 2006 21:55:16 -0500</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-85@DOMAIN.HIDDEN">srfi-85@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Sebastian Egner raised an excellent point:
+
+&gt; In many cases I need an application-specific
+&gt; equivalence which is not among the predefined
+&gt; ones. For example, it should deal with cyclic
+&gt; structures the way EQUIV? does, but floats are
+&gt; compared only up to a certain tolerance (not
+&gt; that this results in an actual 'equivalence,'
+&gt; but it is often needed as a predicate anyhow).
+&gt; Another example is the presence of user-defined
+&gt; record types; equivalence predicates that are
+&gt; meaningful for the application can ignore some
+&gt; fields while recursing only on others.
+&gt;
+&gt; In these situations, I would still end up implementing a
+&gt; lot of code similar to the reference implementation you
+&gt; give but with little modifications in the recursion, or
+&gt; for the atomic types.
+
+It would not be hard to provide parameterized
+versions, say equivalent? and dag-equivalent?,
+that take a predicate as their first argument
+and use that predicate when comparing leaf nodes
+(defined as anything that isn't a pair or vector).
+
+Then (equiv? x y) would be like (equivalent? eqv? x y),
+and (dag-equiv? x y) like (dag-equivalent? eqv? x y).
+Your example might be something like
+
+(define myequiv?
+  (let* ((epsilon 1e-14)
+         (leaf-equal? (lambda (x y)
+                        (if (and (complex? x) (complex? y))
+                            (&lt; (magnitude (- x y))
+                               (* epsilon
+                                  (max 1.0
+                                       (magnitude x)
+                                       (magnitude y))))
+                            (eqv? x y)))))
+    (lambda (x y)
+      (equivalent? leaf-equal? x y))))
+
+It might be better to define make-equiv-predicate
+and make-dag-equiv-predicate, which would take a
+total predicate as their lone argument and return
+a recursive binary predicate as their result.
+
+Will
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00002.html">equiv:bound-on-recursion</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00004.html">Re: building other EQUIV?-like predicates</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00004.html">Re: building other EQUIV?-like predicates</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00001.html">pattern-matching?</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00003"><strong>Date</strong></a></li>
+<li><a href="threads.html#00003"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

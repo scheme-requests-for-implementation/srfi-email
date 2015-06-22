@@ -1,0 +1,220 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Comparing Pika&#45;syle and JNI&#45;style -->
+<!--X-From-R13: Fbz Zbeq <ybeqNrzs.arg> -->
+<!--X-Date: Wed, 14 Jan 2004 22:13:41 +0100 (NFT) -->
+<!--X-Message-Id: 200401142141.NAA07967@morrowfield.regexps.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: E1AfQRd&#45;0000Qa&#45;00@mail.mumble.net -->
+<!--X-Reference: vt2y8scua4h.fsf@zenia.home -->
+<!--X-Reference: 877jzwtzaz.fsf@becket.becket.net -->
+<!--X-Reference: vt2ptdn2bqq.fsf@zenia.home -->
+<!--X-Reference: vt2isje3nna.fsf_&#45;_@zenia.home -->
+<!--X-Reference: 200401141840.KAA07050@morrowfield.regexps.com -->
+<!--X-Reference: vt265fecl8l.fsf@zenia.home -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Comparing Pika-syle and JNI-style</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00304.html">Date Prev</a>][<a href="msg00306.html">Date Next</a>][<a href="msg00304.html">Thread Prev</a>][<a href="msg00311.html">Thread Next</a>][<a href="maillist.html#00305">Date Index</a>][<a href="threads.html#00305">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Comparing Pika-syle and JNI-style</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:jimb@DOMAIN.HIDDEN">jimb@xxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Comparing Pika-syle and JNI-style</li>
+<li><em>From</em>: Tom Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 14 Jan 2004 13:41:22 -0800 (PST)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:vt265fecl8l.fsf@DOMAIN.HIDDEN">vt265fecl8l.fsf@xxxxxxxxxx</a>&gt; (message from Jim Blandy on 14 Jan	2004 15:45:46 -0500)</li>
+<li><em>References</em>: &lt;<a href="mailto:E1AfQRd-0000Qa-00@DOMAIN.HIDDEN">E1AfQRd-0000Qa-00@xxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:vt2y8scua4h.fsf@DOMAIN.HIDDEN">vt2y8scua4h.fsf@xxxxxxxxxx</a>&gt;	&lt;<a href="mailto:877jzwtzaz.fsf@DOMAIN.HIDDEN">877jzwtzaz.fsf@xxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:vt2ptdn2bqq.fsf@DOMAIN.HIDDEN">vt2ptdn2bqq.fsf@xxxxxxxxxx</a>&gt;	&lt;<a href="mailto:vt2isje3nna.fsf_-_@DOMAIN.HIDDEN">vt2isje3nna.fsf_-_@xxxxxxxxxx</a>&gt;	&lt;<a href="mailto:200401141840.KAA07050@DOMAIN.HIDDEN">200401141840.KAA07050@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:vt265fecl8l.fsf@DOMAIN.HIDDEN">vt265fecl8l.fsf@xxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+
+    &gt; From: Jim Blandy &lt;jimb@xxxxxxxxxx&gt;
+
+    &gt; It's worth noting here that SCM_LSET is essentially a 'linearizing'
+    &gt; assignment operator.  I'd been thinking of providing a similar
+    &gt; operator for Minor:
+    &gt; [nice example]
+
+So we're another step closer to saying that these two interfaces are
+just duals of each other (modulo error handling foo and topics we
+haven't gotten to yet like tail calls and continuation foo).
+
+But they aren't _quite_ duals.  JNI/Minor-style still has this
+mandatory separate allocation of handles and liveness of unfreed
+handles until returning from C to Scheme (at least in implementations
+not storing scheme values in `mn_ref *' variables and using
+conservative GC).   At the very least, JNI/Minor-style is tolerant of
+code that is generally undesirable.
+
+You're niftier example indirectly reveals the problem:
+
+    &gt;      mn_ref *
+    &gt;      assq (mn_call *c, mn_ref *key, mn_ref *alist)
+    &gt;      {
+    &gt;        mn_ref *pair = 0;
+    &gt;        mn_ref *pair_key = 0;
+    &gt; 
+    &gt;        while (mn_pair_p (c, alist))
+    &gt;          {
+    &gt;            pair     = mn_set (c, pair,     mn_car (c, alist));
+    &gt;            pair_key = mn_set (c, pair_key, mn_car (c, pair));
+    &gt;  
+    &gt;            if (mn_ref_eq (c, key, pair_key))
+    &gt;              return pair;
+    &gt;  
+    &gt;            alist = mn_to_cdr (c, alist);
+    &gt;          }
+    &gt;  
+    &gt;        return mn_false (c);
+    &gt;      }
+
+
+Ok, but now:
+
+	while (N--)
+          {
+             ... assq (...); ...
+          }
+
+is O(N) space.  I guess you need to put back the free calls just
+before the returns -- right where GCUNPROs would go.
+
+There's also that:
+
+    &gt;            pair     = mn_set (c, pair,     mn_car (c, alist));
+
+needs to allocate and free an intermediate handle (for the return
+value of mn_car, in implementations that don't store scheme values
+directly in `mn_ref *' variables and use conservative GC techniques)
+but the relative cost of those mandatory instructions in minor
+compared to other things in Pika is something I'd find hard to guess
+about.
+
+
+
+    &gt; I think this underscores how fundamentally similar the two are:
+    &gt; - Minor calls correspond to Pika frames.
+
+Correspond to but aren't isomorphic because of their different
+lifetimes.  That's the almost-but-not-quite-duals point.  You seem to
+agree:
+
+    &gt; - Minor heap-allocates while Pika stack-allocates.
+
+    &gt; I think the biggest difference between the two is that Pika ties
+    &gt; reference lifetimes very tightly to lexical block lifetimes, whereas
+    &gt; Minor binds them to call lifetimes, but allows/requires you to do some
+    &gt; other explicit frees.  Each has some advantages and some
+    &gt; disadvantages.
+
+I don't mean to be gratuitously argumentative.   I don't see any
+advantage to the call-lifetime hack other than that it is slightly 
+more tolerant of sloppy code that we'd want to discourage anyway.
+Your revised assq implementation is an example.
+
+Just as a point of interest: I remember back in the early days of
+Guile the syntax issues of C code were something we worried quite a
+lot about.  Some of the discussions concluded, for example, that
+conservative GC was imperative because we figured that anything else
+would be too hard for &quot;average C programmers&quot; to use and it seemed
+(incorrectly) at the time that conservative GC let us write Scheme
+expressions in C in a very direct style without having to think about
+it too hard.  Two things happened in the years following: (a) GC
+became much more widely accepted (thank you, James Gosling) and so
+what the &quot;average C programmer&quot; can be counted on for has expanded;
+(b) it turns out that conservative GC is a sham in the sense that if
+you use it without a deep understanding of permissable C optimizations
+and eternal vigilance about what they might effect -- you're going to
+lose by writing subtly incorrect code.  Scheme expressions aren't (in
+a simple way) C expressions and that's all there is too it -- trying
+to hide that fact in the manner of JNI doesn't help anyone (anymore).
+I think there's an analogy between the interactions of conservative GC
+and C optimizations on the one hand and on the other hand the
+interactions between JNI/Minor-style conventions and semantics and
+call lifetimes on the other.
+
+
+
+-t
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00311" href="msg00311.html">Re: Comparing Pika-syle and JNI-style</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+<li><strong><a name="00312" href="msg00312.html">Re: Comparing Pika-syle and JNI-style</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00262" href="msg00262.html">Re: when GC is permitted</a></strong>
+<ul><li><em>From:</em> Richard Kelsey</li></ul></li>
+<li><strong><a name="00283" href="msg00283.html">temporarily withdrawing SRFI-50</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+<li><strong><a name="00287" href="msg00287.html">Re: temporarily withdrawing SRFI-50</a></strong>
+<ul><li><em>From:</em> Thomas Bushnell, BSG</li></ul></li>
+<li><strong><a name="00294" href="msg00294.html">Re: temporarily withdrawing SRFI-50</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+<li><strong><a name="00295" href="msg00295.html">Comparing Pika-syle and JNI-style</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+<li><strong><a name="00296" href="msg00296.html">Re: Comparing Pika-syle and JNI-style</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00304" href="msg00304.html">Re: Comparing Pika-syle and JNI-style</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00304.html">Re: Comparing Pika-syle and JNI-style</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00306.html">Re: temporarily withdrawing SRFI-50</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00304.html">Re: Comparing Pika-syle and JNI-style</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00311.html">Re: Comparing Pika-syle and JNI-style</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00305"><strong>Date</strong></a></li>
+<li><a href="threads.html#00305"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

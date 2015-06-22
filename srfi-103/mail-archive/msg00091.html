@@ -1,0 +1,167 @@
+<!-- MHonArc v2.6.16 -->
+<!--X-Subject: upcoming revision, need feedback -->
+<!--X-From-R13: Rrevpx Sqqvatgba <qrevpx.rqqvatgbaNtznvy.pbz> -->
+<!--X-Date: Sun, 10 Jan 2010 03:34:23 +0000 (UTC) -->
+<!--X-Message-Id: 1263094024.31734.295.camel@eep -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>upcoming revision, need feedback</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00090.html">Date Prev</a>][<a href="msg00092.html">Date Next</a>][<a href="msg00090.html">Thread Prev</a>][<a href="msg00092.html">Thread Next</a>][<a href="maillist.html#00091">Date Index</a>][<a href="threads.html#00091">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>upcoming revision, need feedback</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-103@DOMAIN.HIDDEN">srfi-103@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: upcoming revision, need feedback</li>
+<li><em>From</em>: Derick Eddington &lt;<a href="mailto:derick.eddington@DOMAIN.HIDDEN">derick.eddington@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 09 Jan 2010 19:27:04 -0800</li>
+<li><em>Cc</em>: <a href="mailto:dvanhorn@DOMAIN.HIDDEN">dvanhorn@xxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-103@DOMAIN.HIDDEN">srfi-103@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Dkim-signature</em>: v=1; a=rsa-sha256; c=relaxed/relaxed;        d=gmail.com; s=gamma;        h=domainkey-signature:received:received:subject:from:to:cc         :content-type:date:message-id:mime-version:x-mailer         :content-transfer-encoding;        bh=XqUgvPH5F3yOlZd6NXB8G3f6cegMwM/2MUjdokTk+fQ=;        b=nt9I0B2bqlFsxx3oDjjrRWkFJ+RZRqO/gvgl2URqe99RkOF6orN4BEosgmSki8XNL/         PcHLnRKkLh4upbjQ9iTFqwyZlEgWppBZPQ0aYzHk6kfbZ6E1ydlec0/x4azFwd1xIyrN         9Q5hzadi2LnkAas/5AeoXA3R0B2O/x80uECMM=</li>
+<li><em>Domainkey-signature</em>: a=rsa-sha1; c=nofws;        d=gmail.com; s=gamma;        h=subject:from:to:cc:content-type:date:message-id:mime-version         :x-mailer:content-transfer-encoding;        b=X6dus3Q9Y9Oc6S5px7FMOFvE8VUcY8e6uxlckeezjl15gjIKzr/VKO/va18ddEFBiw         gfopv3ifnONqrPT53Fmw6TQkVsXvmegfXshI++TkjBI6s4vFrSyHTFBjs1WeHp0MzV8I         R+CN6bBnOPY4H0bKU+KnMyHydWKG3XsxgKJto=</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>I'm going to do another revision.  Listed below is what I'm thinking of
+revising.  I hope this will be the final revision.  I need feedback about some
+things.
+
+---------------------------
+Changes I'm undecided about
+---------------------------
+
+1) Should the implicit file name support be removed?  The sole motivation for it
+is so that (sub-)collections of files can be distributed and managed as
+stand-alone directories which can be moved around or deleted without having to
+remember and deal with straggler files outside the directory.  However, having
+stand-alone directories can instead be accomplished with an explicit &quot;main&quot; or
+some other naming convention (i.e. instead of (foo) use (foo main)).  Also,
+removing the implicit file name will remove the exceptional mapping of library
+names (--- main), (--- _main), etc.  I personally am (now) neutral about
+removing the implicit file name.
+
+2) Should the character encoding design be changed to encoding of code points
+(instead of UTF-8)?  This would require a terminating character after each
+encoded character, to avoid ambiguity.  E.g. the library name (a%/b c:*d) would
+map to the file name &quot;a%25%%2F%b/c%3A%%2A%d.ext&quot;, instead of
+&quot;a%25%2Fb/c%3A%2Ad.ext&quot; with the current UTF-8 design.  The motivation for this
+is: the terminating character makes it obvious where a character encoding ends;
+it's marginally easier to convert characters to and from code points than to and
+from UTF-8 encodings; and it is more consistent with Scheme's syntax for symbols
+and strings.  I personally am neutral about changing the encoding design.
+
+3) I'm thinking SRFI 104 should be changed such that it's required to always
+affect library locating, so that there's a portable cross-system interface to
+reconfiguring library locating.  Currently, SRFI 104 is designed such that it
+may or may not affect the locating of library files, and this is because I
+thought it good for systems to have the freedom to implement only the more
+abstract SRFI 103 and not care about SRFI 104 but SRFI 104 still needs to be
+useful (for working with library files) when externally imported on a system
+which does not have it affect library locating.  Now I'm thinking it's too
+confusing to have some systems' library locating be affected by SRFI 104 and
+others' not be, and I can't think of a reason why all systems supporting SRFI
+104 shouldn't have it affect their library locating; systems can still support
+SRFI 103 only and not SRFI 104; systems supporting an SRFI 104 which affects
+their library locating can still have other interfaces to affect library
+locating.  I personally would like to make this change.  Does anyone not like
+this change?
+
+-------------------------------------
+Changes I assume aren't controversial
+-------------------------------------
+
+4) Say that what's addressed is only how source files are found.  Rephrase to
+clearly allow systems to have complementary mechanisms for using
+separately-compiled object files instead of source files.  The current phrasing
+might seem to preclude that.  I welcome suggestions for the phrasing.
+
+5) Rephrase to clearly allow systems to ignore SRFI 103's environment variables
+if some system-specific mechanisms (e.g. command-line options) are used to
+override.  The current phrasing might seem to preclude that.
+
+6) Define the pathname component separator character to be #\/ on Unixes and #\\
+on Windows.  Define the environment variable element separator character to be
+#\: on Unixes and #\; on Windows.  The current draft is already tied to Unixes
+and Windows.
+
+7) Add #\; to the set of encoded characters, because a directory could be both
+in the SCHEME_LIB_PATH sequence and correspond to a library name component.
+Such a directory with a name including #\; is unusual but must be supported,
+otherwise an unencoded #\; would be misinterpreted in SCHEME_LIB_PATH.
+
+8) Rephrase to say what the set of encoded characters is and then say why
+particular characters are encoded.  The current phrasing is not as clear.
+
+9) Use a term other than &quot;search paths&quot; for the sequence of searched
+directories, and use a term other than &quot;search path&quot; for an element of the
+sequence of searched directories.  I welcome suggestions.
+
+10) Change SRFI 104's `search-paths' (i.e. whatever it's renamed to) element
+type from &quot;path&quot; to &quot;string&quot;, so that users can portably rely on the elements
+being that type and not some other unknown path type.
+
+Any other suggestions about terminological or phraseological improvement are
+welcome.
+
+--
+: Derick
+----------------------------------------------------------------
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00092" href="msg00092.html">Re: upcoming revision, need feedback</a></strong>
+<ul><li><em>From:</em> Vitaly Magerya</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00090.html">Re: why change the file name extension</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00092.html">Re: upcoming revision, need feedback</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00090.html">Re: why change the file name extension</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00092.html">Re: upcoming revision, need feedback</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00091"><strong>Date</strong></a></li>
+<li><a href="threads.html#00091"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

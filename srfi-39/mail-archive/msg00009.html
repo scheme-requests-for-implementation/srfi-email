@@ -1,0 +1,206 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Some comments -->
+<!--X-From-R13: [nep Trryrl <srryrlNWDA.G[bagerny.QO> -->
+<!--X-Date: Mon, 30 Dec 2002 15:29:58 +0100 (NFT) -->
+<!--X-Message-Id: 200212301429.gBUETMm28219@dino00.iro.umontreal.ca -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 3E050560.6090507@freenet.de -->
+<!--X-Reference: 200212220251.gBM2p2Y14110@dino00.iro.umontreal.ca -->
+<!--X-Reference: 3E077CA2.2040703@freenet.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Some comments</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00008.html">Date Prev</a>][<a href="msg00010.html">Date Next</a>][<a href="msg00008.html">Thread Prev</a>][<a href="msg00010.html">Thread Next</a>][<a href="maillist.html#00009">Date Index</a>][<a href="threads.html#00009">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Some comments</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:felixundduni@DOMAIN.HIDDEN">felixundduni@xxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Some comments</li>
+<li><em>From</em>: Marc Feeley &lt;<a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 30 Dec 2002 09:29:22 -0500</li>
+<li><em>Cc</em>: <a href="mailto:srfi-39@DOMAIN.HIDDEN">srfi-39@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-39@DOMAIN.HIDDEN">srfi-39@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:3E077CA2.2040703@DOMAIN.HIDDEN">3E077CA2.2040703@xxxxxxxxxx</a>&gt; (message from felix on Mon, 23 Dec	2002 22:14:10 +0100)</li>
+<li><em>References</em>: &lt;<a href="mailto:3E050560.6090507@DOMAIN.HIDDEN">3E050560.6090507@xxxxxxxxxx</a>&gt; &lt;<a href="mailto:200212220251.gBM2p2Y14110@DOMAIN.HIDDEN">200212220251.gBM2p2Y14110@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:3E077CA2.2040703@DOMAIN.HIDDEN">3E077CA2.2040703@xxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; &gt; When writing code, you really have to think of the parameters created
+&gt; &gt; by make-parameter as read-only, and those created by
+&gt; &gt; make-mutable-parameter as read-write.  It is only to simplify the
+&gt; &gt; migration of legacy code that the parameters created by make-parameter
+&gt; &gt; are possibly mutable (with an implementation dependent semantics).
+&gt; 
+&gt; This is unfortunate, since this SRFI really moves all that &quot;legacy&quot;
+&gt; code into non-specifiedness...
+
+Since SRFI 39 did not exist when the legacy code was written the code
+never conformed to it.  So SRFI 39 does not &quot;move&quot; the code into
+non-specifiedness.  The other choice (of having &quot;make-parameter&quot;
+create the mutable parameters as specified in SRFI 39) is even less
+appealing because in that case PLT legacy code would no longer work if
+PLT adopted that semantics.
+
+The existence of two kinds of parameters is mainly motivated by
+compatibility with PLT (so that there is very little work needed to
+implement it in PLT).
+
+&gt; I think parameters (as used in Chez, PLT or (say) Chicken) are
+&gt; (IMHO) well understood and heavily used.
+
+For these systems and Gambit-C, &quot;make-mutable-parameter&quot; and
+&quot;make-parameter&quot; can be defined as the native &quot;make-parameter&quot; when
+multithreading is not used.  The semantic differences only matter with
+PLT when threads are being used and the parameters are mutated (indeed
+only PLT and Chicken implement threads and the Chicken manual does not
+explain the interaction between parameters and threads).  I view SRFI
+39's main contribution as a specification of how mutation of
+parameters should work in the presence of threads.
+
+&gt; &gt;&gt;2) `parameterize' changes the parameters by &quot;swapping&quot;, as
+&gt; &gt;&gt;    in the traditional implementation.
+&gt; &gt; 
+&gt; &gt; 
+&gt; &gt; What do you mean by &quot;swapping&quot;?  Do you mean that parameterize does
+&gt; &gt; not create a new cell and simply saves the content of the cell,
+&gt; &gt; changes the content of the cell for the duration of the body, and then
+&gt; &gt; restores the cell?
+&gt; 
+&gt; Right.
+&gt; 
+&gt;  &gt; This would be unbelievably difficult to use in a
+&gt; &gt; multithreaded system, unless of course thread creation copies the
+&gt; &gt; dynamic environment of the parent (which I guess is why you want point
+&gt; &gt; 3).  Moreover, this implementation is expensive when using
+&gt; &gt; continuations to jump between different dynamic scopes (you have to
+&gt; &gt; undo a bunch of parameter mutations, and then redo a bunch of other
+&gt; &gt; mutations).
+&gt; 
+&gt; I don't think so. You could use a &quot;copy-on-write&quot; strategy that
+&gt; copies the dynamic (parameter) environment only if a thread actually
+&gt; mutates the parameter: say you have a global parameter environment,
+&gt; and `make-parameter' puts the value into this. Every thread gets its
+&gt; own parameter-environment (initially a copy of the parent thread's env [*]).
+&gt; Then, when the parameter is referenced, you check wether the thread's
+&gt; parameter-environment contains a value, and, if not, take the
+&gt; global one. Mutating a parameter does the copying (if needed).
+&gt; This should result in a negligible overhead for thread-creation,
+&gt; and a not-too-expensive overhead in the worst case (a shallow vector
+&gt; copy is used in Chicken, for example).
+
+No &quot;copy-on-write&quot; is not a valid implementation.  The reason is that
+the &quot;swapping&quot; semantics requires the child thread to have an
+independent copy of the parent's thread.  So the child must get a
+snapshot of the parent's dynamic environment which will make the
+child's mutations invisible to the parent ***AND*** the parent's
+mutations invisible to the child.  The copy-on-write approach you
+suggest only makes the child's mutations invisible to the parent.
+
+&gt; &gt;&gt;3) Make all parameters thread-local, child threads inherit
+&gt; &gt;&gt;    the parameter-settings of their parents.
+&gt; &gt; 
+&gt; &gt; 
+&gt; &gt; By thread-local you mean copy the dynamic environment (including the
+&gt; &gt; cells)?  Then see my previous response to a comment by Matthew Flatt
+&gt; &gt; (to summarize: it isn't clean and it is expensive when you create a
+&gt; &gt; thread).
+&gt; &gt; 
+&gt; 
+&gt; Clean? Well, that's a matter of taste. Expensive? Not necessarily
+&gt; (see above).
+
+When I say &quot;clean&quot; I don't mean it so subjectively.  A strong argument
+can be made that the semantics I propose in SRFI 39 for dynamic
+binding are closer to the lexical binding semantics.  What does this
+mean?  Well, if you look at how environments are manipulated in the
+denotational semantics (section 7.2 of R5RS) you will see that there
+are only two operations on environments &quot;lookup&quot; and &quot;extends&quot;.
+&quot;lookup&quot; returns the location in the store that is bound to an
+identifier.  The value associated to a location in the store is
+obtained with &quot;hold&quot; and &quot;assign&quot; changes the value associated with
+the location.  Dynamic binding as I propose it uses exactly the same
+operations (with the minor point that the domain of &quot;lookup&quot; and
+&quot;extends&quot; must be changed to accept parameter objects).  In addition
+to the lexical environment, the semantic functions also need an extra
+environment: the dynamic environment.  The dynamic binding semantics
+is simply obtained by having procedure call pass this dynamic
+environment to the called procedure (and this is the only thing that
+distinguished it from lexical binding).  Similarly (but obviously
+outside the scope of R5RS), the creation of a new thread would capture
+the dynamic environment of the parent thread.  That's it.  There is no
+need for an additional semantic operation for copying dynamic
+environments (which is non trivial because it must allocate store).
+Dynamic binding is a simple and natural extension of the R5RS
+semantics.  This is what I mean by &quot;clean&quot;.
+
+Marc
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00010" href="msg00010.html">Re: Some comments</a></strong>
+<ul><li><em>From:</em> Matthew Flatt</li></ul></li>
+<li><strong><a name="00013" href="msg00013.html">Re: Some comments</a></strong>
+<ul><li><em>From:</em> felix</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00001" href="msg00001.html">Some comments</a></strong>
+<ul><li><em>From:</em> felix</li></ul></li>
+<li><strong><a name="00003" href="msg00003.html">Re: Some comments</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+<li><strong><a name="00008" href="msg00008.html">Re: Some comments</a></strong>
+<ul><li><em>From:</em> felix</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00008.html">Re: Some comments</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00010.html">Re: Some comments</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00008.html">Re: Some comments</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00010.html">Re: Some comments</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00009"><strong>Date</strong></a></li>
+<li><a href="threads.html#00009"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

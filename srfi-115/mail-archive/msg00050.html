@@ -1,0 +1,183 @@
+<!-- MHonArc v2.6.18 -->
+<!--X-Subject: SRFI&#45;115 issues -->
+<!--X-From-R13: Xbua Qbjna <pbjnaNzrephel.ppvy.bet> -->
+<!--X-Date: Sun, 20 Oct 2013 23:37:58 +0200 (MST) -->
+<!--X-Message-Id: 20131020213757.GG7404@mercury.ccil.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>SRFI-115 issues</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00049.html">Date Prev</a>][<a href="msg00051.html">Date Next</a>][<a href="msg00044.html">Thread Prev</a>][<a href="msg00054.html">Thread Next</a>][<a href="maillist.html#00050">Date Index</a>][<a href="threads.html#00050">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>SRFI-115 issues</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-115@DOMAIN.HIDDEN">srfi-115@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: SRFI-115 issues</li>
+<li><em>From</em>: John Cowan &lt;<a href="mailto:cowan@DOMAIN.HIDDEN">cowan@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 20 Oct 2013 17:37:57 -0400</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-115@DOMAIN.HIDDEN">srfi-115@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Sender</em>: John Cowan &lt;<a href="mailto:cowan@DOMAIN.HIDDEN">cowan@xxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mutt/1.5.20 (2009-06-14)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Alex Shinn scripsit:
+
+&gt; How to integrate with the PCRE regular expression library? The
+&gt; intention is to make this the primitive notation, and for POSIX
+&gt; require a separate wrapper such as (pcre-&gt;sre &lt;str&gt;). Alternately
+&gt; we could allow both in the same API, as in IrRegex, though this
+&gt; introduces an ambiguity. Finally, we could make this entirely separate
+&gt; from the PCRE API.
+
+I think this is the best way: separate it from string-based REs, with
+conversions to and from handled by some other library.
+
+&gt; From SCSH's SREs I've left out the dsm notation which doesn't seem
+&gt; as though it need be exposed to the user, the posix-string notation
+&gt; because it's better accomplished with pcre-&gt;sre, and uncase whose
+&gt; exact semantics and motivation I never quite understood. I also left
+&gt; out the blank character class since it's a GNU extension without an
+&gt; accepted Unicode definition.
+
++1 on all points.
+
+&gt; | and &amp; are allowed, but the former must be escaped, which looks
+&gt; fairly ugly. For aesthetics they can also be written or and and,
+&gt; respectively.
+
+Stick with just `and` and `or`, I think.
+
+&gt; I've kept most IrRegex extensions, but made many of the non-POSIX
+&gt; ones optional, designated by the regexp-extended feature, and backref
+&gt; specifically gets its own feature regexp-backrefs.
+
+This troubles me.  It leaves things too much up to the implementation,
+and not enough flexibility for the user.  These extensions work only if
+you have a backtracking NFA, which is inherently less efficient.  In
+order to provide both efficiency and power, the implementation would
+have to provide both an NFA (to be used in the general case) and a DFA
+or Thompson-NFA (to be used if the extensions are not needed).  This is
+what Perl does, but Perl is a rag-bag by nature.
+
+I'd say: leave these things out of the main library, but add another
+library that provides them but using the same API.  This way, the user
+can load (srfi 115) or (srfi 115 extended) and get the most suitable
+engine.  Of course, they can be the same engine if the implementer
+doesn't care that much about speed.  If the user needs to load both,
+using the R6RS/R7RS prefix feature makes both APIs available.
+
+&gt; I left out the common utility patterns integer, domain, url, etc.,
+&gt; which can easily enough be included in libraries and unquoted into
+&gt; SREs.
+
+I think the large language should have these, either in this SRFI or in
+another SRFI, but in any case in (srfi 115 patterns).
+
+&gt; The =&gt; shorthand for named matches used by IrRegex would perhaps have
+&gt; better been named &lt;-, the more common choice to represent binding in
+&gt; parsers, leaving =&gt; open for the send-to-procedure idiom used in cond.
+
+No opinion on this, except that if a change is to be made, this is the
+time to make it.
+
+&gt; The API uses string indices for start, end and match positions, which
+&gt; is slow for a UTF8 implementation.
+
+That is the Right Thing.
+
+&gt; Many Unicode properties as well as Unicode script names that are
+&gt; available in PCRE are not provided as char-sets here.
+
+I'm working on a Unicode properties API.
+
+&gt; SREs with embedded SRFI 14 char-sets can't be written and read back
+&gt; in portably. R7RS WG2 is considering external syntax representations,
+&gt; and may include them for SRFI 14 char-sets as well, making this a
+&gt; non-issue.
+
+Not quite a non-issue, because if we have those things it will probably
+be as macros, not as lexical representations.  So they will need to be
+unquoted and won't work in data files.
+
+&gt; On the other hand SREs with embedded compiled regexps, as allowed in
+&gt; SCSH, are not supported, largely to preserve writeability. Instead you
+&gt; should embedded other SREs.
+
++1
+
+&gt; regexp-&gt;sre is frequently requested in IrRegex. It is useful and the
+&gt; only argument against it is that it would require more memory for
+&gt; compiled regexps (linearly more for most implementations), but I'll
+&gt; wait to see if it's requested in the discussion.
+
+I think it's an important thing to have.  The wording should allow for
+either caching within the regexp object or decompilation, and should
+warn that caching may produce a space leak.
+
+-- 
+John Cowan    <a  rel="nofollow" href="http://ccil.org/~cowan">http://ccil.org/~cowan</a>  cowan@xxxxxxxx
+Arise, you prisoners of Windows / Arise, you slaves of Redmond, Wash,
+The day and hour soon are coming / When all the IT folks say &quot;Gosh!&quot;
+It isn't from a clever lawsuit / That Windowsland will finally fall,
+But thousands writing open source code / Like mice who nibble through a wall.
+        --The Linux-nationale by Greg Baker
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00054" href="msg00054.html">Re: SRFI-115 issues</a></strong>
+<ul><li><em>From:</em> Alex Shinn</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00049.html">Re: benefits of SRE syntax</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00051.html">SRFI 115 editorial</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00044.html">Re: Two typos</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00054.html">Re: SRFI-115 issues</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00050"><strong>Date</strong></a></li>
+<li><a href="threads.html#00050"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,210 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Opaque syntax objects -->
+<!--X-From-R13: Yrvgu Ievtug <xjevtugNserr&#45;pbzc&#45;fubc.pbz> -->
+<!--X-Date: Sat, 13 Aug 2005 09:31:58 +0200 (DFT) -->
+<!--X-Message-Id: 200508130730.j7D7Ufa1004743@fcs12.free&#45;comp&#45;shop.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: y9lr7cz9obf.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Opaque syntax objects</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00034.html">Date Prev</a>][<a href="msg00036.html">Date Next</a>][<a href="msg00048.html">Thread Prev</a>][<a href="msg00039.html">Thread Next</a>][<a href="maillist.html#00035">Date Index</a>][<a href="threads.html#00035">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Opaque syntax objects</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-72@DOMAIN.HIDDEN">srfi-72@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Opaque syntax objects</li>
+<li><em>From</em>: Keith Wright &lt;<a href="mailto:kwright@DOMAIN.HIDDEN">kwright@xxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 13 Aug 2005 03:30:41 -0400</li>
+<li><em>Cc</em>: <a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-72@DOMAIN.HIDDEN">srfi-72@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:y9lr7cz9obf.fsf@DOMAIN.HIDDEN">y9lr7cz9obf.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt; (message from	Michael Sperber on Fri, 12 Aug 2005 17:17:56 +0200)</li>
+<li><em>References</em>: &lt;<a href="mailto:y9lr7cz9obf.fsf@DOMAIN.HIDDEN">y9lr7cz9obf.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; From: Michael Sperber &lt;sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx&gt;
+&gt; 
+&gt; The issue has come up in the discussion, but hasn't really been in
+&gt; the focus yet:
+&gt; 
+&gt; I'd like to suggest that compound expressions be represented by an
+&gt; opaque type rather than by pairs.  This would ensure a modicum of
+&gt; abstraction, and would *really* make comprehensive the ability of
+&gt; all syntax objects to carry location information.  I've come to
+&gt; appreciate this added layer of abstraction in PLT Scheme.
+
+Yow!  It looks like the low traffic on this list does
+not mean that nobody was reading.
+
+In my opinion, the great beauty of this SRFI is that it
+makes syntax into a list of identifiers so that we can
+write macros with map, caddar, reverse, etc...
+I _don't_ want to learn a whole new set, and re-write
+all my utility list handing procedures as syntax transformers.
+
+
+&gt; From: =?ISO-8859-1?Q?Jens_Axel_S=F8gaard?= &lt;jensaxel@xxxxxxxxxxxx&gt;
+&gt; 
+&gt; &gt; But wouldn't this completely break the (IMHO) rather practical
+&gt; &gt; ability to destructure arguments passed to macros via normal
+&gt; &gt; Scheme operators?
+&gt; 
+&gt; Keeping this abstraction doesn't make destructuring significantly
+&gt; more impractical. Destructuring arguments using the pattern matching
+&gt; capabilities of syntax-case is unchanged with both representations,
+
+Syntax-case is still available as a library procedure, if you like that.
+Personally, I never liked syntax-case, mostly because I did not
+understand it.  But a side benefit of working with the SRFI
+system for a while is that I think I start to understand
+syntax-case by seeing how it is built from the simpler components!
+
+&gt; and in the case were it is neccessary to use normal Scheme
+&gt; operators, most often a call to syntax-&gt;list, which turns a
+&gt; syntax-object representing a list into a list of syntax-objects, is
+&gt; enough to solve the problem.
+
+It seems that if you did enough of that you could eventually
+bust your syntax object down into the SRFI representation---
+the hard way!  What's the advantage?
+
+&gt; Since quote, quasiquote, unquote and unquote-splicing is used to 
+&gt; construct lists, one can introduce syntax, quasisyntax, unsyntax and
+&gt; unsyntax-splicing to construct syntax-objects. The abbreviation #'
+&gt; is a common abbreviation for syntax, and in analogy with this among
+&gt; others PLT uses #&#xB4; #, #,@ for the rest.
+
+But with this SRFI you don't even need #, and #,@ !
+We have quasisyntax (i.e. #` ) but , and ,@ still work
+with it the same as with quasiquote.
+  (hope you can parse the punctuation)
+
+Now what about #(reverse), #(filter), ...
+It seems like a losing direction to me.
+ 
+&gt; As an example of a macro written using normal Scheme operators and
+&gt; these syntactical abbreviations, I have taken the macro do-primes
+&gt; from &quot;Practical Common Lisp&quot; p. 94.
+
+I do not see the point of this example.  
+I just ran the following through the SRFI reference implementation,
+it works fine.
+
+(define-syntax (do-primes var start end . body)
+   #`(do (( ,var (next-prime ,start) (next-prime (+ ,var 1))))
+         ((&gt; ,var ,end) 'done)
+         ,@body))
+
+This is nothing more than a very straightforward substitution
+of a few parameters into a fixed template.  The template
+happens to be a loop, but so what?
+A more interesting example would do the loop in the macro expander.
+I don't have time right now to work up a prime example, but here
+is one I have laying about:
+
+(define-syntax define-count
+  (lambda (form)
+      #`,(let loop ((names (cdr form))
+                    (k 0)
+                    (result '()))
+           (if (null? names)
+               (quasisyntax (begin ,@result))
+                  (loop (cdr names)
+                        (+ k 1)
+                        (cons #`(define ,(car names) ,k))
+                              result)))))
+
+(define-count zero one two three)
+
+    --&gt;  (expands to)
+
+    (begin (define three 3) 
+        (define two 2)
+        (define one 1)
+        (define zero 0))
+
+(list three one zero two)   ==&gt; (3 1 0 2)
+
+
+&gt; A macro whose expansion uses quasiquote to construct a list can
+&gt; be hard to read (and write), if ordinary lists are used to represent
+&gt; syntax. It is not immediately obvious whether a given quasiquote
+&gt; is used to construct the expansion or is a part of the expansion
+&gt; of a call to the macro.
+
+Indeed, nested quasiquote is notoriously mind-bending.
+What part of the SRFI should be changed to fix that?
+How does a lot of syntax-&gt;list help?
+
+-- 
+     -- Keith Wright
+
+Programmer in Chief, Free Computer Shop
+ ---  Food, Shelter, Source code.  ---
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00039" href="msg00039.html">Re: Opaque syntax objects</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+<li><strong><a name="00055" href="msg00055.html">Re: Opaque syntax objects</a></strong>
+<ul><li><em>From:</em> Jens Axel S&#xF8;gaard</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00026" href="msg00026.html">Opaque syntax objects</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00034.html">Re: Opaque syntax objects</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00036.html">Re: Opaque syntax objects</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00048.html">Re: Opaque syntax objects</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00039.html">Re: Opaque syntax objects</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00035"><strong>Date</strong></a></li>
+<li><a href="threads.html#00035"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

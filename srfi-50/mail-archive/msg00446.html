@@ -1,0 +1,287 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Unicode and Scheme (tweaked) -->
+<!--X-From-R13: Fbz Zbeq <ybeqNrzs.arg> -->
+<!--X-Date: Sun,  8 Feb 2004 23:23:47 +0100 (NFT) -->
+<!--X-Message-Id: 200402082239.OAA21950@morrowfield.regexps.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: BC4C1389.A3D4%schlie@comcast.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Unicode and Scheme (tweaked)</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00445.html">Date Prev</a>][<a href="msg00447.html">Date Next</a>][<a href="msg00445.html">Thread Prev</a>][<a href="msg00448.html">Thread Next</a>][<a href="maillist.html#00446">Date Index</a>][<a href="threads.html#00446">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Unicode and Scheme (tweaked)</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:schlie@DOMAIN.HIDDEN">schlie@xxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Unicode and Scheme (tweaked)</li>
+<li><em>From</em>: Tom Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 8 Feb 2004 14:39:59 -0800 (PST)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:BC4C1389.A3D4%25schlie@DOMAIN.HIDDEN">BC4C1389.A3D4%schlie@xxxxxxxxxxx</a>&gt; (message from Paul Schlie on	Sun, 08 Feb 2004 16:25:45 -0500)</li>
+<li><em>References</em>: &lt;<a href="mailto:BC4C1389.A3D4%25schlie@DOMAIN.HIDDEN">BC4C1389.A3D4%schlie@xxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+Hopefully this coming week the editors will agree to promote my
+submission to draft status, at which point this discussion should
+probably move there.  Nevertheless, the CHAR? and STRING? types _do_
+play a significant role in FFIs so I don't feel _to_ bad about
+continuing this here for now.
+
+
+    &gt; -- refined earlier post --
+
+    &gt; Re: &quot;This SRFI is based in part on the presumption that one should be able
+    &gt; to write a portable Scheme program which can accurately read and manipulate
+    &gt; source texts in any implementation, even if those source texts contain
+    &gt; characters specific to that implementation.&quot;
+
+    &gt; Personally, I believe that it's a mistake to attempt to more abstractly
+    &gt; extend the interpretation of scheme's standard character type and associated
+    &gt; functions, which are presently specified in such a way to enable their
+    &gt; implementation to be based on the host's platform's native 8-bit byte
+    &gt; character encoding which may be synonymous the platform's raw octet data
+    &gt; interfaces (thereby enabling various scheme implementation's historical
+    &gt; ability to manipulate raw data byte streams as character sequences, which
+    &gt; may actually encode what ever one needs to; which these proposals begin to
+    &gt; indirectly break by prohibiting the ability to maintain that equivalence,
+    &gt; without offering an alternative).
+
+My view:
+
+Scheme does need a clear, clean way to manipulate octets.  SRFI-4
+(&quot;Homogenous numeric vector types&quot;) helps in that regard.   A SRFI
+of standard procedures for signed and unsigned octet arithmetic might
+help.   I/O procedures would help.
+
+Scheme also needs a clear, clean way to manipulate source texts and
+symbol names.  The requirements of &quot;global programming&quot; suggest to me
+at least that these can not possibly be octet-oriented.
+
+Historically, briefly (a few decades), we've lived through a period in
+which there was a pun in which characters fit in octets and there was
+no practical reason to distinguish them.   But realistically, this is
+just an accident -- not something fundamental that ought to be carved
+into Scheme standards.
+
+So there is a choice of which direction to take the CHAR? type: it
+might take one fork and become &quot;an octet&quot; or another direction and
+become &quot;a character&quot;.  I don't see any reason why &quot;character&quot; isn't
+the better choice.   We don't need a symbolic syntax for octets.   We
+don't need case-independence for octets.   We do need characters for
+reflective/metacircular programming.   CHAR? should be characters, and
+characters, we should now recognize, are not octets.
+
+
+    &gt; However, it is likely true that scheme's character set and associated
+    &gt; function specification should be tightened up a little bit even in this
+    &gt; regard; so as feedback on this aspect of the proposals:
+
+    &gt; - character-set and lexical ordering could be improved along these lines:
+
+    &gt;   digit:        0 .. 9
+
+    &gt;   letter:       A a .. Z z           ;; where A a .. F f also hexdigits
+
+That ordering of letters would be: upwards incompatible with R5RS and
+R4RS (at least); inconsistent with ASCII; inconsistent with Unicode,
+redundent with the -ci ordering predicates.
+
+
+    &gt;   symbol:       ( ) # ' ` , @ . &quot;    ;; for consistency lexical ordering
+    &gt;                 ; $ % &amp; * / : + -    ;; could/should be defined/improved
+    &gt;                 ^ _ ~ \ &lt; = &gt; ?
+    &gt;                 { } [ ] | !          ;; which should also be included
+
+That would, again, be incompatible with R5RS, R4RS, ASCII, and Unicode.
+
+
+    &gt;   space:        space tab newline    ;; as well as other
+    &gt;   tab:        &lt;unmapped-values&gt;    ;; unspecified character/byte codes
+
+I don't quite follow what you are suggesting or why it would improve anything.
+
+    &gt; - lexical ordering should be refined as above to be more typically useful:
+    &gt;   (char&lt;? #\A #\a ... #\Z #\z) -&gt; #t
+    &gt;   (char&lt;? &lt;digit&gt; &lt;letter&gt; &lt;symbol&gt; &lt;space&gt; &lt;other&gt;) -&gt; #t
+
+Why would that be useful?  It would prevent Scheme's from using the
+&quot;natural&quot; orderings of ASCII, Unicode, and other character sets.
+
+
+    &gt; - only &lt;letter&gt; characters have different upper/lower case representations;
+    &gt;   all other character encodings, including those unspecified, are unaltered
+    &gt;   by upper-case, lower-case, and read/write-port functions:
+
+    &gt;   (char-upper-case? &lt;digit&gt; #\A..#\Z &lt;symbol&gt; &lt;space&gt; &lt;other&gt;) -&gt; #t
+    &gt;   (char-lower-case? &lt;digit&gt; #\a..#\z &lt;symbol&gt; &lt;space&gt; &lt;other&gt;) -&gt; #t
+
+It would be a strange fiction to say that digits, punctuation, space,
+or other non-letter characters are both upper and lower case, although
+I don't think anything in my proposals precludes an implementation
+from doing so.
+
+    &gt;   (char-upper-case? #\a..#\z) -&gt; #f
+    &gt;   (char-lower-case? #\A..#\Z) -&gt; #f
+
+    &gt;   (char=? (char-upper-case (char-lower-case x)) (char-upper-case x)) -&gt; #t
+    &gt;   (char=? (char-lower-case (char-upper-case x)) (char-lower-case x)) -&gt; #t
+
+    &gt;   for all x &lt;letter&gt; characters:
+    &gt;   (char=? (char-upper-case x) (char-lower-case x)) -&gt; #f
+
+    &gt;   for all x non &lt;letter&gt; characters:
+    &gt;   (char=? x (char-upper-case x) (char-lower-case x)) -&gt; #t
+
+    &gt;   for all x characters:
+    &gt;   (char-ci=? x (char-upper-case x) (char-lower-case x)) -&gt; #t
+
+There is sort of a general design choice.   You can:
+
+	1) define the case-mapping procedures of Scheme to have a
+           certain highly regular &quot;algebraic&quot; structure, as you 
+           are proposing.
+
+        2) define the case-mapping procedures of Scheme so that they
+           can reflect the structure of character sets people have 
+           designed to deal with the actual complexities of human
+           writing.
+
+I tend to think that the old &quot;as simple as possible but no simpler&quot;
+line applies here and that, generally, (2) is preferred.   R5RS looks
+to me like, for CHAR-ALPHABETIC? characters, the authors intended (2)
+but made the mistake of assuming that (2) and (1) are mutually
+consistent.
+
+Therefore, I've proposed that CHAR-ALPHABETIC? be retained as the
+class of characters that (roughly) satisfy the kind of (1) you are
+after;  and CHAR-LETTER? be introduced that is consistent with (2).
+That's the only upward compatible way I see forward.
+
+
+    &gt; - all characters are assumed to be encoded as bytes using the host's
+    &gt;   native encoding representation, thereby enabling equivalence between
+    &gt;   the host's native raw byte data I/O and storage, and an implementation's
+    &gt;   character-set encoding.
+
+I think a byte is simply an INTEGER? which is EXACT? --- either in the
+range -128..127 or 0..255.   What's missing are procedures to perform
+suitable modular and 2s-complement binary operations on such integers.
+
+
+    &gt; - portability of the native platform's encoded text is the responsibility
+    &gt;   of the host platform and/or other external utilities aware of the
+    &gt;   transliterations requirements between the various encoding
+    &gt;   formats.
+
+Don't confuse encoding with character-set.  There are, for example,
+many ways to encode a given Unicode codepoint stream as a sequence of
+octets -- but at the endpoints of two such streams, two Schemes should
+agree about whether or not READ has returned EQ? symbols.
+
+
+    &gt; - implementations which desire to support specific character set encoding
+    &gt;   which may require I/O port transliteration between scheme's presumed
+    &gt;   platform neutral character/byte encodings and that of it's native host,
+    &gt;   may do so by defining a collection of functions which map an arbitrary
+    &gt;   specific character set encoding into scheme's neutral character/byte
+    &gt;   sequences as required; and/or may extend the definition of standard
+    &gt;   function definitions as long as they do not alter the presumed neutrality
+    &gt;   and binary equivalence between scheme's character/byte data sequence
+    &gt;   representation and that of it's host.
+
+I don't follow you there.
+
+    &gt; (lastly, the notion of enabling scheme symbols to be composed of arbitrary
+    &gt;  extended character set characters which may not be portably displayed on
+    &gt;  or easily manipulated on arbitrary platforms, is clearly antithetical to
+    &gt;  achieving portability; so it's suggestion should just be dropped.)
+
+On the contrary.   Display and manipulation by other tools is and will
+continue to catch up.   There should be some Unicode SRFIs precisely
+because that is the best bet for portability.
+
+
+    &gt; Although I know that these views may not be shared by many, I don't believe
+    &gt; that scheme should be indirectly restricted to only being able to interface
+    &gt; to a text only world (regardless of it's encoding); and hope that some
+    &gt; recognize that these proposals begin to restrict the applicability of scheme
+    &gt; in just that way, without providing an alternative mechanism to facilitate
+    &gt; scheme's ability to access and manipulate raw binary, which is that all
+    &gt; truly flexible programming languages with any legs must do; as the computing
+    &gt; world is a tad larger than assuming all that needs to be processed and
+    &gt; interfaced with is text encoded in some specific way.
+
+I think you'll find that almost everyone agrees that Scheme needs
+facilities for &quot;raw binary&quot; manipulation.   I think the mistake you
+make is assuming that these facilities must be made the job of the
+CHAR? and STRING? types.    Octets are integers, not characters.
+
+-t
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00448" href="msg00448.html">Re: Unicode and Scheme (tweaked)</a></strong>
+<ul><li><em>From:</em> Paul Schlie</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00445" href="msg00445.html">Re: Unicode and Scheme (tweaked)</a></strong>
+<ul><li><em>From:</em> Paul Schlie</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00445.html">Re: Unicode and Scheme (tweaked)</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00447.html">Re: strings draft</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00445.html">Re: Unicode and Scheme (tweaked)</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00448.html">Re: Unicode and Scheme (tweaked)</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00446"><strong>Date</strong></a></li>
+<li><a href="threads.html#00446"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

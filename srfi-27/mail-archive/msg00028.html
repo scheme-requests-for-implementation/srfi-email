@@ -1,0 +1,210 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: changes to the design -->
+<!--X-From-R13: fronfgvna.rtareNcuvyvcf.pbz -->
+<!--X-Date: Thu,  4 Apr 2002 19:21:08 +0200 (DFT) -->
+<!--X-Message-Id: OFC42F7EC2.342C7F6A&#45;ONC1256B91.0059DFC8@diamond.philips.com -->
+<!--X-Content-Type: multipart/alternative -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>changes to the design</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00027.html">Date Prev</a>][<a href="msg00029.html">Date Next</a>][<a href="msg00027.html">Thread Prev</a>][<a href="msg00029.html">Thread Next</a>][<a href="maillist.html#00028">Date Index</a>][<a href="threads.html#00028">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>changes to the design</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-27@DOMAIN.HIDDEN">srfi-27@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: changes to the design</li>
+<li><em>From</em>: <a href="mailto:sebastian.egner@DOMAIN.HIDDEN">sebastian.egner@xxxxxxxxxxx</a></li>
+<li><em>Date</em>: Thu, 4 Apr 2002 19:18:07 +0200</li>
+<li><em>Cc</em>: <a href="mailto:lecuyer@DOMAIN.HIDDEN">lecuyer@xxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-27@DOMAIN.HIDDEN">srfi-27@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+
+<br><font size=2 face="sans-serif">Dear list,</font>
+<br>
+<br><font size=2 face="sans-serif">The following issues have been raised in the discussion about </font>
+<br><font size=2 face="sans-serif">SRFI-27 &quot;Sources of Random Bits&quot;.</font>
+<br>
+<br><font size=2 face="sans-serif">1. Which generator to use for the reference implementation?</font>
+<br><font size=2 face="sans-serif">2. How to deal with several streams and substream?</font>
+<br><font size=2 face="sans-serif">3. How to obtain streams of random bytes (e.g. for security appl.)?</font>
+<br><font size=2 face="sans-serif">4. How to deal with default-random-source?</font>
+<br><font size=2 face="sans-serif">5. How to name the procedures?</font>
+<br>
+<br><font size=2 face="sans-serif">In particular the first and second question have led me to reconsider</font>
+<br><font size=2 face="sans-serif">the entire design. The result of this process is a revision of the SRFI</font>
+<br><font size=2 face="sans-serif">which will be announced by the editors shortly. I will now briefly discuss</font>
+<br><font size=2 face="sans-serif">the topics and my changes to the design.</font>
+<br>
+<br><font size=2 face="sans-serif">Ad 1. </font>
+<br>
+<br><font size=2 face="sans-serif">My original reference implementation was based on George Marsaglia's</font>
+<br><font size=2 face="sans-serif">COMBO generator, which is a 32-bit implementable generator of</font>
+<br><font size=2 face="sans-serif">period 2^60. From my experience, this generator is usually quite</font>
+<br><font size=2 face="sans-serif">acceptable.</font>
+<br>
+<br><font size=2 face="sans-serif">Brad Lucier suggested to use Pierre l'Ecuyer's MRG32k3a generator,</font>
+<br><font size=2 face="sans-serif">based on the fact that there is substantially more theory on this generators</font>
+<br><font size=2 face="sans-serif">than for the COMBO generator. In addition, its period is much larger and</font>
+<br><font size=2 face="sans-serif">it allows to advance the generator by more than one step at once, which</font>
+<br><font size=2 face="sans-serif">is necessary to provide more than one stream in a controlled fashion.</font>
+<br>
+<br><font size=2 face="sans-serif">I have fully adopted Brad's proposal. The revised version of the reference</font>
+<br><font size=2 face="sans-serif">implementation is entirely based on MRG32k3a.</font>
+<br>
+<br><font size=2 face="sans-serif">Ad 2.</font>
+<br>
+<br><font size=2 face="sans-serif">An important issue for numerical simulation and other applications are</font>
+<br><font size=2 face="sans-serif">streams and substreams. This means that the interface provides a simple</font>
+<br><font size=2 face="sans-serif">way to obtain several streams derived from the same backbone generator.</font>
+<br><font size=2 face="sans-serif">Ideally, these streams appear to be statistically independent.</font>
+<br>
+<br><font size=2 face="sans-serif">Moreover, as Pierre l'Ecuyer pointed out, a most frequent pattern of usage</font>
+<br><font size=2 face="sans-serif">for simulations is to obtain streams and then substreams of these streams.</font>
+<br><font size=2 face="sans-serif">In other words, the independent streams are S[i,j] for i, j &gt;= 0 and not just</font>
+<br><font size=2 face="sans-serif">S[i] for i &gt;= 0. Since it also represents a considerable amount of work (in</font>
+<br><font size=2 face="sans-serif">the case of MRG32k3a already done by P. l'Ecuyer) to find good points</font>
+<br><font size=2 face="sans-serif">in the entire period for the independent streams, I have adopted this two-</font>
+<br><font size=2 face="sans-serif">dimensional indexing for independent streams.</font>
+<br>
+<br><font size=2 face="sans-serif">Technically, the interface has been augmented by the call</font>
+<br>
+<br><font size=2 face="sans-serif">&nbsp; &nbsp; &nbsp; &nbsp; (random-source-pseudo-randomize! s i j) </font>
+<br>
+<br><font size=2 face="sans-serif">which advances the random source s to the beginning of the (i,j)-th</font>
+<br><font size=2 face="sans-serif">independent stream. (Refer to the revised SRFI document for details.)</font>
+<br>
+<br><font size=2 face="sans-serif">In effect, the reference implementation of the SRFI does now contains</font>
+<br><font size=2 face="sans-serif">most of the features of the software Pierre l'Ecuyer's has written to</font>
+<br><font size=2 face="sans-serif">provide random number generators (refer to l'Ecuyer's publications).</font>
+<br>
+<br><font size=2 face="sans-serif">Ad 3. </font>
+<br>
+<br><font size=2 face="sans-serif">In certain applications it is desired to obtain a sequence of random bytes</font>
+<br><font size=2 face="sans-serif">in one way or the other. The current interface provides two ways to do this.</font>
+<br><font size=2 face="sans-serif">One can either repeatedly call (random-integer 256), maybe for more</font>
+<br><font size=2 face="sans-serif">than one byte at a time, or one can call (random-integer (expt 256 n))</font>
+<br><font size=2 face="sans-serif">where n is the number of bytes desired. Both ways have their applications </font>
+<br><font size=2 face="sans-serif">and I suppose the potential performance gain for a dedicated procedure</font>
+<br><font size=2 face="sans-serif">is not worth the effort for the specification. Therefore I did not change the</font>
+<br><font size=2 face="sans-serif">interface for that.</font>
+<br>
+<br><font size=2 face="sans-serif">Ad 4.</font>
+<br>
+<br><font size=2 face="sans-serif">The interface specifies that there is a default random source that controls</font>
+<br><font size=2 face="sans-serif">the behavior of the &quot;no fuss&quot; procedures random-integer and random-real.</font>
+<br><font size=2 face="sans-serif">Felix proposed to replace the global variable default-random-source by</font>
+<br><font size=2 face="sans-serif">a procedure call to set or retrieve the default random source.</font>
+<br>
+<br><font size=2 face="sans-serif">I have experimented with this idea. Unfortunately, it does not solve the</font>
+<br><font size=2 face="sans-serif">problem that the procedures random-integer and random-real have an</font>
+<br><font size=2 face="sans-serif">implicit reference to an object that controls their behavior. This become</font>
+<br><font size=2 face="sans-serif">particularly problematic when a caller wants to set a new default random</font>
+<br><font size=2 face="sans-serif">source. Does that automatically mean that the variables random-integer</font>
+<br><font size=2 face="sans-serif">and random-real should be changed as well?</font>
+<br>
+<br><font size=2 face="sans-serif">Eventually, I have chosen to leave this decision to the (expert) user,</font>
+<br><font size=2 face="sans-serif">which means default-random-source is still a global variable, but</font>
+<br><font size=2 face="sans-serif">I advise the occasional user not to assign any new value to avoid</font>
+<br><font size=2 face="sans-serif">the miraculous &quot;I set the default source, why does random-integer</font>
+<br><font size=2 face="sans-serif">seem to be unimpressed?&quot;-effect that I had to endure a couple of times.</font>
+<br><font size=2 face="sans-serif">(An assignment to default-random-source does not change random-integer</font>
+<br><font size=2 face="sans-serif">in any way; it still uses the old object.)</font>
+<br>
+<br><font size=2 face="sans-serif">Ad 5.</font>
+<br>
+<br><font size=2 face="sans-serif">It has been proposed by Bengt Kleberg to change the naming convention</font>
+<br><font size=2 face="sans-serif">from &quot;set-random-xyz!&quot; into &quot;random-xzy-set!&quot;. This has been done.</font>
+<br>
+<br>
+<br><font size=2 face="sans-serif">Additional Modifications to the SRFI</font>
+<br>
+<br><font size=2 face="sans-serif">The largest modification in the interface specified by the SRFI is the</font>
+<br><font size=2 face="sans-serif">presence of a mechanism to obtain random real numbers. This has</font>
+<br><font size=2 face="sans-serif">two reasons. </font>
+<br>
+<br><font size=2 face="sans-serif">First, there are many applications (in particular numerical simulations)</font>
+<br><font size=2 face="sans-serif">that need real values as their primary source of randomness. I was just</font>
+<br><font size=2 face="sans-serif">to biassed towards my own (discrete) applications to understand how</font>
+<br><font size=2 face="sans-serif">fundamental it is to have reals available.</font>
+<br>
+<br><font size=2 face="sans-serif">Second, there are (backbone) pseudo random number generators </font>
+<br><font size=2 face="sans-serif">optimized to exploit floating point hardware nicely, MRG32k3a is an</font>
+<br><font size=2 face="sans-serif">example of that. It would be an untolerable waste of performance if</font>
+<br><font size=2 face="sans-serif">such a generator would have to convert its output into range-limited</font>
+<br><font size=2 face="sans-serif">integers, just for the next functions to reconstruct the reals if the application</font>
+<br><font size=2 face="sans-serif">needs it. </font>
+<br>
+<br><font size=2 face="sans-serif">Once I had fully adopted the need for real numbers, it became clear</font>
+<br><font size=2 face="sans-serif">that the old reference implementation (based on COMBO anyway)</font>
+<br><font size=2 face="sans-serif">had to be redone entirely. This has taken quite some time to accomplish</font>
+<br><font size=2 face="sans-serif">but it has resulted in three different implementations that are meant as a </font>
+<br><font size=2 face="sans-serif">source of inspiration to Scheme implementors.</font>
+<br>
+<br><font size=2 face="sans-serif">Please refer to the SRFI document once it is available online... :-)</font>
+<br>
+<br><font size=2 face="sans-serif">Sebastian.</font>
+<br><font size=2 face="sans-serif"><br>
+----<br>
+Dr. Sebastian Egner<br>
+Senior Scientist<br>
+Philips Research Laboratories<br>
+Prof. Holstlaan 4 (WY2)<br>
+5656 AA Eindhoven<br>
+The Netherlands<br>
+tel: &nbsp; &nbsp; &nbsp; +31 40 27-43309<br>
+fax: &nbsp; &nbsp; &nbsp;+31 40 27-44918<br>
+email: sebastian.egner@xxxxxxxxxxx</font>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00027.html">Re: streams and substreams</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00029.html">New revision of SRFI 27 available</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00027.html">Re: streams and substreams</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00029.html">New revision of SRFI 27 available</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00028"><strong>Date</strong></a></li>
+<li><a href="threads.html#00028"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

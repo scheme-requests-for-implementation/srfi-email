@@ -1,0 +1,136 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Finally clauses -->
+<!--X-From-R13: Dvpuneq Yryfrl <xryfrlNf48.bet> -->
+<!--X-Date: Sat, 10 Aug 2002 01:28:04 +0200 (DFT) -->
+<!--X-Message-Id: E17dJ9O&#45;0006TH&#45;00@rosebud -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20020809151056.A2425@phage.intra.eservglobal.co.uk -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Finally clauses</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00010.html">Date Prev</a>][<a href="msg00012.html">Date Next</a>][<a href="msg00010.html">Thread Prev</a>][<a href="msg00012.html">Thread Next</a>][<a href="maillist.html#00011">Date Index</a>][<a href="threads.html#00011">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Finally clauses</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:tonyg@DOMAIN.HIDDEN">tonyg@xxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Finally clauses</li>
+<li><em>From</em>: Richard Kelsey &lt;<a href="mailto:kelsey@DOMAIN.HIDDEN">kelsey@xxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 09 Aug 2002 19:26:34 -0400</li>
+<li><em>Cc</em>: <a href="mailto:srfi-34@DOMAIN.HIDDEN">srfi-34@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-34@DOMAIN.HIDDEN">srfi-34@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20020809151056.A2425@DOMAIN.HIDDEN">20020809151056.A2425@xxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt; (message	from Tony Garnock-Jones on Fri, 9 Aug 2002 15:10:56 +0100)</li>
+<li><em>Sender</em>: &lt;<a href="mailto:kelsey@DOMAIN.HIDDEN">kelsey@xxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>   Date: Fri, 9 Aug 2002 15:10:56 +0100
+   From: Tony Garnock-Jones &lt;tonyg@xxxxxxxxxxxxxxx&gt;
+
+   Hi. One feature I find valuable in Java that I miss in C++ (and
+   Scheme, for that matter) is the idea of a &quot;finally&quot; clause. Would
+   srfi-34 be a sensible place to put one of these - either alongside the
+   try clause, on its own, or bound up together with it, as perhaps
+   try/finally?
+
+Scheme already has a 'finally' in dynamic-wind.  In Java the
+'finally' mechanism is combined with exception handling because
+raising an exception is the only way to do a throw.  Scheme has
+long had throws, via call-with-current-continuation, and in 
+R5RS it got dynamic-wind as its version of 'finally'.  What it
+doesn't have is exceptions.  With SRFI-34 exceptions and throws
+are still separate.  You can raise an exception without doing a
+throw, and do a throw without raising an exception.
+
+	   (begin
+	     (mutex-lock! m)
+	     (finally (mutex-unlock! m)
+	       (do-operation-requiring-lock)))
+
+This 'finally' can be defined as:
+
+  (define-syntax finally
+    (syntax-rules ()
+      ((finally final-exp body . rest)
+       (dynamic-wind (lambda () #f)
+                     (lambda () body . rest)
+                     (lambda () final-exp)))))
+
+Note that your example doesn't work well because someone can
+use continuations to throw out of the lock-requiring operation
+and then back in again.  You could fix this by doing
+
+   (dynamic-wind (lambda () (mutex-lock! m))
+                 (lambda () (do-operation-requiring-lock))
+                 (lambda () (mutex-unlock! m)))
+
+but your lock-requiring operation still only gets very weak
+protection.  The lock only protects the sections that do not do
+throws, and you don't need 'finally' for those parts.
+
+The bottom line is that 'finally' is already there but it doesn't
+help as much as you would like.
+                                       -Richard Kelsey
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00012" href="msg00012.html">Re: Finally clauses</a></strong>
+<ul><li><em>From:</em> Tony Garnock-Jones</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00009" href="msg00009.html">Finally clauses</a></strong>
+<ul><li><em>From:</em> Tony Garnock-Jones</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00010.html">Re: Finally clauses</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00012.html">Re: Finally clauses</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00010.html">Re: Finally clauses</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00012.html">Re: Finally clauses</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00011"><strong>Date</strong></a></li>
+<li><a href="threads.html#00011"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

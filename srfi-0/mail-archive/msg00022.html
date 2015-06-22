@@ -1,0 +1,160 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: a separate configuration language -->
+<!--X-From-R13: Dvpuneq Yryfrl <xryfrlNerfrnepu.aw.arp.pbz> -->
+<!--X-Date: Fri, 26 Feb 1999 10:37:00 &#45;0600 (CST) -->
+<!--X-Message-Id: 199902261636.LAA11953@kima.nj.nec.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: y9ln221ckrs.fsf@brabantio.informatik.uni&#45;tuebingen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: a separate configuration language</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00021.html">Date Prev</a>][<a href="msg00023.html">Date Next</a>][<a href="msg00021.html">Thread Prev</a>][<a href="msg00023.html">Thread Next</a>][<a href="maillist.html#00022">Date Index</a>][<a href="threads.html#00022">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: a separate configuration language</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: a separate configuration language</li>
+<li><em>From</em>: Richard Kelsey &lt;<a href="mailto:kelsey@DOMAIN.HIDDEN">kelsey@xxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 26 Feb 1999 11:36:37 -0500</li>
+<li><em>Cc</em>: <a href="mailto:srfi-0@DOMAIN.HIDDEN">srfi-0@xxxxxxxxxxxxxxxxx</a>, <a href="mailto:srfi-editors@DOMAIN.HIDDEN">srfi-editors@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:y9ln221ckrs.fsf@DOMAIN.HIDDEN">y9ln221ckrs.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	(<a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+   References: &lt;199902230131.UAA30938@xxxxxxxxxxxxxxx&gt;
+   From: sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx (Michael Sperber [Mr. Preprocessor])
+   Date: 26 Feb 1999 15:16:55 +0100
+
+   Richard&gt;  - It may be difficult to implement either version of SRFI 0 in the
+   Richard&gt;    presence of a module system.  This is certainly the case with
+   Richard&gt;    Scheme 48.
+
+   Actually, I have an implementation of our suggestion for Scheme 48 :-)
+
+I would be interested in seeing it.
+
+   There's one change you suggest which we're not happy with:
+
+   Richard&gt; Unlike the proposed COND-IMPLEMENTS, the implementation has no
+   Richard&gt; leeway in choosing which clause to use (down with ambiguity!).
+
+   We bounced this around quite a number of times among the editors.  I
+   don't know how to better support our case for leaving in the ambiguity 
+   than what's already in the suggestion:
+
+   &gt; The COND-IMPLEMENTS construct specified here gives Scheme
+   &gt; implementations more flexibility in implementing it.  The
+   &gt; specification is intentionally ambiguous as to which clause will be
+   &gt; expanded in a COND-IMPLEMENTS form.  This is in order to allow Scheme
+   &gt; implementations to choose an especially convenient (fastest/least
+   &gt; memory-intensive/...) combination of implementations.
+
+How does the implementation know what the programmer has in
+mind?  Suppose there are two SRFI's that provide image manipulation,
+SRFI-X which can handle both gif and jpeg images, and SRFI-Y that
+can only do gif.  The programmer writes
+
+ (cond-implements (srfi-x 'good)
+                  (srfi-y (display &quot;GIF only, sorry&quot;)
+                          (newline)
+                          ... jpeg stubs that raise errors ...))
+
+Most likely the implementation of SRFI-Y will be smaller and
+faster, as it only has to handle one kind of image.  But do you
+you really want the implementation to choose the second clause?
+Suppose the form were
+
+ (cond-implements (srfi-x 'good)
+                  (srfi-y (error &quot;sorry, incompatible implementation&quot;)))
+
+No matter how fast SRFI-Y was, I think I would prefer SRFI-X.
+
+Secondly, how much leeway does the implementation have?
+If a program contains the following:
+
+ (cond-implements ((and srfi-x srfi-y)
+                   ...)
+                  (srfi-z
+                   ...))
+
+ (cond-implements (srfi-x
+                   ...)
+                  (srfi-z
+                   ...))
+
+can the implementation choose the first clause in the first
+form, because it prefers srfi-y to srfi-z, and the second clause
+in the second form, because it prefers srfi-z to srfi-x?  This
+would be awful.  Both clauses in the first form would have to be
+compatible with both clauses in the second form.
+
+It makes sense to allow users to choose between available
+SRFIs, as the user may have additional knowledge or requirements,
+but the implementation should not override the programmer's
+priorities on its own.
+                                    -Richard
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00023" href="msg00023.html">Re: a separate configuration language</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr. Preprocessor]</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00021" href="msg00021.html">Re: a separate configuration language</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr. Preprocessor]</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00021.html">Re: a separate configuration language</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00023.html">Re: a separate configuration language</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00021.html">Re: a separate configuration language</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00023.html">Re: a separate configuration language</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00022"><strong>Date</strong></a></li>
+<li><a href="threads.html#00022"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

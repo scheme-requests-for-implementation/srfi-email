@@ -1,0 +1,208 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: loss of abstraction -->
+<!--X-From-R13: Oaqerj Ivypbk <njvypbkNnaqerjjvypbk.anzr> -->
+<!--X-Date: Mon, 22 Aug 2005 17:46:24 +0200 (DFT) -->
+<!--X-Message-Id: 20050822155106.4ECCC60009B@iris.wilcoxsoftware.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>loss of abstraction</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00095.html">Date Prev</a>][<a href="msg00097.html">Date Next</a>][<a href="msg00102.html">Thread Prev</a>][<a href="msg00098.html">Thread Next</a>][<a href="maillist.html#00096">Date Index</a>][<a href="threads.html#00096">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>loss of abstraction</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-72@DOMAIN.HIDDEN">srfi-72@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: loss of abstraction</li>
+<li><em>From</em>: Andrew Wilcox &lt;<a href="mailto:awilcox@DOMAIN.HIDDEN">awilcox@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 22 Aug 2005 08:51:06 -0700 (PDT)</li>
+<li><em>Cc</em>: Michael Sperber &lt;<a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-72@DOMAIN.HIDDEN">srfi-72@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Michael Sperber wrote:
+&gt; Just out of curiosity---from this statement, and more like it on
+&gt; this list, I'm getting the vague impression that people regard using
+&gt; lists to represent compound syntax as something new.  (Of course,
+&gt; Scheme macro systems have been doing that forever.)  Am I
+&gt; misunderstanding the vibes here?
+
+Well, I'm most familiar with the portable syntax case expander from
+Chez Scheme [<a  rel="nofollow" href="http://scheme.com/csug/syntax.html">http://scheme.com/csug/syntax.html</a>] that SISC uses.
+
+After I was using the portable syntax case expander for some time, I
+became aware that compound syntax objects were represented by lists.
+
+However, as far as I knew this was simply an internal representation.
+
+It was never clear to me that using CAR, CDR, and CONS as a procedural
+interface with that macro system was at all supported.  I might luck
+out, and have a macro work when I wrote it, but how was I to know that
+it would work tomorrow or in some other implementation of syntax-case?
+
+Of course, perhaps the procedural interface was always supported and
+in fact so obvious that the manual didn't need to mention it :-) As
+you asked, I'm reporting on my vibes here...
+
+Then I learned more about PLT Scheme's macro system.  I noticed that
+PLT Scheme did not support CAR, CDR, and CONS with syntax objects
+directly.  (Though of course I can use SYNTAX-&gt;LIST etc.)  I also saw
+that PLT Scheme had useful source code location tracking capabilities
+that greatly enhanced the macro error reporting.
+
+So my *impression* as I saw the progression towards more more powerful
+macro systems with better error reporting was that we were going from
+a procedural interface being available but not supported to not being
+available.  A necessary loss in order to support more sophisticated
+features.
+
+Michael Sperber wrote:
+&gt; No, the problem is the loss of abstraction.
+
+A line of argument occurred to me this morning.  Let me try it out...
+
+In Java, java.util.List is an interface.  This is a powerful
+abstraction, because any methods that operate on lists can be used
+directly with any object that can usefully have a list abstraction.
+
+java.util.List is probably not a useful abstraction for a Java parse
+tree.  However, it would be a useful abstraction for Scheme syntax.
+
+Suppose we consider CAR, CDR, and CONS as an abstract interface to an
+underlying representation.  Being able to traverse Scheme syntax as if
+it were a list is useful abstraction and allows us to use directly use
+powerful list procedures such as SRFI-1.
+
+But what about CONS?  CAR and CDR could in theory be, for example,
+generic procedures that have the ability operate on different types.
+But CONS returns a pair.
+
+I don't know if any language has a good solution to the issue of what
+to do when you want to construct new objects of your preferred type.
+In Java, you might have a procedure that you wished to be able to
+return a list of the type you desired.  (Think of a Java
+implementation of FOLD, for example).  You could pass to the procedure
+an instance of a factory class to create a new list of your desired
+type.  However, as a practical matter, I find (in Java) is once I get
+to the point of creating factory classes and so on, I'm often creating
+more new code in the framework with the factory classes etc. then I'm
+able to take out by removing code duplication.  The cure turns out to
+be worse than the disease.
+
+As an alternative, I may be able to return a particular implementation
+of java.util.List, which user code then simply uses as a list without
+being concerned with what class is implementing it.
+java.util.Collections.singletonList(Object) works in this way, for
+example.
+
+By analogy, CAR and CDR might be generic procedures that operate on
+any kind of pair, or object oriented procedures that can operate on
+pair subtypes, while CONS always returns a plain pair.
+
+As an interface, CAR, CDR, and CONS have some advantages and
+disadvantages compared to Java's java.util.List interface.  In Java,
+for example, you can insert a new item at the beginning of a list.
+
+However, the list procedures available in Scheme through SRFI-1 and
+simple tail recursion are richer (and far easier to use) than are the
+procedures available in Java's java.util.Collections or in the Apache
+commons library.
+
+I'm not sure that this is just a matter of available libraries.  What
+I find in programming in Scheme compared to other languages is that
+there is tremendous synergy in the recurring pattern of the list
+concept: procedure calls as a list of arguments, data as lists,
+programs as list, macros that operate on lists.
+
+Java's collections library is a modern, sophisticated specification.
+It directly supports powerful abstractions such as lists and sets as
+interfaces.  And yet, as a practical matter, I find that for much of
+the work I do Scheme's synergy around the list concept turns out to be
+more powerful (I can write code with more features in less time) then
+Java's sophistication in this area.
+
+I look at the SRFI proposal, and I say, &quot;wow, I get to use the
+procedural interface of CAR, CDR, and CONS with syntax objects and
+thus use libraries such as SRFI-1 directly without conversions?  *And*
+I get source code location information? Neat!&quot;
+
+When you say the issue is the loss of abstraction, correct me if I'm
+wrong, what I imagine is an argument that goes like this: most current
+Scheme implementations do not support CAR and CDR as generic
+procedures or object oriented methods.  In these Scheme
+implementations, the only way to get an object that can be operated on
+by CAR and CDR is to return a pair.  We are thus constraining the
+implementation to use lists made up of standard pairs.
+
+I think this is a valid argument.
+
+But let me ask.  Suppose you are using a typical Scheme implementation
+in which CAR and CDR operate only on plain pairs.  You are then
+constrained to implement compound syntax objects as lists.  You have
+lost the ability to use some other abstraction.  As a practical
+matter, what impact does that have on you?  What would you like to be
+able to do with a syntax object abstraction that you'd not be able to
+do if you've lost that abstraction?
+
+Regards,
+
+Andrew
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00098" href="msg00098.html">Re: loss of abstraction</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00095.html">Opaque thought experiment</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00097.html">Re: question on the opaque syntax object debate</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00102.html">Re: Opaque thought experiment</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00098.html">Re: loss of abstraction</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00096"><strong>Date</strong></a></li>
+<li><a href="threads.html#00096"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

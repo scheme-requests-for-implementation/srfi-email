@@ -1,0 +1,172 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: inexactness vs. exactness -->
+<!--X-From-R13: orne <orneNfbavp.arg> -->
+<!--X-Date: Sun, 24 Jul 2005 18:44:36 +0200 (DFT) -->
+<!--X-Message-Id: Pine.LNX.4.58.0507240855140.23115@bolt.sonic.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: y9loe8sbnhh.fsf@sams.informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: 5fb7e0870507240705438a6915@mail.gmail.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: inexactness vs. exactness</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00157.html">Date Prev</a>][<a href="msg00159.html">Date Next</a>][<a href="msg00159.html">Thread Prev</a>][<a href="msg00160.html">Thread Next</a>][<a href="maillist.html#00158">Date Index</a>][<a href="threads.html#00158">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: inexactness vs. exactness</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Alex Shinn &lt;<a href="mailto:alexshinn@DOMAIN.HIDDEN">alexshinn@xxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: inexactness vs. exactness</li>
+<li><em>From</em>: bear &lt;<a href="mailto:bear@DOMAIN.HIDDEN">bear@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 24 Jul 2005 09:44:25 -0700 (PDT)</li>
+<li><em>Cc</em>: William D Clinger &lt;<a href="mailto:will@DOMAIN.HIDDEN">will@xxxxxxxxxxx</a>&gt;, <a href="mailto:srfi-70@DOMAIN.HIDDEN">srfi-70@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-70@DOMAIN.HIDDEN">srfi-70@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:5fb7e0870507240705438a6915@DOMAIN.HIDDEN">5fb7e0870507240705438a6915@xxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:y9loe8sbnhh.fsf@DOMAIN.HIDDEN">y9loe8sbnhh.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:5fb7e0870507240705438a6915@DOMAIN.HIDDEN">5fb7e0870507240705438a6915@xxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+On Sun, 24 Jul 2005, Alex Shinn wrote:
+
+&gt;If you take the idea that inexacts represent single real values,
+&gt;then all equations have to be qualified with &quot;so long as the values
+&gt;and intermediate results remain within the precision the system
+&gt;provides.&quot;
+
+Yes.  That's exactly what the &quot;inexact&quot; status described in
+the standard means, and exactly how it's used.
+
+&gt; If instead you assume that inexacts represent ranges, then the
+&gt; qualification instead becomes &quot;all values within the range are
+&gt; indistinguishable.&quot;  In the above contradiction, x and y when
+&gt; represented on the computer are indistinguishable from 1.0,
+&gt; so without any steps at all you can conclude x = y = 1.0.
+&gt; This goes for any real number, not just 1.0.
+
+But that's exactly what the above contradiction means.
+x = y = 1.0; therefore there is no range here, period.
+
+&gt;    It is important to distinguish between the mathematical numbers,
+&gt;    the Scheme numbers that attempt to model them, the machine
+&gt;    representations used to implement the Scheme numbers, and
+&gt;    notations used to write numbers.
+&gt;
+&gt; Perhaps it is best to leave it this way and let individual people
+&gt; (and implementations) apply interpretations to those numbers
+&gt; as suits them.
+
+Perhaps.  But there is a fundamental point to be made here; the
+      combination of base-10 external notation and base-2 internal
+      representation makes for some strange numeric properties.
+      assuming for a moment that =, &gt;, and &lt; compare strictly
+      numeric values, and also assuming that S and L denote
+      base 2 representations of different length, we get:
+
+(= 1.1L1 1.1S1) =&gt; #f
+(&lt; 1.1L1 1.1S1) =&gt; #f
+(&gt; 1.1L1 1.1S1) =&gt; #t
+      ;; 1.1 isn't representable in base 2, so extending it
+      ;; to long representation gives a different number on systems
+      ;; where the underlying representation is base 2.
+
+
+(= 1.25L1 1.25S1) =&gt; #t
+(&lt; 1.25L1 1.25S1) =&gt; #f
+(&gt; 1.25L1 1.25S1) =&gt; #f
+      ;; But 1.25 is, so using long or short representation, these
+      ;; are literally the same numeric value.
+
+On the other hand, if the system uses BCD or rationals or
+some equivalent to store both L and S formats, you get consistency.
+
+(= 1.25L1 1.25S1) =&gt; #t   (= 1.1L1 1.1S1) =&gt; #t
+(&lt; 1.25L1 1.25S1) =&gt; #f   (&lt; 1.1L1 1.1S1) =&gt; #f
+(&gt; 1.25L1 1.25S1) =&gt; #f   (&gt; 1.1L1 1.1S1) =&gt; #f
+
+So the behavior of the comparison predicates depends on the
+internal representation and how well it matches the external
+representation and what kind of rounding was done to represent
+the answer to a calculation.
+
+I think the idea of &quot;neighborhoods&quot; was mainly an excuse to give these
+operations semantics that somebody thought were desirable in comparing
+numbers of different internal representation.  But I think that
+covering up numeric differences that are artifacts of the representation
+system is not actually desirable.  The problems are that it will also
+cover up numeric differences which are not artifacts of the
+representation system, and that it will cover up differences which
+will lead to different results in subsequent calculations.
+
+The current standard states that comparison operations are not reliable
+on inexact numbers.  This is demonstrably true.  Until someone has a
+truly brilliant idea about how to deal with inexact control flow, I
+think we should probably leave it at that, because there is a precipice
+here; the need to return a sensible value from a comparison predicate
+on inexact numbers creates a compelling case for inexact booleans.
+But the semantics of control structures like if and cond when dealing
+with inexact booleans are at best murky, until that truly brilliant
+idea comes along.
+
+				Bear
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00155" href="msg00155.html">Re: inexactness vs. exactness</a></strong>
+<ul><li><em>From:</em> William D Clinger</li></ul></li>
+<li><strong><a name="00156" href="msg00156.html">Re: inexactness vs. exactness</a></strong>
+<ul><li><em>From:</em> Alex Shinn</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00157.html">Re: inexactness vs. exactness</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00159.html">Re: inexactness vs. exactness</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00159.html">Re: inexactness vs. exactness</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00160.html">Re: inexactness vs. exactness</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00158"><strong>Date</strong></a></li>
+<li><a href="threads.html#00158"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

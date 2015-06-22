@@ -1,0 +1,147 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: [Chicken&#45;users] Which eggs to migrate from Chicken 3 first? -->
+<!--X-From-R13: Oyrwnaqeb Tbereb Qhreib <nmhyNsernxf&#45;havqbf.arg> -->
+<!--X-Date: Thu,  7 May 2009 06:32:46 +0000 (UTC) -->
+<!--X-Message-Id: y9lr5z1mnhq.fsf@deinprogramm.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20090422161112.GA721@mercury.ccil.org -->
+<!--X-Reference: da4fbdb30904220916y46def0e6y48d69ebbe2a679d2@mail.gmail.com -->
+<!--X-Reference: 20090506021620.GR11542@freaks&#45;unidos.net -->
+<!--X-Reference: da4fbdb30905060732x5604d8f8n8776ae926d99abc6@mail.gmail.com -->
+<!--X-Reference: m2hbzxrj3n.fsf@synthcode.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: [Chicken-users] Which eggs to migrate from Chicken 3 first?</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00009.html">Date Prev</a>][Date Next][<a href="msg00009.html">Thread Prev</a>][<a href="msg00008.html">Thread Next</a>][<a href="maillist.html#00010">Date Index</a>][<a href="threads.html#00010">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: [Chicken-users] Which eggs to migrate from Chicken 3 first?</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-41@DOMAIN.HIDDEN">srfi-41@xxxxxxxxxxxxxxxxx</a>,</li>
+<li><em>Subject</em>: Re: [Chicken-users] Which eggs to migrate from Chicken 3 first?</li>
+<li><em>From</em>: Alejandro Forero Cuervo &lt;<a href="mailto:azul@DOMAIN.HIDDEN">azul@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 07 May 2009 08:32:49 +0200</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-41@DOMAIN.HIDDEN">srfi-41@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:m2hbzxrj3n.fsf@DOMAIN.HIDDEN">m2hbzxrj3n.fsf@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:20090422161112.GA721@DOMAIN.HIDDEN">20090422161112.GA721@xxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:da4fbdb30904220916y46def0e6y48d69ebbe2a679d2@DOMAIN.HIDDEN">da4fbdb30904220916y46def0e6y48d69ebbe2a679d2@xxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20090506021620.GR11542@DOMAIN.HIDDEN">20090506021620.GR11542@xxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:da4fbdb30905060732x5604d8f8n8776ae926d99abc6@DOMAIN.HIDDEN">da4fbdb30905060732x5604d8f8n8776ae926d99abc6@xxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:m2hbzxrj3n.fsf@DOMAIN.HIDDEN">m2hbzxrj3n.fsf@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Gnus/5.110011 (No Gnus v0.11) XEmacs/21.5-b28 (darwin)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; &gt; Streams are not lists.  Scheme ensures there are
+&gt; &gt; substantial disadvantages to using streams rather than
+&gt; &gt; lists, due to the underlying promises that require
+&gt; &gt; numerous type conversions, so streams should be used only
+&gt; &gt; when the sequence of elements is truly infinite (such as
+&gt; &gt; mathematical series) or when there is some clear advantage
+&gt; &gt; of laziness (such as reducing the number of passes through
+&gt; &gt; a large data set).
+&gt; 
+&gt; I also find that any data structure in general which is
+&gt; built on I/O works well as a stream.  For the current NLP
+&gt; app I'm working on, I need to build a parse graph from a
+&gt; port.  Slurping up the whole input at once could require too
+&gt; much memory, and also would prevent the parser acting as a
+&gt; proper (buffered) Unix filter.  On the other hand, since the
+&gt; algorithm for determining how much text I need to work with
+&gt; is dynamic, I can't just read chunks at a time (the basic
+&gt; unit I want to work on is a sentence, but I don't know what
+&gt; a sentence is until the parse is finished).  So I build the
+&gt; graph as a lazy stream of nodes, and the algorithm
+&gt; transparently expands only as much input as needed.
+&gt; 
+&gt; From what I've seen Alejandro also uses streams primarily
+&gt; with I/O - it's a very natural combination.
+
+Just thought I'd mention another example where I do this, which I feel
+is relevant to this discussion: <a  rel="nofollow" href="http://wiki.freaks-unidos.net/xc">http://wiki.freaks-unidos.net/xc</a>, my
+command-line calculator.
+
+The whole lexing/parsing is done using streams: the input is received
+by the lexer as a stream of characters and turned into a stream of
+tokens (by procedure 'lexer'); the parser itself receives this stream
+of tokens and returns a stream with the numbers that should be printed
+(by procedure 'parse-input').  The whole evaluation of the input is
+thus simply (and here I'm quoting verbatim):
+
+  (stream-for-each
+    (lambda (obj)
+      (if (number? obj)
+        (output-num obj)
+        (format #t &quot;~S~%&quot; obj)))
+    (parse-input (lexer (port-&gt;stream))))
+
+Very clean, isn't it?  All is evaluated lazily, allowing things such
+as output-num to be redefined during the evaluation, to output numbers
+in a different formats.
+
+Given the primitives provided by stream-ext and stream-parser, xc does
+not have to add complexity of its own to handle streams but can deal
+exclusively with the problem it attacks, of evaluating arithmetic
+expressions and such.
+
+And, obviously, the sequence of elements in these streams is finite
+and, even if the tricks such as redefining output-num didn't matter,
+using streams instead of lists still has the advantage that Alex Shinn
+mentions of loading elements from the input lazily.  Perhaps more
+importantly, it also produces the output as soon as it is available
+(so that one can actually use the calculator interactively and see the
+result of an expression immediately after entering it).
+
+Alejo.
+<a  rel="nofollow" href="http://azul.freaks-unidos.net/">http://azul.freaks-unidos.net/</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00005" href="msg00005.html">Re: [Chicken-users] Which eggs to migrate from Chicken 3 first?</a></strong>
+<ul><li><em>From:</em> Phil Bewig</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00009.html">Re: [Chicken-users] Which eggs to migrate from Chicken 3 first?</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00009.html">Re: [Chicken-users] Which eggs to migrate from Chicken 3 first?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00008.html">Re: [Chicken-users] Which eggs to migrate from Chicken 3 first?</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00010"><strong>Date</strong></a></li>
+<li><a href="threads.html#00010"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

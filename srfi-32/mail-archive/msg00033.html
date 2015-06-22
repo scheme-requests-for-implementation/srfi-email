@@ -1,0 +1,137 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: 3&#45;way compares and short&#45;circuit sorting -->
+<!--X-From-R13: Oyrk Euvaa <sbbsNflagupbqr.pbz> -->
+<!--X-Date: Mon,  5 Aug 2002 11:10:25 +0200 (DFT) -->
+<!--X-Message-Id: 87u1m9u0wq.wl@lain.synthcode.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>3-way compares and short-circuit sorting</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00032.html">Date Prev</a>][<a href="msg00034.html">Date Next</a>][<a href="msg00029.html">Thread Prev</a>][<a href="msg00034.html">Thread Next</a>][<a href="maillist.html#00033">Date Index</a>][<a href="threads.html#00033">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>3-way compares and short-circuit sorting</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-32@DOMAIN.HIDDEN">srfi-32@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: 3-way compares and short-circuit sorting</li>
+<li><em>From</em>: Alex Shinn &lt;<a href="mailto:foof@DOMAIN.HIDDEN">foof@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 05 Aug 2002 18:09:57 +0900</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-32@DOMAIN.HIDDEN">srfi-32@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Wanderlust/2.8.1 (Something) Emacs/21.2 Mule/5.0 (SAKAKI)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Perhaps it doesn't belong in this srfi, and it doesn't seem very
+Scheme-ish, but I was wondering if anyone had given thought to C-style
+comparisons that yield positive, negative or zero on comparison (as in
+strcmp)?  This lets you write efficient short-circuit tests such as:
+
+  int pred (obj a, obj b) {
+    return ((cheap_func(a) - cheap_func(b))
+             || (expensive_func(a) - expensive_func(b)))
+            &lt; 0;
+  }
+
+where it is rare for the initial comparison to be zero.  As it is now,
+you have to either sort twice or build a custom sort pred.  Building new
+procedures is what Scheme is all about, so for the latter method I use
+the following utility:
+
+(define (chain-sort-predicate key1 pred&lt;1 pred=1 key2 pred&lt;2 . rest)
+  (define (make-sort-predicate key pred)
+    (if (eq? key identity)
+      pred
+      (lambda (a b) (pred (key a) (key b)))))
+  (let ((secondary
+         (if (null? rest)
+           (make-sort-predicate key2 pred&lt;2)
+           (apply chain-sort-predicate (append (list key2 pred&lt;2) rest)))))
+    (lambda (a b)
+      (let ((a1 (key1 a)) (b1 (key1 b)))
+        (or (pred&lt;1 a1 b1)
+            (and (pred=1 a1 b1)
+                 (secondary a b)))))))
+
+which, without the sort-keys and variable-arity could just be
+
+(define (chain-sort-predicate pred&lt;1 pred=1 pred&lt;2)
+  (lambda (a b)
+    (or (pred&lt;1 a b)
+        (and (pred=1 a b)
+             (pred&lt;2 a b)))))
+
+which lets you do
+
+   (sort data (chain-sort-predicate pred&lt;1 pred=1 pred&lt;2))
+
+but the problem arises when pred&lt;1 and pred=1 are not so cheap.  Usually
+the steps needed to determine their value are the same, so it is a waste
+to make the computation twice.
+
+The solution in other languages is to define a general purpose
+comparator, cmp in Python, &lt;=&gt; in Perl, which returns this trinary
+value.  [This is also useful in general for OO-programming because you
+can define just this method and you get &lt;, &gt;, =, et al for free on a
+given class.]  Then you can sort with something-like
+
+  (sort data (lambda (a b) (nzero-or (cmp1 a b) (cmp2 a b))))
+
+and maybe define utilities to make that cleaner.
+
+Anyway, just some rambling, thought I'd mention it...
+
+-- 
+Alex
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00032.html">RE: Almost OT, &lt; and &lt;=</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00034.html">a typo; min/max; partial orders</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00029.html">URL correction correction</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00034.html">a typo; min/max; partial orders</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00033"><strong>Date</strong></a></li>
+<li><a href="threads.html#00033"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

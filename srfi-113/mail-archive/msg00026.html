@@ -1,0 +1,139 @@
+<!-- MHonArc v2.6.18 -->
+<!--X-Subject: Re: Open issues for SRFI 113 -->
+<!--X-From-R13: Yriva Ibegzna <xjbegznaNtznvy.pbz> -->
+<!--X-Date: Sun,  8 Dec 2013 05:35:27 +0100 (MET) -->
+<!--X-Message-Id: 52A3F70B.7020707@gmail.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20131204043726.GF22362@mercury.ccil.org -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Open issues for SRFI 113</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00025.html">Date Prev</a>][<a href="msg00027.html">Date Next</a>][<a href="msg00023.html">Thread Prev</a>][<a href="msg00028.html">Thread Next</a>][<a href="maillist.html#00026">Date Index</a>][<a href="threads.html#00026">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Open issues for SRFI 113</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-113@DOMAIN.HIDDEN">srfi-113@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Open issues for SRFI 113</li>
+<li><em>From</em>: Kevin Wortman &lt;<a href="mailto:kwortman@DOMAIN.HIDDEN">kwortman@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 07 Dec 2013 20:35:23 -0800</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-113@DOMAIN.HIDDEN">srfi-113@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Dkim-signature</em>: v=1; a=rsa-sha256; c=relaxed/relaxed;        d=gmail.com; s=20120113;        h=message-id:date:from:user-agent:mime-version:to:subject:references         :in-reply-to:content-type:content-transfer-encoding;        bh=mZQ9T7dbcWrJ4AS7N6KX9ZLo6suSbGN+cpnPWR/2RHo=;        b=YT0UCdrIC3LvxJS1qYvUbx8yU4EN7/C9vTYWrVFKL7Gs6I57AD1O2xf1k4tdgDHsn1         tUDvUvsKRNvGqus+Gh6Td3yg6d3cL0DIR6VvyXM6S8l2HrxhIC2zzv0sHXHL5yYbluaR         lODBqSnC9SGp9tuAWUmiMmitzUMrSsd1NVhADHjYTWS11CvDfMtG7+LxXTMlmaWSMmbl         YVEx6sSz+HLJ/nhnil7pYENRoqMLbUItKmQcv3gi8lkGcEgTYr/MDtEQS4TcvbBTSsgc         E1VmPyGUBRQia0nFMmjfuTlNQjh4nuvMcx/UnTsEbtMq0K/8iRkpF9JOj6Tofci6yFzA         Es3w==</li>
+<li><em>In-reply-to</em>: &lt;<a href="msg00023.html">20131204043726.GF22362@mercury.ccil.org</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="msg00023.html">20131204043726.GF22362@mercury.ccil.org</a>&gt;</li>
+<li><em>User-agent</em>: Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20100101 Thunderbird/24.1.0</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; 8. Should we switch to unique enum objects rather than symbols?
+&gt; Symbols are all distinct from one another, and are convenient to use,
+&gt; but it's not possible to ask which enum-set a symbol belongs to, for it
+&gt; may belong to more than one.
+
+I think symbols are best.
+
+&gt; 12. Should we stick to just comparators, or also allow equality
+&gt; predicates?  SRFI 114 provides comparators for `eq?`, `eqv?`, `equal?`,
+&gt; `string=?`, and `string-ci=?`, which are the Big Five.  Hash tables need
+&gt; to accept equality predicates for backward compatibility, but there is
+&gt; no real compatibility issue for sets.
+
+I think it should be comparators only. Otherwise there is an implicit
+union type of comparator-or-equality-predicate. Code that depends on
+this SRFI, or mimics it, would also need to deal with the
+comparator-or-equality-predicate type, so code handling that concern
+would be scattered all over the place. Creating a comparator is easy so
+I think it's reasonable to expect client code to do that.
+
+&gt; 13. Should we switch to six libraries (sets, bags, integer sets,
+&gt; character sets, enum sets, and set-bag conversion), or stick with a single
+&gt; library? (This is not about dividing the SRFI itself.)  The only reason
+&gt; to do this would be to minimize namespace pollution and load space:
+&gt; if you don't need bags or charsets, you wouldn't have to have them.
+&gt; On the other hand, the whole package is only about 2 KLOC.
+
+In my use cases the time and effort that it takes programmers to find
+and import multiple fine-grained libraries is far costlier than the time
+it might take a Scheme environment to load a single coarse one, so I say
+stick with one library.
+
+&gt; 14. Should we add a cursor API similar to SRFI 14's?  This would allow
+&gt; stepping through the elements in a fixed order.  It wouldn't make much
+&gt; sense for general sets or bags, but might be handy for character sets
+&gt; (via SRFI 14), integer sets, and enum sets.
+
+This can be deceptively complex with mutable structures, since all the
+interactions between mutative operations and pre-existing cursors need
+to be defined precisely.
+
+If we do go down this route I would advocate using streams (lazy
+sequences) for this purpose rather than inventing a new cursor API.
+
+Presently one could iterate through a set by converting it to a list and
+using established list iteration methods, admittedly with O(n) space
+overhead. Are there use cases where this would be inadequate?
+
+Kevin Wortman
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00028" href="msg00028.html">Re: Open issues for SRFI 113</a></strong>
+<ul><li><em>From:</em> John Cowan</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00023" href="msg00023.html">Open issues for SRFI 113</a></strong>
+<ul><li><em>From:</em> John Cowan</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00025.html">Re: New release of SRFI 113</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00027.html">Re: New release of SRFI 113</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00023.html">Open issues for SRFI 113</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00028.html">Re: Open issues for SRFI 113</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00026"><strong>Date</strong></a></li>
+<li><a href="threads.html#00026"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

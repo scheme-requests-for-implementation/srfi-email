@@ -1,0 +1,205 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Interface view of dictionaries -->
+<!--X-From-R13: "Penqq I. Embalr" <oenqq+fesvNfmbalr.pbz> -->
+<!--X-Date: Sun, 26 Oct 2003 09:56:03 +0100 (NFT) -->
+<!--X-Message-Id: 20031026085556.GS18773@loki.vpn.szonye.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20031021072047.GB26398@loki.vpn.szonye.com -->
+<!--X-Reference: 20031023010959.GA20350@freenetproject.org -->
+<!--X-Reference: 20031023020257.GA6989@loki.vpn.szonye.com -->
+<!--X-Reference: 20031023024351.GA21257@freenetproject.org -->
+<!--X-Reference: 20031023033542.GB6989@loki.vpn.szonye.com -->
+<!--X-Reference: 20031025035254.GB26663@freenetproject.org -->
+<!--X-Reference: 20031025165854.GA18773@loki.vpn.szonye.com -->
+<!--X-Reference: Pine.LNX.4.58.0310251010190.5625@bolt.sonic.net -->
+<!--X-Reference: 20031026042704.GA22624@freenetproject.org -->
+<!--X-Reference: Pine.LNX.4.58.0310252357380.3604@bolt.sonic.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Interface view of dictionaries</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00157.html">Date Prev</a>][<a href="msg00159.html">Date Next</a>][<a href="msg00156.html">Thread Prev</a>][<a href="msg00123.html">Thread Next</a>][<a href="maillist.html#00158">Date Index</a>][<a href="threads.html#00158">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Interface view of dictionaries</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Interface view of dictionaries</li>
+<li><em>From</em>: &quot;Bradd W. Szonye&quot; &lt;<a href="mailto:bradd%2Bsrfi@DOMAIN.HIDDEN">bradd+srfi@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 26 Oct 2003 01:55:57 -0700</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:Pine.LNX.4.58.0310252357380.3604@DOMAIN.HIDDEN">Pine.LNX.4.58.0310252357380.3604@xxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Mail-followup-to</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>References</em>: &lt;<a href="mailto:20031021072047.GB26398@DOMAIN.HIDDEN">20031021072047.GB26398@xxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20031023010959.GA20350@DOMAIN.HIDDEN">20031023010959.GA20350@xxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20031023020257.GA6989@DOMAIN.HIDDEN">20031023020257.GA6989@xxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20031023024351.GA21257@DOMAIN.HIDDEN">20031023024351.GA21257@xxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20031023033542.GB6989@DOMAIN.HIDDEN">20031023033542.GB6989@xxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20031025035254.GB26663@DOMAIN.HIDDEN">20031025035254.GB26663@xxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20031025165854.GA18773@DOMAIN.HIDDEN">20031025165854.GA18773@xxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:Pine.LNX.4.58.0310251010190.5625@DOMAIN.HIDDEN">Pine.LNX.4.58.0310251010190.5625@xxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20031026042704.GA22624@DOMAIN.HIDDEN">20031026042704.GA22624@xxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:Pine.LNX.4.58.0310252357380.3604@DOMAIN.HIDDEN">Pine.LNX.4.58.0310252357380.3604@xxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mutt/1.4i</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>bear wrote:
+&gt;&gt;&gt; (*-get-n dict num)
+&gt;&gt;&gt; (*-get-n-deleting! dict num)
+
+&gt; scgmille@xxxxxxxxxxxxxxxxxx wrote:
+&gt;&gt; Trivially defined with enumeration.
+
+&gt; And with the same problem.  On a lot of dictionaries, if I go in
+&gt; knowing I want the first N elements, I can get them at one swell foop
+&gt; and not waste time traversing the structure again and again for each
+&gt; one.
+
+Enumeration isn't quite that bad. The smart way to do it is to traverse
+the collection only once, with a filter function that halts the
+enumeration as soon as it gets what it needs. Pseudocode:
+
+    (cfold f (cons n '()) dict)
+    
+    where n is the number to fetch and f is
+
+    (lambda (nr datum)
+      (let [(n (car nr)) (result (cdr nr))]
+        (cond [(= n 0)
+               (&lt;halt enumeration and return (reverse l)&gt;)]
+              [(&lt;match filter&gt;)
+               (cons (1- n) (cons datum result))]
+              [else nr])))
+
+This will return the elements in O(N) time, which isn't horrible.
+However, it's also far from the best possible way to do it. For a
+typical tree-based dictionary, you can do it in O((lg N) + K) time:
+Finding the first element takes O(lg N), and traversing the structure to
+get all K elements takes O(K) time.
+
+There's a big difference between those performance characteristics.
+Unless K is very large (close to N), it's effectively O(lg N) for the
+&quot;native&quot; approach vs O(N) for the filtering enumeration.
+
+That's how it works for element fetching, anyway. For consecutive
+deletions, it's a bit more complicated. Unless the enumeration is
+stable, consecutive deletions are O(N-squared), because you need to
+enumerate the whole thing once for each iteration. A sophisticated
+native function may still be able to do it in O(lg N) time.
+
+This is why I complained that the SRFI didn't take performance into
+consideration. Sure, it's a bad idea to attempt construction-time
+optimizations too early in the design process. However, these are not
+construction-time optimization. They're significant algorithm choices,
+and they make a huge difference. In the worst case, it degrades
+performance from O(lg N) to O(N-squared).
+
+That kind of major algorithmic degradation *is* an appropriate
+consideration for a design doc.
+
+Tangent: In the example above, I used the traditional argument
+convention for higher-order functions: (proc f seed collections ...).
+One of the thing that annoys me about SRFI-44 is that it abandons good
+conventions like these. Collection-fold permits an arbitrary number of
+seeds but only one collection. That gives you something useless (if you
+want multiple seeds, use a list like I did) while taking away something
+useful (folding multiple collections).
+
+Tangent off the tangent: Why the heck did SRFI-1 define the folding
+function to accept the seed argument *last*? There's only one seed but
+many lists, which naturally suggests a (f seed . data) signature for
+folding functions that can work on any number of lists. Instead, it
+specifies (f datum0 datum1 ... seed). Why?!
+
+&gt; Failure to provide a name for this function practically demands an
+&gt; implementation that sucks, which will then be applied to all
+&gt; dictionaries, whether the implementation of this function for that
+&gt; dictionary had to suck or not.
+
+OK, I guess it's your turn to be hostile!
+
+&gt; My API allows efficient implementations.  The one proposed in the SRFI
+&gt; does not.  Because of that, they are not even remotely similar.  Yes,
+&gt; you could use the SRFI API to provide whacking slow versions of most
+&gt; of the functionality.  But every coder who has to live with them is
+&gt; going to hate them, either because they will waste CPU time that does
+&gt; not have to be wasted, or because redefining R5RS functions won't play
+&gt; nice with the existing code and module system, or both.
+
+I generally agree, but with one reservation: While there are good
+reasons for the PLT module system to work that way, it's still more
+cumbersome than it needs to be. I've been discussing this on the PLT
+mailing list, and I hope to develop some methods to ease the pain a bit.
+I still think gratuitous incompatibilities are a bad idea, but it
+shouldn't be so hard to use well-designed extensions to existing
+bindings.
+-- 
+Bradd W. Szonye
+<a  rel="nofollow" href="http://www.szonye.com/bradd">http://www.szonye.com/bradd</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00105" href="msg00105.html">Re: Procedures (interfaces)</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+<li><strong><a name="00115" href="msg00115.html">Re: Procedures (interfaces)</a></strong>
+<ul><li><em>From:</em> scgmille</li></ul></li>
+<li><strong><a name="00116" href="msg00116.html">Major issues</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+<li><strong><a name="00117" href="msg00117.html">Re: Major issues</a></strong>
+<ul><li><em>From:</em> scgmille</li></ul></li>
+<li><strong><a name="00118" href="msg00118.html">Re: Major issues</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+<li><strong><a name="00122" href="msg00122.html">Re: Major issues</a></strong>
+<ul><li><em>From:</em> scgmille</li></ul></li>
+<li><strong><a name="00125" href="msg00125.html">Re: Major issues</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+<li><strong><a name="00131" href="msg00131.html">Interface view of dictionaries</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+<li><strong><a name="00152" href="msg00152.html">Re: Interface view of dictionaries</a></strong>
+<ul><li><em>From:</em> scgmille</li></ul></li>
+<li><strong><a name="00156" href="msg00156.html">Re: Interface view of dictionaries</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00157.html">Re: Major issues</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00159.html">Re: Interface view of dictionaries</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00156.html">Re: Interface view of dictionaries</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00123.html">Re: Left- and right-ness of folds</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00158"><strong>Date</strong></a></li>
+<li><a href="threads.html#00158"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

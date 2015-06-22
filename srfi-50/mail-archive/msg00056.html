@@ -1,0 +1,251 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: GC safety and return values -->
+<!--X-From-R13: Fbz Zbeq <ybeqNrzs.arg> -->
+<!--X-Date: Wed, 24 Dec 2003 18:10:36 +0100 (NFT) -->
+<!--X-Message-Id: 200312241734.JAA22237@morrowfield.regexps.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200312222122.NAA06270@morrowfield.regexps.com -->
+<!--X-Reference: vt2d6agcztq.fsf@zenia.home -->
+<!--X-Reference: 200312222210.OAA06590@morrowfield.regexps.com -->
+<!--X-Reference: vt2smjcbidh.fsf@zenia.home -->
+<!--X-Reference: 200312232304.PAA18640@morrowfield.regexps.com -->
+<!--X-Reference: vt2n09ia9wo.fsf@zenia.home -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: GC safety and return values</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00055.html">Date Prev</a>][<a href="msg00057.html">Date Next</a>][<a href="msg00050.html">Thread Prev</a>][<a href="msg00059.html">Thread Next</a>][<a href="maillist.html#00056">Date Index</a>][<a href="threads.html#00056">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: GC safety and return values</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:jimb@DOMAIN.HIDDEN">jimb@xxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: GC safety and return values</li>
+<li><em>From</em>: Tom Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 24 Dec 2003 09:34:20 -0800 (PST)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:vt2n09ia9wo.fsf@DOMAIN.HIDDEN">vt2n09ia9wo.fsf@xxxxxxxxxx</a>&gt; (message from Jim Blandy on 24 Dec        2003 03:37:43 -0500)</li>
+<li><em>References</em>: &lt;<a href="mailto:200312222122.NAA06270@DOMAIN.HIDDEN">200312222122.NAA06270@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;        &lt;<a href="mailto:vt2d6agcztq.fsf@DOMAIN.HIDDEN">vt2d6agcztq.fsf@xxxxxxxxxx</a>&gt;        &lt;<a href="mailto:200312222210.OAA06590@DOMAIN.HIDDEN">200312222210.OAA06590@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;        &lt;<a href="mailto:vt2smjcbidh.fsf@DOMAIN.HIDDEN">vt2smjcbidh.fsf@xxxxxxxxxx</a>&gt;        &lt;<a href="mailto:200312232304.PAA18640@DOMAIN.HIDDEN">200312232304.PAA18640@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:vt2n09ia9wo.fsf@DOMAIN.HIDDEN">vt2n09ia9wo.fsf@xxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+
+    &gt; From: Jim Blandy &lt;jimb@xxxxxxxxxx&gt;
+
+    &gt; Yes, the EXTRACT issues aren't critical.  But the thread-related
+    &gt; problems with GCPRO that I don't see how to solve are those
+    &gt; created by the user's compiler rearranging code that operates
+    &gt; directly on heap references.  The compiler is free to make
+    &gt; copies of heap references in registers where a copying GC can't
+    &gt; find them to update them.
+
+We agree about the problem caused by C semantics and in broad strokes
+about the compiler-taming tricks needed to solve them -- my solution
+differs from yours (and JNIs) in that it doesn't require reference
+objects to be explicitly heap allocated and freed.  Loosely speaking,
+they are instead stack allocated.  (Yes, I suspect you are thinking of
+making a tiny stack on the heap to allocate the local mn_frefs of a
+given call but keep reading.)
+
+In the GCPRO system I'm proposing, all parameters are passed by
+reference (by a `scheme_value *'); all return values returned by
+output parameters (again a `scheme_value *'); and local assignment is
+via a macro that can impose a write barrier rather than with C's
+assignment operator.  In those regards, it very much resembles the
+mn_refs idea.  (Though changing the value of an mn_ref seems something
+one is less likely to do in your system.)
+
+One difference in our proposals concerns the lifetimes of variables.
+Local mn_refs seem to live until some outermost call returns unless
+code explicitly creates then destroys a new mn_call.  My approach
+controls variable lifetimes with GCPRO-style calls giving them
+lifetimes that coincide with C stack frame lifetimes.
+
+Note that I haven't made any proposal about what you call `global
+mn_refs'.  I am planning on having an interface for allocating arrays
+of GC roots to which C data structures can refer.
+
+A simple example:
+
+  /* scm_cons1 (result, arena, a)
+   * 
+   * Return a new pair of the form ( *a . () )
+   * 
+   * Equivalent to (lambda (a) (cons a '()))
+   * 
+   */
+  void
+  scm_cons1 (scheme_value * result, scheme_instance arena, scheme_value * a)
+  {
+    struct cons1_locals
+      {
+        SCM_FRAME;
+        scheme_value nil;
+      } l;
+
+    SCM_PROTECT_FRAME (l);
+
+    SCHEME_MAKE_NIL (&amp;l.nil, arena);
+    SCHEME_CONS (result, arena, a, &amp;l.nil);
+
+    SCM_UNPROTECT_FRAME (l);
+  }
+
+The parameter, `*a', is protected by the caller.  `l.nil' is protected
+because SCM_PROTECT_FRAME has made it visible to GC and because it's
+address, not its value, is passed to the primitives `scm_make_nil' and
+`scm_cons'.  The value stored in `l.nil' is protected by `scm_cons1'
+before `scm_make_nil' returns.  The value stored in `*result' is
+protected by the caller of `scm_cons1' before `scm_cons' returns to
+`scm_cons1'.   (If interprocedural optimization is allowed to screw
+this I'd like to know exactly how and why....)
+
+
+
+    &gt; The general view is like this: the GCPRO'd variables are inescapably a
+    &gt; data structure that is shared between the mutator thread that owns the
+    &gt; stack frame and some other collecting thread out there.  But there's
+    &gt; no opportunity for the API implementation to do the needed
+    &gt; synchronization.
+
+Yes there is.  The only way the GCPROtected variables are ever
+modified is in the primitives provided by the FFI.  This includes
+assignment between two locals:
+
+	SCM_LSET (&amp;l.a, arena, &amp;l.b);    /* l.a = l.b */
+
+and as tb pointed out, other C operators on scheme_values are also
+prohibited:
+
+	scm_is_nil (arena, &amp;l.a)   /* rather than l.a == scm_nil */
+
+A function using the FFI has no reason to ever land a raw `scm_value'
+in a register or compiler-created temporary variable.
+
+
+    &gt; The only way I can see to save GCPRO is to forbid collection except
+    &gt; when every thread is at a &quot;safe point&quot;.  In other words, you
+    &gt; reintroduce the restriction that &quot;collection may only happen in calls
+    &gt; that do allocation&quot;, by saying that *every* thread must be in a
+    &gt; specially designated call.
+
+Not at all.  For example, in `scm_cons1' above, GC can safely happen
+at any point at all during its execution from prolog to postlog (even
+if, for some strange reason, nil is newly heap allocated by
+scm_make_nil).
+
+The biggest issue in choosing between the two approaches, as far as I
+know, is the question of efficiency.   The approach above has a few 
+advantages in that regard, I think:
+
+  a) Assuming that you plan to build little stacks on the heap to
+     allocate the local mn_refs for a given call, the allocation
+     overheads are probably close to a wash.  
+
+     I might get some advantage in allocation times by not having to
+     do a separate overflow check and by getting the space for them
+     when the C stack frame is allocated.  I get some advantage by
+     allocating a bunch of variables at once with GCPRO.  I get some
+     advantage by not having to separately stack allocate room for
+     `mn_ref *' values.   I get some disadvantage (speed-wise, not
+     precision-wise) from the greater number of GCUNPRO calls.
+
+
+  b) In single-threaded environment, I can inline some primitives and
+     (at least my hunch is) get much better code.   For example, 
+     SCM_LSET can come out to just an ordinary C assignment (`=');
+     SCHEME_IS_NIL can come out to an == check on a local variable
+     that may very well be in a handy register.
+
+
+  c) You may have a good answer for this but I don't see it in your
+     post to the list.   Don't local mn_refs leak like a sieve?
+
+     For example, `mn_cdr' returns a new `mn_ref *', right?
+     It's not freed until some outermost call, associated with
+     the `mn_call *' I got returns.
+
+     So now what if I'm traversing a long list with K elements?
+     Won't that allocate K local mn_refs which aren't freed until
+     I return?   Won't they, until then, be protecting the values
+     they refer to?
+
+
+-t
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00059" href="msg00059.html">Simplified, Limited, Easy FFI: Useful?</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+<li><strong><a name="00062" href="msg00062.html">Re: GC safety and return values</a></strong>
+<ul><li><em>From:</em> Thomas Bushnell, BSG</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00006" href="msg00006.html">GC safety and return values</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00007" href="msg00007.html">Re: GC safety and return values</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+<li><strong><a name="00008" href="msg00008.html">Re: GC safety and return values</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00014" href="msg00014.html">Re: GC safety and return values</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+<li><strong><a name="00037" href="msg00037.html">Re: GC safety and return values</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00050" href="msg00050.html">Re: GC safety and return values</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00055.html">Re: GC safety and return values</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00057.html">Re: GC safety and return values</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00050.html">Re: GC safety and return values</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00059.html">Simplified, Limited, Easy FFI: Useful?</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00056"><strong>Date</strong></a></li>
+<li><a href="threads.html#00056"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

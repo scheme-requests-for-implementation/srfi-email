@@ -1,0 +1,158 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Surrogates and character representation -->
+<!--X-From-R13: Fbz Szrefba <gerrNonfvfgrpu.pbz> -->
+<!--X-Date: Sun, 24 Jul 2005 19:54:45 +0200 (DFT) -->
+<!--X-Message-Id: 17123.54753.371934.424875@tiphares.basistech.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 1122002894.6607.29.camel@dev1.seyza.com -->
+<!--X-Reference: 17120.28178.788826.533753@tiphares.basistech.net -->
+<!--X-Reference: 20050722040917.GB7576@NYCMJCOWA2 -->
+<!--X-Reference: 17120.30080.768671.539970@tiphares.basistech.net -->
+<!--X-Reference: 878xzykn0y.fsf@becket.becket.net -->
+<!--X-Reference: 17122.31220.22073.72951@tiphares.basistech.net -->
+<!--X-Reference: 20050724053713.GM2784@NYCMJCOWA2 -->
+<!--X-Reference: 42E3D086.90403@astrosmo.unam.mx -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Surrogates and character representation</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00224.html">Date Prev</a>][<a href="msg00226.html">Date Next</a>][<a href="msg00224.html">Thread Prev</a>][<a href="msg00226.html">Thread Next</a>][<a href="maillist.html#00225">Date Index</a>][<a href="threads.html#00225">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Surrogates and character representation</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Alan Watson &lt;<a href="mailto:a.watson@DOMAIN.HIDDEN">a.watson@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Surrogates and character representation</li>
+<li><em>From</em>: Tom Emerson &lt;<a href="mailto:tree@DOMAIN.HIDDEN">tree@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 24 Jul 2005 13:54:41 -0400</li>
+<li><em>Cc</em>: &quot;John.Cowan&quot; &lt;<a href="mailto:jcowan@DOMAIN.HIDDEN">jcowan@xxxxxxxxxxxxxxxxx</a>&gt;,	Thomas Bushnell BSG &lt;<a href="mailto:tb@DOMAIN.HIDDEN">tb@xxxxxxxxxx</a>&gt;, <a href="mailto:srfi-75@DOMAIN.HIDDEN">srfi-75@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-75@DOMAIN.HIDDEN">srfi-75@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:42E3D086.90403@DOMAIN.HIDDEN">42E3D086.90403@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:1122002894.6607.29.camel@DOMAIN.HIDDEN">1122002894.6607.29.camel@xxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:17120.28178.788826.533753@DOMAIN.HIDDEN">17120.28178.788826.533753@xxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:20050722040917.GB7576@DOMAIN.HIDDEN"><a href="msg00190.html">20050722040917.GB7576@NYCMJCOWA2</a></a>&gt;	&lt;<a href="mailto:17120.30080.768671.539970@DOMAIN.HIDDEN">17120.30080.768671.539970@xxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:878xzykn0y.fsf@DOMAIN.HIDDEN">878xzykn0y.fsf@xxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:17122.31220.22073.72951@DOMAIN.HIDDEN">17122.31220.22073.72951@xxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:20050724053713.GM2784@DOMAIN.HIDDEN"><a href="msg00219.html">20050724053713.GM2784@NYCMJCOWA2</a></a>&gt;	&lt;<a href="mailto:42E3D086.90403@DOMAIN.HIDDEN">42E3D086.90403@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Reply-to</em>: <a href="mailto:tree@DOMAIN.HIDDEN">tree@xxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Alan Watson writes:
+&gt; Hmm. That would seem to prevent an implementation representing strings 
+&gt; internally using UTF-8. This is convenient in some contexts as Scheme 
+&gt; strings can be trivially converted to UTF-8 C strings.
+
+You can create surrogate values in UTF-8, the result is just
+ill-formed.  A conformant (Unicode) implementation shouldn't generate
+these, though one could argue that if you get garbage-in, you get
+garbage-out.
+
+Scenario 1: You have a text stream encoded in UTF-16. It contains a
+valid surrogate pair &lt;D840,DD9B&gt;. This is converted to the USV
+#x0002019B. If you represent the Unicode strings internally as UTF-8,
+this gets converted to the byte-sequence #xF0 #xA0 #x86 #x9B. When
+writing the text stream you pick the encoding and the USV gets written
+appropriately.
+
+Scenario 2: You have a text stream encoded in UTF-16. It contains a
+lone surrogate, &lt;D840&gt;. This is an invalid string. You have a couple
+of options:
+
+ 2a: reject the input as invalid.
+
+ 2b: replace the surrogate value with the replacement character
+     U+FFFD (converted to #xEF #xBF #xBD in UTF-8 rep land)
+
+ 2c: keep the character, encode internally in UTF-8 (#xED #xA1
+     #xB0). On output this gets converted back.
+
+ 2d: ignore that value completely, not preserving it on input.
+
+Of these, 2c is non-conforming and not recommended, but avoids data
+loss in cases where that is important.
+
+Representing strings internally in UTF-8 is a loss though, since you
+lose random access to the string. For some applications this isn't a
+big deal, but in general using UTF-8 as an internal representation is
+a bad idea.
+
+    -tree
+
+-- 
+Tom Emerson                                          Basis Technology Corp.
+Software Architect                                 <a  rel="nofollow" href="http://www.basistech.com">http://www.basistech.com</a>
+  &quot;Beware the lollipop of mediocrity: lick it once and you suck forever&quot;
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00226" href="msg00226.html">Re: Surrogates and character representation</a></strong>
+<ul><li><em>From:</em> Alan Watson</li></ul></li>
+<li><strong><a name="00227" href="msg00227.html">Re: Surrogates and character representation</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00187" href="msg00187.html">Re: the &quot;Unicode Background&quot; section</a></strong>
+<ul><li><em>From:</em> Thomas Lord</li></ul></li>
+<li><strong><a name="00189" href="msg00189.html">Surrogates and character representation</a></strong>
+<ul><li><em>From:</em> Tom Emerson</li></ul></li>
+<li><strong><a name="00190" href="msg00190.html">Re: Surrogates and character representation</a></strong>
+<ul><li><em>From:</em> John.Cowan</li></ul></li>
+<li><strong><a name="00192" href="msg00192.html">Re: Surrogates and character representation</a></strong>
+<ul><li><em>From:</em> Tom Emerson</li></ul></li>
+<li><strong><a name="00213" href="msg00213.html">Re: Surrogates and character representation</a></strong>
+<ul><li><em>From:</em> Thomas Bushnell BSG</li></ul></li>
+<li><strong><a name="00215" href="msg00215.html">Re: Surrogates and character representation</a></strong>
+<ul><li><em>From:</em> Tom Emerson</li></ul></li>
+<li><strong><a name="00219" href="msg00219.html">Re: Surrogates and character representation</a></strong>
+<ul><li><em>From:</em> John.Cowan</li></ul></li>
+<li><strong><a name="00224" href="msg00224.html">Re: Surrogates and character representation</a></strong>
+<ul><li><em>From:</em> Alan Watson</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00224.html">Re: Surrogates and character representation</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00226.html">Re: Surrogates and character representation</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00224.html">Re: Surrogates and character representation</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00226.html">Re: Surrogates and character representation</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00225"><strong>Date</strong></a></li>
+<li><a href="threads.html#00225"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

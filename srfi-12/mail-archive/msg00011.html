@@ -1,0 +1,164 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: more srfi&#45;12 rationale? -->
+<!--X-From-R13: Rnir [nfba <qznfbaNfnet.elrefba.pn> -->
+<!--X-Date: Sat, 16 Oct 1999 23:23:44 &#45;0500 (CDT) -->
+<!--X-Message-Id: 199910170422.AAA20473@sarg.Ryerson.CA -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 199910160912.FAA15873@kima.nj.nec.com -->
+<!--X-Reference: 199910160254.WAA14569@sarg.Ryerson.CA -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: more srfi-12 rationale?</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00010.html">Date Prev</a>][<a href="msg00012.html">Date Next</a>][<a href="msg00006.html">Thread Prev</a>][<a href="msg00012.html">Thread Next</a>][<a href="maillist.html#00011">Date Index</a>][<a href="threads.html#00011">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: more srfi-12 rationale?</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-12@DOMAIN.HIDDEN">srfi-12@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: more srfi-12 rationale?</li>
+<li><em>From</em>: Dave Mason &lt;<a href="mailto:dmason@DOMAIN.HIDDEN">dmason@xxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 17 Oct 1999 00:22:18 -0400</li>
+<li><em>In-reply-to</em>: Your message of &quot;Fri, 15 Oct 1999 22:54:39 EDT.&quot;             &lt;<a href="mailto:199910160254.WAA14569@DOMAIN.HIDDEN">199910160254.WAA14569@xxxxxxxxxxxxxxx</a>&gt; </li>
+<li><em>References</em>: &lt;<a href="mailto:199910160912.FAA15873@DOMAIN.HIDDEN">199910160912.FAA15873@xxxxxxxxxxxxxxx</a>&gt; </li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Thanks to Richard for pointing out the discussion on the RnRS authors
+list.  I have added a reference to it to the SRFI FAQ page.
+
+I read through the 50-odd messages about this topic from 1995/96 and
+thought about this a bit more.
+
+&gt;&gt;&gt;&gt;&gt; On Fri, 15 Oct 1999 22:54:39 -0400, Dave Mason &lt;dmason@xxxxxxxxxxxxxxx&gt; said:
+&gt; Is the definition of ABORT supposed to be recursive?  The semantics
+&gt; of that are very unclear.  Shouldn't it be unrolling exception
+&gt; handlers?
+
+After thinking about it, I realized that HANDLE-EXCEPTIONS does the
+unwind of the exception handler.  It probably wouldn't be a bad idea
+for WITH-EXCEPTION-HANDLER to recommend that people should normally
+use HANDLE-EXCEPTIONS.
+
+But there's still a problem with the implementation.  Try:
+	(handle-exceptions
+	 foo
+	 (abort 'barf)
+	 (abort 'blat))
+but have your hand near your ^C key.
+
+It's pretty clear to me that the exception handler should have the
+exception context of the HANDLE-EXCEPTIONS, rather than itself!
+
+In reading the RnRS archive, I became quite convinced (primarily based
+on the compelling arguments of one of the authors of SRFI-12) that
+setting up an exception handler and taking an exception should be
+*very* cheap.  The SRFI-12 exception mechanism *is* cheap, but the
+*condition* mechanism isn't cheap at all.  It requires (in general)
+creating an object for every raised exception.
+
+The point of conditions, as I understand them, is that there is some
+fixed information associated with raising an exception (such
+EOF-IN-DATUM) and some variable data (such as the port).  An exception
+handler might want to ascertain all sorts of information about the
+exception (particularly in the common-lisp interactive debugging
+model).  I suggest that this should be separated and the definition
+look more like:
+
+  (HANDLE-EXCEPTION
+     (lambda (exn-static exn-dynamic fn)
+         ...)
+     e1 e2 ...)
+
+Where ``exn-static'' is the fixed data specific to the exception
+raised (could be specified to be a symbol, a list, a ``condition''
+value, or anything else you like), ``exn-dynamic'' is the dynamic
+data, and ``fn'' is a function used to extract information from the
+static and dynamic data.  ``fn'' takes at least 3 parameters:
+exn-static, exn-dynamic, and a selector to choose the information to
+retrieve:
+	(fn exn-static exn-dynamic 'condition-predicate kind-key)
+	(fn exn-static exn-dynamic 'message-english)
+
+This doesn't seem terribly unreasonable, and it means that in almost
+all cases the exn-static and fn parameters to the handler will be
+constants and the exn-dynamic will be a value already available (part
+of the operation).  So no cons'ing or other object creation is
+necessary.  The fn parameter might reasonably be left out of the
+specification, but it has the potential of making exceptions more
+efficient.
+
+I don't like the fact that it needs to do a dynamic-wind and a call/cc
+to set up an exception and the continuation is actually called whether
+or not an exception is raised (because it appears that dynamic-wind
+isn't values-aware).  This seems a lot heavier-weight than I would
+like.  It appears that this is because exception handlers can return
+as well as abort (exceptions in ML are only of the latter type).
+Personally, I'd be perfectly happy with exceptions that only could
+abort.
+
+../Dave
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00012" href="msg00012.html">Re: more srfi-12 rationale?</a></strong>
+<ul><li><em>From:</em> Richard Kelsey</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00008" href="msg00008.html">Re: more srfi-12 rationale?</a></strong>
+<ul><li><em>From:</em> Richard Kelsey</li></ul></li>
+<li><strong><a name="00006" href="msg00006.html">Re: more srfi-12 rationale?</a></strong>
+<ul><li><em>From:</em> Dave Mason</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00010.html">Re: more srfi-12 rationale?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00012.html">Re: more srfi-12 rationale?</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00006.html">Re: more srfi-12 rationale?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00012.html">Re: more srfi-12 rationale?</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00011"><strong>Date</strong></a></li>
+<li><a href="threads.html#00011"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,221 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Issues with Unicode -->
+<!--X-From-R13: orne <orneNfbavp.arg> -->
+<!--X-Date: Wed, 10 May 2006 03:59:13 +0200 (MST) -->
+<!--X-Message-Id: Pine.LNX.4.58.0605091651340.2829@bolt.sonic.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: y9lbqushdsw.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: 803467D9&#45;D753&#45;4E8A&#45;AAEA&#45;2F03E97EDB42@iro.umontreal.ca -->
+<!--X-Reference: 1147187289.13545.134.camel@vmx.eros&#45;os.org -->
+<!--X-Reference: 20060509153245.GA1177@ccil.org -->
+<!--X-Reference: 1147193562.13545.149.camel@vmx.eros&#45;os.org -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Issues with Unicode</title>
+<link rev="made" href="mailto:bear@sonic.net">
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00020.html">Date Prev</a>][<a href="msg00022.html">Date Next</a>][<a href="msg00020.html">Thread Prev</a>][<a href="msg00023.html">Thread Next</a>][<a href="maillist.html#00021">Date Index</a>][<a href="threads.html#00021">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Issues with Unicode</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &quot;Jonathan S. Shapiro&quot; &lt;<a href="mailto:shap%40eros-os.org">shap@eros-os.org</a>&gt;</li>
+<li><em>Subject</em>: Re: Issues with Unicode</li>
+<li><em>From</em>: bear &lt;<a href="mailto:bear%40sonic.net">bear@sonic.net</a>&gt;</li>
+<li><em>Date</em>: Tue, 9 May 2006 18:58:54 -0700 (PDT)</li>
+<li><em>Cc</em>: John Cowan &lt;<a href="mailto:cowan%40ccil.org">cowan@ccil.org</a>&gt;, <a href="mailto:srfi-91%40srfi.schemers.org">srfi-91@srfi.schemers.org</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-91%40srfi.schemers.org">srfi-91@srfi.schemers.org</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:1147193562.13545.149.camel%40vmx.eros-os.org"><a href="msg00020.html">1147193562.13545.149.camel@vmx.eros-os.org</a></a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:y9lbqushdsw.fsf%40informatik.uni-tuebingen.de">y9lbqushdsw.fsf@informatik.uni-tuebingen.de</a>&gt;  &lt;<a href="mailto:803467D9-D753-4E8A-AAEA-2F03E97EDB42%40iro.umontreal.ca">803467D9-D753-4E8A-AAEA-2F03E97EDB42@iro.umontreal.ca</a>&gt;  &lt;<a href="mailto:1147187289.13545.134.camel%40vmx.eros-os.org"><a href="msg00018.html">1147187289.13545.134.camel@vmx.eros-os.org</a></a>&gt;  &lt;<a href="mailto:20060509153245.GA1177%40ccil.org"><a href="msg00019.html">20060509153245.GA1177@ccil.org</a></a>&gt; &lt;<a href="mailto:1147193562.13545.149.camel%40vmx.eros-os.org"><a href="msg00020.html">1147193562.13545.149.camel@vmx.eros-os.org</a></a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>I'm going to try to organize what I have to say and just
+make it a bullet list instead of responding to a half-dozen
+different things.
+
+Immutable strings - With Unicode and threads, it's the only
+viable implementation strategy.  The hairy underpinnings and
+implementation strategies in a threaded unicode environment,
+if you don't want locking to absolutely thrash, will use
+purely functional structures and lock-free algorithms.
+
+But the interface is not the implementation.  Once you've
+done the legwork for immutable strings, providing
+string-set!  and similar is a very short further trip.
+Constructing a new string every time a mutation happens
+seems like a big chore, but if you're using a good
+implementation, you'll be able to do it in O(1) or O(log(n))
+with a log base that's pretty large, and reuse 99%+ of the
+structure of the extant string.
+
+Under the heading of &quot;what is efficient should be very easy
+to use&quot;, and given that immutable strings *will* be more
+efficient in unicode-enabled multithreaded schemata, we need
+a family of string functions that explicitly return new
+strings leaving the extant string unchanged rather than
+doing any kind of mutation.  But there is plenty of time for
+this; we don't have to get them into R6RS, and in fact we
+need R6RS' unicode specs before they can be written.
+
+Removing string-set! would be way too much of a flag-day for
+existing scheme code.  You'd have to spend R7RS implementing
+all kinds of functional-string operations that we don't have
+now because they're not sensible for mutable array-based
+strings, add some you probably missed in R8RS, start
+deprecating string-set!  in R9RS, and then you can *think*
+about making strings immutable starting with R10RS or R11RS.
+It would be far more sensible for a new dialect of lisp to
+just not have string-set! than for scheme to try to get rid
+of it.
+
+Someone has asserted that indexing by grapheme cluster
+implies stepping and is O(n).  This is only true for strings
+implemented as C implements them.  It is perfectly feasible
+to have characters inside your implementation always
+represented by constant-width values, using a subrange of
+those values as indexes into a table of interned characters.
+You intern any characters falling into that subrange and any
+characters too wide for your fixed-width units. Then you
+index in O(1) and don't worry at all about whether some
+characters are big.  Of course, in such an implementation
+indexing by codepoint would be problematic... the
+double-indexing (both codepoint and grapheme cluster are
+indexed) methods I can think of right now are all O(log(n)).
+
+Regarding what ought to be legal as an identifier: I think
+control characters, whitespace (properties Zs, Zl, Zp) and
+delimiters (properties Ps, and Pc) ought not appear in
+identifiers.  I wouldn't be at all upset if a standard also
+forbade combining characters; after all, identifiers and
+symbol names don't need the full functionality of strings.
+I wouldn't be at all upset of a standard also forbade all
+characters not yet assigned as of Unicode 4.1.0, with
+the implication that this forbidding would be permanent
+across Scheme report revisions, even though later Unicode
+versions doubtless will come along.
+
+I think you ought to be able to tell in the first three
+characters that a symbol is not a number.  Right now the
+standard says the first one character, and I'm okay with
+that too.
+
+I think that the standard needs to explicitly specify a
+method for partitioning the set of all strings into a few
+groups:
+
+   * things an implementation is required to accept as identifiers
+   * things an implementation is free to accept as identifiers
+   * things an implementation may not accept as numbers or identifiers
+      (reserved for non-numeric
+   * things an implementation is free to accept as numbers
+   * things an implementation is required to accept as numbers
+
+   (etc...  required and permitted syntaxes for booleans,
+characters, other constant formats. )
+
+The first category would be simple, like the BNF from RNRS.
+The second category would be things that, *if* they appear
+in a program, *must* be either identifiers or syntax errors.
+You shove 'em off here because some folks may want them as
+identifiers whilst others hate what the pattern-matching for
+them does to their parsers.  (an example would be my
+alternate three-characters rule for determining that
+something isn't a number).  The third category is for
+extensions and unspecified kinds of data; here's where I'd
+be using those openings and closings and initial and final
+punctuations I wanted kept out of identifiers.  The fourth
+category would be for classes of strings reserved for
+numeric extensions and numeric constant formats that
+implementations aren't required to implement.  And the fifth
+would be for numeric formats that all implementations *are*
+required to implement.
+
+Right now we have a minimal set of identifiers guaranteed to
+be legal identifiers (the BNF for symbols in R5RS) and a
+very minimal set of numeric syntax that's required to be
+accepted (a limited range of integers, with the limit
+unspecified). And every implementation makes its own calls
+as to how to interpret all other tokens.  21/22 may be an
+identifier in a scheme that doesn't support rationals, and
+#q2+2i+j+4k may be a number in a scheme that supports
+quaternions, and #33.28 may be a boolean in a system with
+fuzzy logic extensions.  There is absolutely *nothing* you
+can do to define a syntactic class of objects that is
+guaranteed to *not* step on number or identifier syntax in
+any scheme.  This is a mess, inhibits innovation, and
+introduces bugs into code that works fine elsewhere, and the
+standard *does* need to help sort it out.
+
+
+
+
+
+
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00023" href="msg00023.html">Re: Issues with Unicode</a></strong>
+<ul><li><em>From:</em> John Cowan &lt;cowan@ccil.org&gt;</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00018" href="msg00018.html">Re: Issues with Unicode</a></strong>
+<ul><li><em>From:</em> &quot;Jonathan S. Shapiro&quot; &lt;shap@eros-os.org&gt;</li></ul></li>
+<li><strong><a name="00019" href="msg00019.html">Re: Issues with Unicode</a></strong>
+<ul><li><em>From:</em> John Cowan &lt;cowan@ccil.org&gt;</li></ul></li>
+<li><strong><a name="00020" href="msg00020.html">Re: Issues with Unicode</a></strong>
+<ul><li><em>From:</em> &quot;Jonathan S. Shapiro&quot; &lt;shap@eros-os.org&gt;</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00020.html">Re: Issues with Unicode</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00022.html">Re: Issues with Unicode</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00020.html">Re: Issues with Unicode</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00023.html">Re: Issues with Unicode</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00021"><strong>Date</strong></a></li>
+<li><a href="threads.html#00021"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

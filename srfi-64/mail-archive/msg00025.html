@@ -1,0 +1,208 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Meta&#45;test suite -->
+<!--X-From-R13: Bre Pbguare <creNobguare.pbz> -->
+<!--X-Date: Wed,  9 Mar 2005 22:39:15 +0100 (NFT) -->
+<!--X-Message-Id: 422F6CE4.3090703@bothner.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: Pine.LNX.4.44.0503091457310.19219&#45;100000@localhost.localdomain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Meta-test suite</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00024.html">Date Prev</a>][<a href="msg00026.html">Date Next</a>][<a href="msg00024.html">Thread Prev</a>][<a href="msg00026.html">Thread Next</a>][<a href="maillist.html#00025">Date Index</a>][<a href="threads.html#00025">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Meta-test suite</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Donovan Kolbly &lt;<a href="mailto:donovan@DOMAIN.HIDDEN">donovan@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Meta-test suite</li>
+<li><em>From</em>: Per Bothner &lt;<a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 09 Mar 2005 13:38:44 -0800</li>
+<li><em>Cc</em>: SRFI 64 &lt;<a href="mailto:srfi-64@DOMAIN.HIDDEN">srfi-64@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-64@DOMAIN.HIDDEN">srfi-64@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:Pine.LNX.4.44.0503091457310.19219-100000@DOMAIN.HIDDEN">Pine.LNX.4.44.0503091457310.19219-100000@xxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:Pine.LNX.4.44.0503091457310.19219-100000@DOMAIN.HIDDEN">Pine.LNX.4.44.0503091457310.19219-100000@xxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.7.3) Gecko/20041020</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+Donovan Kolbly wrote:
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+So that, suppose:
+
+   (test-begin &quot;a&quot;)
+   (test-begin &quot;b&quot;)
+   (test-assert &quot;x&quot; #t)
+
+then in an on-test hook executing for the test-assert, we have:
+
+   (test-runner-test-name runner) ==&gt; &quot;x&quot;
+   (test-runner-group-path runner) ==&gt; (&quot;a&quot; &quot;b&quot;)
+</pre></blockquote><pre style="margin: 0em;">
+
+Yes.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><tt>Although, then a custom runner would have no way to know about an empty 
+</tt><tt>group.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>Would you intend that, for a custom runner, the following are 
+</tt><tt>indistinguishable:
+</tt><pre style="margin: 0em;">
+
+   (test-begin &quot;a&quot;)
+   (test-assert &quot;x&quot; #t)
+   (test-end)
+   (test-begin &quot;a&quot;)
+   (test-assert &quot;y&quot; #t)
+   (test-end)
+
+vs:
+
+   (test-begin &quot;a&quot;)
+   (test-assert &quot;x&quot; #t)
+   (test-assert &quot;y&quot; #t)
+   (test-end)
+</pre></blockquote><pre style="margin: 0em;">
+
+I do think we should have call-back routins for test-begin/test-end.
+For example a test-runner might want to write in a log:
+[Entering group a]
+Test x PASS.
+[Exiting group a]
+[Entering group a]
+Test y PASS.
+[Exiting group a]
+
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+A &quot;test suite&quot; is a collection of &quot;test cases&quot; optionally organized into a
+hierarchy of &quot;test groups&quot;.  A &quot;test group&quot; may be either implict, as
+introduced by test-begin and terminated by test-end, or explicit, as
+introduced by test-group.
+</pre></blockquote><pre style="margin: 0em;">
+
+Agreed.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Furthermore, note that the tests within an
+explicit test group may be skipped using test-skip, but this is not true
+for tests within an implicit test group.
+
+</pre><tt>[I think it's wierd that you can't skip an implicit test group, just for 
+</tt><tt>symmetry.  Although I can't see implementing it so that all the forms are 
+</tt><tt>skipped, it might make sense to actually skip *tests* inside a skippable
+</tt><pre style="margin: 0em;">
+implicit group.]
+</pre></blockquote><pre style="margin: 0em;">
+
+I'm inclined to agree.  I don't think the reference implementation does
+it this way, but it should be difficult to fix.
+
+For test-match-nth, should be count both the test-group/test-begin *and*
+(assuming the test-group/test-begin is not skipped) the tests in it?
+
+(test-skip 2) ;; Define this to mean skipping the 2nd following test.
+(test-begin &quot;a&quot;)
+(test-assert &quot;x1&quot;)
+(test-assert &quot;x2&quot;)
+(test-end &quot;a&quot;)
+(test-assert &quot;x3&quot;)
+
+Should we skip &quot;x2&quot; or &quot;x3&quot;?  I.e. do we count 1 for &quot;a&quot; as a unit, or 1
+for &quot;a&quot; and 1 each for &quot;x1&quot;...&quot;x3&quot;.  The latter might be a little strange,
+but perhaps more convenient - and easier to implement, since we can use
+a single global counter.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+For the purposes of test counting as checked by test-end, a test group (of
+either variety) counts as a single test.
+</pre></blockquote><pre style="margin: 0em;">
+
+I'm open to discussion on this: perhaps it should count as a single test
+*if it is skipped*.
+
+&gt; Note that the registered on-test
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+procedure is not involved in test group boundaries, which means that the
+sum of (test-runner-*-count) may be larger than the number of calls to the
+on-test procedure.
+</pre></blockquote><pre style="margin: 0em;">
+
+Yes, I think so.  I we add test-begin/test-end call-backs, as I think we
+should, we might be able to be more specific.
+
+&gt; Furthermore, if an explicit test group is skipped, the
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+group as a whole is skipped, not each test within it, which means that
+(test-runner-skip-count) may be *smaller* than if the tests were
+individually skipped.
+</pre></blockquote><pre style="margin: 0em;">
+
+This seems unavoidable.
+--
+	--Per Bothner
+per@xxxxxxxxxxx   <a  rel="nofollow" href="http://per.bothner.com/">http://per.bothner.com/</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00026" href="msg00026.html">Counting [was Re: Meta-test suite]</a></strong>
+<ul><li><em>From:</em> Donovan Kolbly</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00024" href="msg00024.html">Re: Meta-test suite</a></strong>
+<ul><li><em>From:</em> Donovan Kolbly</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00024.html">Re: Meta-test suite</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00026.html">Counting [was Re: Meta-test suite]</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00024.html">Re: Meta-test suite</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00026.html">Counting [was Re: Meta-test suite]</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00025"><strong>Date</strong></a></li>
+<li><a href="threads.html#00025"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

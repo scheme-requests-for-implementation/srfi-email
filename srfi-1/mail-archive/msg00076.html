@@ -1,0 +1,153 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: SRFI&#45;1 final draft available -->
+<!--X-From-R13: fuvirefNnv.zvg.rqh -->
+<!--X-Date: Fri, 13 Aug 1999 18:20:22 &#45;0500 (CDT) -->
+<!--X-Message-Id: 199908132320.TAA03554@mongkok.ai.mit.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 01da01bee368$8c1bab00$7a01a8c0@intranet -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: SRFI-1 final draft available</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00075.html">Date Prev</a>][<a href="msg00077.html">Date Next</a>][<a href="msg00074.html">Thread Prev</a>][<a href="msg00073.html">Thread Next</a>][<a href="maillist.html#00076">Date Index</a>][<a href="threads.html#00076">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: SRFI-1 final draft available</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-1@DOMAIN.HIDDEN">srfi-1@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: SRFI-1 final draft available</li>
+<li><em>From</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxx</a></li>
+<li><em>Date</em>: Fri, 13 Aug 1999 19:20:15 -0400</li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:01da01bee368%248c1bab00%247a01a8c0@DOMAIN.HIDDEN"><a href="msg00074.html">01da01bee368$8c1bab00$7a01a8c0@intranet</a></a>&gt; (<a href="mailto:esl@DOMAIN.HIDDEN">esl@xxxxxxxxxxxxxxx</a>)</li>
+<li><em>References</em>: &lt;<a href="mailto:01da01bee368%248c1bab00%247a01a8c0@DOMAIN.HIDDEN"><a href="msg00074.html">01da01bee368$8c1bab00$7a01a8c0@intranet</a></a>&gt;</li>
+<li><em>Reply-to</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>   From: &quot;Sergei Egorov&quot; &lt;esl@xxxxxxxxxxxxxxx&gt;
+   Date: Tue, 10 Aug 1999 15:42:57 -0400
+
+   I have several comments on the final draft:
+
+   - NULL-LIST? is allowed to handle circular lists in the first sentence of
+   its description and disallowed in the third. Taking into account the
+   intended use of circular lists in MAP-like functionals, I think that it is
+   logical to allow NULL-LIST?  to return #f on circular lists (?)
+
+Oops -- that's a typo. NULL-LIST should indeed return #f on circular lists.  I
+have added the starred text: &quot;It is an error to pass this procedure a value
+which is not a proper *or circular* list.&quot;
+
+   - TAKE, TAKE-RIGHT: I am still not convinced that &quot;the last 2 elements of
+   (1 2 3 . d) &quot; are (2 3 . d) and that in this case the benefits of extended
+   arguments domain overweight error checking. Scheme's LIST-TAIL does not
+   handle dotted lists (inspite of the fact that its sample implementation
+   won't notice the difference) and I believe there's no *immediate* need to
+   allow dotted list handling in TAKE/DROP. This is also true for LIST-COPY
+   and LAST (I can agree that (last-pair '(1 2 . 3)) is (2 . 3) but the fact
+   that (last '(1 2 . 3)) is 2 still looks like an oddity).
+
+- It's a completely consistent view. 
+- It preserves the important identities
+     (append (take x i) (drop x i)) = x
+     (append (take-right x i) (drop-right x i)) = x
+- It's driven by the view of DROP as simply being cdr^n.
+  (This is discussed in the Common Lisp rationale.)
+
+   - Searching: the criteria of acceptability of arguments to a search
+   procedure based on the result of the search itself (circular lists) is very
+   confusing and contradicts the traditional notion of &quot;argument types&quot;:
+   acceptability of an argument should be judged using universal rules
+   (&quot;types&quot; or &quot;domains&quot;) and should not depend on values or types of other
+   arguments. This approach simplifies documentation and understanding of the
+   procedure's behavior; it also serves as a basis for formal type systems,
+   both &quot;soft&quot; and static.
+
+That is *my* opinion, as well, but you guys overrode me. There is no &quot;proper
+list&quot; type in Scheme! So it does not make sense to restrict these functions
+to proper lists -- i.e., to throw out dotted lists. The dynamic typing of
+Scheme means that in order to strictly enforce such a ban, you would have
+to have your search procedure search all the way to the end of the list to
+check termination, even if the element being sought was the first or
+second element. But I bow to the public voice, and spec these procedures
+restricting them to patterns of data structure that are not part of the
+underlying type system.
+
+Circular lists are a perfectly useful data structure; they fit some algorithms
+ust right.  Allowing you to pass cirular lists to FIND-TAIL allows you to
+&quot;rotate&quot; a list, which is handy. I do not feel this is a squirrel case.
+
+   As a general note, the list library design process demonstrated weakness of
+   the Scheme lists concept. It is not a &quot;stable&quot; feature that resists all
+   attempts to revise it; some of the revisions are even useful in some
+   situations, and all the messy details can be carefully documented (see the
+   CL spec).  But original description of lists as finite and NULL-terminated
+   sequences of pairs, even in its present &quot;unstable&quot; form, is the simplest
+   design choice that covers all common uses.
+
+Yes, that's a good summary. But I would like to cover the uncommon cases,
+as well, where possible.
+
+   I know that the chances to convince Olin so lately in the design process
+   are close to nothing, but given the amount of work that went into this SRFI
+   it's still worth a try...
+
+Sergei, as always, I appreciate your careful reviews and comments.
+	-Olin
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00074" href="msg00074.html">RE: SRFI-1 final draft available</a></strong>
+<ul><li><em>From:</em> Sergei Egorov</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00075.html">One more voice on &quot;linear update&quot; and &quot;!&quot;</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00077.html">One more vote on &quot;linear update&quot; and &quot;!&quot;</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00074.html">RE: SRFI-1 final draft available</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00073.html">TAKE, DROP &amp; sharing</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00076"><strong>Date</strong></a></li>
+<li><a href="threads.html#00076"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

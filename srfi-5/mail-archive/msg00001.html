@@ -1,0 +1,164 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Making the new let easier to stomach -->
+<!--X-From-R13: Oaql Unlabe <fvyireNznvy.jrofcna.arg> -->
+<!--X-Date: Thu, 11 Feb 1999 17:56:57 &#45;0600 (CST) -->
+<!--X-Message-Id: 36C36F54.F9477F6B@mail.webspan.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: y9liudagxae.fsf@brabantio.informatik.uni&#45;tuebingen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Making the new let easier to stomach</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00000.html">Date Prev</a>][<a href="msg00002.html">Date Next</a>][<a href="msg00000.html">Thread Prev</a>][<a href="msg00002.html">Thread Next</a>][<a href="maillist.html#00001">Date Index</a>][<a href="threads.html#00001">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Making the new let easier to stomach</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-5@DOMAIN.HIDDEN">srfi-5@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Making the new let easier to stomach</li>
+<li><em>From</em>: Andy Gaynor &lt;<a href="mailto:silver@DOMAIN.HIDDEN">silver@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 12 Feb 1999 00:01:24 +0000</li>
+<li><em>Cc</em>: &quot;Michael Sperber [Mr. Preprocessor]&quot;  &lt;<a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Organization</em>: Nightmare</li>
+<li><em>References</em>: &lt;<a href="mailto:y9liudagxae.fsf@DOMAIN.HIDDEN">y9liudagxae.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Sender</em>: <a href="mailto:silver@DOMAIN.HIDDEN">silver@xxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx (Michael Sperber [Mr. Preprocessor]) writes:
+&gt; - You're essentially arguing for replacing R5RS let with the one you propose.
+&gt;   This is totally valid.
+&gt; 
+&gt;   As it SRFI, your proposal is still only a suggestion for an addition to the
+&gt;   language.  Why not rename it to something other than let?
+
+I proposed SRFI-5 specifically to patch two little holes that I perceived in
+the R5RS let form, inconsistencies with respect to other R5RS features.  I like
+to think that these little holes are oversights that would have been corrected
+at the time the named-let and signature-style define features were introduced,
+had they been noticed.  Providing the functionality of SRFI-5's let form under
+a different name would defeat much of the reason why it was submitted.
+
+&gt;   This would also make it easier to use for people dealing with legacy code.
+
+SRFI-5 is backward-compatible with R5RS's let and uses only one syntactic
+extension (symbols in the binding list) to implement its two new facets.  How
+serious can a legacy problem be?
+
+&gt; - Is there a way to define the construct using standard R5RS macros rather
+&gt;   than explicit renaming (which is only supported by one or two Scheme
+&gt;   systems)?
+
+Heh heh, R5RS template-style macros?  See bottom.  I wouldn't be surprised if
+a template wizard were able to optimize it a bit, so I'd appreciate it if
+someone gave it a sound thrashing.  Not heavily tested, but it appears to work.
+
+Regards, [Ag]   Andy Gaynor   silver@xxxxxxxxxxxxxxxx
+_______________________________________________________________________________
+
+(define-syntax let
+  (syntax-rules ()
+
+    ;; In the (let 0 name normals rest arguments body bindings) form:
+    ;;     name:      The name to assign to the lambda, or #f if none.
+    ;;     normals:   The normal parameters of the lambda.
+    ;;     rest:      The rest parameter for the lambda, or () if none.
+    ;;                Using () saves a rule for (normal ... . rest).
+    ;;     arguments: The arguments to the lambda.
+    ;;     body:      The body of the lambda.
+    ;;     bindings:  Bindings remaining to be processed.
+
+    ;; Terminating cases
+    ;; No name, use an anonymous lambda call
+    ((let 0 #f (normal ...) rest arguments body ())
+     ((lambda (normal ... . rest) . body) . arguments))
+    ;; Name, use a letrec and call
+    ((let 0 name (normal ...) rest arguments body ())
+     (letrec ((name (lambda (normal ... . rest) . body))) (name . arguments)))
+
+    ;; Deconstructing bindings
+    ;; Shuffle a normal binding
+    ((let 0 name (normal ...) () (argument ...) body ((variable value) . bindings))
+     (let 0 name (normal ... variable) () (argument ... value) body bindings))
+    ;; Shuffle a rest binding (its values are shuffled below)
+    ((let 0 name normals () arguments body (rest-variable . rest-values))
+     (let 0 name normals rest-variable arguments body rest-values))
+    ;; Shuffle a rest value
+    ((let 0 name normals rest (argument ...) body (rest-value . rest-values))
+     (let 0 name normals rest (argument ... rest-value) body rest-values))
+
+    ;; Top-level interface
+    ;; Straight let, no bindings
+    ((let () . body)
+     (let 0 #f () () () body ()))
+    ;; Straight let, bindings
+    ((let ((variable value) . bindings) . body)
+     (let 0 #f (variable) () (value) body bindings))
+    ;; Signature-style named let
+    ((let (name . bindings) . body)
+     (let 0 name () () () body bindings))
+    ;; Non-signature-style named let
+    ((let name bindings . body)
+     (let 0 name () () () body bindings))))
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00002" href="msg00002.html">Re: Making the new let easier to stomach</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr. Preprocessor]</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00000" href="msg00000.html">Making the new let easier to stomach</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr. Preprocessor]</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00000.html">Making the new let easier to stomach</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00002.html">Re: Making the new let easier to stomach</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00000.html">Making the new let easier to stomach</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00002.html">Re: Making the new let easier to stomach</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00001"><strong>Date</strong></a></li>
+<li><a href="threads.html#00001"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

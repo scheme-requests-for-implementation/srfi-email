@@ -1,0 +1,225 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Various opinions -->
+<!--X-From-R13: Xbetra Epunrsre <sbepreNsbepvk.pk> -->
+<!--X-Date: Fri, 15 Jul 2005 21:06:05 +0200 (DFT) -->
+<!--X-Message-Id: 87ll4751pg.fsf@forcix.kollektiv&#45;hamburg.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Various opinions</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00078.html">Date Prev</a>][<a href="msg00080.html">Date Next</a>][<a href="msg00059.html">Thread Prev</a>][<a href="msg00081.html">Thread Next</a>][<a href="maillist.html#00079">Date Index</a>][<a href="threads.html#00079">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Various opinions</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-75@DOMAIN.HIDDEN">srfi-75@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Various opinions</li>
+<li><em>From</em>: Jorgen Schaefer &lt;<a href="mailto:forcer@DOMAIN.HIDDEN">forcer@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 15 Jul 2005 21:06:03 +0200</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-75@DOMAIN.HIDDEN">srfi-75@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Gnus/5.11 (Gnus v5.11) Emacs/22.0.50 (gnu/linux)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>The topic of Unicode support in a language is very difficult. I'm not
+sure the array of codepoints idea is the best solution, but I won't
+question it in this mail (mainly because I don't have a better
+proposal).
+
+
+Integers and Codepoints
+=======================
+The SRFI defines the procedures CHAR-&gt;INTEGER and INTEGER-&gt;CHAR,
+but also defines the return value to be a Unicode codepoint. So it
+would be better to name them
+
+  char-&gt;codepoint
+  codepoint-&gt;char
+
+instead.
+
+
+The newline character
+=====================
+#\NEWLINE always has been a problem, because a new line is a
+system-dependent sequence of octets. #\LINEFEED is the correct term.
+
+We also have (newline), which is the right thing to do, so we can just
+drop #\NEWLINE.
+
+
+x, u and U
+==========
+The SRFI defines x, u and U for two-digit, four-digit and eight-digit
+hexadecimal codepoints in character literals and in strings.
+
+First of all, for character literals, this is unnecessary. It would be
+much more elegant to have
+
+   (char=? #\xA #\d10 #\o12 #\b1010)
+
+analogous to
+
+   (= #xA #d10 #o12 #b1010)
+
+
+Introducing characters which mark fixed-width tokens in strings
+strikes me as problematic as well. The obvious alternative is
+using delimiters, as already proposed on this list. Delimiters
+improve readability, and since using explicit codepoints in
+strings is rare, the extra length is not a problem. It is also not
+clear that hexadecimal encoding is always preferable. So I would
+propose a delimiter which allows for different bases.
+
+There are different approaches. The main goal is to make it readable.
+
+    &quot;A\(#x42)C&quot;  - This is _very_ readable, though verbose
+    &quot;A\x42;C&quot;
+    &quot;A\x42:C&quot;    - This is also very readable
+    &quot;A\x42#C&quot;
+    &quot;A\#x42#C&quot;   - This provides some consistency
+
+Analogous to the character syntax described above, the following could
+be possible:
+
+   (apply char=? (string-&gt;list &quot;\xA:\d10:\o12:\b1010:&quot;)) =&gt; #t
+
+
+Quoted Strings
+==============
+I'm a bit confused as to why we need all those character shorthands.
+
+The rationale &quot;it's what is provided in other places&quot; doesn't sound
+right. Specifically, I have never seen \b or \v in use.
+
+I also wonder why \? and \' got added there - those are equivalent to
+the characters without the backslash, and neither the question mark
+nor the quote are ever used in a context where they have to be quoted.
+
+
+Newlines in strings
+===================
+I like the \&lt;newline&gt;&lt;intraline-whitespace&gt; syntax, as it allows for
+correctly-indented strings.
+
+I would dislike being prevented from using newlines in a string,
+though, and I don't see a reason to do so.
+
+
+Here Strings
+============
+The introduction of here strings poses a few problems. Allowing for
+any character in the delimiter does not seem useful (except for the
+Obfuscated Scheme Code Contest, of course :-)), so I would think it to
+be the correct choice to limit the number of allowed characters.
+
+For consistency, a symbol could be used there. After the delimiter,
+only whitespace may follow until the newline.
+
+This allows for here-strings to be normal tokens (instead of being
+possibly split up over several tokens), and doesn't lend itself to
+hiding errors as easily.
+
+
+Case-Insensitivity
+==================
+Unicode defines case folding for case-insensitive comparisons. This
+works by mapping characters to specific case-folded characters - not
+necessarily upper-case or lower-case, but a special case-folded
+version.
+
+This allows, for example, the Greek sigma - which has two forms in the
+lower-case variant - to match correctly, as well as the German eszett
+to match with the double-s in uppercase form.
+
+The procedures that deal with case insensitivity in this SRFI -
+i.e. *-CI* - should use case folding, not downcasing.
+
+
+Normalization
+=============
+This SRFI lacks a notion of normalization, which is important for any
+kind of string comparison. I don't see an easy way to integrate this
+besides providing STRING-NORMALIZE-NF{C,D,KC,KD}, though.
+
+
+It's What Others Do
+===================
+The discussions in this thread seem to reiterate one argument from
+time to time which I find problematic. The argument is &quot;This Is What
+Others Do&quot;, or even &quot;This Is What People Coming From Other Languages
+Expect&quot;.
+
+Since when was that a good argument against a sensible solution in
+Scheme?
+
+I think it would be useful to stop pondering about how to copy
+questionable design decisions from other languages, and try to find
+good solutions - it wouldn't be the first time Scheme does something
+no one else did, because it is the right thing to do.
+
+
+Greetings,
+        -- Jorgen
+
+-- 
+((email . &quot;forcer@xxxxxxxxx&quot;) (www . &quot;<a  rel="nofollow" href="http://www.forcix.cx/&quot">http://www.forcix.cx/&quot</a>;)
+ (gpg   . &quot;1024D/028AF63C&quot;)   (irc . &quot;nick forcer on IRCnet&quot;))
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00081" href="msg00081.html">Re: Various opinions</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00078.html">Re: case mappings</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00080.html">Re: case mappings</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00059.html">Re: Fundamental operations on strings</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00081.html">Re: Various opinions</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00079"><strong>Date</strong></a></li>
+<li><a href="threads.html#00079"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

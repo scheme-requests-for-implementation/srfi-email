@@ -1,0 +1,161 @@
+<!-- MHonArc v2.6.16 -->
+<!--X-Subject: Re: proposing a simpler mechanism -->
+<!--X-From-R13: Fubznf Phfuaryy PEU <goNorpxrg.arg> -->
+<!--X-Date: Fri, 13 Nov 2009 04:23:58 +0000 (UTC) -->
+<!--X-Message-Id: 1258084540.6678.19.camel@kozaki.becket.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200911130158.nAD1ww8C007840@moose.cs.indiana.edu -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: proposing a simpler mechanism</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00011.html">Date Prev</a>][<a href="msg00013.html">Date Next</a>][<a href="msg00011.html">Thread Prev</a>][<a href="msg00013.html">Thread Next</a>][<a href="maillist.html#00012">Date Index</a>][<a href="threads.html#00012">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: proposing a simpler mechanism</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &quot;R. Kent Dybvig&quot; &lt;<a href="mailto:dyb@DOMAIN.HIDDEN">dyb@xxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: proposing a simpler mechanism</li>
+<li><em>From</em>: Thomas Bushnell BSG &lt;<a href="mailto:tb@DOMAIN.HIDDEN">tb@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 12 Nov 2009 19:55:40 -0800</li>
+<li><em>Cc</em>: <a href="mailto:srfi-102@DOMAIN.HIDDEN">srfi-102@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-102@DOMAIN.HIDDEN">srfi-102@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:200911130158.nAD1ww8C007840@DOMAIN.HIDDEN">200911130158.nAD1ww8C007840@xxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:200911130158.nAD1ww8C007840@DOMAIN.HIDDEN">200911130158.nAD1ww8C007840@xxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>What do you expect procedure-arity to return for a procedure which
+accepts any number of arguments?  IEEE +inf?
+
+On Thu, 2009-11-12 at 20:58 -0500, R. Kent Dybvig wrote:
+&gt; As David knows, I'm not a big fan of mechanisms to retrieve a procedure's
+&gt; arity.  If such a mechanism is going to be standardized, however, as a
+&gt; SRFI or in some future report, I'd prefer it be as small, simple, and
+&gt; efficient as possible.  I therefore propose the following simpler
+&gt; alternative to the mechanism described in the SRFI.  It consists of a
+&gt; single procedure, procedure-arity:
+&gt; 
+&gt; --------
+&gt; (procedure-arity proc) -&gt; bitmask | #f
+&gt; 
+&gt; Bitmask is an exact integer.  Bit i is set in the two's complement
+&gt; representation of bitmask if proc accepts i arguments.  Conversely, bit i
+&gt; is reset if proc is certain to reject i arguments.  #f implies no arity
+&gt; information is available.
+&gt; --------
+&gt; 
+&gt; This simpler proposal satisfies the requirements set forth in the first
+&gt; paragraph of the rationale.  It is also straightforwardly implemented
+&gt; using any of the mechanisms referenced in paragraph 2 of the rationale. 
+&gt; It leverages the existing bit testing procedures in R6RS and many non-R6RS
+&gt; Scheme implementations, e.g., R6RS bitwise-bit-set?; it works for all
+&gt; procedures created by case-lambda; and it is uniquely specified, so there
+&gt; is no normalization issue.  For most procedures, the bitmask will be a
+&gt; fixnum.  In most implementations, this means computing it requires no
+&gt; allocation, and working with arities will be efficient.  Perhaps most
+&gt; importantly, the mechanism requires the addition of only one procedure to
+&gt; the language, and no data types, is simple to describe, and simple to use.
+&gt; 
+&gt; Discussion:
+&gt; 
+&gt; This simpler proposal does not allow an implementation to expose as much
+&gt; of the structure of a procedure's implementation as does the existing
+&gt; proposal.  For example:
+&gt; 
+&gt; (procedure-arity (case-lambda [(x y) ---] [x ---]))
+&gt; 
+&gt; might return (2 #(0)) with the existing proposal, where #(0) is an
+&gt; arity-at-least object representing zero or more arguments, hinting at the
+&gt; structure of the procedure argument.  Meanwhile, the same call returns -1
+&gt; with the simpler proposal.
+&gt; 
+&gt; On the other hand, nothing in the existing proposal _requires_ an
+&gt; implementation of procedure-arity to expose the structure of the procedure
+&gt; argument, so the above call to procedure-arity might simply return #(0),
+&gt; or, due to some quirk of its optimized representation of the procedure,
+&gt; return, say, (0 1 2 3 4 5 #(4)), where #(4) is an arity-at-least object
+&gt; representing four or more arguments.
+&gt; 
+&gt; Thus, I see this neither as a benefit of the existing proposal nor as a
+&gt; drawback of the simpler proposal.  It might even be considered a feature
+&gt; of the simpler proposal that no more of the internal structure of a
+&gt; procedure can be leaked than necessary.
+&gt; 
+&gt; Issues:
+&gt; 
+&gt; It might be better for procedure-arity to return -1 if no arity
+&gt; information is available, meaning the procedure might accept any number of
+&gt; arguments, just to keep it simple and given that the existence of arity
+&gt; information is no guarantee of its accuracy, as discussed in the Caveat
+&gt; Emptor section.
+&gt; 
+&gt; A different name can be used to avoid conflict with existing mechanisms. 
+&gt; 
+&gt; Kent
+&gt; 
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00013" href="msg00013.html">Re: proposing a simpler mechanism</a></strong>
+<ul><li><em>From:</em> Taylor R Campbell</li></ul></li>
+<li><strong><a name="00017" href="msg00017.html">Re: proposing a simpler mechanism</a></strong>
+<ul><li><em>From:</em> R. Kent Dybvig</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00011" href="msg00011.html">proposing a simpler mechanism</a></strong>
+<ul><li><em>From:</em> R. Kent Dybvig</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00011.html">proposing a simpler mechanism</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00013.html">Re: proposing a simpler mechanism</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00011.html">proposing a simpler mechanism</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00013.html">Re: proposing a simpler mechanism</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00012"><strong>Date</strong></a></li>
+<li><a href="threads.html#00012"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

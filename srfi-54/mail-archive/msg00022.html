@@ -1,0 +1,561 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: feedback -->
+<!--X-From-R13: fbb <gvyqrNgvyqr.pb.xe> -->
+<!--X-Date: Sun, 28 Mar 2004 13:58:14 +0200 (DFT) -->
+<!--X-Message-Id: 87vfkpi3no.fsf@tilde.co.kr -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>feedback</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00021.html">Date Prev</a>][<a href="msg00023.html">Date Next</a>][<a href="msg00005.html">Thread Prev</a>][<a href="msg00023.html">Thread Next</a>][<a href="maillist.html#00022">Date Index</a>][<a href="threads.html#00022">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>feedback</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-54@DOMAIN.HIDDEN">srfi-54@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: feedback</li>
+<li><em>From</em>: soo &lt;<a href="mailto:tilde@DOMAIN.HIDDEN">tilde@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: 28 Mar 2004 20:58:51 +0900</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-54@DOMAIN.HIDDEN">srfi-54@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Sender</em>: soo &lt;<a href="mailto:soo@DOMAIN.HIDDEN">soo@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Gnus/5.09 (Gnus v5.9.0) Emacs/21.2</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Thank all for thoughtful comments and indicating my wrong view.  Especially, I
+express my thanks to Alan Watson for his thoughtful consideration.
+
+ * From: Shiro Kawai &lt;shiro@xxxxxxxx&gt;
+ * Date: Thu, 25 Mar 2004 03:08:20 -1000 (HST)
+ * Subj: Overloading
+
+   &gt;&gt; &gt;&gt; | Why not have two distinct
+   &gt;&gt; &gt;&gt; | procedures?
+   &gt;&gt; 
+   &gt;&gt; Why must have two procedure?  Inspite of the same processing course and return
+   &gt;&gt; type(string).
+
+ | I can think of one reason for not overloading the function.
+ | Suppose I like to write a procedure that takes a list of objects,
+ | and print out each element per line, left-padded to 20 columns,
+ | using 'write' representation.
+
+ | (defun (foo list-of-objects)
+  (for-each (cut fmt &lt;&gt; 20 write &quot;\n&quot;) list-of-objects))
+
+ | Oops, this fails if list-of-objects contains numeric values, right?
+ | I think I suppose to write something like this:
+
+ | (defun (foo list-of-objects)
+  (for-each (lambda (elt)
+              (if (number? elt)
+                 (fmt elt 20 &quot;\n&quot;)
+                 (fmt elt 20 write &quot;\n&quot;)))
+            list-of-objects))
+
+ | However, I think this is awkward.  The trouble is, only the
+ | programmer knows how she wants to treat a given object as 
+ | a numeric value or as just &quot;one of Scheme values&quot;---the program
+ | can't deduct the programmer's intention purely from the type
+ | of the object.
+
+ | Having two distinct procedures at least help a programmer
+ | to express the intention.
+
+At present, I partially agree with you.
+How about adding &lt;show&gt; parameter to number type?
+Then you can write it like this:
+
+(define (foo list-of-objects)
+  (for-each (lambda (elt)
+              (display (fmt elt 20 write &quot;\n&quot;)))
+            list-of-objects))
+
+(foo '(12 abc &quot;string&quot; #\a '(1 de &quot;str&quot; #\e)))
+                  12
+                 abc
+            &quot;string&quot;
+                 #\a
+   '(1 de &quot;str&quot; #\e)
+ 
+
+ * From: Shiro Kawai &lt;shiro@xxxxxxxx&gt;
+ * Date: Thu, 25 Mar 2004 03:16:17 -1000 (HST)
+ * Subj: &lt;show&gt; parameter
+
+   &gt;&gt; * From: David Van Horn &lt;dvanhorn@xxxxxxxxxx&gt;
+   &gt;&gt; &gt;&gt; |And further, why are you allowed to pass in only display or write?
+   &gt;&gt; 
+   &gt;&gt; FMT needs only display and write. 
+
+ | I might want to pass write-with-shared-structure (srfi-38),
+ | in case if object has circular reference.  Or to pass
+ | my own version of write, which uses special formatting for
+ | certain objects, suitable for my application.
+
+ | I don't see what fmt gains by limiting &lt;show&gt; parameter to
+ | display and write.
+
+ | --shiro
+
+I used simply the &lt;show&gt; argument with intent to embody ~s and ~a directives
+of FORMAT.  Now I agree with you, and I'll change the code of FMT from (list
+display write) to (cons display procedure?).
+
+Additional Changes:
+1. The + of &lt;plus&gt; parameter is not a procedure but a symbol.
+2. The number type also has the &lt;show&gt; option.
+
+
+ * From: Alex Shinn &lt;foof@xxxxxxxxxxxxx&gt;
+ * Date: Fri, 26 Mar 2004 15:36:50 +0900
+ * Subj: Re: a preface
+ 
+ | ...
+ | So a title like
+  &quot;SRFI-54: Converting Objects to Strings&quot;
+ | would seem more appropriate.
+
+If possible, I'll change it to such a form.
+
+ | I definitely agree that there should be a separate procedure for
+ | numbers.
+
+Still, I can't agree.  I am thinking over it.
+
+ |  If you choose radix as the first optional argument it can in
+ | fact be an extended version of NUMBER-&gt;STRING.
+
+Actually, FMT is its extended version.
+
+ 
+ |  I think Paul Schlie gave
+ | the most comprehensive list of number aspects here:
+
+  <a  rel="nofollow" href="http://srfi.schemers.org/srfi-48/mail-archive/msg00031.html">http://srfi.schemers.org/srfi-48/mail-archive/msg00031.html</a>
+
+ | of which you're currently missing sign (which should allow for the
+ | parentheses form used in finance) and commas.
+
+Thanks, I'll read it.
+
+ | The other procedure could be OBJECT-&gt;STRING, -&gt;STRING, or just STR (same
+ | length!) if you want something short.
+
+ | I also agree &lt;show&gt; should be allowed to be any procedure of two
+ | arguments (object and port).  If not, it should be omitted and just use
+ | DISPLAY - users can write objects to string ports before passing them to
+   OBJECT-&gt; STRING if they need to override this.
+
+Now, I also agree.  But how about a procedure of single argument (the first
+argument of FMT)?
+
+
+ * From: &quot;Bradd W. Szonye&quot; &lt;bradd+srfi@xxxxxxxxxx&gt;
+ * Date: Thu, 25 Mar 2004 10:59:58 -0800
+ * Subj: Re: Comments and some bugs
+
+ | Jens Axel S&#xF8;gaard wrote: &gt; soo wrote:
+   &gt;&gt; I would mark &quot;-1.&quot; as an error, if a student wrote it. I don't think
+   &gt;&gt; &quot;-1.&quot; is correct mathematical syntax.
+
+ | It's correct; it matches the syntax rule
+
+    &lt;decimal 10&gt; --&gt; &lt;digit 10&gt;+ . &lt;digit 10&gt;* #* &lt;suffix&gt;
+
+   &gt;&gt; Besides the -1 given to FMT is an exact number.
+
+ | But you're right about the problem here.
+
+I cannot agree.  I think 0 is different from null.  If there is &lt;depth&gt;
+parameter, I think the resulting string must have a decimal point.
+example:
+(fmt 123 10)	     &quot;       123&quot;
+(fmt 123 10 0)	     &quot;    #e123.&quot;
+(fmt 123 10 1)       &quot;   #e123.0&quot;
+(fmt 123.45 10)      &quot;    123.45&quot;
+(fmt 123.45 10 0)    &quot;      123.&quot;
+(fmt 123.45 10 1)    &quot;     123.5&quot;
+
+
+ * From: bear &lt;bear@xxxxxxxxx&gt;
+ * Date: Thu, 25 Mar 2004 10:05:20 -0800 (PST)
+ * Subj: Re: Comments and some bugs
+
+ | On Thu, 25 Mar 2004, soo wrote:
+   &gt;&gt; R5RS says: If the written representation of a number has no exactness prefix,
+   &gt;&gt; the constant may be either inexact or exact.  It is inexact if it contains a
+   &gt;&gt; decimal point, an exponent, or a &quot;#&quot; character in the place of a digit,
+   &gt;&gt; otherwise it is exact.
+
+ | This is true, but a number such as #e1.234 is still an exact number.
+ | It could also have been written 1234/10000.
+
+ | In general, if you rely on implementations to do the &quot;Right thing&quot; with
+ | exact vs. inexact numbers, you will be disappointed or wind up with
+ | a nonportable library.  Some of them throw syntax errors on exactness
+ | prefixes, some ignore exactness prefixes, some disallow decimal points
+ | in exact numbers, some silently coerce to inexact even after reading an
+ | exactness prefix if they encounter a decimal, etc.  The behavior described
+ | in R5RS is fully implemented, alas, only by a very few.
+
+   &gt;&gt; &gt; (fmt 1/2 5 0)
+   &gt;&gt; | &quot;   1.&quot;            ; Huh?
+   &gt;&gt; 
+   &gt;&gt; &gt; (fmt -1 10 0)
+   &gt;&gt; | &quot;       -1.&quot;       ; Is this on purpose?
+   &gt;&gt; 
+   &gt;&gt; Yes, it expresses that -1. is inexact number.
+
+ | The problem here is that in both cases you should have an exact number.
+ | You were given exact parameters, you had no need for inexact computations.
+ | Why aren't the results exact?  What display ought to give you here would
+ | be simply &quot;1&quot; and &quot;-1&quot;.
+
+   &gt;&gt; (fmt 1/2 5 2 #\space (fmt 10))           &quot; 0.5010&quot;
+   &gt;&gt; (fmt 1/2 5 2)                            &quot; 0.50&quot;
+   &gt;&gt; The default value of padding character is #\space.
+
+ | In these cases people have given you exact numbers and asked for
+ | decimal format.  The correct responses would be exact prefixes
+ | followed by a decimal fractions, but I don't think the write procedure
+ | of any known scheme will produce them. I'd need to pass my own write
+ | procedure into FMT in order to get them, and FMT as specified doesn't
+ | allow it.
+
+In fact, I don't know well where the &lt;show&gt; procedure is inserted and how many
+optional arguments is needed, and  I think there is no reason for shame in
+learning.  So tell me the way, please.
+
+Anyway, I've corrected FMT procedure as pointed out above.
+I've attached it in the end of this reply, and the followings are examples.
+
+				(A) implementation	(B) implementation
+(fmt 12.45 10 1)	     &quot;      12.5&quot;		&quot;      12.5&quot;	
+(fmt 12.45 10 1 'e)	     &quot;    #e12.5&quot;		&quot;    #e12.5&quot;
+(fmt 12.45 10 1 'e '+)	     &quot;   #e+12.5&quot;		&quot;   #e+12.5&quot;	
+(fmt 12.45 10 1 'e '+ #\0)   &quot;#e+00012.5&quot;		&quot;#e+00012.5&quot;
+(fmt 12 10)		     &quot;        12&quot;		&quot;        12&quot;	
+(fmt 12 10 1)		     &quot;    #e12.0&quot;		&quot;    #e12.0&quot;
+3/2			     3/2			1.5
+(fmt 3/2 10)		     &quot;       3/2&quot;		&quot;       1.5&quot;
+(fmt 3/2 10 2)		     &quot;    #e1.50&quot;		&quot;      1.50&quot;
+(fmt 3/2 10 2 'e)	     &quot;    #e1.50&quot;		&quot;    #e1.50&quot;
+(inexact-&gt;exact 2.5)	     5/2			3
+(fmt 2.5 10 'e)		     &quot;       5/2&quot;		&quot;         3&quot;
+(fmt 2.5 10 'e 3)	     &quot;   #e2.500&quot;		&quot;   #e2.500&quot;
+(fmt 2.e-6)		     &quot;2.e-06&quot;			&quot;2.0e-6&quot;
+(fmt 2.e-6 'e)		     &quot;472236.../23611832...&quot;	&quot;0&quot;
+
+
+ * From: Jens Axel S&#xF8;gaard &lt;jensaxel@xxxxxxxxxxxx&gt;
+ * Date: Thu, 25 Mar 2004 19:07:38 +0100
+ * Subj: Re: Comments and some bugs
+
+ | soo wrote:
+   &gt;&gt; * From: Jens Axel S&#xF8;gaard &lt;jensaxel@xxxxxxxxxxxx&gt;
+
+   &gt;&gt; &gt; (fmt -5.0 0 #\space 10 + 'e)
+   &gt;&gt; | . fmt: exact number cannot have a decimal point
+   &gt;&gt; | 10 depth (and depth (eq? exactness (quote e)))    ; Why not?
+   &gt;&gt; &gt; (fmt -5 0 #\space 10 + 'e)
+   &gt;&gt; | . fmt: exact number cannot have a decimal point 10 depth (and depth (eq? exactness (quote e)))
+   &gt;&gt; R5RS says: If the written representation of a number has no exactness prefix,
+   &gt;&gt; the constant may be either inexact or exact.  It is inexact if it contains a
+   &gt;&gt; decimal point, an exponent, or a &quot;#&quot; character in the place of a digit,
+   &gt;&gt; otherwise it is exact.
+
+ | Yes?
+
+ | What the above says is that if the reader sees a number *without exactness prefix*
+ | such as &quot;-5.0&quot; then it by default shall read it as inexact if there is decimal dot.
+
+ | If there is an exactness prefix the above rule doesn't apply since, it is obvious
+ | whether the number read is exact or inexact.
+
+ | Example:
+
+   &gt; (exact? #e-5.0)
+   #t
+
+   &gt; (exact? -5.0)
+   #f
+
+I've corrected it.
+And I've extended the spec of &lt;depth&gt; for (B) Implementation.
+&lt;depth&gt; is now exact integer.
+If &lt;depth&gt; is non-negative integer, then the exact sign (#e) can be prefixed.
+If &lt;depth&gt; is negative integer, then the exact sign is not used.
+Example:
+(fmt 123 10 1)			  &quot;   #e123.0&quot;
+(fmt 123 10 -1)			  &quot;     123.0&quot;
+(fmt 123.45 10 1)		  &quot;     123.5&quot;
+(fmt 123.45 10 -1)		  &quot;     123.5&quot;
+(fmt 12.45 10 1 'e '+ #\0)	  &quot;#e+00012.5&quot;
+(fmt 12.45 10 -1 'e '+ #\0)	   Error: fmt: you didn't choose exact sign
+				   -1
+				   depth
+				   (and depth (eq? exactness 'e) (&lt; depth 0))
+
+Thanks all.
+
+(define (fmt expr . rest)
+  (if (number? expr)
+      (receive (width depth char show radix plus exactness space . str-list)
+	  (opt-values rest
+		      (cons #f (lambda (x) (and (integer? x) (exact? x))))
+		      (cons #f (lambda (x) (and (integer? x) (exact? x))))
+		      (cons #f char?)
+		      (cons #f procedure?)
+		      (list 'd 'b 'o 'x)
+		      (cons #f (lambda (x) (eq? x '+)))
+		      (cons #f (lambda (x) (memq x '(e i))))
+		      (cons #f (lambda (x)
+				 (and (list? x)
+				      (&lt;= 1 (length x) 2)
+				      (every (lambda (x)
+					       (and (integer? x)
+						    (exact? x)
+						    (&lt;= 0 x)))
+					     x)))))
+	(arg-ors (&quot;fmt: bad argument&quot;  str-list
+		  (not (every string? str-list)))
+		 (&quot;fmt: non-decimal cannot be inexact&quot; radix
+		  (and (memq radix '(b o x))
+		       (or depth
+			   (and (inexact? expr) (not (eq? exactness 'e)))
+			   (eq? exactness 'i))))
+		 (&quot;fmt: you didn't choose exact sign&quot; depth
+		  (and depth (eq? exactness 'e) (&lt; depth 0)))
+		 (&quot;fmt: unnecessary padding character&quot; char
+		  (and char (not width))))
+	(let* ((width (or width 0))
+	       (char (or char #\space))
+	       (sign (if (&lt; width 0) '- '+))
+	       (exact-sign (and (and depth
+				     (&lt;= 0 depth)
+				     (or (eq? exactness 'e)
+					(and (exact? expr)
+					     (not (eq? exactness 'i)))))
+				&quot;#e&quot;))
+	       (str (number-&gt;string
+		     (if (or (not depth) (&lt;= 0 depth))
+			 (if exact-sign
+			     (if (exact? expr)
+				 (exact-&gt;inexact expr)
+				 expr)
+			     (if exactness
+				 (if (eq? exactness 'e)
+				     (if (inexact? expr)
+					 (inexact-&gt;exact expr) expr)
+				     (if (exact? expr)
+					 (exact-&gt;inexact expr) expr))
+				 expr))
+			 (if exactness
+			     (if (eq? exactness 'e)
+				 (if (inexact? expr)
+				     (inexact-&gt;exact expr) expr)
+				 (if (exact? expr)
+				     (exact-&gt;inexact expr) expr))
+			     (if (and depth (exact? expr))
+				 (exact-&gt;inexact expr)
+				 expr)))
+		     (cdr (assq radix '((b . 2) (d . 10) (o . 8) (x . 16))))))
+	       (str
+		(if depth
+		    (let ((depth (abs depth))
+			  (e-index (or (string-index str #\e)
+				       (string-index str #\E)))
+			  (+-index (string-index str #\+ 1))
+			  (--index (string-index str #\- 1)))
+		      (define (mold str dep)
+			(let ((len (string-length str))
+			      (index (string-index str #\.)))
+			  (if index
+			      (let ((d-len (- len (+ index 1))))
+				(if (&lt;= d-len dep)
+				    (string-append str
+						   (make-string (- dep d-len)
+								#\0))
+				    (mold
+				     (number-&gt;string
+				      (let ((num
+					     (string-&gt;number
+					      (substring str 0
+							 (+ (if (= dep 0) 0 1)
+							    index dep)))))
+					((if (&lt; num 0) - +)
+					 num
+					 (if (&lt; 4 (string-&gt;number
+						   (string (string-ref
+							    str
+							    (+ 1 index dep)))))
+					     (expt 0.1 dep)
+					     0))))
+				     dep)))
+			      (string-append str &quot;.&quot; (make-string dep #\0)))))
+		      (cond
+		       (e-index
+			(string-append
+			 (mold (substring str 0 e-index) depth)
+			 (substring str e-index (string-length str))))
+		       (+-index
+			(string-append
+			 (mold (substring str 0 +-index) depth)
+			 &quot;+&quot;
+			 (mold (substring str (+ 1 +-index)
+					  (- (string-length str) 1)) depth)
+			 (string (string-ref str (- (string-length str) 1)))))
+		       (--index
+			(string-append
+			 (mold (substring str 0 --index) depth)
+			 &quot;-&quot;
+			 (mold (substring str (+ 1 --index)
+					  (- (string-length str) 1)) depth)
+			 (string (string-ref str (- (string-length str) 1)))))
+		       (else
+			(mold str depth))))
+		    str))
+	       (str (if (and (&lt; 0 (real-part expr))
+			     (not (eqv? #\+ (string-ref str 0)))
+			     plus)
+			(string-append &quot;+&quot; str)
+			str))
+	       (len (string-length str))
+	       (lt (if space (car space) 0))
+	       (rt (if (and space (not (null? (cdr space)))) (cadr space) 0))
+	       (pad (- (abs width) (+ len lt rt (if exact-sign 2 0)))))
+	  (apply string-append
+		 (make-string lt #\space)
+		 (cond
+		  ((&lt;= pad 0) 
+		   (string-append (or exact-sign &quot;&quot;) str))
+		  ((eq? sign '+)
+		   (if (and (eqv? char #\0)
+			    (or (eqv? #\+ (string-ref str 0))
+				(eqv? #\- (string-ref str 0))))
+		       (string-append (or exact-sign &quot;&quot;)
+				      (string (string-ref str 0))
+				      (make-string pad char)
+				      (substring str 1 len))
+		       (string-append (make-string pad char)
+				      (or exact-sign &quot;&quot;)
+				      str)))
+		  (else
+		       (string-append (or exact-sign &quot;&quot;)
+				      str
+				      (make-string pad char))))
+		 (make-string rt #\space)
+		 str-list)))
+      (receive (width count char show case space . str-list)
+	  (opt-values rest
+		      (cons #f (lambda (x) (and (integer? x) (exact? x))))
+		      (cons #f (lambda (x) (and (integer? x) (exact? x))))
+		      (cons #f char?)
+		      (cons display procedure?)
+		      (cons #f (lambda (x) (memq x '(d u t))))
+		      (cons #f (lambda (x)
+				 (and (list? x)
+				      (&lt;= 1 (length x) 2)
+				      (every (lambda (x)
+					       (and (integer? x)
+						    (exact? x)
+						    (&lt;= 0 x)))
+					     x)))))
+	(arg-ors (&quot;fmt: bad argument&quot; str-list
+		  (not (every string? str-list)))
+		 (&quot;fmt: unnecessary padding character&quot; char
+		  (and char (not width))))
+	(let* ((width (or width 0))
+	       (char (or char #\space))
+	       (sign (if (&lt; width 0) '- '+))
+	       (str (if (or (eq? show display)
+			    (eq? show write))
+			(get-output-string
+			 (let ((str-port (open-output-string)))
+			   (show expr str-port)
+			   str-port))
+			(show expr)))
+	       (str (if (and count (&lt; (abs count) (string-length str)))
+			(if (&lt; count 0)
+			    (string-take-right str (abs count))
+			    (string-take str count))
+			str))
+	       (str (if case
+			((cdr (assq case `((d . ,string-downcase)
+					   (u . ,string-upcase)
+					   (t . ,string-titlecase)))) str)
+			str))
+	       (lt (if space (car space) 0))
+	       (rt (if (and space (not (null? (cdr space)))) (cadr space) 0))
+	       (pad (- (abs width) (+ (string-length str) lt rt))))
+	  (apply string-append
+		 (make-string lt #\space)
+		 (cond
+		  ((&lt;= pad 0) str)
+		  ((eq? sign '+) (string-append (make-string pad char) str))
+		  (else (string-append str (make-string pad char))))
+		 (make-string rt #\space)
+		 str-list)))))
+-- 
+INITERM
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00023" href="msg00023.html">Re: feedback</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+<li><strong><a name="00024" href="msg00024.html">Re: feedback</a></strong>
+<ul><li><em>From:</em> Paul Schlie</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00021.html">Re: a preface</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00023.html">Re: feedback</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00005.html">Re: a preface</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00023.html">Re: feedback</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00022"><strong>Date</strong></a></li>
+<li><a href="threads.html#00022"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

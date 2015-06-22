@@ -1,0 +1,163 @@
+<!-- MHonArc v2.6.16 -->
+<!--X-Subject: Re: SRFI 105: Curly&#45;infix&#45;expressions -->
+<!--X-From-R13: "Rnivq O. Iurryre" <qjurryreNqjurryre.pbz> -->
+<!--X-Date: Wed, 29 Aug 2012 18:54:21 +0000 (UTC) -->
+<!--X-Message-Id: E1T6nP9&#45;0007DH&#45;IZ@fenris.runbox.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: E1T5yCj&#45;0002HP&#45;1q@fenris.runbox.com -->
+<!--X-Reference: 20120827.084849.350550980193030524.shiro@lava.net -->
+<!--X-Reference: E1T659P&#45;0004sq&#45;O5@fenris.runbox.com -->
+<!--X-Reference: 20120828.121555.673046846847759951.shiro@lava.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: SRFI 105: Curly-infix-expressions</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00041.html">Date Prev</a>][<a href="msg00043.html">Date Next</a>][<a href="msg00038.html">Thread Prev</a>][<a href="msg00043.html">Thread Next</a>][<a href="maillist.html#00042">Date Index</a>][<a href="threads.html#00042">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: SRFI 105: Curly-infix-expressions</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-105@DOMAIN.HIDDEN">srfi-105@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: SRFI 105: Curly-infix-expressions</li>
+<li><em>From</em>: &quot;David A. Wheeler&quot; &lt;<a href="mailto:dwheeler@DOMAIN.HIDDEN">dwheeler@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 29 Aug 2012 14:54:19 -0400 (EDT)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-105@DOMAIN.HIDDEN">srfi-105@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20120828.121555.673046846847759951.shiro@DOMAIN.HIDDEN">20120828.121555.673046846847759951.shiro@xxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:E1T5yCj-0002HP-1q@DOMAIN.HIDDEN">E1T5yCj-0002HP-1q@xxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20120827.084849.350550980193030524.shiro@DOMAIN.HIDDEN">20120827.084849.350550980193030524.shiro@xxxxxxxx</a>&gt; &lt;<a href="mailto:E1T659P-0004sq-O5@DOMAIN.HIDDEN">E1T659P-0004sq-O5@xxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20120828.121555.673046846847759951.shiro@DOMAIN.HIDDEN">20120828.121555.673046846847759951.shiro@xxxxxxxx</a>&gt;</li>
+<li><em>Reply-to</em>: <a href="mailto:dwheeler@DOMAIN.HIDDEN">dwheeler@xxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Shiro Kawai:
+&gt; I implemented curly-infix notation in Gauche and stated to give
+&gt; it a try.  And I can't help feeling c-exprs and s-exprs don't mix well. ...
+&gt; Here I pasted some code: <a  rel="nofollow" href="https://gist.github.com/3502491">https://gist.github.com/3502491</a>
+&gt; I took exiting code that used some math (and I remember I wished
+&gt; to have had infix notation when I wrote them) and converted to C-exprs....
+&gt; I started itemizing why they don't mix, but before writing up
+&gt; a lenghthy email, I'd better check with you if I'm not doing it wrong.
+
+I looked further at your pasted code (thanks for doing that).  To be honest, I don't think it's terrible at all, I think it's an improvement from traditional s-expressions.  From your description, and further looking, I'm guessing it's this kind of code you're unhappy about:
+
+(define (S0 &amp;#955; N)
+  (sum-ec (: n 1 N)
+          {&amp;#955; * (exp (- {n * &amp;#955;})) * (- {2 ^^ (ceiling (log n 2))}) * n}))
+
+Again, I think this is a *BIG* improvement over traditional s-expressions.
+
+I think as infix expressions get long they're less helpful.  Since you can CHOOSE when to use them, you can skip it, which is actually an *advantage* over many other languages with built-in infix. Try this:
+
+(define (S0 &amp;#955; N)
+  (sum-ec (: n 1 N)
+    (*
+      &amp;#955;
+      (exp (- {n * &amp;#955;}))
+      (- {2 ^^ (ceiling (log n 2))})
+      n)))
+
+Now that said, its inability to handle stuff of the form f(...), such as -(...), is a big drawback.  We could add support for neoteric-expressions inside {...} to resolve that; it's an easy spec change, and that specification is mature.  So let's see what that would do:
+
+(define (S0 &amp;#955; N)
+  (sum-ec (: n 1 N)
+    {&amp;#955; * exp(-({n * &amp;#955;})) * -({2 ^^ ceiling(log(n 2))}) * n}))
+
+That's better.  Again, kind of long for infix; try this:
+
+(define (S0 &amp;#955; N)
+  (sum-ec (: n 1 N)
+    (*
+      &amp;#955;
+      exp(-{n * &amp;#955;})
+      -{2 ^^ ceiling(log(n 2))}
+      n)))
+
+If you don't like the mixing of () and {}, well, we intentionally designed it so that when you have 0 and 1 parameters you can use either.  That becomes (back to few lines):
+
+(define (S0 &amp;#955; N)
+  (sum-ec (: n 1 N)
+    {&amp;#955; * exp{-{{n * &amp;#955;}}} * -{{2 ^^ ceiling(log(n 2))}} * n}))
+
+This compares favorably with full neoteric-expressions, which allow the use of f(x) for (f x) ANYWHERE:
+define( S0(&amp;#955; N)
+  sum-ec( (: n 1 N)
+    {&amp;#955; * exp{-{{n * &amp;#955;}}} * -{{2 ^^ ceiling(log(n 2))}} * n}))
+
+Well, those are a lot of options.  In *practice*, what I would do is switch to a NON-infix form once the expression gets to be more than half a line with complex expressions inside them (as shown above).  So with curly-infix ONLY I'd do this (as shown above):
+(define (S0 &amp;#955; N)
+  (sum-ec (: n 1 N)
+    (*
+      &amp;#955;
+      (exp (- {n * &amp;#955;}))
+      (- {2 ^^ (ceiling (log n 2))})
+      n)))
+
+
+--- David A. Wheeler
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00043" href="msg00043.html">Re: SRFI 105: Curly-infix-expressions</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00020" href="msg00020.html">Re: SRFI 105: Curly-infix-expressions</a></strong>
+<ul><li><em>From:</em> David A. Wheeler</li></ul></li>
+<li><strong><a name="00025" href="msg00025.html">Re: SRFI 105: Curly-infix-expressions</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+<li><strong><a name="00026" href="msg00026.html">Re: SRFI 105: Curly-infix-expressions</a></strong>
+<ul><li><em>From:</em> David A. Wheeler</li></ul></li>
+<li><strong><a name="00035" href="msg00035.html">Re: SRFI 105: Curly-infix-expressions</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00041.html">Re: SRFI 105: Curly-infix-expressions</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00043.html">Re: SRFI 105: Curly-infix-expressions</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00038.html">Re: SRFI 105: Curly-infix-expressions</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00043.html">Re: SRFI 105: Curly-infix-expressions</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00042"><strong>Date</strong></a></li>
+<li><a href="threads.html#00042"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

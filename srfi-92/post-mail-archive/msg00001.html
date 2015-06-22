@@ -1,0 +1,1010 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject:  -->
+<!--X-From-R13: <vavgNvavgrez.pbz> -->
+<!--X-Date: Thu, 20 Dec 2007 05:48:11 +0100 (MET) -->
+<!--X-Message-Id: 000001c842c3$84134350$eef86bde@INITERM -->
+<!--X-Content-Type: multipart/mixed -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>[no subject]</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00000.html">Date Prev</a>][Date Next][<a href="msg00000.html">Thread Prev</a>][Thread Next][<a href="maillist.html#00001">Date Index</a>][<a href="threads.html#00001">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>[no subject]</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &lt;<a href="mailto:srfi-92@DOMAIN.HIDDEN">srfi-92@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: </li>
+<li><em>From</em>: &lt;<a href="mailto:init@DOMAIN.HIDDEN">init@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 20 Dec 2007 13:48:07 +0900</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-92@DOMAIN.HIDDEN">srfi-92@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Importance</em>: Normal</li>
+<li><em>Sender</em>: &quot;soo&quot; &lt;<a href="mailto:tilde@DOMAIN.HIDDEN">tilde@xxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Hi.
+
+I'd like to revive this SRFI-92 as following attached file.
+--
+Joo ChurlSoo 
+</pre><pre>Title
+
+qlambda and qlambda*
+
+Author
+
+Joo ChurlSoo
+
+Abstract
+
+This SRFI introduces qlambda and qlambda*, each of which creates a procedure
+that checks actual arguments and takes optional variables including `fixed',
+`non-fixed named', and `non-fixed unnamed' variables.
+
+Rationale
+
+The syntax reduces not only the clutter of various error conditionals by
+checking actual arguments but also somewhat lengthy code by combining optional
+argument handling methods such as let-optionals and let-keywords into a single
+syntax.
+Optional variables include not only optional fixed variables but also optional
+non-fixed variables.  The formers are the same as those of `opt' form of ALET
+and the latters are the same as those of `key' and `cat' forms of ALET (see
+SRFI-86).  The following are examples to show the similarities.
+
+1. optional fixed variables (`opt' form):
+
+((lambda (v . r)
+   (alet ((opt r (n 2) (c #\a) (s &quot;opt alet&quot;)))
+     (list v n c s)))
+ 10 3 #\o)					=&gt; (10 3 #\o &quot;opt alet&quot;)
+
+((qlambda (v , (n 2) (c #\a) (s &quot;opt qlambda&quot;))
+   (list v n c s))
+ 10 3 #\o)					=&gt; (10 3 #\o &quot;opt qlambda&quot;)
+ 
+2. optional non-fixed named variables (`key' form):   		 
+
+((lambda (v . r)
+   (alet ((key r (n 2) (c #\a) (s &quot;&quot;)))
+     (list v n c s)))
+ 10 's &quot;key alet&quot; 'c #\k)			=&gt; (10 2 #\k &quot;key alet&quot;)
+
+((qlambda (v , ('n 2) ('c #\a) ('s &quot;&quot;))
+   (list v n c s))
+ 10 's &quot;key qlambda&quot; 'c #\k)			=&gt; (10 2 #\k &quot;key qlambda&quot;)
+
+3. optional non-fixed unnamed variables (`cat' form):   
+
+((lambda (v . r)
+   (alet ((cat r (n 2 (number? n)) (c #\a (char? c)) (s &quot;&quot; (string? s))))
+     (list v n c s)))
+ 10 &quot;cat alet&quot; #\c)				=&gt; (10 2 #\c &quot;cat alet&quot;)
+
+((qlambda (v , (`n 2 (number? n)) (`c #\a (char? c)) (`s &quot;&quot; (string? s)))
+   (list v n c s))
+ 10 &quot;cat qlambda&quot; #\c)				=&gt; (10 2 #\c &quot;cat qlambda&quot;)
+
+
+Like optional variables, required variables can be divded into three groups,
+namely, conventional required fixed variables, required non-fixed named
+variables, and required non-fixed unnamed variables.  These are best explained
+by simple examples.
+
+1. required fixed variables:
+
+(define str-ref-req
+  (qlambda* ((s (string? s))
+	     (n (and (integer? n) (&lt;= 0 n) (&lt; n (string-length s)))))
+    (string-ref s n)))
+
+(str-ref-req &quot;str&quot; 1)		=&gt; #\t
+(str-ref-req 1 &quot;str&quot;)		=&gt; qlambda[*]: bad argument 1 s (string? s)
+
+2. required non-fixed named variables:
+
+(define str-ref-key
+  (qlambda* (('s (string? s))
+	     ('n (and (integer? n) (&lt;= 0 n) (&lt; n (string-length s)))))
+    (string-ref s n)))
+
+(str-ref-key 'n 1 's &quot;str&quot;)	=&gt; #\t
+(str-ref-key 'n 1 's 123)	=&gt; qlambda[*]: bad argument 123 s (string? s)
+(str-ref-key 'n 1 's)		=&gt; error: expects 4 arguments, given 3: n 1 s
+
+3. required non-fixed unnamed variables:
+
+(define str-ref-cat
+  (qlambda* ((`s (string? s))
+	     (`n (and (integer? n) (&lt;= 0 n) (&lt; n (string-length s)))))
+    (string-ref s n)))
+
+(str-ref-cat &quot;str&quot; 1)	=&gt; #\t
+(str-ref-cat 1 &quot;str&quot;)	=&gt; #\t
+(str-ref-cat 1 123)	=&gt; qlambda[*]: bad arguments (1 123) s (string? s)
+(str-ref-cat &quot;str&quot; 1 2)	=&gt; error: expects 2 arguments, given 3: &quot;str&quot; 1 2
+
+	  
+Specification
+
+The syntax is defined in the extended BNF of R5RS.
+(qlambda   &lt;extended formals&gt; &lt;body&gt;)
+(qlambda*  &lt;extended formals&gt; &lt;body&gt;)
+
+&lt;extended formals&gt; --&gt; (&lt;required spec&gt;)
+		   |   (, &lt;optional spec&gt;)
+		   |   (&lt;required spec&gt; , &lt;optional spec&gt;) 
+
+&lt;required spec&gt; --&gt; &lt;fixed required spec&gt;+ &lt;named required spec&gt;*
+		|   &lt;fixed required spec&gt;+ &lt;unnamed required spec&gt;*
+		|   &lt;named required spec&gt;+
+		|   &lt;unnamed required spec&gt;+
+&lt;optional spec&gt; --&gt; &lt;fixed optional spec&gt;+ &lt;named optional spec&gt;*
+		|   &lt;fixed optional spec&gt;+ &lt;unnamed optional spec&gt;*
+		|   &lt;named optional spec&gt;+
+		|   &lt;unnamed optional spec&gt;+
+
+&lt;fixed required spec&gt; --&gt; &lt;variable&gt; | (&lt;variable&gt; &lt;test spec&gt;)
+&lt;fixed optional spec&gt; --&gt; &lt;variable&gt; | (&lt;variable&gt; &lt;default spec&gt;)
+
+&lt;named required spec&gt; --&gt; '&lt;variable&gt; | ('&lt;variable&gt; &lt;test spec&gt;)
+		      |	  (('&lt;variable&gt; &lt;keyword&gt;) &lt;test spec&gt;)
+		      |	  (('&lt;variable&gt; &lt;keyword&gt; &lt;proc&gt;) &lt;test spec&gt;)
+&lt;named optional spec&gt; --&gt; '&lt;variable&gt; | ('&lt;variable&gt; &lt;default spec&gt;)
+		      |	  (('&lt;variable&gt; &lt;keyword&gt;) &lt;default spec&gt;)
+		      |	  (('&lt;variable&gt; &lt;keyword&gt; &lt;proc&gt;) &lt;default spec&gt;)
+
+&lt;unnamed required spec&gt; --&gt; `&lt;variable&gt; | (`&lt;variable&gt; &lt;test spec&gt;)
+&lt;unnamed optional spec&gt; --&gt; `&lt;variable&gt; | (`&lt;variable&gt; &lt;default spec&gt;)
+
+&lt;default spec&gt; --&gt; &lt;default&gt; &lt;test spec&gt; | &lt;empty&gt;
+&lt;test spec&gt; --&gt; &lt;test&gt;
+	    |	&lt;test&gt; &lt;true substitute&gt;
+	    |	&lt;test&gt; &lt;true substitute&gt; &lt;false substitute&gt;
+	    |	&lt;empty&gt;
+&lt;proc&gt; --&gt; eq? | eqv? | equal? | &lt;other equivalence predicate&gt; 
+
+&lt;keyword&gt; --&gt; &lt;any scheme object&gt;
+&lt;variable&gt; --&gt; &lt;identifier&gt;
+&lt;default&gt;, &lt;test&gt;, &lt;true substitute&gt;, &lt;false substitute&gt; --&gt; &lt;expression&gt;
+
+
+The qlambda* is to the qlambda what the let* is to the let.  The &lt;default&gt;s,
+&lt;test&gt;s, &lt;true substitute&gt;s, and &lt;false substitute&gt;s of qlambda* are evaluated
+in an environment that all the bindings of previous &lt;variable&gt;s are visible.
+
+There are three kinds of required variables, namely, required fixed variable,
+required non-fixed unnamed variable, and required non-fixed named variable.
+They determine the number of required actual arguments, that is, the minimum
+arity of the resulting procedure.
+
+The required fixed variables are bound to successive actual arguments starting
+with the first actual argument.  If there is a &lt;test&gt;, it is evaluated.  If it
+returns a false value and there is no &lt;false substitute&gt;, an error is
+signaled.  If it returns a false value and there is a &lt;false substitute&gt;, the
+variable is rebound to the result of evaluating &lt;false substitute&gt; instead of
+signaling an error.  If it returns a true value and there is a &lt;true
+substitute&gt;, the variable is rebound to the result of evaluating &lt;true
+substitute&gt;.
+
+The required non-fixed unnamed variable is temporarily bound to each of
+remaining required actual arguments sequentially, until &lt;test&gt; returns a true
+value, then the variable is finally bound to the passed argument.  If there is
+no &lt;test&gt;, the first one of the remaining required actual arguments is
+regarded as passing.  If any actual argument does not pass &lt;test&gt;, an error is
+signaled.  If there is a &lt;false substitute&gt; and &lt;test&gt; returns a false value,
+the variable is finally bound to the result of evaluating &lt;false substitute&gt;
+instead of the above process.  If there is a &lt;true substitute&gt; and &lt;test&gt;
+returns a true value, the variable is rebound to the result of evaluating
+&lt;true substitute&gt;.
+
+The keyword used at a call site for the corresponding variable is a symbol of
+the same name as the variable.  But the keyword can be any scheme object when
+the required parameter is specified as a double parenthesized variable and a
+keyword, or a double parenthesized variable, a keyword, and a equivalence
+predicate.  If a particular equivalence predicate is not specified, the
+default predicate is `eq?'.  The remaining required actual arguments must be
+an even number.  They are sequentially interpreted as a series of pairs, where
+the first member of each pair is a keyword corresponding to the variable, and
+the second is the corresponding value.  If there is no element for a
+particular keyword, an error is signaled.  When there is a &lt;test&gt;, it is
+evaluated.  If it returns a false value and there is no &lt;false substitute&gt;, an
+error is signaled.  If it returns a false value and there is a &lt;false
+substitute&gt;, the variable is rebound to the result of evaluating &lt;false
+substitute&gt; instead of signaling an error.  If it returns a true value and
+there is a &lt;true substitute&gt;, the variable is rebound to the result of
+evaluating &lt;true substitute&gt;.
+
+The binding method of the optional fixed variables is the same as that of the
+required fixed variables except that each variable is bound to the result of
+evaluating &lt;default&gt; instead of signaling an error if there are no remaining
+actual arguments.  If &lt;default&gt; is not specified, #f is the default.
+
+The binding method the optional non-fixed unnamed variables is the same as
+that of the required non-fixed unnamed variables except that each variable is
+bound to the result of evaluating &lt;default&gt; instead of signaling an error if
+any actual argument does not pass &lt;test&gt;.  If &lt;default&gt; is not specified, #f
+is the default.
+
+The binding method of the optional non-fixed named variables is the same as
+that of the required non-fixed named variables except that each variable is
+bound to the result of evaluating &lt;default&gt; instead of signaling an error if
+there is no corresponding value to the particular keyword.  If &lt;default&gt; is
+not specified, #f is the default.
+
+When there are remaining actual arguments, an error is signaled if dotted rest
+variable is not given.  If dotted rest variable is given, it is bound to the
+remaining actual arguments.
+
+Examples
+
+(define ranking
+  (qlambda (, (country 'Canada)
+	      (('1st 1 =) &quot;Ben Hur&quot;)
+	      (('2nd 2 =) &quot;Mission&quot;)
+	      (('3rd 3 =) &quot;Sting&quot;)
+	      (('4th 4 =) &quot;Escape&quot;))
+    (list country 1st 2nd 3rd 4th)))
+ 
+(ranking)	 =&gt; (Canada &quot;Ben Hur&quot; &quot;Mission&quot; &quot;Sting&quot; &quot;Escape&quot;)
+(ranking 'Canada 2 &quot;Sting&quot; 3 &quot;Mission&quot;)
+		 =&gt; (Canada &quot;Ben Hur&quot; &quot;Sting&quot; &quot;Mission&quot; &quot;Escape&quot;)
+(ranking 'USA 4 &quot;Mission Impossible&quot;)
+		 =&gt; (USA &quot;Ben Hur&quot; &quot;Mission&quot; &quot;Sting&quot; &quot;Mission Impossible&quot;)
+
+Implementation
+
+The following implementation is written in R5RS hygienic macros and requires
+SRFI-23 (Error reporting mechanism).
+
+;;; auxilliaries
+(define-syntax wow-opt
+  (syntax-rules ()
+    ((wow-opt n v)
+     v)
+    ((wow-opt n v t)
+     (let ((n v))
+       (if t n (error &quot;qlambda[*]: bad argument&quot; n 'n 't))))
+    ((wow-opt n v t ts)
+     (let ((n v))
+       (if t ts (error &quot;qlambda[*]: bad argument&quot; n 'n 't))))
+    ((wow-opt n v t ts fs)
+     (let ((n v))
+       (if t ts fs)))))
+
+(define-syntax wow-cat!
+  (syntax-rules ()
+    ((wow-cat! z n d)
+     (let ((n (car z)))
+       (set! z (cdr z)) n))
+    ((wow-cat! z n d t)
+     (let ((n (car z)))
+       (if t
+	   (begin (set! z (cdr z)) n)
+	   (let lp ((head (list n)) (tail (cdr z)))
+	     (if (null? tail)
+		 d
+		 (let ((n (car tail)))
+		   (if t
+		       (begin (set! z (append (reverse head) (cdr tail))) n)
+		       (lp (cons n head) (cdr tail)))))))))
+    ((wow-cat! z n d t ts)
+     (let ((n (car z)))
+       (if t
+	   (begin (set! z (cdr z)) ts)
+	   (let lp ((head (list n)) (tail (cdr z)))
+	     (if (null? tail)
+		 d
+		 (let ((n (car tail)))
+		   (if t
+		       (begin (set! z (append (reverse head) (cdr tail))) ts)
+		       (lp (cons n head) (cdr tail)))))))))
+    ((wow-cat! z n d t ts fs)
+     (let ((n (car z)))
+       (if t
+	   (begin (set! z (cdr z)) ts)
+	   (begin (set! z (cdr z)) fs))))))
+
+(define-syntax wow-key!
+  (syntax-rules ()
+    ((wow-key! z (n key p) d)
+     (let ((x (car z))
+	   (y (cdr z)))
+       (if (null? y)
+	   d
+	   (if (p key x)
+	       (begin (set! z (cdr y)) (car y))
+	       (let lp ((head (list (car y) x)) (tail (cdr y)))
+		 (if (null? tail)
+		     d
+		     (let ((x (car tail))
+			   (y (cdr tail)))
+		       (if (null? y)
+			   d
+			   (if (p key x)
+			       (begin (set! z (append (reverse head) (cdr y)))
+				      (car y))
+			       (lp (cons (car y) (cons x head))
+				   (cdr y)))))))))))
+    ((wow-key! z (n key p) d t)
+     (let ((x (car z))
+	   (y (cdr z)))
+       (if (null? y)
+	   d
+	   (if (p key x)
+	       (let ((n (car y)))
+		 (if t
+		     (begin (set! z (cdr y)) n)
+		     (error &quot;qlambda[*]: bad argument&quot; n 'n 't)))
+	       (let lp ((head (list (car y) x)) (tail (cdr y)))
+		 (if (null? tail)
+		     d
+		     (let ((x (car tail))
+			   (y (cdr tail)))
+		       (if (null? y)
+			   d
+			   (if (p key x)
+			       (let ((n (car y)))
+				 (if t
+				     (begin (set! z (append (reverse head)
+							    (cdr y)))
+					    n)
+				     (error &quot;qlambda[*]: bad argument&quot;
+					    n 'n 't)))
+			       (lp (cons (car y) (cons x head))
+				   (cdr y)))))))))))
+    ((wow-key! z (n key p) d t ts)
+     (let ((x (car z))
+	   (y (cdr z)))
+       (if (null? y)
+	   d
+	   (if (p key x)
+	       (let ((n (car y)))
+		 (if t
+		     (begin (set! z (cdr y)) ts)
+		     (error &quot;qlambda[*]: bad argument&quot; n 'n 't)))
+	       (let lp ((head (list (car y) x)) (tail (cdr y)))
+		 (if (null? tail)
+		     d
+		     (let ((x (car tail))
+			   (y (cdr tail)))
+		       (if (null? y)
+			   d
+			   (if (p key x)
+			       (let ((n (car y)))
+				 (if t
+				     (begin (set! z (append (reverse head)
+							    (cdr y)))
+					    ts)
+				     (error &quot;qlambda[*] bad argument&quot;
+					    n 'n 't)))
+			       (lp (cons (car y) (cons x head))
+				   (cdr y)))))))))))
+    ((wow-key! z (n key p) d t ts fs)
+     (let ((x (car z))
+	   (y (cdr z)))
+       (if (null? y)
+	   d
+	   (if (p key x)
+	       (let ((n (car y)))
+		 (if t
+		     (begin (set! z (cdr y)) ts)
+		     (begin (set! z (cdr y)) fs)))
+	       (let lp ((head (list (car y) x)) (tail (cdr y)))
+		 (if (null? tail)
+		     d
+		     (let ((x (car tail))
+			   (y (cdr tail)))
+		       (if (null? y)
+			   d
+			   (if (p key x)
+			       (let ((n (car y)))
+				 (if t
+				     (begin (set! z (append (reverse head)
+							    (cdr y)))
+					    ts)
+				     (begin (set! z (append (reverse head)
+							    (cdr y)))
+					    fs)))
+			       (lp (cons (car y) (cons x head))
+				   (cdr y)))))))))))))
+
+(define-syntax req-cat!
+  (syntax-rules ()
+    ((req-cat! z n)
+     (let ((n (car z)))
+       (set! z (cdr z)) n))
+    ((req-cat! z n t)
+     (let ((n (car z)))
+       (if t
+	   (begin (set! z (cdr z)) n)
+	   (let lp ((head (list n)) (tail (cdr z)))
+	     (if (null? tail)
+		 (error &quot;qlambda[*]: bad arguments&quot; (reverse head) 'n 't)
+		 (let ((n (car tail)))
+		   (if t
+		       (begin (set! z (append (reverse head) (cdr tail))) n)
+		       (lp (cons n head) (cdr tail)))))))))
+    ((req-cat! z n t ts)
+     (let ((n (car z)))
+       (if t
+	   (begin (set! z (cdr z)) ts)
+	   (let lp ((head (list n)) (tail (cdr z)))
+	     (if (null? tail)
+		 (error &quot;qlambda[*]: bad arguments&quot; (reverse head) 'n 't)
+		 (let ((n (car tail)))
+		   (if t
+		       (begin (set! z (append (reverse head) (cdr tail))) ts)
+		       (lp (cons n head) (cdr tail)))))))))
+    ((req-cat! z n t ts fs)
+     (let ((n (car z)))
+       (if t
+	   (begin (set! z (cdr z)) ts)
+	   (begin (set! z (cdr z)) fs))))))
+
+(define-syntax req-key!
+  (syntax-rules ()
+    ((req-key! z (n key p))
+     (let ((x (car z))
+	   (y (cdr z)))
+       (if (p key x)
+	   (begin (set! z (cdr y)) (car y))
+	   (let lp ((head (list (car y) x)) (tail (cdr y)))
+	     (if (null? tail)
+		 (error &quot;qlambda[*]: no corresponding value to key&quot; 
+			key (reverse head))
+		 (let ((x (car tail))
+		       (y (cdr tail)))
+		   (if (null? y)
+		       (error &quot;qlambda[*]: no corresponding value to key&quot; 
+			      key (append (reverse head) tail))
+		       (if (p key x)
+			   (begin (set! z (append (reverse head) (cdr y)))
+				  (car y))
+			   (lp (cons (car y) (cons x head)) (cdr y))))))))))
+    ((req-key! z (n key p) t)
+     (let ((x (car z))
+	   (y (cdr z)))
+       (if (p key x)
+	   (let ((n (car y)))
+	     (if t
+		 (begin (set! z (cdr y)) n)
+		 (error &quot;qlambda[*]: bad argument&quot; n 'n 't)))
+	   (let lp ((head (list (car y) x)) (tail (cdr y)))
+	     (if (null? tail)
+		 (error &quot;qlambda[*]: no corresponding value to key&quot; 
+			key (reverse head))
+		 (let ((x (car tail))
+		       (y (cdr tail)))
+		   (if (null? y)
+		       (error &quot;qlambda[*]: no corresponding value to key&quot; 
+			      key (append (reverse head) tail))
+		       (if (p key x)
+			   (let ((n (car y)))
+			     (if t
+				 (begin (set! z (append (reverse head)
+							(cdr y)))
+					n)
+				 (error &quot;qlambda[*]: bad argument&quot; n 'n 't)))
+			   (lp (cons (car y) (cons x head)) (cdr y))))))))))
+    ((req-key! z (n key p) t ts)
+     (let ((x (car z))
+	   (y (cdr z)))
+       (if (p key x)
+	   (let ((n (car y)))
+	     (if t
+		 (begin (set! z (cdr y)) ts)
+		 (error &quot;qlambda[*]: bad argument&quot; n 'n 't)))
+	   (let lp ((head (list (car y) x)) (tail (cdr y)))
+	     (if (null? tail)
+		 (error &quot;qlambda[*]: no corresponding value to key&quot; 
+			key (reverse head))
+		 (let ((x (car tail))
+		       (y (cdr tail)))
+		   (if (null? y)
+		       (error &quot;qlambda[*]: no corresponding value to key&quot; 
+			      key (append (reverse head) tail))
+		       (if (p key x)
+			   (let ((n (car y)))
+			     (if t
+				 (begin (set! z (append (reverse head)
+							(cdr y)))
+					ts)
+				 (error &quot;qlambda[*]: bad argument&quot; n 'n 't)))
+			   (lp (cons (car y) (cons x head)) (cdr y))))))))))
+    ((req-key! z (n key p) t ts fs)
+     (let ((x (car z))
+	   (y (cdr z)))
+       (if (p key x)
+	   (let ((n (car y)))
+	     (if t
+		 (begin (set! z (cdr y)) ts)
+		 (begin (set! z (cdr y)) fs)))
+	   (let lp ((head (list (car y) x)) (tail (cdr y)))
+	     (if (null? tail)
+		 (error &quot;qlambda[*]: no corresponding value to key&quot; 
+			key (reverse head))
+		 (let ((x (car tail))
+		       (y (cdr tail)))
+		   (if (null? y)
+		       (error &quot;qlambda[*]: no corresponding value to key&quot; 
+			      key (append (reverse head) tail))
+		       (if (p key x)
+			   (let ((n (car y)))
+			     (if t
+				 (begin (set! z (append (reverse head)
+							(cdr y)))
+					ts)
+				 (begin (set! z (append (reverse head)
+							(cdr y)))
+					fs)))
+			   (lp (cons (car y) (cons x head)) (cdr y))))))))))))
+
+(define-syntax opt-key-cat
+  (syntax-rules ()
+    ((opt-key-cat z (nd ...) ((n d t ...) odt ...) kdt cdt e bd ...)
+     (let ((y (if (null? z) z (cdr z)))
+	   (x (if (null? z)
+		  d
+		  (wow-opt n (car z) t ...))))
+       (opt-key-cat y (nd ... (n x)) (odt ...) kdt cdt e bd ...)))
+    ((opt-key-cat z (nd ...) () (((n k p) d t ...) kdt ...) cdt e bd ...)
+     (let ((x (if (null? z)
+		  d
+		  (wow-key! z (n k p) d t ...))))
+       (opt-key-cat z (nd ... (n x)) () (kdt ...) cdt e bd ...)))
+    ((opt-key-cat z (nd ...) () () ((n d t ...) cdt ...) e bd ...)
+     (let ((x (if (null? z)
+		  d
+		  (wow-cat! z n d t ...))))
+       (opt-key-cat z (nd ... (n x)) () () (cdt ...) e bd ...)))
+    ((opt-key-cat z (nd ...) () () () () bd ...)
+     (if (null? z)
+	 (let (nd ...) bd ...)
+	 (error &quot;qlambda: too many arguments&quot; z)))
+    ((opt-key-cat z (nd ...) () () () e bd ...)
+     (let (nd ... (e z)) bd ...))))
+
+(define-syntax opt-key-cat*
+  (syntax-rules ()
+    ((opt-key-cat* z ((n d t ...) odt ...) kdt cdt e bd ...)
+     (let ((y (if (null? z) z (cdr z)))
+	   (n (if (null? z)
+		  d
+		  (wow-opt n (car z) t ...))))
+       (opt-key-cat* y (odt ...) kdt cdt e bd ...)))
+    ((opt-key-cat* z () (((n k p) d t ...) kdt ...) cdt e bd ...)
+     (let ((n (if (null? z)
+		  d
+		  (wow-key! z (n k p) d t ...))))
+       (opt-key-cat* z () (kdt ...) cdt e bd ...)))
+    ((opt-key-cat* z () () ((n d t ...) cdt ...) e bd ...)
+     (let ((n (if (null? z)
+		  d
+		  (wow-cat! z n d t ...))))
+       (opt-key-cat* z () () (cdt ...) e bd ...)))
+    ((opt-key-cat* z () () () () bd ...)
+     (if (null? z)
+	 (let () bd ...)
+	 (error &quot;qlambda*: too many arguments&quot; z)))
+    ((opt-key-cat* z () () () e bd ...)
+     (let ((e z)) bd ...))))
+
+;; (define-syntax opt-keycat
+;;   (syntax-rules ()
+;;     ((opt-keycat z (nd ...) (((n k p) d t ...) . e) bd ...)
+;;      (let ((x (if (null? z)
+;; 		  d
+;; 		  (wow-key! z (n k p) d t ...))))
+;;        (opt-keycat z (nd ... (n x)) e bd ...)))
+;;     ((opt-keycat z (nd ...) (((n) d t ...) . e) bd ...)
+;;      (let ((x (if (null? z)
+;; 		  d
+;; 		  (wow-cat! z n d t ...))))
+;;        (opt-keycat z (nd ... (n x)) e bd ...)))
+;;     ((opt-keycat z (nd ...) ((n d t ...) . e) bd ...)
+;;      (let ((y (if (null? z) z (cdr z)))
+;; 	   (x (if (null? z)
+;; 		  d
+;; 		  (wow-opt n (car z) t ...))))
+;;        (opt-keycat y (nd ... (n x)) e bd ...)))
+;;     ((opt-keycat z (nd ...) () bd ...)
+;;      (if (null? z)
+;; 	 (let (nd ...) bd ...)
+;; 	 (error &quot;qlambda: too many arguments&quot; z)))
+;;     ((opt-keycat z (nd ...) e bd ...)
+;;      (let (nd ... (e z)) bd ...))))
+
+;; (define-syntax opt-keycat*
+;;   (syntax-rules ()
+;;     ((opt-keycat* z (((n k p) d t ...) . e) bd ...)
+;;      (let ((n (if (null? z)
+;; 		  d
+;; 		  (wow-key! z (n k p) d t ...))))
+;;        (opt-keycat* z e bd ...)))
+;;     ((opt-keycat* z (((n) d t ...) . e) bd ...)
+;;      (let ((n (if (null? z)
+;; 		  d
+;; 		  (wow-cat! z n d t ...))))
+;;        (opt-keycat* z e bd ...)))
+;;     ((opt-keycat* z ((n d t ...) . e) bd ...)
+;;      (let ((y (if (null? z) z (cdr z)))
+;; 	   (n (if (null? z)
+;; 		  d
+;; 		  (wow-opt n (car z) t ...))))
+;;        (opt-keycat* y e bd ...)))
+;;     ((opt-keycat* z () bd ...)
+;;      (if (null? z)
+;; 	 (let () bd ...)
+;; 	 (error &quot;qlambda*: too many arguments&quot; z)))
+;;     ((opt-keycat* z e bd ...)
+;;      (let ((e z)) bd ...))))
+
+;;; main
+(define-syntax qlambda
+  (syntax-rules ()
+    ((qlambda (g . e) bd ...)
+     (%a% () () () () () (g . e) () () () () bd ...))
+    ((qlambda e bd ...)
+     (lambda e bd ...))))
+
+(define-syntax %a%
+  (syntax-rules (quote quasiquote unquote)
+    ((%a% i j rr rk rc (, (('n w p) d t ...) . e) () () () () bd ...)
+     (%a% i j rr rk rc e (()) () (((n w p) d t ...)) () bd ...))
+    ((%a% i j rr rk rc (, (('n w) d t ...) . e) () () () () bd ...)
+     (%a% i j rr rk rc e (()) () (((n w eq?) d t ...)) () bd ...))
+    ((%a% i j rr rk rc (, (('n w p)) . e) () () () () bd ...)
+     (%a% i j rr rk rc e (()) () (((n w p) #f)) () bd ...))
+    ((%a% i j rr rk rc (, (('n w)) . e) () () () () bd ...)
+     (%a% i j rr rk rc e (()) () (((n w eq?) #f)) () bd ...))
+    ((%a% i j rr rk rc (, ('n d t ...) . e) () () () () bd ...)
+     (%a% i j rr rk rc e (()) () (((n 'n eq?) d t ...)) () bd ...))
+    ((%a% i j rr rk rc (, (`n d t ...) . e) () () () () bd ...)
+     (%a% i j rr rk rc e (()) () () ((n d t ...)) bd ...))
+    ((%a% i j rr rk rc (, ('n) . e) () () () () bd ...)
+     (%a% i j rr rk rc e (()) () (((n 'n eq?) #f)) () bd ...))
+    ((%a% i j rr rk rc (, (`n) . e) () () () () bd ...)
+     (%a% i j rr rk rc e (()) () () ((n #f)) bd ...))
+    ((%a% i j rr rk rc (, 'n . e) () () () () bd ...)
+     (%a% i j rr rk rc e (()) () (((n 'n eq?) #f)) () bd ...))
+    ((%a% i j rr rk rc (, `n . e) () () () () bd ...)
+     (%a% i j rr rk rc e (()) () () ((n #f)) bd ...))
+    ((%a% i j rr rk rc (, (n d t ...) . e) () () () () bd ...)
+     (%a% i j rr rk rc e (()) ((n d t ...)) () () bd ...))
+    ((%a% i j rr rk rc (, (n) . e) () () () () bd ...)
+     (%a% i j rr rk rc e (()) ((n #f)) () () bd ...))
+    ((%a% i j rr rk rc (, n . e) () () () () bd ...)
+     (%a% i j rr rk rc e (()) ((n #f)) () () bd ...))
+    ((%a% i (j ...) rr (rk ...) () ((('n w p) t ...) . e) () o k c bd ...)
+     (%a% i (j ... j1 j2) rr (rk ... ((n w p) t ...)) () e () o k c bd ...))
+    ((%a% i (j ...) rr (rk ...) () ((('n w) t ...) . e) () o k c bd ...)
+     (%a% i (j ... j1 j2) rr (rk ... ((n w eq?) t ...)) () e () o k c bd ...))
+    ((%a% i (j ...) rr (rk ...) () (('n t ...) . e) () o k c bd ...)
+     (%a% i (j ... j1 j2) rr (rk ... ((n 'n eq?) t ...)) () e () o k c bd ...))
+    ((%a% i (j ...) rr () (rc ...) ((`n t ...) . e) () o k c bd ...)
+     (%a% i (j ... j1) rr () (rc ... (n t ...)) e () o k c bd ...))
+    ((%a% i (j ...) rr (rk ...) () ('n . e) () o k c bd ...)
+     (%a% i (j ... j1 j2) rr (rk ... ((n 'n eq?))) () e () o k c bd ...))
+    ((%a% i (j ...) rr () (rc ...) (`n . e) () o k c bd ...)
+     (%a% i (j ... j1) rr () (rc ... (n)) e () o k c bd ...))
+    ((%a% (i ...) () (rr ...) () () ((n t ...) . e) () o k c bd ...)
+     (%a% (i ... i1) () (rr ... (n t ...)) () () e () o k c bd ...))
+    ((%a% (i ...) () (rr ...) () () (n . e) () o k c bd ...)
+     (%a% (i ... i1) () (rr ... (n)) () () e () o k c bd ...))
+    ((%a% i j rr rk rc ((('n w p) d t ...) . e) (()) o (k ...) () bd ...)
+     (%a% i j rr rk rc e (()) o (k ... ((n w p) d t ...)) () bd ...))
+    ((%a% i j rr rk rc ((('n w) d t ...) . e) (()) o (k ...) () bd ...)
+     (%a% i j rr rk rc e (()) o (k ... ((n w eq?) d t ...)) () bd ...))
+    ((%a% i j rr rk rc ((('n w p)) . e) (()) o (k ...) () bd ...)
+     (%a% i j rr rk rc e (()) o (k ... ((n w p) #f)) () bd ...))
+    ((%a% i j rr rk rc ((('n w)) . e) (()) o (k ...) () bd ...)
+     (%a% i j rr rk rc e (()) o (k ... ((n w eq?) #f)) () bd ...))
+    ((%a% i j rr rk rc (('n d t ...) . e) (()) o (k ...) () bd ...)
+     (%a% i j rr rk rc e (()) o (k ... ((n 'n eq?) d t ...)) () bd ...))
+    ((%a% i j rr rk rc ((`n d t ...) . e) (()) o () (c ...) bd ...)
+     (%a% i j rr rk rc e (()) o () (c ... (n d t ...)) bd ...))
+    ((%a% i j rr rk rc (('n) . e) (()) o (k ...) () bd ...)
+     (%a% i j rr rk rc e (()) o (k ... ((n 'n eq?) #f)) () bd ...))
+    ((%a% i j rr rk rc ((`n) . e) (()) o () (c ...) bd ...)
+     (%a% i j rr rk rc e (()) o () (c ... (n #f)) bd ...))
+    ((%a% i j rr rk rc ('n . e) (()) o (k ...) () bd ...)
+     (%a% i j rr rk rc e (()) o (k ... ((n 'n eq?) #f)) () bd ...))
+    ((%a% i j rr rk rc (`n . e) (()) o () (c ...) bd ...)
+     (%a% i j rr rk rc e (()) o () (c ... (n #f)) bd ...))
+    ((%a% i j rr rk rc ((n d t ...) . e) (()) (o ...) () () bd ...)
+     (%a% i j rr rk rc e (()) (o ... (n d t ...)) () () bd ...))
+    ((%a% i j rr rk rc ((n) . e) (()) (o ...) () () bd ...)
+     (%a% i j rr rk rc e (()) (o ... (n #f)) () () bd ...))
+    ((%a% i j rr rk rc (n . e) (()) (o ...) () () bd ...)
+     (%a% i j rr rk rc e (()) (o ... (n #f)) () () bd ...))
+    ;; main
+    ((%a% i () ((n) ...) () () e () () () () bd ...)
+     (lambda (n ... . e) bd ...))
+    ((%a% (i ...) () ((n) ...) () () e (()) (o ...) (k ...) (c ...) bd ...)
+     (lambda (i ... . te)
+       (opt-key-cat te ((n i) ...) (o ...) (k ...) (c ...) e bd ...)))
+    ((%a% (i ...) () ((n t ...) ...) () () () () () () () bd ...)
+     (lambda (i ...)
+       (let ((n (wow-opt n i t ...)) ...) bd ...)))
+    ((%a% (i ...) () ((n t ...) ...) () () e () () () () bd ...)
+     (lambda (i ... . te)
+       (let ((n (wow-opt n i t ...)) ... (e te)) bd ...)))
+    ((%a% (i ...) () ((n t ...) ...) ()
+	  () e (()) (o ...) (k ...) (c ...) bd ...)
+     (lambda (i ... . te)
+       (opt-key-cat te ((n (wow-opt n i t ...)) ...)
+		    (o ...) (k ...) (c ...) e bd ...)))
+    ((%a% (i ...) (j ...) ((n) ...) (((rk w p) tt ...) ...)
+	  ((rc rt ...) ...) () () () () () bd ...)
+     (lambda (i ... j ...)
+       (let ((zz (list j ...)))
+	 (let ((n i) ...
+	       (rk (req-key! zz (rk w p) tt ...)) ...
+	       (rc (req-cat! zz rc rt ...)) ...)
+	   bd ...))))
+    ((%a% (i ...) (j ...) ((n) ...) (((rk w p) tt ...) ...)
+	  ((rc rt ...) ...) e () () () () bd ...)
+     (lambda (i ... j ... . te)
+       (let ((zz (list j ...)))
+	 (let ((n i) ...
+	       (rk (req-key! zz (rk w p) tt ...)) ...
+	       (rc (req-cat! zz rc rt ...)) ...
+	       (e te))
+	   bd ...))))
+    ((%a% (i ...) (j ...) ((n) ...) (((rk w p) tt ...) ...)
+	  ((rc rt ...) ...) e (()) (o ...) (k ...) (c ...) bd ...)
+     (lambda (i ... j ... . te)
+       (let ((zz (list j ...)))
+	 (opt-key-cat te ((n i) ...
+			  (rk (req-key! zz (rk w p) tt ...)) ...
+			  (rc (req-cat! zz rc rt ...)) ...)
+		      (o ...) (k ...) (c ...) e bd ...))))
+    ((%a% (i ...) (j ...) ((n t ...) ...) (((rk w p) tt ...) ...)
+	  ((rc rt ...) ...) () () () () () bd ...)
+     (lambda (i ... j ...)
+       (let ((zz (list j ...)))
+	 (let ((n (wow-opt n i t ...)) ...
+	       (rk (req-key! zz (rk w p) tt ...)) ...
+	       (rc (req-cat! zz rc rt ...)) ...)
+	   bd ...))))
+    ((%a% (i ...) (j ...) ((n t ...) ...) (((rk w p) tt ...) ...)
+	  ((rc rt ...) ...) e () () () () bd ...)
+     (lambda (i ... j ... . te)
+       (let ((zz (list j ...)))
+	 (let ((n (wow-opt n i t ...)) ...
+	       (rk (req-key! zz (rk w p) tt ...)) ...
+	       (rc (req-cat! zz rc rt ...)) ...
+	       (e te))
+	   bd ...))))
+    ((%a% (i ...) (j ...) ((n t ...) ...) (((rk w p) tt ...) ...)
+	  ((rc rt ...) ...) e (()) (o ...) (k ...) (c ...) bd ...)
+     (lambda (i ... j ... . te)
+       (let ((zz (list j ...)))
+	 (opt-key-cat te ((n (wow-opt n i t ...)) ...
+			  (rk (req-key! zz (rk w p) tt ...)) ...
+			  (rc (req-cat! zz rc rt ...)) ...)
+		      (o ...) (k ...) (c ...) e bd ...))))))
+
+(define-syntax qlambda*
+  (syntax-rules ()
+    ((qlambda* (g . e) bd ...)
+     (%b% () () () () () (g . e) () () () () bd ...))
+    ((qlambda* e bd ...)
+     (lambda e bd ...))))
+
+(define-syntax %b%
+  (syntax-rules (quote quasiquote unquote)
+    ((%b% i j rr rk rc (, (('n w p) d t ...) . e) () () () () bd ...)
+     (%b% i j rr rk rc e (()) () (((n w p) d t ...)) () bd ...))
+    ((%b% i j rr rk rc (, (('n w) d t ...) . e) () () () () bd ...)
+     (%b% i j rr rk rc e (()) () (((n w eq?) d t ...)) () bd ...))
+    ((%b% i j rr rk rc (, (('n w p)) . e) () () () () bd ...)
+     (%b% i j rr rk rc e (()) () (((n w p) #f)) () bd ...))
+    ((%b% i j rr rk rc (, (('n w)) . e) () () () () bd ...)
+     (%b% i j rr rk rc e (()) () (((n w eq?) #f)) () bd ...))
+    ((%b% i j rr rk rc (, ('n d t ...) . e) () () () () bd ...)
+     (%b% i j rr rk rc e (()) () (((n 'n eq?) d t ...)) () bd ...))
+    ((%b% i j rr rk rc (, (`n d t ...) . e) () () () () bd ...)
+     (%b% i j rr rk rc e (()) () () ((n d t ...)) bd ...))
+    ((%b% i j rr rk rc (, ('n) . e) () () () () bd ...)
+     (%b% i j rr rk rc e (()) () (((n 'n eq?) #f)) () bd ...))
+    ((%b% i j rr rk rc (, (`n) . e) () () () () bd ...)
+     (%b% i j rr rk rc e (()) () () ((n #f)) bd ...))
+    ((%b% i j rr rk rc (, 'n . e) () () () () bd ...)
+     (%b% i j rr rk rc e (()) () (((n 'n eq?) #f)) () bd ...))
+    ((%b% i j rr rk rc (, `n . e) () () () () bd ...)
+     (%b% i j rr rk rc e (()) () () ((n #f)) bd ...))
+    ((%b% i j rr rk rc (, (n d t ...) . e) () () () () bd ...)
+     (%b% i j rr rk rc e (()) ((n d t ...)) () () bd ...))
+    ((%b% i j rr rk rc (, (n) . e) () () () () bd ...)
+     (%b% i j rr rk rc e (()) ((n #f)) () () bd ...))
+    ((%b% i j rr rk rc (, n . e) () () () () bd ...)
+     (%b% i j rr rk rc e (()) ((n #f)) () () bd ...))
+    ((%b% i (j ...) rr (rk ...) () ((('n w p) t ...) . e) () o k c bd ...)
+     (%b% i (j ... j1 j2) rr (rk ... ((n w p) t ...)) () e () o k c bd ...))
+    ((%b% i (j ...) rr (rk ...) () ((('n w) t ...) . e) () o k c bd ...)
+     (%b% i (j ... j1 j2) rr (rk ... ((n w eq?) t ...)) () e () o k c bd ...))
+    ((%b% i (j ...) rr (rk ...) () (('n t ...) . e) () o k c bd ...)
+     (%b% i (j ... j1 j2) rr (rk ... ((n 'n eq?) t ...)) () e () o k c bd ...))
+    ((%b% i (j ...) rr () (rc ...) ((`n t ...) . e) () o k c bd ...)
+     (%b% i (j ... j1) rr () (rc ... (n t ...)) e () o k c bd ...))
+    ((%b% i (j ...) rr (rk ...) () ('n . e) () o k c bd ...)
+     (%b% i (j ... j1 j2) rr (rk ... ((n 'n eq?))) () e () o k c bd ...))
+    ((%b% i (j ...) rr () (rc ...) (`n . e) () o k c bd ...)
+     (%b% i (j ... j1) rr () (rc ... (n)) e () o k c bd ...))
+    ((%b% (i ...) () (rr ...) () () ((n t ...) . e) () o k c bd ...)
+     (%b% (i ... i1) () (rr ... (n t ...)) () () e () o k c bd ...))
+    ((%b% (i ...) () (rr ...) () () (n . e) () o k c bd ...)
+     (%b% (i ... i1) () (rr ... (n)) () () e () o k c bd ...))
+    ((%b% i j rr rk rc ((('n w p) d t ...) . e) (()) o (k ...) () bd ...)
+     (%b% i j rr rk rc e (()) o (k ... ((n w p) d t ...)) () bd ...))
+    ((%b% i j rr rk rc ((('n w) d t ...) . e) (()) o (k ...) () bd ...)
+     (%b% i j rr rk rc e (()) o (k ... ((n w eq?) d t ...)) () bd ...))
+    ((%b% i j rr rk rc ((('n w p)) . e) (()) o (k ...) () bd ...)
+     (%b% i j rr rk rc e (()) o (k ... ((n w p) #f)) () bd ...))
+    ((%b% i j rr rk rc ((('n w)) . e) (()) o (k ...) () bd ...)
+     (%b% i j rr rk rc e (()) o (k ... ((n w eq?) #f)) () bd ...))
+    ((%b% i j rr rk rc (('n d t ...) . e) (()) o (k ...) () bd ...)
+     (%b% i j rr rk rc e (()) o (k ... ((n 'n eq?) d t ...)) () bd ...))
+    ((%b% i j rr rk rc ((`n d t ...) . e) (()) o () (c ...) bd ...)
+     (%b% i j rr rk rc e (()) o () (c ... (n d t ...)) bd ...))
+    ((%b% i j rr rk rc (('n) . e) (()) o (k ...) () bd ...)
+     (%b% i j rr rk rc e (()) o (k ... ((n 'n eq?) #f)) () bd ...))
+    ((%b% i j rr rk rc ((`n) . e) (()) o () (c ...) bd ...)
+     (%b% i j rr rk rc e (()) o () (c ... (n #f)) bd ...))
+    ((%b% i j rr rk rc ('n . e) (()) o (k ...) () bd ...)
+     (%b% i j rr rk rc e (()) o (k ... ((n 'n eq?) #f)) () bd ...))
+    ((%b% i j rr rk rc (`n . e) (()) o () (c ...) bd ...)
+     (%b% i j rr rk rc e (()) o () (c ... (n #f)) bd ...))
+    ((%b% i j rr rk rc ((n d t ...) . e) (()) (o ...) () () bd ...)
+     (%b% i j rr rk rc e (()) (o ... (n d t ...)) () () bd ...))
+    ((%b% i j rr rk rc ((n) . e) (()) (o ...) () () bd ...)
+     (%b% i j rr rk rc e (()) (o ... (n #f)) () () bd ...))
+    ((%b% i j rr rk rc (n . e) (()) (o ...) () () bd ...)
+     (%b% i j rr rk rc e (()) (o ... (n #f)) () () bd ...))
+    ;; main
+    ((%b% i () ((n) ...) () () e () () () () bd ...)
+     (lambda (n ... . e) bd ...))
+    ((%b% i () ((n) ...) () () e (()) (o ...) (k ...) (c ...) bd ...)
+     (lambda (n ... . te)
+       (opt-key-cat* te (o ...) (k ...) (c ...) e bd ...)))
+    ((%b% (i ...) () ((n t ...) ...) () () () () () () () bd ...)
+     (lambda (i ...)
+       (let* ((n (wow-opt n i t ...)) ...) bd ...)))
+    ((%b% (i ...) () ((n t ...) ...) () () e () () () () bd ...)
+     (lambda (i ... . te)
+       (let* ((n (wow-opt n i t ...)) ... (e te)) bd ...)))
+    ((%b% (i ...) () ((n t ...) ...) ()
+	  () e (()) (o ...) (k ...) (c ...) bd ...)
+     (lambda (i ... . te)
+       (let* ((n (wow-opt n i t ...)) ...)
+	 (opt-key-cat* te (o ...) (k ...) (c ...) e bd ...))))
+    ((%b% i (j ...) ((n) ...) (((rk w p) tt ...) ...)
+	  ((rc rt ...) ...) () () () () () bd ...)
+     (lambda (n ... j ...)
+       (let ((zz (list j ...)))
+	 (let* ((rk (req-key! zz (rk w p) tt ...)) ...
+		(rc (req-cat! zz rc rt ...)) ...)
+	   bd ...))))
+    ((%b% i (j ...) ((n) ...) (((rk w p) tt ...) ...)
+	  ((rc rt ...) ...) e () () () () bd ...)
+     (lambda (n ... j ... . te)
+       (let ((zz (list j ...)))
+	 (let* ((rk (req-key! zz (rk w p) tt ...)) ...
+		(rc (req-cat! zz rc rt ...)) ...
+		(e te))
+	   bd ...))))
+    ((%b% i (j ...) ((n) ...) (((rk w p) tt ...) ...)
+	  ((rc rt ...) ...) e (()) (o ...) (k ...) (c ...) bd ...)
+     (lambda (n ... j ... . te)
+       (let ((zz (list j ...)))
+	 (let* ((rk (req-key! zz (rk w p) tt ...)) ...
+		(rc (req-cat! zz rc rt ...)) ...)
+	   (opt-key-cat* te (o ...) (k ...) (c ...) e bd ...)))))
+    ((%b% (i ...) (j ...) ((n t ...) ...) (((rk w p) tt ...) ...)
+	  ((rc rt ...) ...) () () () () () bd ...)
+     (lambda (i ... j ...)
+       (let ((zz (list j ...)))
+	 (let* ((n (wow-opt n i t ...)) ...
+		(rk (req-key! zz (rk w p) tt ...)) ...
+		(rc (req-cat! zz rc rt ...)) ...)
+	   bd ...))))
+    ((%b% (i ...) (j ...) ((n t ...) ...) (((rk w p) tt ...) ...)
+	  ((rc rt ...) ...) e () () () () bd ...)
+     (lambda (i ... j ... . te)
+       (let ((zz (list j ...)))
+	 (let* ((n (wow-opt n i t ...)) ...
+		(rk (req-key! zz (rk w p) tt ...)) ...
+		(rc (req-cat! zz rc rt ...)) ...
+		(e te))
+	   bd ...))))
+    ((%b% (i ...) (j ...) ((n t ...) ...) (((rk w p) tt ...) ...)
+	  ((rc rt ...) ...) e (()) (o ...) (k ...) (c ...) bd ...)
+     (lambda (i ... j ... . te)
+       (let ((zz (list j ...)))
+	 (let* ((n (wow-opt n i t ...)) ...
+		(rk (req-key! zz (rk w p) tt ...)) ...
+		(rc (req-cat! zz rc rt ...)) ...)
+	   (opt-key-cat* te (o ...) (k ...) (c ...) e bd ...)))))))
+
+;;; eof
+
+References
+
+[R5RS]	    Richard Kelsey, William Clinger, and Jonathan Rees: Revised(5)
+	    Report on the Algorithmic Language Scheme
+	    <a  rel="nofollow" href="http://www.schemers.org/Documents/Standards/R5Rs/">http://www.schemers.org/Documents/Standards/R5Rs/</a>
+[SRFI 86]   Joo ChurlSoo: MU and NU simulating VALUES &amp; CALL-WITH-VALUES,
+	    and their related LET-syntax.
+	    <a  rel="nofollow" href="http://srfi.schemers.org/srfi-86/">http://srfi.schemers.org/srfi-86/</a>
+[SRFI 89]   Marc Feeley: Optional and named parameters.
+	    <a  rel="nofollow" href="http://srfi.schemers.org/srfi-89/">http://srfi.schemers.org/srfi-89/</a>
+
+Copyright
+
+Copyright (c) 2006 Joo ChurlSoo.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the ``Software''), to
+deal in the Software without restriction, including without limitation the
+rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+sell copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED ``AS IS'', WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00000.html">Withdrawn SRFI 92: ALAMBDA and ALAMBDA*</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00000.html">Withdrawn SRFI 92: ALAMBDA and ALAMBDA*</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00001"><strong>Date</strong></a></li>
+<li><a href="threads.html#00001"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

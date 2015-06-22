@@ -1,0 +1,161 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: some suggestions -->
+<!--X-From-R13: [ngguvnf @rhonhre <arhonhreNvasbezngvx.hav&#45;servohet.qr> -->
+<!--X-Date: Thu, 13 Feb 2003 18:26:11 +0100 (NFT) -->
+<!--X-Message-Id: xg8smusxfbl.fsf@hapuna.informatik.uni&#45;freiburg.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: E18izZd&#45;00073M&#45;00@rosebud -->
+<!--X-Reference: y9l3cms2o1e.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: some suggestions</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00008.html">Date Prev</a>][<a href="msg00010.html">Date Next</a>][<a href="msg00008.html">Thread Prev</a>][<a href="msg00011.html">Thread Next</a>][<a href="maillist.html#00009">Date Index</a>][<a href="threads.html#00009">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: some suggestions</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Phil Bewig &lt;<a href="mailto:pbewig@DOMAIN.HIDDEN">pbewig@xxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: some suggestions</li>
+<li><em>From</em>: Matthias Neubauer &lt;<a href="mailto:neubauer@DOMAIN.HIDDEN">neubauer@xxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: 13 Feb 2003 18:26:06 +0100</li>
+<li><em>Cc</em>: Richard Kelsey &lt;<a href="mailto:kelsey@DOMAIN.HIDDEN">kelsey@xxxxxxx</a>&gt;, <a href="mailto:srfi-40@DOMAIN.HIDDEN">srfi-40@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-40@DOMAIN.HIDDEN">srfi-40@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:y9l3cms2o1e.fsf@DOMAIN.HIDDEN">y9l3cms2o1e.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:E18izZd-00073M-00@DOMAIN.HIDDEN"><a href="msg00007.html">E18izZd-00073M-00@rosebud</a></a>&gt;	&lt;<a href="mailto:y9l3cms2o1e.fsf@DOMAIN.HIDDEN">y9l3cms2o1e.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Sender</em>: <a href="mailto:neubauer@DOMAIN.HIDDEN">neubauer@xxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Gnus/5.0808 (Gnus v5.8.8) XEmacs/21.1 (Cuyahoga Valley)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Phil Bewig &lt;pbewig@xxxxxxxxxx&gt; writes:
+
+&gt; On Wednesday, February 12, 2003 10:17 AM, Richard Kelsey [SMTP:kelsey@xxxxxxx] wrote:
+&gt; &gt;    Everyone who has seen a preliminary draft of this SRFI had the same
+&gt; &gt;    comment that it should be split into &quot;essential&quot; and &quot;library&quot; pieces,
+&gt; &gt;    but all had different ideas of where to make the split.
+&gt; &gt; 
+&gt; &gt; I don't care too much about where the split happens as long as the
+&gt; &gt; core part isn't too big.  A dozen or so procedures and macros should
+&gt; &gt; be enough to be useful while not being overwhelming.
+&gt; 
+&gt; Certainly NULL, CONS, CAR, CDR, NULL?, PAIR? and LAMBDA must be
+&gt; in the core, since they all necessarily touch the underlying representation of
+&gt; streams.  You probably want STREAM to build finite streams and ITERATE
+&gt; to build infinite streams, and REF to access items other than the first.
+&gt; MAP, FOR-EACH, FILTER and FOLD-LEFT are useful in their own right and
+&gt; also as building blocks for numerous other functions.  That's fourteen.  Does
+&gt; that make a useful core?
+
+To my mind, the most intrinsic stream abstraction ever is still
+missing in this srfi: UNFOLDR. UNFOLDR is for streams, what FOLDR is
+for lists. Whereas it is a highly common task to consume a list to a
+single value using a consumer function---typically done by using
+FOLDR---, the common pattern for streams is generating a stream
+starting from an initial seed value using a generator function.
+
+And that's what UNFOLDR is all about!
+
+So I vote for putting UNFOLDR in the core srfi:
+(Be warned: the following code is completely untested und unoptimized!)
+
+;; stream-unfold : (b -&gt; (union (cons a b) #f)) b -&gt; stream(a)
+(stream-define (stream-unfold gen-fun seed)
+   (let ((res (gen-fun seed)))
+     (if res
+         (stream-cons (car res)
+                      (stream-unfold gen-fun (cdr res)))
+         stream-null)))
+
+Other stream generators are then easily defined using unfold, as e.g.
+
+(define (stream-from n)
+  (stream-unfold (lambda (s) (cons s (+ s 1))) 
+                 n))
+
+(define (stream-from-to n m)
+  (stream-unfold (lambda (s) (and (&lt;= s m) (cons s (+ s 1))))
+                 n))
+
+(define (stream-iterate f a)
+  (stream-unfold (lambda (s) (cons s (f s))) 
+                 a))
+
+(define (list-&gt;stream l)
+  (stream-unfold (lambda (l) (and (not (null? l)) l))
+		 l))
+
+...
+
+Cheers
+
+Matthias
+
+-- 
+Matthias Neubauer                                       |
+Universit&#xE4;t Freiburg, Institut f&#xFC;r Informatik           | tel +49 761 203 8060
+Georges-K&#xF6;hler-Allee 79, 79110 Freiburg i. Br., Germany | fax +49 761 203 8052
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00011" href="msg00011.html">Re: some suggestions</a></strong>
+<ul><li><em>From:</em> Phil Bewig</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00007" href="msg00007.html">Re: some suggestions</a></strong>
+<ul><li><em>From:</em> Richard Kelsey</li></ul></li>
+<li><strong><a name="00008" href="msg00008.html">Re: some suggestions</a></strong>
+<ul><li><em>From:</em> Phil Bewig</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00008.html">Re: some suggestions</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00010.html">Re: stream-define</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00008.html">Re: some suggestions</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00011.html">Re: some suggestions</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00009"><strong>Date</strong></a></li>
+<li><a href="threads.html#00009"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

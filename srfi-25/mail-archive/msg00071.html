@@ -1,0 +1,186 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Not quite enough abstraction -->
+<!--X-From-R13: @bry Iryfu <abryjryfuNlnubb.pbz> -->
+<!--X-Date: Tue, 29 Jan 2002 13:31:32 +0100 (NFT) -->
+<!--X-Message-Id: 20020129123131.42683.qmail@web11203.mail.yahoo.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: qotlmeha5n0.fsf@ahtela.ling.helsinki.fi -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Not quite enough abstraction</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00070.html">Date Prev</a>][<a href="msg00072.html">Date Next</a>][<a href="msg00070.html">Thread Prev</a>][<a href="msg00069.html">Thread Next</a>][<a href="maillist.html#00071">Date Index</a>][<a href="threads.html#00071">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Not quite enough abstraction</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-25@DOMAIN.HIDDEN">srfi-25@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Not quite enough abstraction</li>
+<li><em>From</em>: Noel Welsh &lt;<a href="mailto:noelwelsh@DOMAIN.HIDDEN">noelwelsh@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 29 Jan 2002 04:31:31 -0800 (PST)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-25@DOMAIN.HIDDEN">srfi-25@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:qotlmeha5n0.fsf@DOMAIN.HIDDEN">qotlmeha5n0.fsf@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Scheme typically allows both imperative and
+functional manipulation of data.  E.g. we have
+fold and set-car!  This isn't the case with
+vectors because, I'm guessing, nobody knew how to
+do efficient functional manipulation of vectors in
+1993 (or whenever R5RS was completed).  So we only
+have the imperative style avaiable.  Many moons
+later the situation has changed somewhat.
+Languages like Sisal and SAC have shown how to
+compile fast functional matrix code.
+
+Neither Sisal nor SAC allow higher order functions
+so they both define their array manipulation in
+terms of a modified for loop.  An example of the
+SAC version is:
+
+  with (0 &lt;= i &lt;= 4)
+    genarray([1 10], i * 2);
+
+This generates the array [0 2 4 6 8 0 0 0 0 0]
+
+There is additional syntax to the with loop that
+allows you to specify a step in the index.  There
+are additional array constructors that draw values
+from an existing array, modifying the values
+according to an expression:
+
+  A = [1 3 5 7 9 11 13 15 17 19];
+  with (0 &lt;= i &lt;= 4)
+     modarray(A, 9, i * 2);
+
+=&gt; [0 2 4 6 8 19 19 19 19 19]
+
+Note that these expressions are declarative.
+There is no guaranteed order to the iteration over
+i.  In fact the compiler will merge loops and
+rearrange the iteration order to achieve the best
+memory locality.
+
+Two things we can get from this:
+
+Firstly I think we all want a higher level way to
+express array manipulation.  We should steal ideas
+from SAC.  We can do away with the explicit index
+variable (i in the examples above) by using
+higher-order functions.
+
+Secondly, this is an attractive way to create
+arrays.  It allows you to allocate arrays and
+initialise them with useful values in one step.
+Using different constructors to modarray/genarray
+above allows you to create different types of
+arrays.  I.e. imagine gen-sparse-array,
+gen-nested-array etc.
+
+If the focus of this SRFI is just a basic matrix
+data type then it's pretty much ok as stands.
+However I think we'd all like to see some
+higher-level operations.  Note that the SAC with
+loop is complete - they can express all array
+manipulations using it.
+
+A array processing function similar to the SAC
+with loop is:
+
+(array-fold start end [step] [width] seed constructor)
+
+start, end, step and width are vectors of length n
+seed is an array
+constructor has type (vector array) -&gt; array
+
+The 1st argument to constructor takes successive
+values from the set
+
+{idx | for-each i in {0 ... n-1} : start[i] &lt;=
+idx[i] &lt;= end[i] and (idx[i] - start[i]) mod step[i] &lt;
+width[i])
+
+(copied from the SAC paper &quot;On Defining
+Application Specific High Level Array Operations
+By Means of Shape Invariant Programming Facilities&quot;)
+
+The 2nd argument to constructor is the result of
+the previous call, or seed if there has been no
+previous call.
+
+The result of array-fold is the last result of
+constructor.  By allowing constructor to
+destructively modify seed we allow efficient
+implementations.  The alternative is to implement
+array-fold as a macro and use predefined
+constructors as in the SAC case.  This way we can
+avoid (explicit) destructive updates at the loss
+of a bit of flexibility.
+
+Finally, has the SRFI web page been updated yet?
+
+Noel
+
+
+__________________________________________________
+Do You Yahoo!?
+Great stuff seeking new owners in Yahoo! Auctions! 
+<a  rel="nofollow" href="http://auctions.yahoo.com">http://auctions.yahoo.com</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00070" href="msg00070.html">Re: Not quite enough abstraction</a></strong>
+<ul><li><em>From:</em> Jussi Piitulainen</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00070.html">Re: Not quite enough abstraction</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00072.html">do not delete ! get rich - hurry up and act now !</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00070.html">Re: Not quite enough abstraction</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00069.html">Re: Not quite enough abstraction</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00071"><strong>Date</strong></a></li>
+<li><a href="threads.html#00071"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

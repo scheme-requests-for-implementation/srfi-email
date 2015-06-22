@@ -1,0 +1,206 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Opaque syntax objects -->
+<!--X-From-R13: =?WEA&#45;8859&#45;1?C?Xraf_Okry_E=T8tnneq?= <wrafnkryNfbrtnneq.arg> -->
+<!--X-Date: Sat, 13 Aug 2005 02:10:50 +0200 (DFT) -->
+<!--X-Message-Id: 42FD3A7D.9090605@soegaard.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200508122124.j7CLOAec003270@later.het.brown.edu -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Opaque syntax objects</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00030.html">Date Prev</a>][<a href="msg00032.html">Date Next</a>][<a href="msg00028.html">Thread Prev</a>][<a href="msg00033.html">Thread Next</a>][<a href="maillist.html#00031">Date Index</a>][<a href="threads.html#00031">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Opaque syntax objects</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>Subject</em>: Re: Opaque syntax objects</li>
+<li><em>From</em>: Jens Axel S&#xF8;gaard &lt;<a href="mailto:jensaxel@DOMAIN.HIDDEN">jensaxel@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 13 Aug 2005 02:10:37 +0200</li>
+<li><em>Cc</em>: <a href="mailto:srfi-72@DOMAIN.HIDDEN">srfi-72@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-72@DOMAIN.HIDDEN">srfi-72@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:200508122124.j7CLOAec003270@DOMAIN.HIDDEN">200508122124.j7CLOAec003270@xxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:200508122124.j7CLOAec003270@DOMAIN.HIDDEN">200508122124.j7CLOAec003270@xxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mozilla Thunderbird 1.0.2 (Windows/20050317)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+Andre van Tonder wrote:
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><tt> 
+</tt><tt> Hi Mike, thanks for the comments.
+</tt><tt> 
+</tt><tt> &gt; I'd like to suggest that compound expressions be represented by an
+</tt><pre style="margin: 0em;">
+ &gt; opaque type rather than by pairs.  This would ensure a modicum of
+ &gt; abstraction, and would *really* make comprehensive the ability of all
+</pre><tt> &gt; syntax objects to carry location information.  
+</tt><tt> 
+</tt><tt> The current representation does allow source tracking for compound syntax
+</tt><tt> objects.  One would make the reader put the location of each node (pair or 
+</tt><tt> vector) in a hash table.  Each evaluation of a SYNTAX or QUASISYNTAX form
+</tt><tt> can do likewise.  Since pairs keep their identity during expansion, 
+</tt><tt> location information for every node (and identifier leaf) can always be 
+</tt><tt> looked up in the hash table at any stage of the expansion.
+</tt></blockquote><pre style="margin: 0em;">
+
+</pre><tt>There is also the user written macros to consider. If source tracking 
+</tt><tt>hinges on the identity of pairs, then a user of the macro system needs
+</tt><pre style="margin: 0em;">
+to be very careful to reuse in the output of a macro the exact same
+pairs, he is given as input; otherwise he looses the annotations
+on the input.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+ &gt; I've come to appreciate
+ &gt; this added layer of abstraction in PLT Scheme.
+</pre><tt> 
+</tt><tt> Would you object to having compound syntax objects be specified as 
+</tt><tt> a subtype of lists, so that we can use car/.../cddddr/map/.../member/... 
+</tt><tt> as generic operations on them?  Is there something you find useful 
+</tt><tt> that such a design would prevent? 
+</tt></blockquote><pre style="margin: 0em;">
+
+I would object unless you can guarantee that car, cdr and friends
+wouldn't become more expensive to use on normal pairs.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+ As a subtype, it would have extra operations to, for example, inspect
+ the source location.  A precedent for this kind of design exists in the
+</pre><tt> R%RS numeric types, where an operation such as |remainder| is specified for 
+</tt><tt> integers but not reals (like our source location operation), while other
+</tt><tt> operations such as + are generic (like our car/cdr).  
+</tt><tt> 
+</tt><tt> Since we are talking about a Lisp where programs can be mapped to lists,
+</tt><tt> there should be a very good reason not to take advantage of the  
+</tt><tt> ability, which comes for free, to reuse all the builtins and large corpora 
+</tt><tt> of library list operations on syntax objects.  Making syntax objects  
+</tt><tt> disjoint from lists would throw this away.  Is there something sufficiently 
+</tt><tt> major that can be gained that would justify this?
+</tt></blockquote><pre style="margin: 0em;">
+
+Besides the feeling that keeping the abstraction is a good thing, the
+</pre><tt>major selling point for me, is that source annotation (including source 
+</tt><tt>location tracking) works so well in PLT. The hash-table approach you
+</tt><pre style="margin: 0em;">
+describe above may work, but it is not (to me) immediately obvious that
+</pre><tt>it does. If I annotate a normal list representing an expression with a 
+</tt><tt>given property, how is the property propagated to its subexpressions
+</tt><tt>in the hash-table implementation? In the explicit representation using 
+</tt><tt>syntax-objects this is done by syntax-&gt;list (and others, such as 
+</tt><tt>syntax-car and syntax-cdr).
+</tt><pre style="margin: 0em;">
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><tt> As we know, subtyping can be thought of in terms of implicit coercions.  
+</tt><tt> The alternative is having explicit coercions as in PLT, the 
+</tt><tt> use of which quickly becomes tedious when expressing simple things like
+</tt><tt> 
+</tt><tt>    (apply append stx))
+</tt><tt> 
+</tt><tt> which would become, with coercions:
+</tt><tt> 
+</tt><tt>   (with-syntax ((result (apply append (map syntax-&gt;list (syntax-&gt;list stx)))
+</tt><tt>     (syntax result))    
+</tt></blockquote><pre style="margin: 0em;">
+
+That particular example can be written very succintly with pattern matching:
+
+  (syntax-case #'((1 2) (3 4 5) (6)) ()
+    [((x ...) ...)
+     #'(x ... ...)])
+
+  ; =&gt; a syntax-object representing (1 2 3 4 5 6)
+
+However, your example shows that lists in &quot;two levels&quot; can be a bit
+tricky. The (with-syntax ((result ...)) (syntax result)) part can be
+shortened though:
+
+  #`#,(apply append (map syntax-&gt;list (syntax-&gt;list stx)))
+
+Since apply needs a list and stx is a syntax-object representing
+</pre><tt>a list, it isn't difficult to get the (apply append ... (syntax-&gt;list 
+</tt><tt>stx)) part right. If I want to call a function that works on
+</tt><pre style="margin: 0em;">
+list on syntax-objects representing lists, I usually define a
+helper function to make things more clear.
+
+   (define (syntax-append list-of-syntax-lists)
+     (apply append (map syntax-&gt;list list-of-syntax-lists)))
+
+Then I can write
+
+   #`#,(apply syntax-append (syntax-&gt;list stx))
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><tt> although notice that even PLT does an implicit type conversion 
+</tt><tt> list-&gt;syntax-object to the result of evaluating (apply (map ....)). 
+</tt></blockquote><pre style="margin: 0em;">
+
+Yes, if the result of a macro call is a list, then it implicitly
+converts it into a syntax-object.
+
+--
+Jens Axel S&#xF8;gaard
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00033" href="msg00033.html">Re: Opaque syntax objects</a></strong>
+<ul><li><em>From:</em> Andre van Tonder</li></ul></li>
+<li><strong><a name="00034" href="msg00034.html">Re: Opaque syntax objects</a></strong>
+<ul><li><em>From:</em> Andre van Tonder</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00028" href="msg00028.html">Re: Opaque syntax objects</a></strong>
+<ul><li><em>From:</em> Andre van Tonder</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00030.html">Re: Opaque syntax objects</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00032.html">Re: Opaque syntax objects</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00028.html">Re: Opaque syntax objects</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00033.html">Re: Opaque syntax objects</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00031"><strong>Date</strong></a></li>
+<li><a href="threads.html#00031"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

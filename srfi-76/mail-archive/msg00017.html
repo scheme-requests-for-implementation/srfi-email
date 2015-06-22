@@ -1,0 +1,174 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Problems with field initialization: Proposal -->
+<!--X-From-R13: Oaqer ina Fbaqre <naqerNabj.urg.oebja.rqh> -->
+<!--X-Date: Thu, 15 Sep 2005 22:41:08 +0200 (MST) -->
+<!--X-Message-Id: Pine.GSO.4.60.0509151624251.9460@now.het.brown.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200509151634.j8FGYlec024397@later.het.brown.edu -->
+<!--X-Reference: y9lr7bq8ag1.fsf@sams.informatik.uni&#45;tuebingen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Problems with field initialization: Proposal</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00016.html">Date Prev</a>][<a href="msg00018.html">Date Next</a>][<a href="msg00014.html">Thread Prev</a>][<a href="msg00019.html">Thread Next</a>][<a href="maillist.html#00017">Date Index</a>][<a href="threads.html#00017">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Problems with field initialization: Proposal</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Michael Sperber &lt;<a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Problems with field initialization: Proposal</li>
+<li><em>From</em>: Andre van Tonder &lt;<a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 15 Sep 2005 16:41:04 -0400 (EDT)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-76@DOMAIN.HIDDEN">srfi-76@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-76@DOMAIN.HIDDEN">srfi-76@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:y9lr7bq8ag1.fsf@DOMAIN.HIDDEN">y9lr7bq8ag1.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:200509151634.j8FGYlec024397@DOMAIN.HIDDEN">200509151634.j8FGYlec024397@xxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:y9lr7bq8ag1.fsf@DOMAIN.HIDDEN">y9lr7bq8ag1.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+On Thu, 15 Sep 2005, Michael Sperber wrote:
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Andre van Tonder &lt;andre@xxxxxxxxxxxxxxxxxxx&gt; writes:
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+ As an example, the hash-table example could be expressed:
+
+  (define-type hash-table
+    (constructor (k) (lambda (pred hasher size)
+                       (k pred
+                          hasher
+                          (make-vector (nearest-prime size))
+                          0)))
+    (fields (pred   immutable)
+            (hasher immutable)
+            (data   mutable)
+            (count  mutable))))
+
+  (define-type eq-hash-table
+    (parent hash-table)
+    (constructor (k) (lambda (pred hasher size)
+                       (k pred
+                          hasher
+                          size
+                          0)))
+    (fields (gc-count mutable)))
+</pre></blockquote><pre style="margin: 0em;">
+
+I'm confused about the K argument in the EQ-HASH-TABLE example.  Does
+it call the primitive constructor of the underlying record type, or
+the construction procedure of the supertype?  If the former, there's
+one argument missing.  (And I'd ask how I could reuse the construction
+procedure of the supertype.)  If the latter, what's it's return value,
+and how do I transform it into an instance of the subtype?
+</pre></blockquote><pre style="margin: 0em;">
+
+</pre><tt>I meant the latter, but I realize now that it would involve an unnecessary 
+</tt><tt>allocation and copy of a supertype instance as an intermediate step, which is 
+</tt><tt>probably unacceptable.
+</tt><pre style="margin: 0em;">
+
+Here is an alternative suggestion:
+
+    (define-type hash-table
+      (constructor (lambda (pred hasher size)
+                     (values pred
+                             hasher
+                             (make-vector (nearest-prime size))
+                             0))
+      (fields (pred   immutable)
+              (hasher immutable)
+              (data   mutable)
+              (count  mutable))))
+
+   (define-type eq-hash-table
+     (parent hash-table)
+     (constructor (lambda (pred hasher size)
+                    (values pred
+                            hasher
+                            size
+                            0)))
+     (fields (gc-count mutable)))
+
+</pre><tt>This is a little more concise than my previous suggestion, and presumably 
+</tt><tt>allocating intermediate VALUES is cheaper than allocating intermediate
+</tt><pre style="margin: 0em;">
+supertype instances.
+
+</pre><tt>In the above, the subtype constructor would call the procedure provided for the 
+</tt><tt>supertype with the first three values, which returns four values used to 
+</tt><tt>populate the first four fields of the subtype instance.  The 5th field is then 
+</tt><tt>populated with the last value 0.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>This suggestion cannot absorb INIT!, though, as the previous suggestion, so 
+</tt><tt>INIT! would still need to be separate.
+</tt><pre style="margin: 0em;">
+
+Cheers
+Andre
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00019" href="msg00019.html">Re: Problems with field initialization: Proposal</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00013" href="msg00013.html">Re: Problems with field initialization: Proposal</a></strong>
+<ul><li><em>From:</em> Andre van Tonder</li></ul></li>
+<li><strong><a name="00014" href="msg00014.html">Re: Problems with field initialization: Proposal</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00016.html">Re: Problem with type inference</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00018.html">Re: Problem with type inference</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00014.html">Re: Problems with field initialization: Proposal</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00019.html">Re: Problems with field initialization: Proposal</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00017"><strong>Date</strong></a></li>
+<li><a href="threads.html#00017"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,174 @@
+<!-- MHonArc v2.6.16 -->
+<!--X-Subject: Names, c&#45;memory&#45;model, etc. -->
+<!--X-From-R13: Rriba Epuhql <qfpuhqlNtznvy.pbz> -->
+<!--X-Date: Thu, 18 Jul 2013 05:27:36 +0200 (MST) -->
+<!--X-Message-Id: CAH_wurkwcz+Ge=56f6yVgJAYFibGiSk8HV7Y3jLH+z6hT4QS6g@mail.gmail.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Names, c-memory-model, etc.</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00009.html">Date Prev</a>][<a href="msg00011.html">Date Next</a>][<a href="msg00008.html">Thread Prev</a>][<a href="msg00011.html">Thread Next</a>][<a href="maillist.html#00010">Date Index</a>][<a href="threads.html#00010">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Names, c-memory-model, etc.</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-112@DOMAIN.HIDDEN">srfi-112@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Names, c-memory-model, etc.</li>
+<li><em>From</em>: Devon Schudy &lt;<a href="mailto:dschudy@DOMAIN.HIDDEN">dschudy@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 17 Jul 2013 23:19:05 -0400</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-112@DOMAIN.HIDDEN">srfi-112@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Dkim-signature</em>: v=1; a=rsa-sha256; c=relaxed/relaxed;        d=gmail.com; s=20120113;        h=mime-version:from:date:message-id:subject:to:content-type;        bh=8OftBAKEd1JnLUD0IDJAMoXpDGnzrjpy4udg7dBKPSU=;        b=wLdqC/H8UrCy7c+VvAOunEo5gHIZW2BFS9DxXxjYnAsuMIL4vhD4jpnm79We+Nfruy         jFMgtMlvelkH90PAllgQCC5ph809DfhLMyNpyA5QkGXl0Mt+fX5XlctVZ7VawXnPe2Bh         SBfYeqlFumUYPlt3sL5msAXKdmYwKMnyCQEtMvkQjGayZRJqvhHo1dt1CGA2N8BtYXAT         jXrHjiygHJvqWTyPVBQcCxBzjxTaRxoq3kE3AqrUOt6S4UWit3TQ7hdRuQQq90CBVexd         Aoo+1gMvJTm7kOmupsqKzg2ENiQn+0N+d2Utfusz3Eusjlkhyn/zSQUCfPRPDmLljA9R         sUDA==</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Is it too late for comments?
+
+The meaning of system-instance is not obvious from its name. I suspect
+this is because &quot;system&quot; suggests &quot;operating system&quot;, not &quot;host&quot;, and
+&quot;instance&quot; doesn't indicate that it's the *name* of the host. How
+about something containing &quot;name&quot;, such as machine-name or
+machine-hostname or host-name or hostname?
+
+I'm guessing os-type is supposed to return a human-readable name of
+the OS (&quot;Mac OS X&quot;, &quot;Linux&quot;, &quot;Microsoft Windows Vista&quot;, &quot;Plan 9 from
+Bell Labs&quot;) rather than a short machine-readable name of the OS family
+(&quot;unix&quot;, &quot;windows&quot;), since the latter is covered better by (features).
+In that case, it would be clearer to call it os-name. This would also
+make os-{name,version} consistent with implementation-{name,version}.
+
+What's the intended use of c-memory-model? It tells the machine's word
+size, but it combines this with a description of which C types are the
+same size as a pointer. That's useful for C programs or a C FFI, but
+it's irrelevant to Scheme, so it probably shouldn't be in this SRFI
+(nor in R7RS-large). If it's intended to tell the size of a Scheme
+pointer, it could be called word-size (or word-width?). If it's
+intended to tell the machine's largest available pointer size (which
+is often different, e.g. a 32-bit Scheme on a 64-bit machine) it could
+be called cpu-word-size. Both of these should presumably return exact
+integers.
+
+...however, these aren't suitable for some of the most obvious reasons
+to care about word size:
+ * Determining fixnum range: use fixnum-width, least-fixnum and
+greatest-fixnum instead.
+ * Determining whether it's safe to use more than a few GB of memory:
+word size is not the only constraint here, so this should really be
+done with some sort of memory-limit or physical-memory function.
+ * Estimating memory use: is a Scheme pointer 4 or 8 bytes? For this
+purpose, you typically want the result in bytes, not bits, although
+that doesn't make sense on some architectures. Also, per-object
+overhead matters (especially if you use a lot of pairs or boxed
+floats). So does the x2 multiplier for a simple copying GC.
+
+Other environment inquiries that might be worth including:
+ * username: mostly covered by (get-environment-variable &quot;USER&quot;), so
+maybe a separate function is not necessary.
+ * user-home-directory (or just user-home?): ~. On single-user
+systems, this should be the usual place for user files, e.g. the root
+of the main drive on Mac OS Classic. Already sort of covered by
+(get-environment-variable &quot;HOME&quot;).
+ * settings-directory (user-settings-directory?): where programs
+should save their user-specific settings. On Unix, this is the same as
+user-home-directory; on Mac OS X and Windows, it's a separate
+subdirectory. Should be provided in addition to user-home-directory
+for portability.
+ * current-directory (working-directory?): sometimes convenient for
+pathname resolution. On systems that don't have this concept, return
+the root or other default directory.
+ * locale: already covered by SRFI-29, and by (get-environment-variable &quot;LANG&quot;).
+ * number-of-cpus (cpu-count?): to determine how many threads to use.
+This really belongs in a multithreading SRFI, but SRFI-21 doesn't have
+it.
+ * cpu-clock, cpu-frequency, cpu-clock-{speed, frequency}: to estimate
+available power, e.g. to decide whether to turn on expensive optional
+features. Returns a frequency in hertz (or MHz?).
+ * physical-memory: how much memory does the machine have? Returns an
+exact integer in bytes, not Scheme pointers, because that's the
+conventional unit and because large data is often not composed of
+pointers. This might not fit in a fixnum, so maybe it should use a
+larger unit than bytes.
+ * cache-memory (cache-size?): how large is the cache, if any? This is
+often more important for performance than physical-memory. When
+there's more than one level of cache, it should return the one with
+the largest effect (L2, on present-day machines).
+ * memory-used: how much (virtual) memory is the Scheme implementation
+currently using? (Including garbage: this is about the process, not
+the GC.)
+ * memory-limit: how much (virtual) memory can the Scheme
+implementation use? This is a bit hard to implement, because it
+depends on word size, available swap, and quotas (e.g. on Unix, the
+soft limit from getrlimit(RLIMIT_AS)).
+ * disk-{free,available}: how much disk space can the program use?
+This is important to avoid filling up disks with ever-growing data
+like logs or caches. With one argument, which must be a pathname,
+return the available space for that path's drive; with zero arguments,
+return the space for some default drive. Should ideally take the user
+quota into account, if any. The name should maybe not include &quot;disk&quot;,
+since that's sometimes inaccurate, but I can't think of an alternative
+that's as easy to understand (&quot;drive&quot; isn't, and isn't much more
+accurate).
+* stack-limit: approximately how deeply can we nest non-tail calls
+without overflowing the stack? This is often an issue for functional
+programs. I'm not sure if the unit should be bytes or calls; the
+latter is more useful but unreliable, since stack-frame sizes may vary
+a lot. Returns #f if there's no limit but available memory. Ideally
+this should return the remaining depth, so recursive functions can
+bail or change strategies when they get close to the limit.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00011" href="msg00011.html">Re: Names, c-memory-model, etc.</a></strong>
+<ul><li><em>From:</em> John Cowan</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00009.html">Re: (c-memory-model) and more</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00011.html">Re: Names, c-memory-model, etc.</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00008.html">Subscribe</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00011.html">Re: Names, c-memory-model, etc.</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00010"><strong>Date</strong></a></li>
+<li><a href="threads.html#00010"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,208 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Names and primitives in SRFI 56 -->
+<!--X-From-R13: orne <orneNfbavp.arg> -->
+<!--X-Date: Sat, 18 Sep 2004 21:46:37 +0200 (DFT) -->
+<!--X-Message-Id: Pine.LNX.4.58.0409181204010.1084@bolt.sonic.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20040917213758.M77231@strader.xs4all.nl -->
+<!--X-Reference: 86acvo1f2j.wl@lain.inunome.com -->
+<!--X-Reference: 20040918094625.M75808@gawab.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Names and primitives in SRFI 56</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00049.html">Date Prev</a>][<a href="msg00051.html">Date Next</a>][<a href="msg00045.html">Thread Prev</a>][<a href="msg00053.html">Thread Next</a>][<a href="maillist.html#00050">Date Index</a>][<a href="threads.html#00050">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Names and primitives in SRFI 56</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Hans Oesterholt-Dijkema &lt;<a href="mailto:hdnews@DOMAIN.HIDDEN">hdnews@xxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Names and primitives in SRFI 56</li>
+<li><em>From</em>: bear &lt;<a href="mailto:bear@DOMAIN.HIDDEN">bear@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 18 Sep 2004 12:45:15 -0700 (PDT)</li>
+<li><em>Cc</em>: Alex Shinn &lt;<a href="mailto:foof@DOMAIN.HIDDEN">foof@xxxxxxxxxxxxx</a>&gt;, <a href="mailto:srfi-56@DOMAIN.HIDDEN">srfi-56@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-56@DOMAIN.HIDDEN">srfi-56@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20040918094625.M75808@DOMAIN.HIDDEN">20040918094625.M75808@xxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:20040917213758.M77231@DOMAIN.HIDDEN">20040917213758.M77231@xxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:86acvo1f2j.wl@DOMAIN.HIDDEN">86acvo1f2j.wl@xxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20040918094625.M75808@DOMAIN.HIDDEN">20040918094625.M75808@xxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+On Sat, 18 Sep 2004, Hans Oesterholt-Dijkema wrote:
+&gt; Alex Shinn wrote:
+&gt;&gt; Apart from further conflicting with possible binary/character port
+&gt;&gt; distinctions,
+
+&gt;Hmm. I'm not sure I agree on that. Binary I/O simply means there's
+&gt;no interpretation given to the I/O; As I see it, the primitives
+&gt;to write and read provide the interpretation (see also my earlier
+&gt;e-mail about doors and what goes through them).
+
+The thing is, &quot;string&quot;, and even &quot;character,&quot; is precisely
+what binary I/O does not do: an interpretation of binary data.
+
+I expect, from a proposal for binary I/O, to get the family
+of primitives I need to then go and *write* libraries that
+handle reading and writing strings and characters.
+
+This is one of the points where there has been a 'castle built
+in the air' in R5RS; we assume the ability to read and write
+&quot;characters&quot;, but have had no way of accessing what actual
+binary forms are read or written.  As a result, the few
+binary-handling libraries we have (manipulating, for instance,
+executable files, graphics files, audio files, etc), all rely
+on the implementation using particular encodings and character
+formats, which are in no way guaranteed by the standard.
+
+Worse, as implementations move into the wide weird world of
+fully supporting Unicode, those vital utilities are becoming
+less portable, not more portable.  Worse still, Unicode has
+sufficiently complicated the representation of characters (by
+having lots of different encodings itself, as well as by
+increasing the number of standards that some application a
+scheme program needs to interoperate with might be using,
+that the simple assumption that we can read and write
+&quot;characters&quot; without specifying their binary form has failed
+since R5RS was written.
+
+Let me say that again, for emphasis.  The conditions on which
+R5RS was predicated have broken.  Our standard is now broken.
+
+R5RS makes sense, sort of, in a world where any environment
+could be assumed to have *some* character encoding so
+dominant as for character encoding to be a nonissue.  By
+leaving such issues unspecified, R5RS left room for different
+choices to be made, which would produce sensible systems for
+&quot;standalone&quot; use in such environments. That is no longer
+the world in which we live.
+
+By failing to specify any means of purely binary I/O, R5RS
+left portable scheme unable to cope with a networked world
+rich in purely binary formats and a world where characters
+from different sources can be encountered in many different
+binary formats. And that is the world in which we live now.
+
+This SRFI clearly aims to lay some foundation stones for
+building on that will hold in the current world.  In order
+to do so, it *MUST* specify rigid, purely binary, I/O.
+
+Character I/O, being subject to interpretation and
+reinterpretation, is for a different layer, or, as
+Alex says,
+
+&gt;&gt; this is beyond the scope of this SRFI.  A general text
+&gt;&gt; parsing library with procedures for reading delimited or terminated
+&gt;&gt; strings with an optional size limit would be the right place for this.
+&gt;
+&gt;That's OK with me, but let's start with such an SRFI right away,
+&gt;because A binary i/o srfi without primitives for character strings
+&gt;seems to me a littlebit, ah how does one say that in english, &quot;disabled?&quot;.
+
+Character strings are not binary.  They are characters.
+Binary is data without interpretation.  Characters are
+an interpretation of binary data.  These are different
+ideas.
+
+We can sweep interpretation like FLOAT32 into &quot;binary&quot; I/O
+at this point, but only because of the efforts of the IEEE
+which have provided an encoding for such interpretations
+that is so universal and dominant as to be a nonissue.
+The encoding is sign-bit in the MSB, followed by 8 bits
+of exponent, followed by 23 bits of normalized mantissa;
+the exponent measures powers of two, not powers of ten or
+four or any of the other strange things we had to cope with
+fifteen years ago.  The mantissa is normalized base-2, not
+BCD.  All that craziness has (mostly) passed away and the
+world is a better place for its absence.  But the point is
+that if the IEEE standard were not now so universal as to
+be a nonissue, floating-point encoding would be a matter
+for a separate SRFI, too.
+
+And another point is that if we need to create a different
+binary floating-point encoding, for whatever reason, we're
+going to look to this SRFI's *BINARY* primitives to give
+us the basic tools to implement a way to read and write it.
+Encodings can pass out of use, however unlikely it seems;
+bits won't.
+
+But character encoding is not, and never has been, universal.
+In fact, for the next couple of decades it's looking damned
+hairy.  It's way too big and way too unstable to try to build
+into a foundation.
+
+Any character I/O SRFI is going to have to be built *ON*
+the routines that this SRFI is trying to provide.  It is as
+futile to attempt one without first getting purely binary I/O
+as it is to attempt to build a castle without first laying
+foundation stones.
+
+				Bear
+
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00053" href="msg00053.html">Re: Names and primitives in SRFI 56</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00038" href="msg00038.html">Names and primitives in SRFI 56</a></strong>
+<ul><li><em>From:</em> Hans Oesterholt-Dijkema</li></ul></li>
+<li><strong><a name="00043" href="msg00043.html">Re: Names and primitives in SRFI 56</a></strong>
+<ul><li><em>From:</em> Alex Shinn</li></ul></li>
+<li><strong><a name="00045" href="msg00045.html">Re: Names and primitives in SRFI 56</a></strong>
+<ul><li><em>From:</em> Hans Oesterholt-Dijkema</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00049.html">Re: binary vs non-binary ports</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00051.html">Re: binary vs non-binary ports</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00045.html">Re: Names and primitives in SRFI 56</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00053.html">Re: Names and primitives in SRFI 56</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00050"><strong>Date</strong></a></li>
+<li><a href="threads.html#00050"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

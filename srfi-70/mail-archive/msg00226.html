@@ -1,0 +1,266 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Wrapping up SRFI&#45;70 -->
+<!--X-From-R13: Ohoerl Xnssre <ntwNnyhz.zvg.rqh> -->
+<!--X-Date: Fri, 19 Aug 2005 03:26:01 +0200 (DFT) -->
+<!--X-Message-Id: 20050819012559.ADAE71B77B4@voluntocracy.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20050810030837.1C5711B77B4@voluntocracy.org -->
+<!--X-Reference: Pine.LNX.4.58.0508092135590.25357@bolt.sonic.net -->
+<!--X-Reference: 20050815034459.8A6981B77B4@voluntocracy.org -->
+<!--X-Reference: Pine.LNX.4.58.0508161900040.27338@bolt.sonic.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Wrapping up SRFI-70</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00225.html">Date Prev</a>][<a href="msg00227.html">Date Next</a>][<a href="msg00222.html">Thread Prev</a>][<a href="msg00227.html">Thread Next</a>][<a href="maillist.html#00226">Date Index</a>][<a href="threads.html#00226">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Wrapping up SRFI-70</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:bear@DOMAIN.HIDDEN">bear@xxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Wrapping up SRFI-70</li>
+<li><em>From</em>: Aubrey Jaffer &lt;<a href="mailto:agj@DOMAIN.HIDDEN">agj@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 18 Aug 2005 21:25:59 -0400 (EDT)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-70@DOMAIN.HIDDEN">srfi-70@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-70@DOMAIN.HIDDEN">srfi-70@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:Pine.LNX.4.58.0508161900040.27338@DOMAIN.HIDDEN">Pine.LNX.4.58.0508161900040.27338@xxxxxxxxxxxxxx</a>&gt; (message from	bear on Tue, 16 Aug 2005 20:06:43 -0700 (PDT))</li>
+<li><em>References</em>: &lt;<a href="mailto:20050810030837.1C5711B77B4@DOMAIN.HIDDEN">20050810030837.1C5711B77B4@xxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:Pine.LNX.4.58.0508092135590.25357@DOMAIN.HIDDEN">Pine.LNX.4.58.0508092135590.25357@xxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20050815034459.8A6981B77B4@DOMAIN.HIDDEN">20050815034459.8A6981B77B4@xxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:Pine.LNX.4.58.0508161900040.27338@DOMAIN.HIDDEN">Pine.LNX.4.58.0508161900040.27338@xxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre> | Date: Tue, 16 Aug 2005 20:06:43 -0700 (PDT)
+ | From: bear &lt;bear@xxxxxxxxx&gt;
+ | 
+ | On Sun, 14 Aug 2005, Aubrey Jaffer wrote:
+ | 
+ | &gt; | It allows people to avoid deeply nested checks for zero,
+ | &gt; | instead testing whenever they like whether the most recent
+ | &gt; | iteration of their algorithm has produced the error object.
+ | &gt; | You can test for it and explicitly throw an exception if that's
+ | &gt; | how you want to handle it, or you can make a substitution or
+ | &gt; | correction explicitly and carry on.
+ | 
+ | &gt; Infinities do all that, and keep track of the sign of overflows
+ | &gt; as well.
+ | 
+ | Yes.  It keeps track of the sign, even in cases where the sign
+ | is ambiguous or undefined. I think this is a problem.
+ | 
+ | When something is divided by zero, pretending that the result
+ | has any particular sign at all is misleading.  This is the
+ | most common operation that results in an infinity, but it is
+ | an infinity, and not an overflow;  it is the result of a
+ | mathematically poorly defined operation. For example
+ | 
+ | (/ 32 (- 7.1 (+ 4.2 2.9)))
+ | 
+ | if performed using floating point arithmetic, is an overflow,
+ | but has positive or negative sign depending solely on rounding
+ | error.
+
+This can be the case for any function having a singularity:
+
+(tan 3.141592653589793)  ==&gt;  -122.46063538223772e-18
+(tan 3.141592653589794)  ==&gt;  765.7177843178875e-18
+
+Functions magnifying errors near singularities is one of the quirks to
+deal with when computing with flonums.
+
+ | If performed using exact arithmetic, or arithmetic in
+ | BCD where no rounding is required, it is a division by a true
+ | zero and the result is properly an unsigned infinity or NaN.
+ | IEEE 754 may recommend a sign, but if it does, then it is
+ | based on the representation, and not on any underlying
+ | mathematical reality.
+
+We can reasonably talk about mathematics with regard to the ring of
+exact integers or the field of exact rationals; but flonums correspond
+to no mathematical formalism that I know of.
+
+ | An actual overflow, such as (* 2 MAXFLONUM), has an unambiguous
+ | sign, but is not actually an infinity; it is merely a number
+ | too large to represent in our current encoding scheme.
+
+(* 2.0 MAXFLONUM) returns an infinity by the definition in SRFI-70:
+
+  `+inf.0' represents real numbers greater than can be encoded by finite
+  inexacts in the implementation (&gt; 179.76931348623157e306 for IEEE-754
+  64-bit flonums). `-inf.0' represents numbers less than can be encoded
+  by finite inexacts in the implementation (&lt; -179.76931348623157e306
+  for IEEE-754 64-bit flonums).
+
+ | Since
+ | this isn't actually an infinity, it is quite right to state
+ | that multiplying such an object by an exact zero may result
+ | in an exact zero.  In fact, it *DOES* result, mathematically
+ | speaking, in zero; 
+
+Mathematically, multiplication exists only in combination with a
+domain of eligible operands in a group, ring, or field.  An example of
+a domain is the integers.  To talk of multiplying an integer by an
+inexact number is mathematically meaningless.  One number must be
+mapped into the other's domain and the appropriate operation
+performed.
+
+ | allowing implementations to return inexact
+ | results in this case is just a bow to implementation
+ | convenience and the desire for implementations that give
+ | high speed on hardware that presents an imperfect model of
+ | mathematics.
+
+If you want to model mathematics, then use exact numbers.  SRFI-70:
+&quot;Each exact number corresponds to a single mathematical number.&quot;
+
+ | Cases where you get an actual infinity that also has an
+ | unambiguous sign are, IME, much rarer according to the laws
+ | of actual mathematics than they are in software and hardware
+ | approximations of mathematics.  This is a flaw in software,
+ | to be tolerated perhaps in the name of convenience and speed
+ | on real-life hardware and in the name of reducing the number
+ | of cases that need to be handled, but not to be mandated or
+ | required when someone may want to do the actual Right Thing
+ | instead.
+
+Exact number systems can do the &quot;Right Thing&quot;.  An algorithmic
+language should also provide the ability to calculate approximately.
+That is the domain of inexact numbers in SRFI-70.
+
+It is up to a language specification to decide how to perform
+conversions between integers and flonums, and which numerical system
+to perform mixed type/exactness operations in.
+
+Pure inexact contagion is a simpler rule than the R5RS treatment.  It
+also makes programs more portable because the exactness of results is
+no longer dependent on numerical value or implementation choices.
+
+ | &gt; | The requirements you make of rounding for inexact numbers are
+ | &gt; | reasonable-sounding, but cannot be carried forward through any
+ | &gt; | level of abstraction.
+ | 
+ | &gt;I have replaced that language with the weakest formulation yet:
+ | 
+ | &gt;  In this SRFI, the definition of inexact numbers is strengthened by
+ | &gt;  their not being subject to the caution about &quot;precision too large to
+ | &gt;  be represented in the implementation&quot;.  Only magnitudes too large
+ | &gt;  are cautioned:
+ | &gt;
+ | &gt;    For inexact numbers, it is the programmer's responsibility to
+ | &gt;    avoid using complex numbers with magnitude too large to be
+ | &gt;    represented in the implementation.
+ | 
+ | I empathize with your frustration, but: did you really mean
+ | to use the word &quot;complex&quot; here, meaning numbers with real and
+ | imaginary parts?  If so I don't think I see the logic or point
+ | of this sentence.
+
+The MAGNITUDE procedure is defined for complex numbers (which includes
+the reals).  Talking about magnitude for other numbers is making
+assumptions.
+
+ | &gt; | The SRFI also proposes to repeal an implementation's power to
+ | &gt; | return an exact number when it can prove that the result is
+ | &gt; | exactly known.  The specific example given in R5RS uses an exact
+ | &gt; | zero as an example.  This example is capital-T True, according to
+ | &gt; | laws much deeper than the surface consistency on which grounds
+ | &gt; | you object to it, because zero is a multiplicative identity
+ | &gt; | element.
+ | &gt;
+ | &gt; Exactness and inexactness are not defined mathematically by R5RS.
+ | &gt; You have objected to my attempts to define inexactness in terms
+ | &gt; of topology.  You can't have it both ways.  With as weak a
+ | &gt; formulation of inexactness as is given above, claims that exact 0
+ | &gt; trumps infinities can't appeal to mathematics.
+ | 
+ | You are correct that if the object being multiplied by an
+ | exact zero may be an actual infinity then the result is
+ | undefined.  Not only are we unable to give its exactness,
+ | we are unable to give its value.  It is an unknown number.
+
+With overflows mapping to infinities we can almost agree:
+
+  (* 0 1.e400) ==&gt; 0/0
+
+ | However, multiplication by exact zero certainly does &quot;trump&quot;
+ | mere overflows (signed numbers that are too large for the
+ | current encoding to represent).  Under your current formulation,
+ | are infinities distinguished from overflows?
+
+No.  Overflows result in infinities, like in IEEE-754.
+
+ | Do you think it would be a reasonable thing to do?
+
+Distinguishing them in error messages might be useful, but I think the
+distinction is not important enough to mandate it be testable from
+Scheme.
+
+ | Do you think it would be a reasonable thing to forbid anyone to do?
+
+Yes, I think inexactness should be contagious without exception.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00227" href="msg00227.html">Re: Wrapping up SRFI-70</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00207" href="msg00207.html">Wrapping up SRFI-70</a></strong>
+<ul><li><em>From:</em> Aubrey Jaffer</li></ul></li>
+<li><strong><a name="00211" href="msg00211.html">Re: Wrapping up SRFI-70</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+<li><strong><a name="00216" href="msg00216.html">Re: Wrapping up SRFI-70</a></strong>
+<ul><li><em>From:</em> Aubrey Jaffer</li></ul></li>
+<li><strong><a name="00219" href="msg00219.html">Re: Wrapping up SRFI-70</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00225.html">Re: Wrapping up SRFI-70</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00227.html">Re: Wrapping up SRFI-70</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00222.html">Re: Wrapping up SRFI-70</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00227.html">Re: Wrapping up SRFI-70</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00226"><strong>Date</strong></a></li>
+<li><a href="threads.html#00226"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

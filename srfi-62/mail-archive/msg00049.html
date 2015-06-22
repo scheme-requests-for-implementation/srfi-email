@@ -1,0 +1,209 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: new draft -->
+<!--X-From-R13: Bnhy Epuyvr <fpuyvrNpbzpnfg.arg> -->
+<!--X-Date: Mon, 28 Feb 2005 02:29:04 +0100 (NFT) -->
+<!--X-Message-Id: BE47DE06.9420%schlie@comcast.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: Pine.LNX.4.44.0502271230320.19664&#45;100000@autodrip.bloodandcoffee.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: new draft</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00048.html">Date Prev</a>][<a href="msg00050.html">Date Next</a>][<a href="msg00048.html">Thread Prev</a>][<a href="msg00050.html">Thread Next</a>][<a href="maillist.html#00049">Date Index</a>][<a href="threads.html#00049">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: new draft</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Taylor Campbell &lt;<a href="mailto:campbell@DOMAIN.HIDDEN">campbell@xxxxxxxxxxxxxxxxxx</a>&gt;,	&lt;<a href="mailto:srfi-62@DOMAIN.HIDDEN">srfi-62@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: new draft</li>
+<li><em>From</em>: Paul Schlie &lt;<a href="mailto:schlie@DOMAIN.HIDDEN">schlie@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 27 Feb 2005 20:28:54 -0500</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-62@DOMAIN.HIDDEN">srfi-62@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:Pine.LNX.4.44.0502271230320.19664-100000@DOMAIN.HIDDEN">Pine.LNX.4.44.0502271230320.19664-100000@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Microsoft-Entourage/11.1.0.040913</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; Taylor Campbell wrote:
+&gt; ...
+&gt;   - I've included the formal specification, based on what Al* Petrofsky
+&gt;     suggested.  (I'd like to note at this point my distaste for using
+&gt;     such cumbersome tools as BNF-style grammars for describing Lisp
+&gt;     syntax...  I attribute the complexity of the change to that, not to
+&gt;     the complexity of this SRFI; the change to the recursive-descent
+&gt;     parser shows how simple it really is.)
+
+- the complexity is due to inconsistency of the lexical scoping specified
+  resulting in the necessary surgery to scheme's otherwise simple grammar;
+  which would not be necessary if the lexical scope of an &lt;s-exp&gt; comment
+  were arguably chosen to be consistent with the languages exiting grammar.
+
+&gt; Regarding Aubrey Jaffer's use of #; for a different purpose: since the
+&gt; use of #; for S-expression comments is already well-established, and
+&gt; since it has already been decided upon for R6RS, I think it is better
+&gt; for this SRFI to stick with #; and for some other character sequence to
+&gt; be selected to substitute for SCM's somewhat obscure use of #;.
+&gt; 
+&gt; On the matter of nested comments: I am pretty firmly set on the current
+&gt; way S-expression comments work.  Since it's an extremely specialized
+&gt; case, since it has a very simple logical explanation, and since the
+&gt; current way things work is a very simple addition to a traditional Lisp
+&gt; recursive-descent S-expression parser, I'm inclined to stay with the
+&gt; status quo unless the suggested alternative can be shown to be as
+&gt; simple, in terms of logical explanation &amp; recursive-descent parser, as
+&gt; the status quo.
+
+- unfortunately not true, it's not consistent with scheme's grammar, nor
+  a consistent addition to a recursive decent parser, as it's doesn't have
+  a recursive lexical scoping semantics.
+
+- more ideally would be to recognize that it may be easily be simply treated
+  just as quote, etc. is parsed, where (comment ... (quote ...)) is
+  equivalent to (quote ... (comment ...)), as such commenting any &lt;s-exp&gt; is
+  yields an &lt;empty-s-exp&gt;, just as quoting a commented (i.e. &lt;empty-s-exp&gt;)
+  also equivalently yields an &lt;empty-s-exp&gt;.
+
+- for those so inclined, the following is a simple tweak of mzscheme's
+  reader, which does just this, and please note how it's both simpler, and
+  may actually prefer it's more consistent semantics:
+
+(which basically adds two lines, and removes 20, which may imply something)
+
+ or if preferred could forward the whole file to anyone interested.
+
+mods to read.c :
+
+...
+
+  case '#':
+    ch = scheme_getc_special_ok(port);
+    switch ( ch )
+  {
+  case EOF:
+  case SCHEME_SPECIAL:
+    scheme_read_err(port, stxsrc, line, col, pos, 1, ch, indentation,
+                    &quot;read: bad syntax `#'&quot;);
+    break;
+  case ';':
+
+#if 1 /* replaced with literally a call to an extended read_quote  */
+    return read_quote(&quot;&quot;, an_uninterned_symbol, 1, port, stxsrc, line, col,
+                      pos, ht, indentation, params);
+#elif /* eliminating the otherwise below odd semantics */
+  {
+    Scheme_Object *skipped;
+    skipped = read_inner(port, stxsrc, ht, indentation, params, 0);
+    if (SCHEME_EOFP(skipped))
+      scheme_read_err(port, stxsrc, line, col, pos, SPAN(port, pos),
+                      EOF, indentation,
+    &quot;read: expected a commented-out element for `#;' (found end-of-file)&quot;);
+    /* For resolving graphs introduced in #; : */
+    if (*ht) {
+      Scheme_Object *v;
+      v = scheme_hash_get(*ht, an_uninterned_symbol);
+      if (!v)
+    v = scheme_null;
+      v = scheme_make_pair(skipped, v);
+      scheme_hash_set(*ht, an_uninterned_symbol, v);
+    }
+
+    if (comment_mode &amp; RETURN_FOR_HASH_COMMENT)
+      return NULL;
+
+    goto start_over;
+  }
+#endif
+
+...
+
+ static Scheme_Object *
+read_quote(char *who, Scheme_Object *quote_symbol, int len,
+       Scheme_Object *port,
+       Scheme_Object *stxsrc, long line, long col, long pos,
+       Scheme_Hash_Table **ht,
+       Scheme_Object *indentation, ReadParams *params)
+{
+  Scheme_Object *obj, *ret;
+
+  obj = read_inner(port, stxsrc, ht, indentation, params, 0);
+  if (SCHEME_EOFP(obj))
+    scheme_read_err(port, stxsrc, line, col, pos, len, EOF, indentation,
+            &quot;read: expected an element for %s (found end-of-file)&quot;,
+            who);
+#if 1 /* Adding one line to effectively remove &lt;empty-s-exp&gt;'s */
+  if ((obj == NULL) || (quote_symbol == an_uninterned_symbol)) return NULL;
+#endif
+  ret = (stxsrc
+     ? scheme_make_stx_w_offset(quote_symbol, line, col, pos, len, stxsrc,
+                                STX_SRCTAG) : quote_symbol);
+  ret = scheme_make_pair(ret, scheme_make_pair(obj, scheme_null));
+  if (stxsrc)
+    ret = scheme_make_stx_w_offset(ret, line, col, pos, SPAN(port, pos),
+                                   stxsrc, STX_SRCTAG);
+  return ret;
+}
+
+...
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00050" href="msg00050.html">Re: new draft</a></strong>
+<ul><li><em>From:</em> Taylor Campbell</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00048" href="msg00048.html">new draft</a></strong>
+<ul><li><em>From:</em> Taylor Campbell</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00048.html">new draft</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00050.html">Re: new draft</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00048.html">new draft</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00050.html">Re: new draft</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00049"><strong>Date</strong></a></li>
+<li><a href="threads.html#00049"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

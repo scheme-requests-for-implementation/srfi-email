@@ -1,0 +1,323 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: when GC is permitted -->
+<!--X-From-R13: Fbz Zbeq <ybeqNrzs.arg> -->
+<!--X-Date: Thu,  8 Jan 2004 18:06:47 +0100 (NFT) -->
+<!--X-Message-Id: 200401081732.JAA08513@morrowfield.regexps.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: E1AeMEw&#45;0005uG&#45;00@mail.mumble.net -->
+<!--X-Reference: 200401072314.PAA05456@morrowfield.regexps.com -->
+<!--X-Reference: vt2vfnnrz9y.fsf@zenia.home -->
+<!--X-Reference: opr1f4lapl1ushe7@post.strato.de -->
+<!--X-Reference: vt2r7yahm8p.fsf@zenia.home -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: when GC is permitted</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00230.html">Date Prev</a>][<a href="msg00232.html">Date Next</a>][<a href="msg00290.html">Thread Prev</a>][<a href="msg00234.html">Thread Next</a>][<a href="maillist.html#00231">Date Index</a>][<a href="threads.html#00231">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: when GC is permitted</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:jimb@DOMAIN.HIDDEN">jimb@xxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: when GC is permitted</li>
+<li><em>From</em>: Tom Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 8 Jan 2004 09:32:41 -0800 (PST)</li>
+<li><em>Cc</em>: <a href="mailto:kelsey@DOMAIN.HIDDEN">kelsey@xxxxxxx</a>, <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:vt2r7yahm8p.fsf@DOMAIN.HIDDEN">vt2r7yahm8p.fsf@xxxxxxxxxx</a>&gt; (message from Jim Blandy on 08 Jan	2004 03:34:45 -0500)</li>
+<li><em>References</em>: &lt;<a href="mailto:E1AeMEw-0005uG-00@DOMAIN.HIDDEN">E1AeMEw-0005uG-00@xxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:200401072314.PAA05456@DOMAIN.HIDDEN">200401072314.PAA05456@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:vt2vfnnrz9y.fsf@DOMAIN.HIDDEN">vt2vfnnrz9y.fsf@xxxxxxxxxx</a>&gt; &lt;<a href="mailto:opr1f4lapl1ushe7@DOMAIN.HIDDEN">opr1f4lapl1ushe7@xxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:vt2r7yahm8p.fsf@DOMAIN.HIDDEN">vt2r7yahm8p.fsf@xxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+
+    &gt; From: Jim Blandy &lt;jimb@xxxxxxxxxx&gt;
+
+    &gt; I'm sorry.  I shouldn't be trying to write so late at night.
+
+Your fresh explanation is much clearer to me.   Here's what seems to
+be wrong with it :-)
+
+    &gt; In code using this SRFI's interface, there are two classes of Scheme
+    &gt; values:
+
+    &gt; [1.] Values that reside in GCPRO'd variables.
+
+    &gt; [2.] Values that reside anywhere else: in other variables,
+    &gt;      compiler-generated temporaries, and so on.
+
+Just as an aside, there's a third class (not directly related to this
+sub-thread but worth keeping in mind when thinking about the draft.
+Your second class could be more precisely stated:
+
+  [2.] Values implied by the execution of FFI-using code and which
+       may reside in a location other than a GCPRO'd varriable such
+       as in registers, compiler-generated temporaries, and so on.
+
+and the third is:
+
+  [3.] Values which reside in Scheme locations not directly accessible 
+       to FFI-using code such as the CAR and CDR of a pair or the
+       elements of a vector.
+
+The gist of my &quot;Pika from first principles&quot; argument is that we can
+eliminate [2.] entirely, and subsume [1.] into [3.] -- leaving just
+one type of Scheme value which is completely and abstractly under the
+control of the Scheme implementation.
+
+
+    &gt; Values in the first class the GC can update when it relocates objects;
+    &gt; those in the second class it cannot, because it can't find them.
+    &gt; Values in the second class are unavoidable if you're actually
+    &gt; operating on the values, since you can't control the code the compiler
+    &gt; generates.
+
+    &gt; By using the 'begin / end' pair of functions, you'd promise the
+    &gt; SRFI-50 implementation that, outside such pairs, no values of the
+    &gt; second class exist, and it is free to collect at any time.  When any
+    &gt; thread is within such a pair, there exist object references the
+    &gt; collector can't find or update, so collection has to wait until the
+    &gt; thread reaches a &quot;may gc&quot; function.
+
+    &gt; Is that better?  Or worse?  :)
+
+It's a clearer explanation.  I'm not sure how useful it is to solve
+the problem.  Consider for example that, applying the rule as you've
+stated it, all calls to any function that accepts or returns a Scheme
+value must be made from within a gc-excluding begin/end pair.
+
+A return statement in a scheme-value-returning function must rely on
+the caller of that function to be within a begin/end pair.
+
+Absent an extension to the idea, effectively all FFI-using code will
+be executed within one big critical section -- GC could never take
+place while any FFI-using function is executing.
+
+I said earlier that I didn't see how what you were proposing could be
+the same as what kelsey was talking about because it didn't explain
+the &quot;re-&quot; in &quot;exit and re-enter critical sections&quot; that he spoke of.
+
+Perhaps what he meant wasn't a need for begin/end pairs -- but instead
+two pairs of entry points:
+
+	SCHEME_ENTER_CRITICAL_SECTION
+	SCHEME_LEAVE_CRITICAL_SECTION
+
+	SCHEME_ENTER_UNCRITICAL_SECTION
+	SCHEME_LEAVE_UNCRITICAL_SECTION
+
+with rules like:
+
+~ within a single thread, critical sections may not be dynamically
+  nested directly within other critical sections.  i.e., this is
+  illegal:
+
+	SCHEME_ENTER_CRITICAL_SECTION;
+	  SCHEME_ENTER_CRITICAL_SECTION;  /* illegal */
+	  SCHEME_LEAVE_CRITICAL_SECTION;
+	SCHEME_LEAVE_CRITICAL_SECTION;
+
+~ within a single threaded system, uncritical sections may be directly
+  nested within critical sections and vice versa.   So this is legal:
+
+	SCHEME_ENTER_CRITICAL_SECTION;
+	  SCHEME_ENTER_UNCRITICAL_SECTION;
+	    SCHEME_ENTER_CRITICAL_SECTION;
+	    SCHEME_LEAVE_CRITICAL_SECTION;
+	  SCHEME_LEAVE_UNCRITICAL_SECTION;
+	SCHEME_LEAVE_CRITICAL_SECTION;
+
+~ entry to C from Scheme is implicitly within a critical section
+
+~ outside of any Scheme dynamic scope (in a thread), code is
+  implicitly within an uncritical section
+
+
+So now I can write something like:
+
+
+        scheme_value
+	foo (....scheme_value parameters ...)
+        {
+          GCPROTECT my parameters;
+          do scheme stuff;
+
+          SCHEME_ENTER_UNCRITICAL_SECTION;
+          do anything but scheme stuff here;
+          SCHEME_LEAVE_UNCRITICAL_SECTION;
+
+          do more scheme stuff;
+          return some value;
+        }
+
+Of course, the &quot;(may GC)&quot; functions are then those that may themselves
+create an uncritical section.
+
+That has a minor drawback.  To write good code using it, it would be a
+mistake to write something like:
+
+
+	while ( .... possibly very long loop ...) 
+        {
+          do scheme stuff;
+        }
+
+or anything similar.    I would have to remember to write:
+
+	while ( .... possibly very long loop ...) 
+        {
+          do scheme stuff;
+          SCHEME_ENTER_UNCRITICAL_SECTION;
+          SCHEME_LEAVE_UNCRITICAL_SECTION;
+        }
+
+or else prove that &quot;do scheme stuff&quot; involves a call to a &quot;(may GC)&quot;
+entry point.
+
+Of course -- I personally like the idea of interrupt polling and this
+is nearly the same thing -- so I won't complain too loudly about that.
+
+However, while this idea does make progress on the problem of
+scheduling some kinds of GC implementation in multi-threaded systems, 
+it still doesn't change the fact that the draft FFI fails on first
+principles.   Recall that it fails in these three ways:
+
+  1) requires that Scheme values be representable as C rvalues
+
+  2) requires that the contents of some Scheme locations be
+     referencable as the value of a C lvalue expression
+
+  3) requires that the contents of some Scheme locations be mutable
+     using the C assignment operator -- that the location be 
+     repersentable as an lvalue, that the value to be stored be
+     representable as an rvalue, and that the compiler is free to
+     implement the mutation in the manner of a C assignment operation.
+
+Let us turn our attention to the possibility of an incremental copying
+collector in a single-threaded system and see what happens wrt. to
+(3) in particular.
+
+The draft FFI proposes to allow an unbounded number of lvalues to be
+registered as GC roots.   We've established in earlier conversation
+that it is reasonable to expect those locations to be incrementally
+traced.   Even with the ENTER/LEAVE macros added, the draft will still
+permit (within a critical section):
+
+	x = y;
+
+and if `x' has already been traced, but `y' not, then `x' will be
+given a stale value -- it will violate the tri-color invariant.
+
+The only workaround the draft permits is to trace _all_ GCPROTected
+lvalues within a single uncritical section.   In other words, it
+requires a trace-step of unbounded duration.
+
+Similar problems arise with, for example, parameter passing and
+return values.
+
+And although these problems are easilly illustrated with incremental
+collectors -- they aren't unique to them.  Any collection technique
+using read and write barriers faces an analogous problem: that since
+the draft permits barrierless reads and writes of an unbounded number
+of locations between GC points, GC is forced to examine an unbounded
+number of locations to see where untrapped values may have been
+written between GC points.
+
+The spirit of the ENTER/LEAVE macros, and indeed the &quot;(may GC)&quot;
+declarations in the draft, is to guarantee the existence of &quot;GC
+points&quot; when GC may take place, guaranteeing that there are no &quot;type
+[2.] values&quot; at those points:
+
+  [2.] Values implied by the execution of FFI-using code and which
+       may reside in a location other than a GCPRO'd varriable such
+       as in registers, compiler-generated temporaries, and so on.
+
+We can understand the most fatal flaws with that goal by observing
+that:
+
+  a) Barrier techniques, whether in the GC or elsewhere, have
+     a stronger requirement than the non-existence of type [2.]
+     values:  they additionally require that the Scheme implementation
+     control reading or writing of Scheme-value-holding locations.
+
+  b) Even if we agree to blow-off barrier techniques in SRFI-50,
+     still, achieving the goal of the ENTER/LEAVE macros creates
+     a new problem: that of ensuring that GC-points occur frequently
+     enough.
+
+If, instead, we fully abstract over scheme values, scheme locations,
+and primitive operations on these things -- then both flaws are
+eliminated.
+
+-t
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00234" href="msg00234.html">Re: when GC is permitted</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00219" href="msg00219.html">Re: when GC is permitted</a></strong>
+<ul><li><em>From:</em> Richard Kelsey</li></ul></li>
+<li><strong><a name="00220" href="msg00220.html">Re: when GC is permitted</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00222" href="msg00222.html">Re: when GC is permitted</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+<li><strong><a name="00224" href="msg00224.html">Re: when GC is permitted</a></strong>
+<ul><li><em>From:</em> Felix Winkelmann</li></ul></li>
+<li><strong><a name="00227" href="msg00227.html">Re: when GC is permitted</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00230.html">Re: Couple things...</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00232.html">Re: when GC is permitted</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00290.html">Re: when GC is permitted</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00234.html">Re: when GC is permitted</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00231"><strong>Date</strong></a></li>
+<li><a href="threads.html#00231"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

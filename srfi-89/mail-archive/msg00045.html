@@ -1,0 +1,901 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: An alternative simulating keyword optional argument -->
+<!--X-From-R13: Xbb QuheyEbb <vavgNvavFrez.pbz> -->
+<!--X-Date: Thu, 13 Apr 2006 16:15:18 +0200 (MST) -->
+<!--X-Message-Id: uwtdt8sv7.fsf@iniTerm.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>An alternative simulating keyword optional argument</title>
+<link rev="made" href="mailto:init@iniTerm.com">
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00044.html">Date Prev</a>][<a href="msg00046.html">Date Next</a>][<a href="msg00037.html">Thread Prev</a>][<a href="msg00046.html">Thread Next</a>][<a href="maillist.html#00045">Date Index</a>][<a href="threads.html#00045">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>An alternative simulating keyword optional argument</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-89%40srfi.schemers.org">srfi-89@srfi.schemers.org</a></li>
+<li><em>Subject</em>: An alternative simulating keyword optional argument</li>
+<li><em>From</em>: Joo ChurlSoo &lt;<a href="mailto:init%40iniTerm.com">init@iniTerm.com</a>&gt;</li>
+<li><em>Date</em>: 13 Apr 2006 23:14:52 +0900</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-89%40srfi.schemers.org">srfi-89@srfi.schemers.org</a></li>
+<li><em>User-agent</em>: Gnus/5.09 (Gnus v5.9.0) Emacs/21.3</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+Using `non-fixed' sequence argument processing concept of SRFI-51, we can
+simulate named optional argument making use of keyword object.
+
+The following is an example:
+
+(define depth 15) 
+(define key-check
+    (check-lambda (a
+		   b
+		   #(c 11)		; positional optional variable
+		   #((width d) 22)	; named optional variable
+		   #((depth e) 33))	; named optional variable
+	  (list a b c `(width ,d) `(depth ,e))))
+(key-check 1)				      =&gt; error
+(key-check 1 2)				      =&gt; (1 2 11 (width 22) (depth 33))
+(key-check 2 1)				      =&gt; (2 1 11 (width 22) (depth 33))
+(key-check 1 2 3)			      =&gt; (1 2 3 (width 22) (depth 33))
+(key-check 1 2 3 #(depth 10))		      =&gt; (1 2 3 (width 22) (depth 10))
+(key-check 1 2 3 #(depth 10) #(width 5))      =&gt; (1 2 3 (width 5) (depth 10))
+(key-check 1 2 3 `#(depth ,depth) #(width 5)) =&gt; (1 2 3 (width 5) (depth 15))
+(key-check 1 2 3 4 5)			      =&gt; error
+
+
+The above can be expanded as follows:
+
+(define test-check
+    (check-lambda* ((a (number? a))
+		    (b (number? b) (&lt; a b))
+		    #(c 11 (number? c) (&lt; b c))
+		    #((width d) 22 (number? d) (&lt; c d))
+		    #((depth e) 33 (number? e) (&lt; d e))
+		   . f)
+	   (list a b c `(width ,d) `(depth ,e) f)))
+(test-check 1)				 =&gt; error
+(test-check 1 2)			 =&gt; (1 2 11 (width 22) (depth 33) ())
+(test-check 2 1)			 =&gt; error
+(test-check 1 2 3)			 =&gt; (1 2 3 (width 22) (depth 33) ())
+(test-check 1 2 3 #(depth 10))		 =&gt; error
+(test-check 1 2 3 #(depth 10) #(width 5))=&gt; (1 2 3 (width 5) (depth 10) ())
+(test-check 1 2 3 `#(depth ,depth) #(width 5))
+					 =&gt; (1 2 3 (width 5) (depth 15) ())
+(test-check 1 2 3 4 5)			 =&gt; (1 2 3 (width 22) (depth 33) (4 5))
+
+
+
+I've attached a rough draft.
+-- 
+Joo ChurlSoo
+
+Title
+
+LAMBDA extension
+
+Author
+
+Joo ChurlSoo
+
+Abstract
+
+This SRFI introduces COND-LAMBDA and COND-LAMBDA* that return different
+procedures according to the states of actual arguments passed in as well as
+the number of arguments, and another four macros, CHECK-LAMBDA and
+CHECK-LAMBDA*, FLOAT-LAMBDA and FLOAT-LAMBDA*, each of which creates a
+procedure that takes optional arguments and checks the states of ordinary
+arguments as well as optional arguments passed in.
+
+Rationale
+
+The COND-LAMBDA can reduce the clutter of procedures more precisely than
+CASE-LAMBDA of SRFI-16 by adding tests for the states of arguments passed in,
+such as type checking.  The CHECK-LAMBDA and FLOAT-LAMBDA reduce not only the
+clutter of various error conditionals by checking actual arguments passed in
+but also somewhat lengthy code by combining respectively `fixed' and
+`non-fixed' sequence argument processing concept of SRFI-51 into a single
+syntax.  The optional parameters that they take include not only positional
+fixed parameters but also named non-fixed parameters that are implemented
+without introducing a new data type such as keyword object.  The COND-LAMBDA*,
+CHECK-LAMBDA*, and FLOAT-LAMBDA* are LET*-like forms corresponding to
+COND-LAMBDA, CHECK-LAMBDA, and FLOAT-LAMBDA.
+
+Specification
+
+The syntax is defined in the extended BNF of R5RS.
+(cond-lambda  &lt;clause&gt;+)
+(cond-lambda* &lt;clause&gt;+)
+
+&lt;clause&gt; --&gt; (&lt;formals&gt; &lt;body&gt;)
+&lt;formals&gt; --&gt; (&lt;variable spec&gt;*)
+	    | &lt;variable&gt;
+	    | (&lt;variable spec&gt;+ . &lt;variable&gt;)
+&lt;variable spec&gt; --&gt; &lt;variable&gt;
+		  | (&lt;variable&gt; &lt;test&gt;+)
+&lt;test&gt; --&gt; &lt;expression&gt;
+			
+COND-LAMBDA is an extended form of CASE-LAMBDA of SRFI-16.  Like CASE-LAMBDA,
+it returns a procedure of the first &lt;clause&gt;, the &lt;formals&gt; of which is
+matched with the number of actual arguments.  But if there are &lt;test&gt;s and any
+of the &lt;test&gt;s returns a false value, the subsequent &lt;clause&gt; is processed in
+spite of the match.  If no &lt;clause&gt; matches, an error is signaled.  Each
+&lt;test&gt; of COND-LAMBDA* sees the values of the previous &lt;variable&gt;s of
+&lt;formals&gt; like LET*.
+
+(check-lambda  &lt;formals&gt; &lt;body&gt;)
+(check-lambda* &lt;formals&gt; &lt;body&gt;)
+
+&lt;formals&gt; --&gt;
+    | (&lt;variable spec&gt;* &lt;positional opt spec&gt;* &lt;named opt spec&gt;*)
+    | &lt;variable&gt;
+    | (&lt;variable spec&gt;+ &lt;positional opt spec&gt;* &lt;named opt spec&gt;* . &lt;variable&gt;)
+    | (&lt;positional opt spec&gt;+ &lt;named opt spec&gt;* . &lt;variable&gt;)
+    | (&lt;named opt spec&gt;+ . &lt;variable&gt;)
+&lt;variable spec&gt; --&gt; &lt;variable&gt;
+		  | (&lt;variable&gt; &lt;test&gt;+)
+&lt;positional opt spec&gt; --&gt; #(&lt;variable&gt; &lt;default value&gt; &lt;test&gt;*)
+&lt;named opt spec&gt; --&gt; #((&lt;name&gt; &lt;variable&gt;) &lt;default value&gt; &lt;test&gt;*)
+&lt;name&gt; --&gt; &lt;symbol&gt;
+&lt;default value&gt; --&gt; &lt;expression&gt;
+&lt;test&gt; --&gt; &lt;expression&gt;
+
+The &lt;formals&gt; is the same as that of COND-LAMBDA except optional variable that
+is a vector pattern.  The optional variables should be placed at the end of
+&lt;formals&gt; list, but before any dotted rest variable. And positional optional
+variables should precede named optional variables.  Unlike COND-LAMBDA, each
+macro can create a procedure that takes optional arguments.  Optional
+variables are given &lt;default value&gt;s which are taken when optional arguments
+are not present in a call.  Even though there are &lt;test&gt;s, they are not
+evaluated when the optional variable is bound to the &lt;default value&gt;.  If any
+&lt;test&gt; of optional or ordinary variable returns a false value, an error is
+signaled.  Unlike positional optional variables, named optional variables are
+not bound sequetially to the optional arguments passed in.  They seek a vector
+whose elements are two and the first element is equal to &lt;name&gt;, sequentially
+from left to right.  Then they are bound to the second elements of the sought
+vectors.  If not sought, they are bound to the &lt;default value&gt;s.  An error is
+signaled when any optional arguments remain after binding process.  But if
+there is a dotted rest variable, it is bound to the remaining arguments.  Each
+&lt;test&gt; of CHECK-LAMBDA* sees the values of the previous &lt;variable&gt;s of
+&lt;formals&gt; like LET*.
+
+(float-lambda  &lt;formals&gt; &lt;body&gt;)
+(float-lambda* &lt;formals&gt; &lt;body&gt;)
+
+&lt;formals&gt; --&gt;
+    | (&lt;variable spec&gt;* &lt;positional opt spec&gt;* &lt;named opt spec&gt;*)
+    | &lt;variable&gt;
+    | (&lt;variable spec&gt;+ &lt;positional opt spec&gt;* &lt;named opt spec&gt;* . &lt;variable&gt;)
+    | (&lt;positional opt spec&gt;+ &lt;named opt spec&gt;* . &lt;variable&gt;)
+    | (&lt;named opt spec&gt;+ . &lt;variable&gt;)
+&lt;variable spec&gt; --&gt; &lt;variable&gt;
+		  | (&lt;variable&gt; &lt;test&gt;+)
+&lt;positional opt spec&gt; --&gt; #(&lt;variable&gt; &lt;default value&gt; &lt;test&gt;*)
+&lt;named opt spec&gt; --&gt; #((&lt;name&gt; &lt;variable&gt;) &lt;default value&gt; &lt;test&gt;*)
+&lt;name&gt; --&gt; &lt;symbol&gt;
+&lt;default value&gt; --&gt; &lt;expression&gt;
+&lt;test&gt; --&gt; &lt;expression&gt;
+
+This is the same as CHECK-LAMBDA except binding method.  It temporarily binds
+an ordinary variable to each of ordinary actual arguments sequentially, until
+all &lt;test&gt;s return true values, then the ordinary variable is finally bound to
+the passed argument.  If there are no &lt;test&gt;s, the first one of the remained
+ordinary actual arguments is regarded as passing.  If any ordinary variable is
+not bound to any one of the ordinary actual arguments, an error is signaled.
+For positional optional variables, the process is the same as above except
+that &lt;default value&gt;s are bound to the corresponding optional variables
+instead of signaling an error if any optional argument does not pass the
+&lt;test&gt;s.  For named optional variables, the process is the same as that of
+CHECK-LAMBDA.  An error is signaled when any optional arguments remain after
+binding process.  But if there is a dotted rest variable, it is bound to the
+remaining arguments. Each &lt;test&gt; of FLOAT-LAMBDA* sees the values of the
+previous &lt;variable&gt;s of &lt;formals&gt; like LET*.
+
+Examples
+
+(define cond-test
+  (cond-lambda*
+   ((a) a)
+   (((a (number? a)) (b (number? b) (&lt; a b)))
+    (+ a b))
+   (((a (number? a)) (b (number? b)))
+    (- a b))
+   (((a (string? a)) (b (string? b) (&lt; (string-length a) (string-length b))))
+    (string-append a b))
+   (((a (string? a)) (b (string? b)))
+    (string-append b a))
+   ((a b) (vector a b))
+   ((a b . c) (apply list a b c))))
+(cond-test 1 2)	     =&gt; 3
+(cond-test 2 1)	     =&gt; 1
+(cond-test &quot;a&quot; &quot;bc&quot;) =&gt; &quot;abc&quot;
+(cond-test &quot;ab&quot; &quot;c&quot;) =&gt; &quot;cab&quot;
+(cond-test &quot;a&quot; 1)    =&gt; #2(&quot;a&quot; 1)
+(cond-test &quot;a&quot; 1 2)  =&gt; (&quot;a&quot; 1 2)
+
+(define check
+  (check-lambda* (a
+		  (b (number? b))
+		  (c (number? c) (&lt; b c))
+		  (d (number? d))
+		  #(e &quot;s&quot; (string? e))
+		  #(f (+ b c) (number? f))
+		  . g)
+	(list a b c d e f g)))
+(check &quot;a&quot; 1 2 3)		=&gt; (&quot;a&quot; 1 2 3 &quot;s&quot; 3 ())
+(check &quot;a&quot; 2 1 3)		=&gt; error
+(check &quot;a&quot; 1 2 3 &quot;b&quot;)		=&gt; (&quot;a&quot; 1 2 3 &quot;b&quot; 3 ())
+(check &quot;a&quot; 1 2 3 4)		=&gt; error
+(check &quot;a&quot; 1 2 3 &quot;b&quot; 4 5)	=&gt; (&quot;a&quot; 1 2 3 &quot;b&quot; 4 (5))
+
+(define float
+  (float-lambda* (a
+		  (b (number? b))
+		  (c (number? c) (&lt; b c))
+		  (d (number? d))
+		  #(e &quot;s&quot; (string? e))
+		  #(f (+ b c) (number? f))
+		  . g)
+	(list a b c d e f g)))
+(float &quot;a&quot; 1 2 3)		=&gt; (&quot;a&quot; 1 2 3 &quot;s&quot; 3 ())
+(float &quot;a&quot; 2 1 3)		=&gt; (&quot;a&quot; 2 3 1 &quot;s&quot; 5 ())
+(float &quot;a&quot; 1 2 3 &quot;b&quot;)		=&gt; (&quot;a&quot; 1 2 3 &quot;b&quot; 3 ())
+(float &quot;a&quot; 1 2 3 4)		=&gt; (&quot;a&quot; 1 2 3 &quot;s&quot; 4 ())
+(float &quot;a&quot; 1 2 3 &quot;b&quot; 4 5)	=&gt; (&quot;a&quot; 1 2 3 &quot;b&quot; 4 (5))
+	
+(define depth 15) 
+(define key-check
+    (check-lambda (a
+		   b
+		   #(c 11)
+		   #((width d) 22)
+		   #((depth e) 33))
+		  (list a b c `(width ,d) `(depth ,e))))
+(key-check 1)				      =&gt; error
+(key-check 1 2)				      =&gt; (1 2 11 (width 22) (depth 33))
+(key-check 2 1)				      =&gt; (2 1 11 (width 22) (depth 33))
+(key-check 1 2 3)			      =&gt; (1 2 3 (width 22) (depth 33))
+(key-check 1 2 3 #(depth 10))		      =&gt; (1 2 3 (width 22) (depth 10))
+(key-check 1 2 3 #(depth 10) #(width 5))      =&gt; (1 2 3 (width 5) (depth 10))
+(key-check 1 2 3 `#(depth ,depth) #(width 5)) =&gt; (1 2 3 (width 5) (depth 15))
+(key-check 1 2 3 4 5)			      =&gt; error
+
+(define test-check
+    (check-lambda* ((a (number? a))
+		    (b (number? b) (&lt; a b))
+		    #(c 11 (number? c) (&lt; b c))
+		    #((width d) 22 (number? d) (&lt; c d))
+		    #((depth e) 33 (number? e) (&lt; d e))
+		   . f)
+		   (list a b c `(width ,d) `(depth ,e) f)))
+(test-check 1)				 =&gt; error
+(test-check 1 2)			 =&gt; (1 2 11 (width 22) (depth 33) ())
+(test-check 2 1)			 =&gt; error
+(test-check 1 2 3)			 =&gt; (1 2 3 (width 22) (depth 33) ())
+(test-check 1 2 3 #(depth 10))		 =&gt; error
+(test-check 1 2 3 #(depth 10) #(width 5))=&gt; (1 2 3 (width 5) (depth 10) ())
+(test-check 1 2 3 `#(depth ,depth) #(width 5))
+					 =&gt; (1 2 3 (width 5) (depth 15) ())
+(test-check 1 2 3 4 5)			 =&gt; (1 2 3 (width 22) (depth 33) (4 5))
+
+Implementation
+
+The following implementation is written in R5RS hygienic macros and requires
+SRFI-23 (Error reporting mechanism).
+
+(define-syntax wow-check		; wow means with-or-without
+  (syntax-rules ()
+    ((wow-check (key n) v)
+     (if (and (vector? v) (= 2 (vector-length v)) (eq? 'key (vector-ref v 0)))
+	 (vector-ref v 1)
+	 (error &quot;check{float]-lambda[*]: too many arguments&quot; v)))
+    ((wow-check (key n) v t ...)
+     (if (and (vector? v) (= 2 (vector-length v)) (eq? 'key (vector-ref v 0)))
+	 (let ((n (vector-ref v 1)))
+	   (if (and t ...)
+	       n
+	       (error &quot;check{float]-lambda[*]: bad argument&quot; n 'n 't ...)))
+	 (error &quot;check{float]-lambda[*]: too many arguments&quot; v)))
+    ((wow-check n v) v)
+    ((wow-check n v t ...)
+     (let ((n v))
+       (if (and t ...)
+	   n
+	   (error &quot;check{float]-lambda[*]: bad argument&quot; n 'n 't ...))))))
+
+(define-syntax wow-check-key!
+  (syntax-rules ()
+    ((wow-check-key! z (key n) d)
+     (let ((v (car z)))
+       (if (and (vector? v)
+		(= 2 (vector-length v))
+		(eq? 'key (vector-ref v 0)))
+	   (begin (set! z (cdr z)) (vector-ref v 1))
+	   (let lp ((head (list v)) (tail (cdr z)))
+	     (if (null? tail)
+		 d
+		 (let ((v (car tail)))
+		   (if (and (vector? v)
+			    (= 2 (vector-length v))
+			    (eq? 'key (vector-ref v 0)))
+		       (begin (set! z (append (reverse head) (cdr tail)))
+			      (vector-ref v 1))
+		       (lp (cons v head) (cdr tail)))))))))
+    ((wow-check-key! z (key n) d t ...)
+     (let ((v (car z)))
+       (if (and (vector? v) (= 2 (vector-length v))
+		(eq? 'key (vector-ref v 0)))
+	   (let ((n (vector-ref v 1)))
+	     (if (and t ...)
+		 (begin (set! z (cdr z)) (vector-ref v 1))
+		 (error &quot;check-lambda[*]: bad argument&quot; n 'n 't ...)))
+	   (let lp ((head (list v)) (tail (cdr z)))
+	     (if (null? tail)
+		 d
+		 (let ((v (car tail)))
+		   (if (and (vector? v) (= 2 (vector-length v))
+			    (eq? 'key (vector-ref v 0)))
+		       (let ((n (vector-ref v 1)))
+			 (if (and t ...)
+			     (begin (set! z (append (reverse head) (cdr tail)))
+				    (vector-ref v 1))
+			     (error &quot;check-lambda[*]: bad argument&quot;
+				    n 'n 't ...)))
+		       (lp (cons v head) (cdr tail)))))))))))
+
+(define-syntax check-opt
+  (syntax-rules ()
+    ((check-opt z (nd ...) (#((key n) d t ...)) bd ...)
+     (let (nd ... (n (if (null? z)
+			 d
+			 (if (null? (cdr z))
+			     (wow-check (key n) (car z) t ...)
+			     (error &quot;check-lambda: too many arguments&quot;
+				    (cdr z))))))
+       bd ...))
+    ((check-opt z (nd ...) (#(n d t ...)) bd ...)
+     (let (nd ... (n (if (null? z)
+			 d
+			 (if (null? (cdr z))
+			     (wow-check n (car z) t ...)
+			     (error &quot;check-lambda: too many arguments&quot;
+				    (cdr z))))))
+       bd ...))
+    ((check-opt z (nd ...) (#((key n) d t ...) . e)  bd ...)
+     (let ((x (if (null? z)
+		  d
+		  (wow-check-key! z (key n) d t ...))))
+       (check-opt z (nd ... (n x)) e bd ...)))
+    ((check-opt z (nd ...) (#(n d t ...) . e)  bd ...)
+     (let ((y (if (null? z) z (cdr z)))
+	   (x (if (null? z)
+		  d
+		  (wow-check n (car z) t ...))))
+       (check-opt y (nd ... (n x)) e bd ...)))
+    ((check-opt z (nd ...) e bd ...)
+     (let (nd ... (e z)) bd ...))))
+
+(define-syntax check-opt*
+  (syntax-rules ()
+    ((check-opt* z (#((key n) d t ...)) bd ...)
+     (let ((n (if (null? z)
+		  d
+		  (if (null? (cdr z))
+		      (wow-check (key n) (car z) t ...)
+		      (error &quot;check-lambda*: too many arguments&quot; (cdr z))))))
+       bd ...))
+    ((check-opt* z (#(n d t ...)) bd ...)
+     (let ((n (if (null? z)
+		  d
+		  (if (null? (cdr z))
+		      (wow-check n (car z) t ...)
+		      (error &quot;check-lambda*: too many arguments&quot; (cdr z))))))
+       bd ...))
+    ((check-opt* z (#((key n) d t ...) . e)  bd ...)
+     (let ((n (if (null? z)
+		  d
+		  (wow-check-key! z (key n) d t ...))))
+       (check-opt* z e bd ...)))
+    ((check-opt* z (#(n d t ...) . e)  bd ...)
+     (let ((y (if (null? z) z (cdr z)))
+	   (n (if (null? z)
+		  d
+		  (wow-check n (car z) t ...))))
+       (check-opt* y e bd ...)))
+    ((check-opt* z e bd ...)
+     (let ((e z)) bd ...))))
+
+(define-syntax check-lambda
+  (syntax-rules ()
+    ((check-lambda (#((key n) d t ...) . e) bd ...)
+     (check-lambda &quot;chk&quot; () () () (#((key n) d t ...)) e bd ...))
+    ((check-lambda (#(n d t ...) . e) bd ...)
+     (check-lambda &quot;chk&quot; () () (#(n d t ...)) () e bd ...))
+    ((check-lambda ((n t ...) . e) bd ...)
+     (check-lambda &quot;chk&quot; (tt) ((n t ...)) () () e bd ...))
+    ((check-lambda (n . e) bd ...)
+     (check-lambda &quot;chk&quot; (tt) ((n)) () () e bd ...))
+    ((check-lambda &quot;chk&quot; (tt ...) (nt ...) (v ...) (k ...) (#((key n) d t ...) . e) bd ...)
+     (check-lambda &quot;chk&quot; (tt ...) (nt ...) (v ...) (k ... #((key n) d t ...)) e bd ...))
+    ((check-lambda &quot;chk&quot; (tt ...) (nt ...) (v ...) () (#(n d t ...) . e) bd ...)
+     (check-lambda &quot;chk&quot; (tt ...) (nt ...) (v ... #(n d t ...)) () e bd ...))
+    ((check-lambda &quot;chk&quot; (tt ...) (nt ...) (v ...) (k ...) (#(n d t ...) . e) bd ...)
+     (error &quot;check-lambda: positional argument should precede named argument&quot;))
+    ((check-lambda &quot;chk&quot; (tt ...) (nt ...) () () ((n t ...) . e) bd ...)
+     (check-lambda &quot;chk&quot; (tt ... tn) (nt ... (n t ...)) () () e bd ...))
+    ((check-lambda &quot;chk&quot; (tt ...) (nt ...) () () (n . e) bd ...)
+     (check-lambda &quot;chk&quot; (tt ... tn) (nt ... (n)) () () e bd ...))
+    ((check-lambda &quot;chk&quot; () () (v ...) (k ...) e bd ...)
+     (lambda z (check-opt z () (v ... k ... . e) bd ...)))
+    ((check-lambda &quot;chk&quot; (tt ...) ((n) ...) () () e bd ...)
+     (lambda (n ... . e) bd ...))
+    ((check-lambda &quot;chk&quot; (tt ...) ((n) ...) (v ...) (k ...) e bd ...)
+     (lambda (tt ... . te)
+       (check-opt te ((n tt) ...) (v ... k ... . e) bd ...)))
+    ((check-lambda &quot;chk&quot; (tt ...) ((n t ...) ...) () () () bd ...)
+     (lambda (tt ...)
+       (let ((n (wow-check n tt t ...)) ...) bd ...)))
+    ((check-lambda &quot;chk&quot; (tt ...) ((n t ...) ...) () () e bd ...)
+     (lambda (tt ... . te)
+       (let ((n (wow-check n tt t ...)) ... (e te)) bd ...)))
+    ((check-lambda &quot;chk&quot; (tt ...) ((n t ...) ...) (v ...) (k ...) e bd ...)
+     (lambda (tt ... . te)
+       (let ((tt (wow-check n tt t ...)) ...)
+	 (check-opt te ((n tt) ...) (v ... k ... . e) bd ...))))
+    ((check-lambda e bd ...)
+     (lambda e bd ...))))
+
+(define-syntax check-lambda*
+  (syntax-rules ()
+    ((check-lambda* (#((key n) d t ...) . e) bd ...)
+     (check-lambda* &quot;chk&quot; () () () (#((key n) d t ...)) e bd ...))
+    ((check-lambda* (#(n d t ...) . e) bd ...)
+     (check-lambda* &quot;chk&quot; () () (#(n d t ...)) () e bd ...))
+    ((check-lambda* ((n t ...) . e) bd ...)
+     (check-lambda* &quot;chk&quot; (tt) ((n t ...)) () () e bd ...))
+    ((check-lambda* (n . e) bd ...)
+     (check-lambda* &quot;chk&quot; (tt) ((n)) () () e bd ...))
+    ((check-lambda* &quot;chk&quot; (tt ...) (nt ...) (v ...) (k ...) (#((key n) d t ...) . e) bd ...)
+     (check-lambda* &quot;chk&quot; (tt ...) (nt ...) (v ...) (k ... #((key n) d t ...)) e bd ...))
+    ((check-lambda* &quot;chk&quot; (tt ...) (nt ...) (v ...) () (#(n d t ...) . e) bd ...)
+     (check-lambda* &quot;chk&quot; (tt ...) (nt ...) (v ... #(n d t ...)) () e bd ...))
+    ((check-lambda* &quot;chk&quot; (tt ...) (nt ...) (v ...) (k ...) (#(n d t ...) . e) bd ...)
+     (error &quot;check-lambda*: positional argument should precede named argument&quot;))
+    ((check-lambda* &quot;chk&quot; (tt ...) (nt ...) () () ((n t ...) . e) bd ...)
+     (check-lambda* &quot;chk&quot; (tt ... tn) (nt ... (n t ...)) () () e bd ...))
+    ((check-lambda* &quot;chk&quot; (tt ...) (nt ...) () () (n . e) bd ...)
+     (check-lambda* &quot;chk&quot; (tt ... tn) (nt ... (n)) () () e bd ...))
+    ((check-lambda* &quot;chk&quot; () () (v ...) (k ...) e bd ...)
+     (lambda z (check-opt* z (v ... k ... . e) bd ...)))
+    ((check-lambda* &quot;chk&quot; (tt ...) ((n) ...) () () () bd ...)
+     (lambda (tt ...) (let* ((n tt) ...) bd ...)))
+    ((check-lambda* &quot;chk&quot; (tt ...) ((n) ...) () () e bd ...)
+     (lambda (tt ... . te) (let* ((n tt) ... (e te)) bd ...)))
+    ((check-lambda* &quot;chk&quot; (tt ...) ((n) ...) (v ...) (k ...) e bd ...)
+     (lambda (tt ... . te)
+       (let* ((n tt) ...)
+	 (check-opt* te (v ... k ... . e) bd ...))))
+    ((check-lambda* &quot;chk&quot; (tt ...) ((n t ...) ...) () () () bd ...)
+     (lambda (tt ...)
+       (let* ((n (wow-check n tt t ...)) ...) bd ...)))
+    ((check-lambda* &quot;chk&quot; (tt ...) ((n t ...) ...) () () e bd ...)
+     (lambda (tt ... . te)
+       (let* ((n (wow-check n tt t ...)) ... (e te)) bd ...)))
+    ((check-lambda* &quot;chk&quot; (tt ...) ((n t ...) ...) (v ...) (k ...) e bd ...)
+     (lambda (tt ... . te)
+       (let* ((n (wow-check n tt t ...)) ...)
+	 (check-opt* te (v ... k ... . e) bd ...))))
+    ((check-lambda* e bd ...)
+     (lambda e bd ...))))
+
+(define-syntax wow-float-key!
+  (syntax-rules ()
+    ((wow-float-key! z (key n) d)
+     (let ((v (car z)))
+       (if (and (vector? v)
+		(= 2 (vector-length v))
+		(eq? 'key (vector-ref v 0)))
+	   (begin (set! z (cdr z)) (vector-ref v 1))
+	   (let lp ((head (list v)) (tail (cdr z)))
+	     (if (null? tail)
+		 d
+		 (let ((v (car tail)))
+		   (if (and (vector? v)
+			    (= 2 (vector-length v))
+			    (eq? 'key (vector-ref v 0)))
+		       (begin (set! z (append (reverse head) (cdr tail)))
+			      (vector-ref v 1))
+		       (lp (cons v head) (cdr tail)))))))))
+    ((wow-float-key! z (key n) d t ...)
+     (let ((v (car z)))
+       (if (and (vector? v)
+		(= 2 (vector-length v))
+		(eq? 'key (vector-ref v 0))
+		(let ((n (vector-ref v 1))) (and t ...)))
+	   (begin (set! z (cdr z)) (vector-ref v 1))
+	   (let lp ((head (list v)) (tail (cdr z)))
+	     (if (null? tail)
+		 d
+		 (let ((v (car tail)))
+		   (if (and (vector? v)
+			    (= 2 (vector-length v))
+			    (eq? 'key (vector-ref v 0))
+			    (let ((n (vector-ref v 1))) (and t ...)))
+		       (begin (set! z (append (reverse head) (cdr tail)))
+			      (vector-ref v 1))
+		       (lp (cons v head) (cdr tail)))))))))
+    ((wow-float-key! z n d)
+     (let ((n (car z)))
+       (set! z (cdr z))
+       n))
+    ((wow-float-key! z n d t ...)
+     (let ((n (car z)))
+       (if (and t ...)
+	   (begin (set! z (cdr z)) n)
+	   (let lp ((head (list n)) (tail (cdr z)))
+	     (if (null? tail)
+		 d
+		 (let ((n (car tail)))
+		   (if (and t ...)
+		       (begin (set! z (append (reverse head) (cdr tail))) n)
+		       (lp (cons n head) (cdr tail)))))))))))
+
+(define-syntax float-opt
+  (syntax-rules ()
+    ((float-opt z (nd ...) (#((key n) d t ...)) bd ...)
+     (let (nd ... (n (if (null? z)
+			 d
+			 (if (null? (cdr z))
+			     (wow-check (key n) (car z) t ...)
+			     (error &quot;float-lambda: too many arguments&quot;
+				    (cdr z))))))
+       bd ...))
+    ((float-opt z (nd ...) (#(n d t ...)) bd ...)
+     (let (nd ... (n (if (null? z)
+			 d
+			 (if (null? (cdr z))
+			     (wow-check n (car z) t ...)
+			     (error &quot;float-lambda: too many arguments&quot;
+				    (cdr z))))))
+       bd ...))
+    ((float-opt z (nd ...) (#((key n) d t ...) . e) bd ...)
+     (let ((x (if (null? z)
+		  d
+		  (wow-float-key! z (key n) d t ...))))
+       (float-opt z (nd ... (n x)) e bd ...)))
+    ((float-opt z (nd ...) (#(n d t ...) . e) bd ...)
+     (let ((x (if (null? z)
+		  d
+		  (wow-float-key! z n d t ...))))
+       (float-opt z (nd ... (n x)) e bd ...)))
+    ((float-opt z ((n d) ...) e bd ...)
+     (let ((n d) ... (e z)) bd ...))))
+
+(define-syntax float-opt*
+  (syntax-rules ()
+    ((float-opt* z (#((key n) d t ...)) bd ...)
+     (let ((n (if (null? z)
+		  d
+		  (if (null? (cdr z))
+		      (wow-check (key n) (car z) t ...)
+		      (error &quot;float-lambda*: too many arguments&quot; (cdr z))))))
+       bd ...))
+    ((float-opt* z (#(n d t ...)) bd ...)
+     (let ((n (if (null? z)
+		  d
+		  (if (null? (cdr z))
+		      (wow-check n (car z) t ...)
+		      (error &quot;float-lambda*: too many arguments&quot; (cdr z))))))
+       bd ...))
+    ((float-opt* z (#((key n) d t ...) . e) bd ...)
+     (let ((n (if (null? z)
+		  d
+		  (wow-float-key! z (key n) d t ...))))
+       (float-opt* z e bd ...)))
+    ((float-opt* z (#(n d t ...) . e) bd ...)
+     (let ((n (if (null? z)
+		  d
+		  (wow-float-key! z n d t ...))))
+       (float-opt* z e bd ...)))
+    ((float-opt* z e bd ...)
+     (let ((e z)) bd ...))))
+
+(define-syntax wow-float!
+  (syntax-rules ()
+    ((wow-float! z n)
+     (let ((n (car z)))
+       (set! z (cdr z)) n))
+    ((wow-float! z n t ...)
+     (let ((n (car z)))
+       (if (and t ...)
+	   (begin (set! z (cdr z)) n)
+	   (let lp ((head (list n)) (tail (cdr z)))
+	     (if (null? tail)
+		 (error &quot;float-lambda[*]: no more argument to check&quot;
+			'n 't ... (reverse head))
+		 (let ((n (car tail)))
+		   (if (and t ...)
+		       (begin (set! z (append (reverse head) (cdr tail))) n)
+		       (lp (cons n head) (cdr tail)))))))))))
+
+(define-syntax slet
+  (syntax-rules ()
+    ((slet ((n v) ...) bd ...)
+     (slet &quot;sequential&quot; () ((n v) ...) bd ...))
+    ((slet &quot;sequential&quot; (nt ...) ((n v) nv ...) bd ...)
+     ((lambda (t) (slet &quot;sequential&quot; (nt ... (n t)) (nv ...) bd ...)) v))
+    ((slet &quot;sequential&quot; ((n t) ...) () bd ...)
+     ((lambda (n ...) bd ...) t ...))))
+
+(define-syntax float-lambda
+  (syntax-rules ()
+    ((float-lambda (#((key n) d t ...) . e) bd ...)
+     (float-lambda &quot;chk&quot; () () () (#((key n) d t ...)) e bd ...))
+    ((float-lambda (#(n d t ...) . e) bd ...)
+     (float-lambda &quot;chk&quot; () () (#(n d t ...)) () e bd ...))
+    ((float-lambda ((n t ...) . e) bd ...)
+     (float-lambda &quot;chk&quot; (tt) ((n t ...)) () () e bd ...))
+    ((float-lambda (n . e) bd ...)
+     (float-lambda &quot;chk&quot; (tt) ((n)) () () e bd ...))
+    ((float-lambda &quot;chk&quot; (tt ...) (nt ...) (v ...) (k ...) (#((key n) d t ...) . e) bd ...)
+     (float-lambda &quot;chk&quot; (tt ...) (nt ...) (v ...) (k ... #((key n) d t ...)) e bd ...))
+    ((float-lambda &quot;chk&quot; (tt ...) (nt ...) (v ...) () (#(n d t ...) . e) bd ...)
+     (float-lambda &quot;chk&quot; (tt ...) (nt ...) (v ... #(n d t ...)) () e bd ...))
+    ((float-lambda &quot;chk&quot; (tt ...) (nt ...) (v ...) (k ...) (#(n d t ...) . e) bd ...)
+     (error &quot;float-lambda: positional argument should precede named argument&quot;))
+    ((float-lambda &quot;chk&quot; (tt ...) (nt ...) () () ((n t ...) . e) bd ...)
+     (float-lambda &quot;chk&quot; (tt ... tn) (nt ... (n t ...)) () () e bd ...))
+    ((float-lambda &quot;chk&quot; (tt ...) (nt ...) () () (n . e) bd ...)
+     (float-lambda &quot;chk&quot; (tt ... tn) (nt ... (n)) () () e bd ...))
+    ((float-lambda &quot;chk&quot; () () (v ...) (k ...) e bd ...)
+     (lambda z (float-opt z () (v ... k ... . e) bd ...)))
+    ((float-lambda &quot;chk&quot; (tt ...) ((n) ...) () () e bd ...)
+     (lambda (n ... . e) bd ...))
+    ((float-lambda &quot;chk&quot; (tt ...) ((n) ...) (v ...) (k ...) e bd ...)
+     (lambda (tt ... . te)
+       (float-opt te ((n tt) ...) (v ... k ... . e) bd ...)))
+    ((float-lambda &quot;chk&quot; (tt ...) ((n t ...) ...) () () () bd ...)
+     (lambda (tt ...)
+       (let ((z (list tt ...)))
+	 ;; not for random order evaluation
+	 ;; but for sequential evaluation from right to left
+	 ;;(slet ((n (wow-float! z n t ...)) ...) bd ...))))
+	 (let ((n (wow-float! z n t ...)) ...) bd ...))))
+    ((float-lambda &quot;chk&quot; (tt ...) ((n t ...) ...) () () e bd ...)
+     (lambda (tt ... . te)
+       (let ((z (list tt ...)))
+	 ;;(slet ((n (wow-float! z n t ...)) ... (e te)) bd ...))))
+	 (let ((n (wow-float! z n t ...)) ... (e te)) bd ...))))
+    ((float-lambda &quot;chk&quot; (tt ...) ((n t ...) ...) (v ...) (k ...) e bd ...)
+     (lambda (tt ... . te)
+       (let ((z (list tt ...)))
+	 ;;(slet ((tt (wow-float! z n t ...)) ...)
+	 (let ((tt (wow-float! z n t ...)) ...)
+	   (float-opt te ((n tt) ...) (v ... k ... . e) bd ...)))))
+    ((float-lambda e bd ...)
+     (lambda e bd ...))))
+
+(define-syntax float-lambda*
+  (syntax-rules ()
+    ((float-lambda* (#((key n) d t ...) . e) bd ...)
+     (float-lambda* &quot;chk&quot; () () () (#((key n) d t ...)) e bd ...))
+    ((float-lambda* (#(n d t ...) . e) bd ...)
+     (float-lambda* &quot;chk&quot; () () (#(n d t ...)) () e bd ...))
+    ((float-lambda* ((n t ...) . e) bd ...)
+     (float-lambda* &quot;chk&quot; (tt) ((n t ...)) () () e bd ...))
+    ((float-lambda* (n . e) bd ...)
+     (float-lambda* &quot;chk&quot; (tt) ((n)) () () e bd ...))
+    ((float-lambda* &quot;chk&quot; (tt ...) (nt ...) (v ...) (k ...) (#((key n) d t ...) . e) bd ...)
+     (float-lambda* &quot;chk&quot; (tt ...) (nt ...) (v ...) (k ... #((key n) d t ...)) e bd ...))
+    ((float-lambda* &quot;chk&quot; (tt ...) (nt ...) (v ...) () (#(n d t ...) . e) bd ...)
+     (float-lambda* &quot;chk&quot; (tt ...) (nt ...) (v ... #(n d t ...)) () e bd ...))
+    ((float-lambda* &quot;chk&quot; (tt ...) (nt ...) (v ...) (k ...) (#(n d t ...) . e) bd ...)
+     (error &quot;float-lambda*: positional argument should precede named argument&quot;))
+    ((float-lambda* &quot;chk&quot; (tt ...) (nt ...) () () ((n t ...) . e) bd ...)
+     (float-lambda* &quot;chk&quot; (tt ... tn) (nt ... (n t ...)) () () e bd ...))
+    ((float-lambda* &quot;chk&quot; (tt ...) (nt ...) () () (n . e) bd ...)
+     (float-lambda* &quot;chk&quot; (tt ... tn) (nt ... (n)) () () e bd ...))
+    ((float-lambda* &quot;chk&quot; () () (v ...) (k ...) e bd ...)
+     (lambda z (float-opt* z (v ... k ... . e) bd ...)))
+    ((float-lambda* &quot;chk&quot; (tt ...) ((n) ...) () () () bd ...)
+     (lambda (tt ...) (let* ((n tt) ...) bd ...)))
+    ((float-lambda* &quot;chk&quot; (tt ...) ((n) ...) ()  () e bd ...)
+     (lambda (tt ... . te) (let* ((n tt) ... (e te)) bd ...)))
+    ((float-lambda* &quot;chk&quot; (tt ...) ((n) ...) (v ...) (k ...) e bd ...)
+     (lambda (tt ... . te)
+       (let* ((n tt) ...)
+	 (float-opt* te (v ... k ... . e) bd ...))))
+    ((float-lambda* &quot;chk&quot; (tt ...) ((n t ...) ...) () () () bd ...)
+     (lambda (tt ...)
+       (let ((z (list tt ...)))
+	 (let* ((n (wow-float! z n t ...)) ...) bd ...))))
+    ((float-lambda* &quot;chk&quot; (tt ...) ((n t ...) ...) () ()  e bd ...)
+     (lambda (tt ... . te)
+       (let ((z (list tt ...)))
+	 (let* ((n (wow-float! z n t ...)) ... (e te)) bd ...))))
+    ((float-lambda* &quot;chk&quot; (tt ...) ((n t ...) ...) (v ...) (k ...) e bd ...)
+     (lambda (tt ... . te)
+       (let ((z (list tt ...)))
+	 (let* ((n (wow-float! z n t ...)) ...)
+	   (float-opt* te (v ... k ... . e) bd ...)))))
+    ((float-lambda* e bd ...)
+     (lambda e bd ...))))
+
+(define-syntax cond-lambda
+  (syntax-rules ()
+    ((cond-lambda (formals bd ...) cl ...)
+     (lambda z (let ((len (length z)))
+		 (cond-lambda &quot;*&quot; z len (formals bd ...) cl ...))))
+    ((cond-lambda &quot;*&quot; z len (() bd ...) cl ...)
+     (if (= len 0)
+         ((lambda () bd ...))
+         (cond-lambda &quot;*&quot; z len cl ...)))
+    ((cond-lambda &quot;*&quot; z len (((n t ...) . e) bd ...) cl ...)
+     (cond-lambda &quot; &quot; z len (tt) ((n t ...)) (e bd ...) cl ...))
+    ((cond-lambda &quot;*&quot; z len ((n . e) bd ...) cl ...)
+     (cond-lambda &quot; &quot; z len (tt) ((n)) (e bd ...) cl ...))
+    ((cond-lambda &quot;*&quot; z len (e bd ...) cl ...)
+     (let ((e z)) bd ...))
+    ((cond-lambda &quot;*&quot; z len)
+     (error &quot;the arguments are not matched to any clause of cond-lambda&quot; z))
+    ((cond-lambda &quot; &quot; z len (tt ...) (nt ...) (((n t ...) . e) bd ...) cl ...)
+     (cond-lambda &quot; &quot; z len (tt ... tn) (nt ... (n t ...)) (e bd ...) cl ...))
+    ((cond-lambda &quot; &quot; z len (tt ...) (nt ...) ((n . e) bd ...) cl ...)
+     (cond-lambda &quot; &quot; z len (tt ... tn) (nt ... (n)) (e bd ...) cl ...))
+    ((cond-lambda &quot; &quot; z len (tt ...) ((n) ...) (() bd ...) cl ...)
+     (if (= len (length '(tt ...)))
+         (apply (lambda (n ...) bd ...) z)
+         (cond-lambda &quot;*&quot; z len cl ...)))
+    ((cond-lambda &quot; &quot; z len (tt ...) ((n t ...) ...) (() bd ...) cl ...)
+     (if (and (= len (length '(tt ...)))
+	      (apply (lambda (tt ...) (and (let ((n tt)) (and t ...)) ...)) z))
+	 (apply (lambda (n ...) bd ...) z)
+         (cond-lambda &quot;*&quot; z len cl ...)))
+    ((cond-lambda &quot; &quot; z len (tt ...) ((n) ...) (e bd ...) cl ...)
+     (if (&gt;= len (length '(tt ...)))
+         (apply (lambda (n ... . e) bd ...) z)
+         (cond-lambda &quot;*&quot; z len cl ...)))
+    ((cond-lambda &quot; &quot; z len (tt ...) ((n t ...) ...) (e bd ...) cl ...)
+     (if (and (&gt;= len (length '(tt ...)))
+	      (apply (lambda (tt ...) (and (let ((n tt)) (and t ...)) ...)) z))
+         (apply (lambda (n ... . e) bd ...) z)
+         (cond-lambda &quot;*&quot; z len cl ...)))))
+
+(define-syntax cond-and*
+  (syntax-rules ()
+    ((cond-and* ((n v t ...)))
+     (let ((n v))
+       (and t ...)))
+    ((cond-and* ((n v t ...) nvt ...))
+     (let ((n v))
+       (and t ... (cond-and* (nvt ...)))))))
+
+(define-syntax cond-lambda*
+  (syntax-rules ()
+    ((cond-lambda* (formals bd ...) cl ...)
+     (lambda z (let ((len (length z)))
+		 (cond-lambda* &quot;*&quot; z len (formals bd ...) cl ...))))
+    ((cond-lambda* &quot;*&quot; z len (() bd ...) cl ...)
+     (if (= len 0)
+         ((lambda () bd ...))
+         (cond-lambda* &quot;*&quot; z len cl ...)))
+    ((cond-lambda* &quot;*&quot; z len (((n t ...) . e) bd ...) cl ...)
+     (cond-lambda* &quot; &quot; z len (tt) ((n t ...)) (e bd ...) cl ...))
+    ((cond-lambda* &quot;*&quot; z len ((n . e) bd ...) cl ...)
+     (cond-lambda* &quot; &quot; z len (tt) ((n)) (e bd ...) cl ...))
+    ((cond-lambda* &quot;*&quot; z len (e bd ...) cl ...)
+     (let ((e z)) bd ...))
+    ((cond-lambda* &quot;*&quot; z len)
+     (error &quot;the arguments are not matched to any clause of cond-lambda*&quot; z))
+    ((cond-lambda* &quot; &quot; z len (tt ...) (nt ...) (((n t ...) . e) bd ...) cl ...)
+     (cond-lambda* &quot; &quot; z len (tt ... tn) (nt ... (n t ...)) (e bd ...) cl ...))
+    ((cond-lambda* &quot; &quot; z len (tt ...) (nt ...) ((n . e) bd ...) cl ...)
+     (cond-lambda* &quot; &quot; z len (tt ... tn) (nt ... (n)) (e bd ...) cl ...))
+    ((cond-lambda* &quot; &quot; z len (tt ...) ((n) ...) (() bd ...) cl ...)
+     (if (= len (length '(tt ...)))
+	 (apply (lambda (tt ...) (let* ((n tt) ...) bd ...)) z)
+         (cond-lambda* &quot;*&quot; z len cl ...)))
+    ((cond-lambda* &quot; &quot; z len (tt ...) ((n t ...) ...) (() bd ...) cl ...)
+     (if (and (= len (length '(tt ...)))
+	      (apply (lambda (tt ...) (cond-and* ((n tt t ...) ...))) z))
+	 (apply (lambda (tt ...) (let* ((n tt) ...) bd ...)) z)
+         (cond-lambda* &quot;*&quot; z len cl ...)))
+    ((cond-lambda* &quot; &quot; z len (tt ...) ((n) ...) (e bd ...) cl ...)
+     (if (&gt;= len (length '(tt ...)))
+	 (apply (lambda (tt ... . te) (let* ((n tt) ... (e te)) bd ...)) z)
+         (cond-lambda* &quot;*&quot; z len cl ...)))
+    ((cond-lambda* &quot; &quot; z len (tt ...) ((n t ...) ...) (e bd ...) cl ...)
+     (if (and (&gt;= len (length '(tt ...)))
+	      (apply (lambda (tt ...) (cond-and* ((n tt t ...) ...))) z))
+	 (apply (lambda (tt ... . te) (let* ((n tt) ... (e te)) bd ...)) z)
+         (cond-lambda* &quot;*&quot; z len cl ...)))))
+
+References
+
+[R5RS]	    Richard Kelsey, William Clinger, and Jonathan Rees: Revised(5)
+	    Report on the Algorithmic Language Scheme
+	    <a  rel="nofollow" href="http://www.schemers.org/Documents/Standards/R5Rs/">http://www.schemers.org/Documents/Standards/R5Rs/</a>
+[SRFI 16]   Lars T Hansen: Syntax for procedures of variable arity.
+	    <a  rel="nofollow" href="http://srfi.schemers.org/srfi-16/">http://srfi.schemers.org/srfi-16/</a>
+[SRFI 51]   Joo ChurlSoo: Handling rest list.
+	    <a  rel="nofollow" href="http://srfi.schemers.org/srfi-51/">http://srfi.schemers.org/srfi-51/</a>
+Scsh	    Olin Shivers, Brian Carlstrom, Martin Gasbichler, Mike Sperber
+	    <a  rel="nofollow" href="http://www.scsh.net">http://www.scsh.net</a>
+
+Copyright
+
+Copyright (c) 2006 Joo ChurlSoo.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the ``Software''), to
+deal in the Software without restriction, including without limitation the
+rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+sell copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED ``AS IS'', WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00044.html">Re: complexity of mechanism</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00046.html">highly parametric interfaces</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00037.html">how to pass a keyword as an argument?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00046.html">highly parametric interfaces</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00045"><strong>Date</strong></a></li>
+<li><a href="threads.html#00045"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

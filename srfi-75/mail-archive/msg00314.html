@@ -1,0 +1,181 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: SRFI withdrawn; comments on the possible future -->
+<!--X-From-R13: orne <orneNfbavp.arg> -->
+<!--X-Date: Fri, 26 May 2006 11:29:38 +0200 (MST) -->
+<!--X-Message-Id: Pine.LNX.4.58.0605260200200.7191@bolt.sonic.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20060525163717.E1EBE65007A@mail&#45;svr1.cs.utah.edu -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: SRFI withdrawn; comments on the possible future</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00313.html">Date Prev</a>][<a href="msg00315.html">Date Next</a>][<a href="msg00313.html">Thread Prev</a>][<a href="msg00315.html">Thread Next</a>][<a href="maillist.html#00314">Date Index</a>][<a href="threads.html#00314">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: SRFI withdrawn; comments on the possible future</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Matthew Flatt &lt;<a href="mailto:mflatt@DOMAIN.HIDDEN">mflatt@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: SRFI withdrawn; comments on the possible future</li>
+<li><em>From</em>: bear &lt;<a href="mailto:bear@DOMAIN.HIDDEN">bear@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 26 May 2006 02:29:30 -0700 (PDT)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-75@DOMAIN.HIDDEN">srfi-75@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-75@DOMAIN.HIDDEN">srfi-75@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20060525163717.E1EBE65007A@DOMAIN.HIDDEN">20060525163717.E1EBE65007A@xxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:20060525163717.E1EBE65007A@DOMAIN.HIDDEN">20060525163717.E1EBE65007A@xxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+On Thu, 25 May 2006, Matthew Flatt wrote:
+
+&gt;Straightforward additions
+&gt;-------------------------
+&gt;
+&gt;    * `char-general-category', which accepts a character and returns one
+&gt;       of 'lu, 'li, ...
+
+Requires big tables.  Library rather than core, I hope.
+
+&gt;    * `string-normalize-nfd', `string-normalize-nfkd,
+&gt;      `string-normalize-nfc', and `string-normalize-nfkc', which each
+&gt;      accept a string and produce its normalization according to normal
+&gt;      form D, KD, C, or KC, respectively.
+
+Buh.  I'd really rather keep the normalization form as
+part of the port abstraction.  A string, internally, is
+characters, full stop.  You produce a normalization form
+by writing it on a port that is defined in terms of that
+normalization form.  Or you produce whatever the internal
+representation is by reading it from a port defined in
+terms of that normalization form.
+
+These routines might be useful for converting strings to
+particular kinds of binary blobs or vice versa, but IMO
+they're not necessary.
+
+&gt;The #\newline character
+&gt;-----------------------
+&gt;
+&gt;It is likely that #\newline will be removed from Scheme leaving only
+&gt;#\linefeed. Since R6RS will pin down characters to Unicode scalar
+&gt;values, the right name for the character is #\linefeed.
+
+This seems sudden.  I'd rather see #\newline deprecated for one
+report version before removal, or ...
+
+&gt;Another view is that #\newline can serve as
+&gt;an abstaction of the end-of-line character sequence which is returned
+&gt;by read-char when the end-of-line character sequence is read (be it
+&gt;#\linefeed, or #\return, or # \return followed by #\linefeed).
+
+&gt;To tighten up the set of characters allowed in a symbol, those with
+&gt;Unicode general category Ps, Pe, Pi, Pf, Zs, Zp, Zl, Cc, or Cf will be
+&gt;disallowed in a symbol's external unquoted representation. That is,
+&gt;paired punctuation, whitespace, controls, and format characters will be
+&gt;disallowed.
+
+Reasonable, I think.  Paired punctuation in particular creates a
+class of lexemes that can be used for external representation of
+user-defined or implementation-defined types.
+
+&gt;Meanwhile, the symbol escapes are similar yet not identical to the
+&gt;escapes in strings and characters, so there is a potential for mistakes
+&gt;if the programmer is not careful. For example one might expect a\nb to
+&gt;be a valid symbol, but it is an error. Also, #\x03BB; without the
+&gt;leading hash may surprise a programmer by reading as a symbol, rather
+&gt;than producing a lexical error. Finally, syntax-highlighting and cursor
+&gt;motion commands (such as M-C-b in emacs) may be difficult to arrange in
+&gt;some editors, due to the semicolon escape terminator.
+
+I think the semicolon is a bad choice for an escape terminator
+given its use as a comment initiator.  It makes programming
+syntax-highlighting modes very context-dependent and hairy,
+and lexical handling of programs similarly context-dependent
+and hairy.  I would suggest the colon instead.
+
+Whatever format is chosen for escaping unicode characters into
+source, I hope that it is possible to run ASCII source through
+a &quot;dumb&quot; formatter that just finds instances of valid unicode
+escape sequences and replaces them with unicode codepoints when
+outputting source.  By &quot;dumb&quot; I mean that it shouldn't have to
+keep track of context.  The same escape sequence, if possible,
+should mean exactly the same thing whether it appears in a string,
+a symbol, a comment, or a character constant.  This also gives
+an advantage in parsing, because unicode source can be run through
+a dumb formatter to become ascii source, even if the programmer
+never sees the ascii source - which gives you the ability to use
+fast lexers with small tables and fast algorithms.
+
+So, assuming we pick something like \XXX: as a unicode escape,
+where XXX is a variable-length hexadecimal string and colon is a
+terminator, this becomes easy:  ASCII representation of Unicode
+character syntax is a bit funny-looking, #\\XXX:  but the \XXX:
+sequence escapes into strings, comments, and symbols exactly
+the same, you don't have to lex first in order to know what
+bits are unicode escapes, and you can easily convert ascii to
+unicode source and back again with a dumb context-insensitive
+formatting program that does nowhere near as much work as lexing.
+
+					Bear
+
+
+
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00312" href="msg00312.html">SRFI withdrawn; comments on the possible future</a></strong>
+<ul><li><em>From:</em> Matthew Flatt</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00313.html">Re: SRFI withdrawn; comments on the possible future</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00315.html">Re: SRFI withdrawn; comments on the possible future</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00313.html">Re: SRFI withdrawn; comments on the possible future</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00315.html">Re: SRFI withdrawn; comments on the possible future</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00314"><strong>Date</strong></a></li>
+<li><a href="threads.html#00314"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

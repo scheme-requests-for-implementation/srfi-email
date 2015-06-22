@@ -1,0 +1,193 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: new time and date procedures -->
+<!--X-From-R13: "Ivyy Tvgmtrenyq" <svgmtrenyqNarbqrfvp.pbz> -->
+<!--X-Date: Wed, 5 Apr 2000 09:43:20 &#45;0500 (CDT) -->
+<!--X-Message-Id: 002e01bf9f0d$4385b2d0$11969fd0@fitzgerald_nt -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200003141532.KAA06567@trex.IRO.UMontreal.CA -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>new time and date procedures</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00006.html">Date Prev</a>][<a href="msg00008.html">Date Next</a>][<a href="msg00002.html">Thread Prev</a>][<a href="msg00008.html">Thread Next</a>][<a href="maillist.html#00007">Date Index</a>][<a href="threads.html#00007">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>new time and date procedures</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &lt;<a href="mailto:srfi-19@DOMAIN.HIDDEN">srfi-19@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: new time and date procedures</li>
+<li><em>From</em>: &quot;Will Fitzgerald&quot; &lt;<a href="mailto:fitzgerald@DOMAIN.HIDDEN">fitzgerald@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 5 Apr 2000 10:43:10 -0400</li>
+<li><em>Importance</em>: Normal</li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:200003141532.KAA06567@DOMAIN.HIDDEN">200003141532.KAA06567@xxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Reply-to</em>: &lt;<a href="mailto:fitzgerald@DOMAIN.HIDDEN">fitzgerald@xxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Taking the comments so far, I'd like to suggest changing the time and
+date procedures in the following way. This isn't a complete write-up,
+and I haven't done the implementation, but I'd be glad for your
+opinions:
+
+;; data types
+
+time    : structured record second/minute/hour/day/month/year/day of
+week/
+          day of year/daylights savings time/time zone offset.
+Equivalent
+          to universal time. Implementations can vary as to whether leap
+          are included. Range is implementation specific.
+
+seconds : real, potentially inexact, corresponding to the number of
+seconds
+          from 0 to implementation specific upper range. What '0'
+corresponds to
+          in the real world is also implementation specific.
+
+Julian day number : integer, corresponding to the number of days
+          from 0 to implementation specific upper range. What '0'
+corresponds to
+          in the real world is also implementation specific.
+
+Implementations should describe the ranges of these numbers and their
+correspondence with the real world.
+
+;; get the current values
+
+(current-time)
+(current-julian-day-number) ; '0' is implementation specific
+(current-seconds)           ; '0' is implementation specific.
+                            ; convertible to time.
+(current-process-seconds)   ; '0' and value is implantation specific
+(current-run-seconds)       ; '0' and value is implementation specific
+
+Note: process-seconds and run-seconds don't have the same 0 as
+(current-seconds) seconds.
+
+;; readers
+
+; TIME
+
+(time-second time) =&gt; real (0 to 61.0) ; potentially includes leap
+seconds
+(time-minute time) =&gt; integer (0 to 59)
+(time-hour time)   =&gt; integer (0 to 23)
+(time-day time)    =&gt; integer (1 to 31)
+(time-month time)  =&gt; integer (1 to 12) (January=1, etc.)
+(time-year time)   =&gt; integer
+(time-week-day)    =&gt; integer (0 to 6) (Sunday=0 to Saturday=6).
+(time-year-day)    =&gt; integer (0 to 365)
+(time-dst? time)   =&gt; boolean (#t if observing dst, #f otherwise)
+(time-zone-offset time) =&gt; integer
+
+; JULIAN-DAY-NUMBER
+
+(julian-day-number-day jdn) =&gt; integer (1 to 31)
+(julian-day-number-month jdn) =&gt; integer (1 to 12)
+(julian-day-number-year jdn) =&gt; integer
+
+;; encoders
+
+(make-time second minute hour date month year)
+(make-time second minute hour date month year zone-offset)
+(make-julian-day-number day month year)
+
+;; writers
+
+(set-time-second! time real)
+(set-time-minute! time integer)
+(set-time-hour! time integer)
+(set-time-day! time integer)
+(set-time-month! time integer)
+(set-time-year! time integer)
+(set-time-dst?! time boolean)
+(set-time-zone-offset! time integer)
+
+;; converters. all strings are ISO formats.
+
+(time-&gt;seconds time) =&gt; real
+(seconds-&gt;time real) =&gt; time
+
+(time-&gt;julian-day-number time) =&gt; integer
+(julian-day-number-&gt;time integer) =&gt; time
+
+(julian-day-number-&gt;seconds integer) =&gt; real
+(seconds-&gt;julian-day-number real) =&gt; integer
+
+(time-&gt;string time)  =&gt; string
+(string-&gt;time string) =&gt; time
+
+(julian-day-number-&gt;string integer) =&gt; string
+(string-&gt;julian-day-number string) =&gt; integer
+
+(seconds-&gt;string seconds) =&gt; string
+(string-&gt;seconds string)  =&gt; real
+
+;; comparing procedures
+
+(time=? time1 time2) =&gt; boolean
+(time&gt;? time1 time2) =&gt; boolean
+(time&lt;? time1 time2) =&gt; boolean
+(time&gt;=? time1 time2) =&gt; boolean
+(time&lt;=? time1 time2) =&gt; boolean
+
+;; data type probes
+
+(time? time) =&gt; boolean
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00002" href="msg00002.html">Re: leap seconds</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00006.html">Re: Issue: When does Time start?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00008.html">more revisions</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00002.html">Re: leap seconds</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00008.html">more revisions</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00007"><strong>Date</strong></a></li>
+<li><a href="threads.html#00007"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

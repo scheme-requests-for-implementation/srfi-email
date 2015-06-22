@@ -1,0 +1,226 @@
+<!-- MHonArc v2.6.16 -->
+<!--X-Subject: Re: sweet&#45;expressions are not homoiconic -->
+<!--X-From-R13: "Rnivq O. Iurryre" <qjurryreNqjurryre.pbz> -->
+<!--X-Date: Mon, 27 May 2013 06:44:35 +0200 (MST) -->
+<!--X-Message-Id: E1UgpIP&#45;0004Iq&#45;39@rmm6prod02.runbox.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: CAPKQtS&#45;uMxFUtgVuTTDz3LcOxm2V0FRmgujmuUUmMh++YXY6ng@mail.gmail.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: sweet-expressions are not homoiconic</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00165.html">Date Prev</a>][<a href="msg00167.html">Date Next</a>][<a href="msg00165.html">Thread Prev</a>][<a href="msg00168.html">Thread Next</a>][<a href="maillist.html#00166">Date Index</a>][<a href="threads.html#00166">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: sweet-expressions are not homoiconic</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &quot;axch&quot; &lt;<a href="mailto:axch@DOMAIN.HIDDEN">axch@xxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: sweet-expressions are not homoiconic</li>
+<li><em>From</em>: &quot;David A. Wheeler&quot; &lt;<a href="mailto:dwheeler@DOMAIN.HIDDEN">dwheeler@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 27 May 2013 00:44:33 -0400 (EDT)</li>
+<li><em>Cc</em>: &quot;stone&quot; &lt;<a href="mailto:stone@DOMAIN.HIDDEN">stone@xxxxxxxxxxxxxxx</a>&gt;, &quot;srfi-110&quot; &lt;<a href="mailto:srfi-110@DOMAIN.HIDDEN">srfi-110@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-110@DOMAIN.HIDDEN">srfi-110@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:CAPKQtS-uMxFUtgVuTTDz3LcOxm2V0FRmgujmuUUmMh%2B%2BYXY6ng@DOMAIN.HIDDEN">CAPKQtS-uMxFUtgVuTTDz3LcOxm2V0FRmgujmuUUmMh++YXY6ng@xxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Reply-to</em>: <a href="mailto:dwheeler@DOMAIN.HIDDEN">dwheeler@xxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Alexey Radul &lt;axch@xxxxxxx&gt; wrote:
+
+&gt; I don't know whether anyone else on this list uses Emacs' Paredit mode
+&gt; <a  rel="nofollow" href="http://www.emacswiki.org/emacs/ParEdit">http://www.emacswiki.org/emacs/ParEdit</a> to edit their S-expressions,
+
+I haven't used Paredit mode, sorry.
+
+But welcome to the discussion, thanks for joining us!!!
+
+&gt; ... The key feature of s-expressions that enables the existence of Paredit
+&gt; mode (besides their extraordinary simplicity) is that every
+&gt; grammatical construct down to the token level begins and ends on a
+&gt; distinct character from every other.  Therefore, there is always at
+&gt; most one non-terminal in the parse tree of my code that begins at the
+&gt; cursor (&quot;point&quot;, in Emacs-speak), and at most one that ends there. ...
+&gt; I haven't read the spec of sweet-expressions very carefully, but it
+&gt; seems that they lack this crucial property: The expression
+&gt;   factorial{n - 1}
+&gt; begins on the same character as its subexpression factorial begins, and
+&gt; ends on the same character as its subexpression {n - 1} ends.
+
+You're correct, sweet-expressions do *not* have this property.
+In &quot;factorial{n - 1}&quot;, the closing &quot;}&quot; actually closes TWO expressions,
+because that is really (factorial {n - 1}) which is really (factorial (- n 1)).
+
+I suspect that in most cases you could arbitrarily pick one as the &quot;real&quot; one, e.g.,
+perhaps the closing &quot;}&quot; matches the leftmost edge (disambiguating the case).
+Not being a Paredit mode user, I wouldn't know if that's enough, but in *that*
+case there may be a simple solution.
+
+More fundamentally, the same thing happens with dedents.  An line
+(e.g., an empty line) may close an arbitrary number of levels. E.G.:
+aa
+! bb
+! ! cc
+! ! ! dd ; Next line is blank.
+
+The ending blank line closes a *set* of expressions; the above is (aa (bb (cc dd))).
+
+I don't see how the &quot;Paredit property&quot; could *possibly* be met by typical
+indentation-sensitive syntaxes, because every one I'm aware of allows
+multiple dedents in one line.  Forcing things otherwise would be annoying.
+
+I'm not currently convinced that the &quot;Paredit property&quot; is important, but whether
+it is or not, sweet-expressions certainly do *not* have this property, and I don't
+see how they could tweaked to have it.
+
+
+&gt; I do not grok the scholarship around parsing well enough to know
+&gt; whether this property is equivalent to being LL(1) (I expect not),
+
+It's LL(1).  The proof: I've completely defined SRFI-105 using ANTLR with
+&quot;options { k = 1; }&quot;, which forces ANTLR to be an LL(1) parser,
+and factorial{n - 1} is perfectly valid in SRFI-105.
+
+In fact, the entire formal BNF grammar of sweet-expressions is LL(1).
+One caveat: the formal grammar assumes a front-end separately processes
+indentation and generates INDENT and DEDENT tokens.  This is how
+indentation-sensitive languages are usually implemented
+(Python, for example, does this).  The Scheme reference implementation
+intentionally mirrors the BNF, making it easy to see that it corresponds
+to the formal BNF, and it's a traditional recursive-descent parser.
+
+It's easy to write a BNF that &quot;looks okay&quot; but actually has problems.
+That's why I used a specialty tool (ANTLR) to ensure that
+the grammar is unambiguous and easy to parse.
+
+
+&gt; ... In any case,
+&gt; I submit that sweet-expressions would become a much more powerful and
+&gt; effective notation if they were to obey the Paredit Property -- or,
+&gt; more broadly, if someone were to implement Paredit mode for them.
+
+Advanced editing modes are definitely desirable!!
+I think there's a reluctance to spend a lot of time creating editing modes
+when the notation itself is still in flux.  I certainly hope to see cool modes
+in the future.
+
+I *do* believe that sweet-expressions
+can be well-supported by an editing mode.
+Heck, people manage to support Python (which is indentation-sensitive)
+and C++ (which is notoriously hard to parse) with fancy editing modes.
+Compared to them, sweet-expressions should be a snap :-).
+
+&gt; I bring this up here because it would be a shame if a small
+&gt; modification to sweet-expressions were to turn out to be the
+&gt; difference between Paredit being implementable for them vs not, and if
+&gt; the SRFI were to be finalized in the wrong state.
+
+If there's a small modification that would make sweet-expressions
+better, I *really* want to hear about it now!!
+
+But I can't see how any indentation-based language could possibly meet this
+property and still be pleasant to use.  As far as the factorial{...} example
+goes, that's based on SRFI-105, which is already frozen.
+But if you have specific ideas on this, I'd love to hear it.
+
+..
+&gt; P.P.S. I was motivated to write this note in part because of the
+&gt; recurrent complaint about 10 closing parens being hard to distinguish
+&gt; from 12.  In the presence of Paredit mode this is simply a
+&gt; non-problem.  Paredit maintains the invariant that one's s-expressions
+&gt; are always well-formed (e.g., typing '(' inserts &quot;()&quot;; typing ')'
+&gt; inserts nothing but moves the next &quot;)&quot; to the cursor and steps over
+&gt; it; etc).
+
+That *invariant* I completely buy in to.
+I have a long-standing habit of always typing the closing paren if
+I'm using an editor that won't do it for me.  I recommend that in non-Lisps too.
+This eliminates the problem of having unclosed items,
+so yes, I agree that this is a useful thing to do.
+
+But that's not the problem I meant.
+
+&gt;  So I literally neither know nor care whether there are 10
+&gt; parens at the end of something or 12 -- it's always the right number.
+
+Sorry, I didn't make myself clear.
+
+Closing *all* expressions is easy enough, I agree.  Even more importantly,
+tools can do that trivially for you.  The problem is when the code
+closes some but not all expressions, and you then have to read it.
+In that case, it's not obvious which datum matches which level.
+An editor can help you when you're *typing*, but it's far less helpful when *reading*
+the code. Some folks have experimented with color, so you can see which
+expressions are at which level, but that brings its own problems.
+
+Contrast this with indentation levels.  A *non-computer* person can easily
+see which indentation level matches which.  If we can make notations that
+clear, then we can focus on the actual problems we're trying to solve
+instead of problems with the notation.  Well, that's the hope anyway.
+
+It's not impossible to read s-expressions, of course. I presume everyone
+here can read Lisp code well (I can't imagine anyone else reading a
+SRFI discussion).  My goal is to make things *better*.
+
+--- David A. Wheeler
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00168" href="msg00168.html">Re: sweet-expressions are not homoiconic</a></strong>
+<ul><li><em>From:</em> Alexey Radul</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00165" href="msg00165.html">Re: sweet-expressions are not homoiconic</a></strong>
+<ul><li><em>From:</em> Alexey Radul</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00165.html">Re: sweet-expressions are not homoiconic</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00167.html">RE: sweet-expressions are not homoiconic</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00165.html">Re: sweet-expressions are not homoiconic</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00168.html">Re: sweet-expressions are not homoiconic</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00166"><strong>Date</strong></a></li>
+<li><a href="threads.html#00166"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

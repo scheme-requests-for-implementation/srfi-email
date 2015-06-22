@@ -1,0 +1,118 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Library semantics correction -->
+<!--X-From-R13: Oaqer ina Fbaqre <naqerNabj.urg.oebja.rqh> -->
+<!--X-Date: Sat,  3 Dec 2005 18:19:50 +0100 (CET) -->
+<!--X-Message-Id: Pine.GSO.4.60.0512031208570.25267@now.het.brown.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Library semantics correction</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00054.html">Date Prev</a>][<a href="msg00056.html">Date Next</a>][<a href="msg00087.html">Thread Prev</a>][<a href="msg00064.html">Thread Next</a>][<a href="maillist.html#00055">Date Index</a>][<a href="threads.html#00055">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Library semantics correction</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-83@DOMAIN.HIDDEN">srfi-83@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Library semantics correction</li>
+<li><em>From</em>: Andre van Tonder &lt;<a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 3 Dec 2005 12:12:11 -0500 (EST)</li>
+<li><em>Cc</em>: <a href="mailto:mflatt@DOMAIN.HIDDEN">mflatt@xxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-83@DOMAIN.HIDDEN">srfi-83@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+With the semantics as stated in the document, a library will only ever
+be visited at phase 0, so a recursion step seems to be missing.  Indeed,
+the following example is not covered:
+
+  (library &quot;m&quot; &quot;scheme&quot;
+    (export u)
+    (define-syntax u (lambda (exp) (syntax 1)))
+
+  (library &quot;n&quot; &quot;scheme&quot;
+    (import (for &quot;m&quot; syntax))
+    (define-syntax v (lambda (exp) (u)))
+
+Indeed, visiting &quot;n&quot; at phase 0 requires &quot;m&quot; to be visited at phase 1 (because
+there is a reference to the macro u on the right hand side of the
+definition of v.
+
+Here is what I think needs to be added:
+
+To visit a library at phase N:
+
+    * Visit at phase N any library that is imported by this library for run time,
+      and that is not yet visited at phase N.
+    * Invoke at phase N+1 any library that is imported by this library for .... expand,
+      and that is not yet invoked at phase N+1.
+
+[ADDITION]
+    * Visit at phase N+1 any library that is imported by this library
+      for .... expand, and that is not yet visited at phase N+1.
+[END ADDITION]
+
+    * Evaluate all syntax definitions within the library.
+      (Top-level expressions are not evaluated, and the right-hand sides
+      of variable definitions are not evaluated.)
+
+Regards
+Andre
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00064" href="msg00064.html">Re: Library semantics - higher level imports</a></strong>
+<ul><li><em>From:</em> Andre van Tonder</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00054.html">Independent optimizing compilation [was: fundamental design issues]</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00056.html">Re: wrapping procedures</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00087.html">Re: Independent optimizing compilation</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00064.html">Re: Library semantics - higher level imports</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00055"><strong>Date</strong></a></li>
+<li><a href="threads.html#00055"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

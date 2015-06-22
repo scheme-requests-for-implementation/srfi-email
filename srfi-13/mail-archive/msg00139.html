@@ -1,0 +1,165 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Final changes to SRFIs 13 &#38; 14 -->
+<!--X-From-R13: fuvirefNpp.tngrpu.rqh -->
+<!--X-Date: Fri, 22 Dec 2000 22:22:17 &#45;0600 (CST) -->
+<!--X-Message-Id: 200012230422.XAA06106@mongkok.cc.gt.atl.ga.us -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Final changes to SRFIs 13 &amp; 14</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00138.html">Date Prev</a>][<a href="msg00140.html">Date Next</a>][<a href="msg00138.html">Thread Prev</a>][<a href="msg00140.html">Thread Next</a>][<a href="maillist.html#00139">Date Index</a>][<a href="threads.html#00139">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Final changes to SRFIs 13 &amp; 14</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-13@DOMAIN.HIDDEN">srfi-13@xxxxxxxxxxxxxxxxx</a>, <a href="mailto:srfi-14@DOMAIN.HIDDEN">srfi-14@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Final changes to SRFIs 13 &amp; 14</li>
+<li><em>From</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxxxxx</a></li>
+<li><em>Date</em>: Fri, 22 Dec 2000 23:22:10 -0500</li>
+<li><em>Reply-to</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>I'm done with the SRFI 13 &amp; 14 specs. I have made two changes to the 
+char-set SRFI, and one change to both SRFIs:
+  1. CHAR-SET-INDEX is now CHAR-SET-REF.
+  2. Lowered minimum number of args to CHAR-SET= &amp; CHAR-SET&lt;= from two to zero.
+  3. Added a little explanatory text describing the spec notation.
+
+I also made a few trivial changes to both sets of SRFIs, which I have
+not bothered to list (&quot;trivial&quot; at the level of spell-checking and fixing
+typos).
+
+I have up-to-date versions of the reference implementation, but I haven't
+released them to ftp.ai.mit.edu; I am going to make another careful pass
+over the source -- testing and code review -- before posting them.
+
+You can complain about these changes, but you better move fast, because I'm
+notifying Mike that the specs are ready to go. That's why I've summarised the
+changes below, to save you the trouble of reading the 135kb of spec text...
+    
+For the full documents, just click 'n view:
+    <a  rel="nofollow" href="ftp://ftp.ai.mit.edu/people/shivers/srfi/13/string-lib.txt">ftp://ftp.ai.mit.edu/people/shivers/srfi/13/string-lib.txt</a>
+    <a  rel="nofollow" href="ftp://ftp.ai.mit.edu/people/shivers/srfi/13/string-lib.html">ftp://ftp.ai.mit.edu/people/shivers/srfi/13/string-lib.html</a>
+    
+    <a  rel="nofollow" href="ftp://ftp.ai.mit.edu/people/shivers/srfi/14/cset-lib.txt">ftp://ftp.ai.mit.edu/people/shivers/srfi/14/cset-lib.txt</a>
+    <a  rel="nofollow" href="ftp://ftp.ai.mit.edu/people/shivers/srfi/14/cset-lib.html">ftp://ftp.ai.mit.edu/people/shivers/srfi/14/cset-lib.html</a>
+    
+Details of the three changes appear below, with rationales.
+    -Olin
+
+-------------------------------------------------------------------------------
+* Changed the name of CHAR-SET-INDEX to CHAR-SET-REF.
+
+	char-set-index cset cursor -&gt; char
+    
+    is the wrong name for this function. The &quot;-INDEX&quot; lexeme is used in the
+    string SRFI for a search process (historical lineage from C/Unix, not
+    really such a great name, but there you are). More importantly, the proper
+    Schemish lexeme is &quot;-REF&quot;, i.e.,
+    
+	char-set-ref cset cursor -&gt; char
+    
+    by analogy with STRING-REF, VECTOR-REF, etc.
+
+    This issue will pop up when we get to hash tables, et al., so let's sync up
+    the convention now.
+
+* Lowered the minimum number of args for CHAR-SET= and CHAR-SET&lt;= from 
+  two to zero. 
+
+   Here is the rationale from the CHAR-SET= entry:
+
+    Rationale: transitive binary relations are generally extended to n-ary
+    relations in Scheme, which enables clearer, more concise code to be
+    written. While the zero-argument and one-argument cases will almost
+    certainly not arise in first-order uses of such relations, they may well
+    arise in higher-order cases or macro-generated code. E.g., consider
+        (apply char-set= cset-list)
+    This is well-defined if the list is empty or a singleton list. Hence
+    we extend these relations to any number of arguments. Implementors
+    have reported actual uses of n-ary relations in higher-order cases
+    allowing for fewer than two arguments. The way of Scheme is to handle the
+    general case; we provide the fully general extension.
+
+    A counter-argument to this extension is that R5RS's transitive binary
+    arithmetic relations (=, &lt;, etc.) require at least two arguments, hence
+    this decision is a break with the prior convention -- although it is
+    at least one that is backwards-compatible.
+
+* Added some text to explain the [ ] and ... notation in procedure signatures.
+
+  Here is the text:
+
+    Parameters given in square brackets are optional. Unless otherwise noted
+    in the text describing the procedure, any prefix of these optional
+    parameters may be supplied, from zero arguments to the full list. When a
+    procedure returns multiple values, this is shown by listing the return
+    values in square brackets, as well. So, for example, the procedure with
+    signature
+
+	halts? f [x init-store] -&gt; [boolean integer]
+
+    would take one (F), two (F, X) or three (F, X, INPUT-STORE) input
+    parameters, and return two values, a boolean and an integer.
+
+    A parameter followed by &quot;...&quot; means zero-or-more elements. So the procedure
+    with the signature
+	sum-squares x ... -&gt; number
+    takes zero or more arguments (X ...), while the procedure with signature
+	spell-check doc dict1 dict2 ... -&gt; string-list
+    takes two required parameters (DOC and DICT1) and zero or more
+    optional parameters (DICT2 ...).
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00138.html">Re: Char sets, Unicode &amp; deadline</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00140.html">SRFI 13 &amp; 14 reference implementations posted</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00138.html">Re: Char sets, Unicode &amp; deadline</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00140.html">SRFI 13 &amp; 14 reference implementations posted</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00139"><strong>Date</strong></a></li>
+<li><a href="threads.html#00139"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

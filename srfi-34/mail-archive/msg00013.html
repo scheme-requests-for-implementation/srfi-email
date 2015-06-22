@@ -1,0 +1,129 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: raise should not change continuation -->
+<!--X-From-R13: [nep Trryrl <srryrlNWDA.G[bagerny.QO> -->
+<!--X-Date: Mon, 12 Aug 2002 14:09:41 +0200 (DFT) -->
+<!--X-Message-Id: 200208121209.g7CC9YB24119@contour.iro.umontreal.ca -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>raise should not change continuation</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00012.html">Date Prev</a>][<a href="msg00014.html">Date Next</a>][<a href="msg00034.html">Thread Prev</a>][<a href="msg00014.html">Thread Next</a>][<a href="maillist.html#00013">Date Index</a>][<a href="threads.html#00013">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>raise should not change continuation</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-34@DOMAIN.HIDDEN">srfi-34@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: raise should not change continuation</li>
+<li><em>From</em>: Marc Feeley &lt;<a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 12 Aug 2002 08:09:34 -0400</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-34@DOMAIN.HIDDEN">srfi-34@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Full-name</em>: Marc Feeley</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; (raise obj ) 
+&gt; 
+&gt;   Invokes the current exception handler on obj . The handler is called
+&gt;   in the dynamic environment of the call to raise , except that the
+&gt;   current exception handler is that in place for the call to
+&gt;   with-exception-handler that installed the handler being called. The
+&gt;   handler's continuation is otherwise unspecified.
+
+I'm sorry to say, but this definition is inconsistent with SRFI 18
+because of this section in SRFI 18:
+
+ Primitives and exceptions
+ 
+   When one of the primitives defined in this SRFI raises an exception
+   defined in this SRFI, the exception handler is called with the same
+   continuation as the primitive (i.e. it is a tail call to the
+   exception handler). This requirement avoids having to use
+   call-with-current-continuation to get the same effect in some
+   situations.
+
+In SRFI 18 the exception handler must be called with the same
+continuation as &quot;raise&quot; (and consequently the same dynamic
+environment and exception handler).
+
+The &quot;try&quot; form is important because it implicitly brings the dynamic
+environment (and exception handler) back to what it was at the time of
+the &quot;try&quot;.  &quot;with-exception-handler&quot; must be used with great care and
+understanding of the Scheme implementation because it can lead to an
+infinite recursion.  For example:
+
+  (call-with-current-continuation
+    (lambda (return)
+      (with-exception-handler
+        (lambda (exc)
+          (write (list 'got 'exception exc))
+          (return 'an-exception-was-raised)))
+      (lambda ()
+        (list 1 2 3))))
+
+In a Scheme implementation that signals heap overflows by raising an
+exception, the call (list 1 2 3) will cause the exception handler to be
+called if the 3 element list can't be allocated, which will again call
+the same exception handler when the expression (list 'got 'exception exc)
+is evaluated, etc, etc.
+
+Robust and portable code should only use the &quot;try&quot; form.
+
+Marc
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00014" href="msg00014.html">Re: raise should not change continuation</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr.  Preprocessor]</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00012.html">Re: Finally clauses</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00014.html">Re: raise should not change continuation</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00034.html">Re: Finally clauses</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00014.html">Re: raise should not change continuation</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00013"><strong>Date</strong></a></li>
+<li><a href="threads.html#00013"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

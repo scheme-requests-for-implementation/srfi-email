@@ -1,0 +1,153 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Purpose of SRFI 39 -->
+<!--X-From-R13: [nep Trryrl <srryrlNWDA.G[bagerny.QO> -->
+<!--X-Date: Mon, 13 Jan 2003 15:21:45 +0100 (NFT) -->
+<!--X-Message-Id: 200301131421.h0DELEM27197@dino00.iro.umontreal.ca -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: y9liswtz58m.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Purpose of SRFI 39</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00017.html">Date Prev</a>][<a href="msg00019.html">Date Next</a>][<a href="msg00017.html">Thread Prev</a>][<a href="msg00019.html">Thread Next</a>][<a href="maillist.html#00018">Date Index</a>][<a href="threads.html#00018">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Purpose of SRFI 39</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Purpose of SRFI 39</li>
+<li><em>From</em>: Marc Feeley &lt;<a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 13 Jan 2003 09:21:14 -0500</li>
+<li><em>Cc</em>: <a href="mailto:srfi-39@DOMAIN.HIDDEN">srfi-39@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-39@DOMAIN.HIDDEN">srfi-39@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:y9liswtz58m.fsf@DOMAIN.HIDDEN">y9liswtz58m.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	(<a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>)</li>
+<li><em>References</em>: &lt;<a href="mailto:y9liswtz58m.fsf@DOMAIN.HIDDEN">y9liswtz58m.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; I'd like to ask a question about the fundamental purpose of SRFI 39.
+&gt; 
+&gt; Is it there primarily to a) codify existing practice (which seems
+&gt; reasonable given that many Scheme implementations already have a
+&gt; parameter-like API) or b) to present a decent API for putting stuff into
+&gt; the dynamic environment?
+&gt; 
+&gt; Of course, it could be both, but I'd like to argue that it's far from
+&gt; a good API for what it's trying to do.  My two main objections are:
+&gt; 
+&gt; - The representation for parameters isn't abstract.  Of course, we
+&gt;   don't know that we'll want to do things not easily doable with the
+&gt;   procedural representation in the future, but it's possible.
+&gt;   (Similar to the case Marc argued for CALL/CC.)
+&gt; 
+&gt; - The procedure representing a parameter does two completely different
+&gt;   things depending on its number of arguments.  It may be just me, but
+&gt;   I don't think that's a particularly good design.
+
+I agree that the API of parameters is not abstract, and that this
+could be improved with separate procedures (or syntax) for creation,
+mutation, reading and binding of dynamic variables.  I did not propose
+this because of the convergence by many implementations to the
+&quot;parameters&quot; API and I wanted to place minimal burden on
+implementors/users of this API.  Moreover, the main point of SRFI 39
+is to propose the &quot;right&quot; semantics for dynamic binding in the
+presence of threads.
+
+&gt; I'd also like to point out that automatic parameter inheritance is not
+&gt; necessarily a natural choice.  In particular, it duplicates
+&gt; functionality already available via lexical scoping.  (I've seen
+&gt; arguments on this list saying that this is a good thing.  I disagree.)
+&gt; Moreover, it harbors the potential for space leaks because you create
+&gt; implicit references to objects by spawning threads.
+&gt; 
+&gt; Of course, this is a plug for our paper
+&gt; 
+&gt; Martin Gasbichler, Michael Sperber: Processes vs. User-Level Threads
+&gt; in Scsh, In The 2002 Scheme Workshop, Pittsburgh, Pa., October 2002.
+&gt; 
+&gt; available off
+&gt; 
+&gt; <a  rel="nofollow" href="http://www-pu.informatik.uni-tuebingen.de/users/sperber/papers/">http://www-pu.informatik.uni-tuebingen.de/users/sperber/papers/</a>
+&gt; 
+&gt; which discusses design choices for parameter-like facilities.
+&gt; 
+&gt; That leaves (if you agree with me) purpose a) for SRFI 39.  
+&gt; I'm not sure how many systems implement parameters and threads.
+&gt; MzScheme does and (as has been pointed out) doesn't do sharing for
+&gt; mutable parameter storage.  I think that's a good argument for having
+&gt; SRFI 39 agree with MzScheme's way of doing things, or eliding mutable
+&gt; parameters (as has been suggested) entirely.
+
+I strongly believe that MzScheme's way (mutation without sharing) is
+wrong.  It prevents a thread T1 from invoking a continuation C that
+was created in another thread T2, because T1 can't reinstate C's
+dynamic environment properly.  The only way this can work in the
+presence of mutable dynamic variables is if it is possible for
+different threads to share the dynamic environment.  This is what
+I'm proposing.
+
+Marc
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00019" href="msg00019.html">Re: Purpose of SRFI 39</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr. Preprocessor]</li></ul></li>
+<li><strong><a name="00020" href="msg00020.html">Re: Purpose of SRFI 39</a></strong>
+<ul><li><em>From:</em> felix</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00017" href="msg00017.html">Purpose of SRFI 39</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr. Preprocessor]</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00017.html">Purpose of SRFI 39</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00019.html">Re: Purpose of SRFI 39</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00017.html">Purpose of SRFI 39</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00019.html">Re: Purpose of SRFI 39</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00018"><strong>Date</strong></a></li>
+<li><a href="threads.html#00018"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

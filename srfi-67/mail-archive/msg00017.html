@@ -1,0 +1,189 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: IEEE 754 floating&#45;point arithmetic is not completely ordered -->
+<!--X-From-R13: =?WEA&#45;8859&#45;1?C?Xraf_Okry_E=T8tnneq?= <wrafnkryNfbrtnneq.arg> -->
+<!--X-Date: Sat, 16 Apr 2005 17:53:38 +0200 (DFT) -->
+<!--X-Message-Id: 426134F8.3070307@soegaard.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: y9ld5sux2j1.fsf@sams.informatik.uni&#45;tuebingen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: IEEE 754 floating-point arithmetic is not completely ordered</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00016.html">Date Prev</a>][<a href="msg00018.html">Date Next</a>][<a href="msg00016.html">Thread Prev</a>][<a href="msg00018.html">Thread Next</a>][<a href="maillist.html#00017">Date Index</a>][<a href="threads.html#00017">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: IEEE 754 floating-point arithmetic is not completely ordered</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Bradley Lucier &lt;<a href="mailto:lucier@DOMAIN.HIDDEN">lucier@xxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: IEEE 754 floating-point arithmetic is not completely ordered</li>
+<li><em>From</em>: Jens Axel S&#xF8;gaard &lt;<a href="mailto:jensaxel@DOMAIN.HIDDEN">jensaxel@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 16 Apr 2005 17:53:28 +0200</li>
+<li><em>Cc</em>: <a href="mailto:srfi-67@DOMAIN.HIDDEN">srfi-67@xxxxxxxxxxxxxxxxx</a>,	Sebastian Egner &lt;<a href="mailto:sebastian.egner@DOMAIN.HIDDEN">sebastian.egner@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-67@DOMAIN.HIDDEN">srfi-67@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:y9ld5sux2j1.fsf@DOMAIN.HIDDEN">y9ld5sux2j1.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:y9ld5sux2j1.fsf@DOMAIN.HIDDEN">y9ld5sux2j1.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mozilla Thunderbird 0.7.3 (Windows/20040803)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+Bradley Lucier wrote:
+
+&gt; Sebastian Egner wrote:
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+So my suggestion: COMPARE-REAL throws and error on NaN arguments, and
+
+-INF &lt; negative REALs &lt; -0.0 = 0 = +0.0 &lt; positive REALs &lt; +INF.
+
+What would be your suggestion?
+</pre></blockquote></blockquote><pre style="margin: 0em;">
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><tt>Well, it depends on what your goal is.  You go to a lot of trouble to 
+</tt><tt>build a total order on all Scheme values (why, I haven't really figured 
+</tt><tt>out yet), so I would argue (0) that it *should* be a total order on all 
+</tt><tt>scheme values, (1) that any two values that are not eqv? should not 
+</tt><tt>compare equal in your total order, and (2) that eqv? on IEEE 
+</tt><tt>floating-point should compare at the sign bit, the biased exponent, and 
+</tt><tt>the mantissa (which are all defined for NaNs and +-0.).
+</tt></blockquote><pre style="margin: 0em;">
+
+Here are some potential goals:
+
+1) compare-real should mimick the behaviour of &lt; and =
+2) compare-real should do the &quot;right thing&quot; w.r.t numerical calculations
+3) default-compare should define a total order on almost all Scheme values
+
+
+ad 1)
+
+  From a user perspective it is nice that (&lt;? x y) behaves exactly
+  as (&lt; x y).
+
+  From an efficiency perspective defining compare-real in terms of
+  the built-in &lt; and = is efficient (in Schemes where compare-real
+  isn't a primitive).
+
+  The down side of 1) is that compare-real will be just as
+  underspecified w.r.t NaN and Inf as &lt; and = are in R5RS.
+
+ad 2)
+
+  This demands a specification of how -inf, +inf, NaN, +0.0, 0.0 and -0.0
+  should be treated. What the &quot;right thing&quot; is I don't know.
+  Should the zeros be considered equal or not? In a randomly picked
+  implementation (PLT Scheme) the current behaviour is:
+
+    &gt; (&lt; -0.0 +0.0)
+    #f
+    &gt; (eqv? +0.0 -0.0)
+    #t
+    &gt; (= +0.0 -0.0)
+    #t
+    &gt; (eq? +0.0 -0.0)
+    #f
+
+  What would a numerical analyst prefer?
+
+  The other thing to consider is NaN. In PLT Scheme NaN is &quot;incomparable&quot;
+  to other numbers (and itself!):
+
+     &gt; (&lt; +nan.0 1)
+     #f
+     &gt; (&lt; 1 +nan.0)
+     #f
+     &gt; (= +nan.0 +nan.0)
+     #f
+
+  Since compare functions are transitive this treatment of NaN is hopeless.
+  Either NaN should be larger (or smaller) than all other numbers or
+  comparing with NaN provoke an error. Which behaviour is the &quot;right thing&quot;
+  I don't know.
+
+ad 3)
+
+  Having a total order on all Scheme values is convenient when working
+  with heterogenous data structures. Sorting a list of numbers without
+  worrying whether NaN is a member or not would be a good thing.
+
+
+Of these goals I consider 1) and 2) the most important, since it
+is quite easy to new compare functions in case of 3).
+
+Would it be advantageous to have both an compare-real for 1) and an
+compare-ieee-real for 2) ?
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><tt>Put the three together and I would compare -0.0 and +0.0 as different, 
+</tt><tt>and the various NaN's artificially in terms of the values of the sign 
+</tt><tt>bit, the biased exponent (which is the maximum value) and the mantissa 
+</tt><tt>(which must be nonzero).  It might be natural to order all NaNs with 
+</tt><tt>sign bit 1 above +inf. and all NaNs with sign bit -1 below -inf.  I 
+</tt><tt>would also order -0. before 0.
+</tt></blockquote><pre style="margin: 0em;">
+
+Oops. In the above discussion I ignored the problem of different NaNs.
+
+--
+Jens Axel S&#xF8;gaard
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00019" href="msg00019.html">Circular structures [was Re: IEEE 754 floating-point arithmetic is not completely ordered]</a></strong>
+<ul><li><em>From:</em> Bradley Lucier</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00016" href="msg00016.html">Re: IEEE 754 floating-point arithmetic is not completely ordered</a></strong>
+<ul><li><em>From:</em> Bradley Lucier</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00016.html">Re: IEEE 754 floating-point arithmetic is not completely ordered</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00018.html">Re: Circular structures [was Re: IEEE 754 floating-point arithmetic is not completely ordered]</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00016.html">Re: IEEE 754 floating-point arithmetic is not completely ordered</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00018.html">Re: Circular structures [was Re: IEEE 754 floating-point arithmetic is not completely ordered]</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00017"><strong>Date</strong></a></li>
+<li><a href="threads.html#00017"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

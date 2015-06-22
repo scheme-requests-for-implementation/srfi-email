@@ -1,0 +1,178 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Problems with field initialization: Proposal -->
+<!--X-From-R13: [vpunry Ecreore <fcreoreNvasbezngvx.hav&#45;ghrovatra.qr> -->
+<!--X-Date: Fri, 16 Sep 2005 19:12:34 +0200 (MST) -->
+<!--X-Message-Id: y9lwtlhrl6q.fsf@sams.informatik.uni&#45;tuebingen.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200509151634.j8FGYlec024397@later.het.brown.edu -->
+<!--X-Reference: y9lr7bq8ag1.fsf@sams.informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: Pine.GSO.4.60.0509151624251.9460@now.het.brown.edu -->
+<!--X-Reference: y9lslw57ahr.fsf@sams.informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: Pine.GSO.4.60.0509160832130.10968@now.het.brown.edu -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Problems with field initialization: Proposal</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00022.html">Date Prev</a>][<a href="msg00024.html">Date Next</a>][<a href="msg00021.html">Thread Prev</a>][<a href="msg00022.html">Thread Next</a>][<a href="maillist.html#00023">Date Index</a>][<a href="threads.html#00023">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Problems with field initialization: Proposal</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Andre van Tonder &lt;<a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Problems with field initialization: Proposal</li>
+<li><em>From</em>: Michael Sperber &lt;<a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 16 Sep 2005 19:12:29 +0200</li>
+<li><em>Cc</em>: <a href="mailto:srfi-76@DOMAIN.HIDDEN">srfi-76@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-76@DOMAIN.HIDDEN">srfi-76@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:Pine.GSO.4.60.0509160832130.10968@DOMAIN.HIDDEN">Pine.GSO.4.60.0509160832130.10968@xxxxxxxxxxxxxxxxx</a>&gt; (Andre van	Tonder's message of &quot;Fri, 16 Sep 2005 08:56:33 -0400 (EDT)&quot;)</li>
+<li><em>References</em>: &lt;<a href="mailto:200509151634.j8FGYlec024397@DOMAIN.HIDDEN">200509151634.j8FGYlec024397@xxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:y9lr7bq8ag1.fsf@DOMAIN.HIDDEN">y9lr7bq8ag1.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:Pine.GSO.4.60.0509151624251.9460@DOMAIN.HIDDEN">Pine.GSO.4.60.0509151624251.9460@xxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:y9lslw57ahr.fsf@DOMAIN.HIDDEN">y9lslw57ahr.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:Pine.GSO.4.60.0509160832130.10968@DOMAIN.HIDDEN">Pine.GSO.4.60.0509160832130.10968@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Gnus/5.110003 (No Gnus v0.3) XEmacs/21.5-b21 (berkeley-unix)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+Andre van Tonder &lt;andre@xxxxxxxxxxxxxxxxx&gt; writes:
+
+&gt; I would like to understand this remark better.  For example, the Java 
+&gt; constructor paradigm seems more similar to my suggestion than the draft.
+
+I would think the opposite is true:
+
+(define-type foo (a b)
+  (fields
+    (a (foo-a) a)
+    (b (foo-b) b)))
+
+class Foo {
+  int a;
+  int b;
+
+
+  Foo(int a, int b) {
+    this.a = a;
+    this.b = b;
+  }
+}
+
+Note that, in the constructor, things occur in the exact same order as
+in DEFINE-TYPE, and that the association between construction
+procedure arguments and fields is by name rather than by position.
+
+&gt; How would you suggest handling, within the current spec, the following:
+&gt;
+&gt;   (define-type unit-vector
+&gt;     (constructor (lambda (x y z)
+&gt;                    (let ((length (+ (* x x) (* y y) (* z z))))
+&gt;                      (values (/ x length)
+&gt;                              (/ y length)
+&gt;                              (/ z length)))))
+&gt;     (fields x y z))
+&gt;
+&gt; or
+&gt;
+&gt;   (define-type rational
+&gt;     (constructor (lambda (x y)
+&gt;                    (let ((common (gcd x y)))
+&gt;                      (values (/ x common)
+&gt;                              (/ y common)))))
+&gt;     (fields num denom))
+&gt;
+&gt;
+&gt; If the spec cannot handle these common cases, is there a clear rationale why 
+&gt; not, and why the distinction is not arbitrary?
+
+Primarily because these didn't occur in the concrete examples we
+looked at.  (Thanks for writing them up!)  Note that I didn't say the
+present spec could handle them straightforwardly, but rather that it
+could straightforwardly be generalized to handle them.  One might
+imagine two hypothetical generalizations:
+
+- In a field spec, allowing the field names prior to the spec to be
+  used as variables in the initialization expression like so:
+
+(define-type foo (a)
+  (fields
+    (a (foo-a) a)
+    (b (foo-b) (f a))))
+
+  (Doesn't cut your mustard, but may cut someone else's.)
+
+- Add a LET clause that introduces a binding into the constructor like
+  so:
+
+(define-type rational (x y)
+  (let ((common (gcd x y))))
+  (fields
+    (num   (rational-num)    (/ x common))
+    (denom (rational-denom)  (/ y common))))
+
+ (Possibly making repeated LET clauses nest.)
+
+-- 
+Cheers =8-} Mike
+Friede, V&#xF6;lkerverst&#xE4;ndigung und &#xFC;berhaupt blabla
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00013" href="msg00013.html">Re: Problems with field initialization: Proposal</a></strong>
+<ul><li><em>From:</em> Andre van Tonder</li></ul></li>
+<li><strong><a name="00014" href="msg00014.html">Re: Problems with field initialization: Proposal</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+<li><strong><a name="00017" href="msg00017.html">Re: Problems with field initialization: Proposal</a></strong>
+<ul><li><em>From:</em> Andre van Tonder</li></ul></li>
+<li><strong><a name="00019" href="msg00019.html">Re: Problems with field initialization: Proposal</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+<li><strong><a name="00021" href="msg00021.html">Re: Problems with field initialization: Proposal</a></strong>
+<ul><li><em>From:</em> Andre van Tonder</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00022.html">Re: Problems with field initialization: Proposal</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00024.html">Re: Problems with field initialization: Proposal</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00021.html">Re: Problems with field initialization: Proposal</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00022.html">Re: Problems with field initialization: Proposal</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00023"><strong>Date</strong></a></li>
+<li><a href="threads.html#00023"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

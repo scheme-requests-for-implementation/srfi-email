@@ -1,0 +1,157 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Comments on SRFI&#45;39 -->
+<!--X-From-R13: [nggurj Tyngg <zsynggNpf.hgnu.rqh> -->
+<!--X-Date: Sun, 26 Jan 2003 15:10:37 +0100 (NFT) -->
+<!--X-Message-Id: 200301261410.h0QEAN9n040610@slow.flux.utah.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200301260845.h0Q8joW4021279@mongkok.dyndns.org -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Comments on SRFI-39</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00021.html">Date Prev</a>][<a href="msg00023.html">Date Next</a>][<a href="msg00021.html">Thread Prev</a>][<a href="msg00023.html">Thread Next</a>][<a href="maillist.html#00022">Date Index</a>][<a href="threads.html#00022">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Comments on SRFI-39</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Comments on SRFI-39</li>
+<li><em>From</em>: Matthew Flatt &lt;<a href="mailto:mflatt@DOMAIN.HIDDEN">mflatt@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 26 Jan 2003 07:12:26 -0700</li>
+<li><em>Cc</em>: <a href="mailto:srfi-39@DOMAIN.HIDDEN">srfi-39@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-39@DOMAIN.HIDDEN">srfi-39@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:200301260845.h0Q8joW4021279@DOMAIN.HIDDEN">200301260845.h0Q8joW4021279@xxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:200301260845.h0Q8joW4021279@DOMAIN.HIDDEN">200301260845.h0Q8joW4021279@xxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>At Sun, 26 Jan 2003 03:45:50 -0500, shivers@xxxxxxxxxxxxx wrote:
+&gt; Matthew asked &quot;Why mutable params?&quot; I support them, with the *exact* semantics
+&gt; Marc provides -- threads *inherit* the dynamic bindings. This allows thread
+&gt; code to be written that interacts w/other threads via shared state accessed
+&gt; from a parameter. The agent that forks off the threads controls the degree of
+&gt; sharing or insulation by arranging sharing of parameter cells.
+
+FWIW, PLT is currently exploring making all built-in parameters
+immutable.
+
+The problem is that mutable parameters make the library writer's life
+too difficult. I think you've actually made a good argument for this
+claim near the end...
+
+&gt; For example, consider a cursor-like object, such as a &quot;current working
+&gt; directory&quot; or a pointer into a database table. Two threads might want to
+&gt; move around in the directory structure or the table by altering the cursor.
+&gt; One thread changes the cursor, the other sees it. You arrange this by
+&gt; (1) binding the param to a fresh cell, then (2) spawning two threads in the
+&gt; single dynamic scope of that binding.
+
+In this relatively unusual situation, use a mutable value instead.
+
+I say it's unusual. Here's the common case: a library function wants to
+use a filename multipe times, and the filename happens to be relative,
+so that it's resolved with respect to `current-directory' each time
+it's used. The library function wil do somthing strange if
+`current-directory' changes its value half-way through.
+
+The library can protect itself by resolving the filename once, but
+that's a pain and it's difficult to remember to use that pattern every
+time.
+
+[BTW, in Windows, the OS's current-directory is process-specific (as in
+most OSes), not thread-specific. Furthermore, certain built-in dialogs
+modify the current-directory setting. The end result is that the
+OS-level currect-directory setting is useless to MzScheme, because a
+dialog might change its value at any time. Indeed, there's at least one
+unrelsolvable race condition where MzScheme must set the OS-level
+current directory before performing an exec(), and there's no way to
+block active dialogs before the exec() takes place.]
+
+&gt; Suppose, however, you want *independent* thread groups. No trouble there, 
+&gt; either. You just spawn each thread or cooperating thread group in a
+&gt; different dynamic-parameter binding.
+
+I note that you'd have to predict in advance which parameters will be
+used among the threads, or you need a &quot;create a fresh binding every
+parameter&quot; primitive. The latter is reasonable.
+
+&gt; I readily admit you can implement mutable params with immutable params and a
+&gt; one-elt vector. But I also buy Marc's story that this is not &quot;the way of
+&gt; Scheme&quot; -- you could also &quot;implement&quot; mutable *variables* with immutable vars
+&gt; &amp; one-elt vectors, but Scheme doesn't. Also, if you emulate mutable params
+&gt; with immutable params + mutable cells, you *expose the cell to parameter
+&gt; clients* -- when you just want to expose the *value of the cell*. This can
+&gt; lead to bugs, in the general way bugs happen when you expose the underlying
+&gt; encoding of a thing (e.g., you encode a structure as a three-element list or
+&gt; something like that). Providing mutable params as a primitive locks up the
+&gt; internal cell so buggy clients can't accidentally fetch it out, store it away,
+&gt; pass it around, reference it outside of scope, etc.
+
+Doesn't the same thing happens with mutable parameters? If you want to
+grab the current binding, just grab the continuation.
+
+&gt; Sound like an abstract objection? It's pretty concrete, actually, by which I
+&gt; mean that it's not an unrealistic bug -- it's the kind of bug you would expect
+&gt; to see in real code.
+
+I absolutely agree, and I think the same sort of bugs happen when
+threads share mutable bindings.
+
+Matthew
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00021" href="msg00021.html">Comments on SRFI-39</a></strong>
+<ul><li><em>From:</em> shivers</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00021.html">Comments on SRFI-39</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00023.html">Re: Comments on SRFI-39</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00021.html">Comments on SRFI-39</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00023.html">Re: Comments on SRFI-39</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00022"><strong>Date</strong></a></li>
+<li><a href="threads.html#00022"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

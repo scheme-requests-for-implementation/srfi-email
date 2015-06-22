@@ -1,0 +1,139 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Octet vs Char (Re: strings draft) -->
+<!--X-From-R13: Euveb Ynjnv <fuvebNynin.arg> -->
+<!--X-Date: Mon, 26 Jan 2004 10:58:21 +0100 (MET) -->
+<!--X-Message-Id: 20040125.235807.67880629.shiro@lava.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20040122.190329.579644543.shiro@lava.net -->
+<!--X-Reference: 200401240045.QAA28248@morrowfield.regexps.com -->
+<!--X-Reference: 20040123.172656.899859146.shiro@lava.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Octet vs Char (Re: strings draft)</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00415.html">Date Prev</a>][<a href="msg00417.html">Date Next</a>][<a href="msg00401.html">Thread Prev</a>][<a href="msg00417.html">Thread Next</a>][<a href="maillist.html#00416">Date Index</a>][<a href="threads.html#00416">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Octet vs Char (Re: strings draft)</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a></li>
+<li><em>Subject</em>: Octet vs Char (Re: strings draft)</li>
+<li><em>From</em>: Shiro Kawai &lt;<a href="mailto:shiro@DOMAIN.HIDDEN">shiro@xxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 25 Jan 2004 23:58:07 -1000 (HST)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20040123.172656.899859146.shiro@DOMAIN.HIDDEN">20040123.172656.899859146.shiro@xxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:20040122.190329.579644543.shiro@DOMAIN.HIDDEN">20040122.190329.579644543.shiro@xxxxxxxx</a>&gt;	&lt;<a href="mailto:200401240045.QAA28248@DOMAIN.HIDDEN">200401240045.QAA28248@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:20040123.172656.899859146.shiro@DOMAIN.HIDDEN">20040123.172656.899859146.shiro@xxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>I gave more thought about the &quot;[0..255] integer &lt;-&gt; char mapping&quot;
+issue and its consequences if I adopt it in multibyte-string
+implementation. 
+
+In short, it can be implemented in multibyte CES Scheme, and
+is useful in the cases such as to call C FFI that takes C 'char'
+argument (I think it is the original intent), and also to
+represent invalid octets in the input character stream.
+
+For multibyte CES that doesn't have sensible character mapping
+from integer range [128..255], it can use &quot;illegal&quot; byte sequence
+to represent these exceptional values.
+
+Having such a character within a string may cause some penalty:
+
+ * Two strings can't be compared directly in mb implementation;
+   since for two integers x and y,
+    (&lt; x y)  &lt;=&gt;  (char&lt; (integer-&gt;char x) (integer-&gt;char y))
+   is required, and it's not easy to encode the characters
+   corresponding to integers [128..255] into the illegal byte
+   sequences with preserving the order to other codepoints.
+
+ * Displaying a string can no longer directly writes out internal mb
+   representation (which is one of main advantage having mb string),
+   if the string contains these illegal byte sequences.
+
+But these are minimized if such a string is flagged specially,
+and the use of such special characters are relatively rare.
+
+I think using strings for binary I/O should be explicitly
+discouraged, even though an octet sequence can be represented by
+using such special characters.  It can be very inefficient
+on some implementations, and it may cause problems on ports
+that deals with character encodings.   Pure binary I/O can
+be done better using srfi-4 uniform vector and special
+binary I/O primitives.
+
+--shiro
+
+
+
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00417" href="msg00417.html">Re: Octet vs Char (Re: strings draft)</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+<li><strong><a name="00432" href="msg00432.html">Strings, one last detail.</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00365" href="msg00365.html">Re: strings draft</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+<li><strong><a name="00388" href="msg00388.html">Re: strings draft</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00391" href="msg00391.html">Re: strings draft</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00415.html">Re: strings draft</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00417.html">Re: Octet vs Char (Re: strings draft)</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00401.html">Re: strings draft</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00417.html">Re: Octet vs Char (Re: strings draft)</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00416"><strong>Date</strong></a></li>
+<li><a href="threads.html#00416"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

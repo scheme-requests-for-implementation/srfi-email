@@ -1,0 +1,186 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Pika&#45;style from first principles -->
+<!--X-From-R13: [nep Trryrl <srryrlNWDA.G[bagerny.QO> -->
+<!--X-Date: Tue,  6 Jan 2004 16:37:01 +0100 (NFT) -->
+<!--X-Message-Id: 200401061536.i06FamwI007117@baro.iro.umontreal.ca -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200401052214.OAA25274@morrowfield.regexps.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Pika-style from first principles</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00203.html">Date Prev</a>][<a href="msg00205.html">Date Next</a>][<a href="msg00169.html">Thread Prev</a>][<a href="msg00211.html">Thread Next</a>][<a href="maillist.html#00204">Date Index</a>][<a href="threads.html#00204">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Pika-style from first principles</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a></li>
+<li><em>Subject</em>: Re: Pika-style from first principles</li>
+<li><em>From</em>: Marc Feeley &lt;<a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 6 Jan 2004 10:36:48 -0500</li>
+<li><em>Cc</em>: <a href="mailto:kelsey@DOMAIN.HIDDEN">kelsey@xxxxxxx</a>, <a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>,	<a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Full-name</em>: Marc Feeley</li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:200401052214.OAA25274@DOMAIN.HIDDEN">200401052214.OAA25274@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt; (message from Tom	Lord on Mon, 5 Jan 2004 14:14:51 -0800 (PST))</li>
+<li><em>References</em>: &lt;<a href="mailto:200401052214.OAA25274@DOMAIN.HIDDEN">200401052214.OAA25274@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; In other words -- FFI implementations should be granted complete
+&gt; liberty for implementing the primitive operations on the big data
+&gt; structure that is the universe of Scheme data.  The interfaces to
+&gt; assignment, reference, and procedural transformation should all grant
+&gt; the FFI implementor complete opportunity to seize the flow of control,
+&gt; subject only to the constraint that that flow is sanely returned to C
+&gt; once the operation is committed.
+&gt; 
+&gt; Moreover, the FFI should be a procedural interface which makes no
+&gt; presumptions at all about the representation of Scheme values or of
+&gt; Scheme locations -- it need only, and therefore should only, impose
+&gt; constraints on the C reification of references to Scheme locations.
+&gt; 
+&gt; Pika and JNI/minor satisfy these abstraction requirements.  Pika does
+&gt; so with less overhead and overhead at least comperable to the draft.
+&gt; The draft soundly fails to satisfy these abstraction requirements for
+&gt; reasons listed above.
+&gt; 
+&gt; Later, I think we can make similar evaluations of the requirements for
+&gt; abstracting over Scheme's flow of control.
+
+I haven't followed the whole discussion (from lack of time, not from
+lack of interest), but what you propose above makes a lot of sense.
+
+In the Gambit FFI there is no (documented) way to access Scheme
+objects directly in C because of all the GC intricacies involved and
+because I want to have the liberty to change the object
+representation, GC, etc in the future.  The Gambit FFI always converts
+parameters and return values between the Scheme representation and the
+C representation.  This is sufficient for most &quot;normal&quot; uses of the
+FFI.  The Gambit FFI also allows the Scheme program to introduce new
+types, and the associated Scheme-to-C and C-to-Scheme conversion
+functions (note that these functions typically need to access the
+Scheme representation).  In the Gambit system, the main cases where C
+code must access Scheme objects directly is for the implementation of
+internal operations (for example to get at the encoding of an object,
+the type tag, etc) and for speed and minimizing code bloat (for
+example when it is known that a parameter or return value is an
+integer that fits in a fixnum).
+
+One interesting case I have come across where the ability to access
+Scheme objects directly seems useful is when the concrete type depends
+on some C compile-time switch and/or depends on the platform/OS.
+Here's a simplified example from the Gambit runtime system.  To
+implement file I/O the Gambit runtime relies on an &quot;open_path&quot; routine
+written in C that calls the appropriate OS routine, i.e. &quot;open&quot; under
+Unix, &quot;CreateFile&quot; under Windows, etc.  Under Unix, the file name is
+of type &quot;char*&quot;.  Under Windows (depending on a compile-time switch)
+the file name is of type &quot;unsigned char*&quot; or &quot;wchar_t*&quot; (to support
+Unicode file names).  Because at Scheme compilation time it is not
+known (for portability) what the target platform/OS is, it is not
+possible for the Scheme compiler to generate C code that directly
+calls the appropriate conversion function.  To get around this
+problem, the file name parameter can be defined to be of type
+&quot;scheme-object&quot; (rather than &quot;nonnull-char-string&quot;,
+&quot;nonnull-ucs2-string&quot;, ...) and it is the C function &quot;open_path&quot; that
+calls the appropriate conversion function.  This is not an elegant
+solution because it is tedious to write the conversion code (in
+&quot;open_path&quot;) by hand.  A more elegant solution is to use the FFI's
+type definition form.  The idea is to define a &quot;FILENAME&quot; type and use
+that as the file name type in &quot;open_path&quot; and other I/O operations,
+something like:
+
+(define-c-type FILENAME &quot;FILENAME&quot;) ; Scheme type name and C type name
+(define-c-type STREAM &quot;STREAM&quot;)     ; Scheme type name and C type name
+(define-c-function (open-path FILENAME) STREAM &quot;open_path&quot;)
+
+To avoid the tedium of writing by hand the associated Scheme-to-C and
+C-to-Scheme conversion functions (i.e. &quot;FILENAME_FROM_SCHEME&quot; and
+&quot;FILENAME_TO_SCHEME&quot;, &quot;STREAM_FROM_SCHEME&quot;, ...), a way to define type
+aliases on the C side of the FFI is useful so that one can write in a
+C header file something like:
+
+/* file: &quot;my_types.h&quot; */
+#include &quot;basic_types.h&quot;
+#ifdef UNICODE
+#define FILENAME NONNULL_UCS2STAR
+#define FILENAME_FROM_SCHEME NONNULL_UCS2STAR_FROM_SCHEME
+#define FILENAME_TO_SCHEME NONNULL_UCS2STAR_TO_SCHEME
+#else
+#define FILENAME NONNULL_CHARSTAR
+#define FILENAME_FROM_SCHEME NONNULL_CHARSTAR_FROM_SCHEME
+#define FILENAME_TO_SCHEME NONNULL_CHARSTAR_TO_SCHEME
+#endif
+
+[If someone knows of a shorter way to do the same with some fancy C
+macros please let me know!]
+
+and the function open_path is then written
+
+#include &quot;my_types.h&quot;
+STREAM open_path (FILENAME fn) { ... }
+
+I believe something like this should be supported by SRFI-50.
+
+Marc
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00211" href="msg00211.html">Re: Pika-style from first principles</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00169" href="msg00169.html">Pika-style from first principles</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00203.html">Re: A note on process</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00205.html">Re: I don't believe in &quot;(may GC)&quot;</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00169.html">Pika-style from first principles</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00211.html">Re: Pika-style from first principles</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00204"><strong>Date</strong></a></li>
+<li><a href="threads.html#00204"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

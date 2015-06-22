@@ -1,0 +1,124 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Side effects -->
+<!--X-From-R13: qloNpf.vaqvnan.rqh -->
+<!--X-Date: Sat, 29 Jul 2006 23:17:58 +0200 (MST) -->
+<!--X-Message-Id: 44cbcfb8.FoHkk/BW8z1kQm3i%dyb@garbo.cs.indiana.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: Pine.GSO.4.60.0607131029500.23942@now.het.brown.edu -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Side effects</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00067.html">Date Prev</a>][<a href="msg00069.html">Date Next</a>][<a href="msg00066.html">Thread Prev</a>][<a href="msg00067.html">Thread Next</a>][<a href="maillist.html#00068">Date Index</a>][<a href="threads.html#00068">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Side effects</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-93@DOMAIN.HIDDEN">srfi-93@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Side effects</li>
+<li><em>From</em>: <a href="mailto:dyb@DOMAIN.HIDDEN">dyb@xxxxxxxxxxxxxx</a></li>
+<li><em>Date</em>: Sat, 29 Jul 2006 17:14:32 -0400</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-93@DOMAIN.HIDDEN">srfi-93@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:Pine.GSO.4.60.0607131029500.23942@DOMAIN.HIDDEN">Pine.GSO.4.60.0607131029500.23942@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:Pine.GSO.4.60.0607131029500.23942@DOMAIN.HIDDEN">Pine.GSO.4.60.0607131029500.23942@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: nail 11.25 7/29/05</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>I believe the current specification allows either (1 1 2) or (1 2 1).  We
+know for sure that the expansion of bar is done exactly once, before the
+expansion of either foo form, and we know that each foo form is expanded
+exactly once.  We don't know in which order the foo forms will be
+expanded, however, since the order in which the variable definition rhs
+expressions and body expressions are expanded is unspecified.
+
+&gt; This seems academic, but I do think the differences could conceivably lead to 
+&gt; difficulties in macros that rely on side effects to register compile-time 
+&gt; information, as in record or object systems.  For example, if BAR were
+&gt; a record definition, I would probably feel most comfortable if I could rely on 
+&gt; the expression being epanded atomically (the first behaviour above).
+
+With the current specification, the transformer for a record definition
+would be invoked before any subsequent forms are seen, and any direct side
+effects of the transformer would happen before any subsequent forms (and
+earlier variable definition rhs expressions) are expanded.  This seems
+like a useful and sufficient guarantee to allow one to do the kinds of
+things one usually wants to do with record and object definitions.
+
+On the other hand, a straight left-to-right expansion algorithm would
+prevent certain forms of mutual recursion among variable and syntax
+definitions.  To use your object-system example, this might prevent two
+class definitions from interacting fully.  For example, consider:
+
+  (define-class C1
+    (method M1 () --- (make C2) ---))
+  (define-class C2
+    (method M2 () --- (make C1) ---))
+
+Assume the transformer for define-class sets up the information necessary
+for make to create instances of a class, either by some side effect or by
+inserting something into its output.  If the expander fully expands the C1
+definition before the C2 definition, the information for creating
+instances of C2 will not be available when the vtable definition for class
+C1---and hence the expression (make C2) in method M1---is expanded.  In
+place of (make C2) and (make C1) you can imagine object switch forms, setf
+forms for ivars, etc.
+
+Kent
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00066" href="msg00066.html">Side effects</a></strong>
+<ul><li><em>From:</em> Andre van Tonder</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00067.html">datum-&gt;syntax and generate-temporaries</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00069.html">Re: datum-&gt;syntax and generate-temporaries</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00066.html">Side effects</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00067.html">datum-&gt;syntax and generate-temporaries</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00068"><strong>Date</strong></a></li>
+<li><a href="threads.html#00068"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

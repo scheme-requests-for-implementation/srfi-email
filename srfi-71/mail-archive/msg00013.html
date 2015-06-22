@@ -1,0 +1,187 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: what about dropping rest&#45;lists? -->
+<!--X-From-R13: "@rvy I. Hna Rlxr" <arvyNarvyinaqlxr.bet> -->
+<!--X-Date: Wed, 18 May 2005 21:45:55 +0200 (DFT) -->
+<!--X-Message-Id: 17035.39785.759543.380296@christy.neilvandyke.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: PlwC0.A.CJF.2LeiCB@rotkohl -->
+<!--X-Reference: OF1AFFB35C.AA3E9CC6&#45;ONC1257005.0032932D&#45;C1257005.0032EAB2@philips.com -->
+<!--X-Reference: 17035.19072.503525.119002@christy.neilvandyke.org -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: what about dropping rest-lists?</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00012.html">Date Prev</a>][<a href="msg00014.html">Date Next</a>][<a href="msg00012.html">Thread Prev</a>][<a href="msg00001.html">Thread Next</a>][<a href="maillist.html#00013">Date Index</a>][<a href="threads.html#00013">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: what about dropping rest-lists?</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Sebastian Egner &lt;<a href="mailto:sebastian.egner@DOMAIN.HIDDEN">sebastian.egner@xxxxxxxxxxx</a>&gt;,	<a href="mailto:srfi-71@DOMAIN.HIDDEN">srfi-71@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: what about dropping rest-lists?</li>
+<li><em>From</em>: &quot;Neil W. Van Dyke&quot; &lt;<a href="mailto:neil@DOMAIN.HIDDEN">neil@xxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 18 May 2005 15:45:45 -0400</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-71@DOMAIN.HIDDEN">srfi-71@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:17035.19072.503525.119002@DOMAIN.HIDDEN">17035.19072.503525.119002@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:PlwC0.A.CJF.2LeiCB@DOMAIN.HIDDEN">PlwC0.A.CJF.2LeiCB@rotkohl</a>&gt;	&lt;<a href="mailto:OF1AFFB35C.AA3E9CC6-ONC1257005.0032932D-C1257005.0032EAB2@DOMAIN.HIDDEN">OF1AFFB35C.AA3E9CC6-ONC1257005.0032932D-C1257005.0032EAB2@xxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:17035.19072.503525.119002@DOMAIN.HIDDEN">17035.19072.503525.119002@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+For purposes of discussion, here's a quick R5RS implementation of the
+&quot;let&quot; variant described in my last post.
+
+;; $Id: let.scm,v 1.12 2005/05/18 19:34:15 neil Exp $
+
+;; This implementation was informed by the Lars T Hansen's SRFI-11 reference
+;; implementation, and initially derived from it, although the different
+;; problem necessitated a rewrite.
+
+;; SBE   : source binding expression. &quot;(SINGLE-VAR0 ... [REST-VAR] EXPR)&quot;
+;;                                aka &quot;(VS0 ...                    EXPR)&quot;
+;; VSE   : variable syntax or expression. &quot;VAR&quot; or &quot;(rest VAR)&quot; or &quot;EXPR&quot;
+;; TVB   : temp variable binding. &quot;(DEST-VAR TEMP-VAR)&quot;
+;; TV    : temp variable
+;; RTV   : rest temp variable
+;; BODYS : list of body expressions
+
+(define-syntax srfi-let
+  ;; (_ SBES BODY0 BODY1 ...)
+  (syntax-rules ()
+    
+    ((_                (SBE0 ...)     BODY0 BODY1 ...)
+     (%srfi71:let:bind (SBE0 ...) () (BODY0 BODY1 ...)))
+
+    ))
+
+(define-syntax %srfi71:let:bind
+  ;; (_ SBES TVBS BODYS)
+  (syntax-rules (rest)
+
+    ;; No more source bindings, so finish with R5RS &quot;let&quot;:
+    ((_   () TVBS (BODY0 ...))
+     (let    TVBS  BODY0 ...))
+    
+    ;; Zero-values binding:
+    ((_ ((EXPR) SBE1 ...) TVBS BODYS)
+     (begin EXPR (%srfi71:let:bind (SBE1 ...) TVBS BODYS)))
+
+    ;; All-values binding:
+    ((_ (((rest VAR) EXPR) SBE1 ...) (TVB0 ...) BODYS)
+     (call-with-values (lambda () EXPR)
+       (lambda temp
+         (%srfi71:let:bind (SBE1 ...) (TVB0 ... (VAR temp)) BODYS))))
+    
+    ;; Single-value binding:
+    ((_ ((VAR EXPR) SBE1 ...) (TVB0 ...) BODYS)
+     (let ((temp EXPR))
+       (%srfi71:let:bind (SBE1 ...) (TVB0 ... (VAR temp)) BODYS)))
+
+    ;; Multiple-values binding:
+    ((_ ((VSE0 ...) SBE1 ...) TVBS BODYS)
+     (%srfi71:let:multbind (VSE0 ...) () (SBE1 ...) TVBS BODYS))
+
+    ))
+
+(define-syntax %srfi71:let:multbind
+  ;; (_ VSES TVS SBES TVBS BODYS)
+
+  (syntax-rules (rest)
+
+    ;; Last VSE, which is the expression:
+    ((_ (EXPR) TVS SBES TVBS BODYS)
+     (call-with-values (lambda () EXPR)
+       (lambda TVS
+         (%srfi71:let:bind SBES TVBS BODYS))))
+
+    ;; Rest-variable, which must be last:
+    ((_ ((rest VAR) EXPR) (TV0 ...) SBES (TVB0 ...) BODYS)
+     (call-with-values (lambda () EXPR)
+       (lambda (TV0 ... . temp)
+         (%srfi71:let:bind SBES (TVB0 ... (VAR temp)) BODYS))))
+
+    ;; Normal-variable:
+    ((_ (VAR VSE1 ...) (TV0 ...) SBES (TVB0 ...) BODYS)
+     (%srfi71:let:multbind
+      (VSE1 ...) (TV0 ... temp) SBES (TVB0 ... (VAR temp)) BODYS))
+     
+    ))
+  
+;; Start of test suite using Testeez (&quot;<a  rel="nofollow" href="http://www.neilvandyke.org/testeez/&quot">http://www.neilvandyke.org/testeez/&quot</a>;):
+(testeez
+ &quot;multiple-value let&quot;
+ 
+ (test/equal &quot;&quot; (srfi-let ( (a b c          (values 1 2 3)) ) c)   3)
+ (test/equal &quot;&quot; (srfi-let ( (a b            (values 1 2  )) ) b)   2)
+ (test/equal &quot;&quot; (srfi-let ( (a              (values 1    )) ) a)   1)
+ (test/equal &quot;&quot; (srfi-let ( (               (values      )) ) #f)  #f)
+
+ (test/equal &quot;&quot; (srfi-let ( (a b c (rest x) (values 1 2 3)) ) x)   '())
+ (test/equal &quot;&quot; (srfi-let ( (a b   (rest x) (values 1 2 3)) ) x)   '(3))
+ (test/equal &quot;&quot; (srfi-let ( (a     (rest x) (values 1 2 3)) ) x)   '(2 3))
+ (test/equal &quot;&quot; (srfi-let ( (      (rest x) (values 1 2 3)) ) x)   '(1 2 3))
+
+ (test/equal &quot;&quot; (srfi-let ( (      (rest x) (values 1 2 3)) ) x)   '(1 2 3))
+ (test/equal &quot;&quot; (srfi-let ( (      (rest x) (values 1 2  )) ) x)   '(1 2))
+ (test/equal &quot;&quot; (srfi-let ( (      (rest x) (values 1    )) ) x)   '(1))
+ (test/equal &quot;&quot; (srfi-let ( (      (rest x) (values      )) ) x)   '())
+
+ )
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00011" href="msg00011.html">Re: what about dropping rest-lists?</a></strong>
+<ul><li><em>From:</em> Sebastian Egner</li></ul></li>
+<li><strong><a name="00012" href="msg00012.html">Re: what about dropping rest-lists?</a></strong>
+<ul><li><em>From:</em> Neil W. Van Dyke</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00012.html">Re: what about dropping rest-lists?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00014.html">Revision of SRFI 71 available</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00012.html">Re: what about dropping rest-lists?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00001.html">Suggestion: nix VALUES in favor of DOT</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00013"><strong>Date</strong></a></li>
+<li><a href="threads.html#00013"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

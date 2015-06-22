@@ -1,0 +1,158 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: begin&#45;for&#45;syntax, begin&#45;for&#45;load should be in this SRFI -->
+<!--X-From-R13: Yrvgu Ievtug <xjevtugNserr&#45;pbzc&#45;fubc.pbz> -->
+<!--X-Date: Sat, 13 Aug 2005 10:20:39 +0200 (DFT) -->
+<!--X-Message-Id: 200508130819.j7D8JOYq005769@fcs12.free&#45;comp&#45;shop.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>begin-for-syntax, begin-for-load should be in this SRFI</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00037.html">Date Prev</a>][<a href="msg00039.html">Date Next</a>][<a href="msg00062.html">Thread Prev</a>][<a href="msg00041.html">Thread Next</a>][<a href="maillist.html#00038">Date Index</a>][<a href="threads.html#00038">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>begin-for-syntax, begin-for-load should be in this SRFI</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-72@DOMAIN.HIDDEN">srfi-72@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: begin-for-syntax, begin-for-load should be in this SRFI</li>
+<li><em>From</em>: Keith Wright &lt;<a href="mailto:kwright@DOMAIN.HIDDEN">kwright@xxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 13 Aug 2005 04:19:24 -0400</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-72@DOMAIN.HIDDEN">srfi-72@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Hidden away in the reference implementation, and in
+an unannounced SRFI are the keywords
+  (begin-for-syntax ...)
+and
+  (begin-for-import ...).
+
+These are part of the module system, but I think they should be
+part of the macro system (srfi-72).
+
+Even if you have no module system, or a different one, these
+are needed to control macro expansion, to prevent big computations
+from being done at expansion time, and to prevent the
+compiled program from bloating up with macro expansion
+helper procedures.
+
+I have been using (load &lt;file&gt;) alone to get my code in, and
+have implemented a version of the expander that writes
+expanded code to a file to be loaded later.  It seems to work.
+
+Along with this I have changed the name of begin-for-import
+to begin-for-load, since I have no import.  I think that
+would be a fine name even when/if the module system is in
+use.  Scheme calls fetching a bunch of code and executing
+it &quot;load&quot;.  I don't really love this name, and the operation
+is underspecified by RRRS (the Repeatedly Revised Report), but
+I rather stick with the name I know than make fruitless
+innovation.  It seems to me that import is just a fancy
+kind of load.
+
+Here is some of the code.
+
+Procedure expand-toplevel has an extra argument to indicate
+whether to execute the expanded form.  This is because the stand-alone
+expander needs to execute definitions in case they are used by macros,
+but in the repl you don't want things done twice.
+
+(define expand-toplevel
+  (let ((source-rename (make-renaming-procedure source-colour scheme-env #f)))
+    (lambda (exp execute?)
+      (*source-stack*        '())
+      (*current-module-name* (string-&gt;symbol &quot;&quot;))
+      (*inside-quasisyntax*  #f)
+      (set! source-rename
+            (make-renaming-procedure source-colour 
+                                     (close-environment (source-rename 'dummy))
+                                     #f))
+      (let ((expanded (expand (datum-&gt;syntax-object0 source-rename exp))))
+         (cond ((begin-for-syntax? expanded)
+		 (eval `(begin . ,(cdr expanded)))
+	          '(void))
+	       ((begin-for-load? expanded)
+	         `(begin . ,(cdr expanded)))
+	       (else 
+                 (if execute? (eval expanded))
+                 expanded))))))
+
+Procedure compile reads a file with macros and makes one without
+
+(define (compile filename)
+  (let ((scm (open-input-file  (string-append filename &quot;.scm&quot;)))
+        (obj (open-output-file  (string-append filename &quot;.obj&quot;))))
+     (let loop ((e (read scm)))
+	  (if (eof-object? e)
+	      'done
+	      (begin
+                (write (expand-toplevel e #t) obj)
+                (newline obj)
+                (loop (read scm)))))))
+
+The repl calls
+   (eval (expand-toplevel exp #f)))
+
+By the way, I do not understand why the local variable
+|source-rename| is initialized and immediately overwriten,
+only to turn to garbage by the end of the procedure,
+but that's the way I found it and I left it so, in case
+there is deep magic unkent.
+
+-- 
+     -- Keith Wright
+
+Programmer in Chief, Free Computer Shop
+ ---  Food, Shelter, Source code.  ---
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00037.html">Re: Opaque syntax objects</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00039.html">Re: Opaque syntax objects</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00062.html">Re: Opaque syntax objects</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00041.html">Re: begin-for-syntax, begin-for-load should be in this SRFI</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00038"><strong>Date</strong></a></li>
+<li><a href="threads.html#00038"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

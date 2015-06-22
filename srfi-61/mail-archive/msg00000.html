@@ -1,0 +1,132 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: SRFI 61: A more general COND clause (fwd) -->
+<!--X-From-R13: Fnlybe Qnzcoryy <pnzcoryyNoybbqnaqpbssrr.arg> -->
+<!--X-Date: Fri,  7 Jan 2005 00:07:16 +0100 (NFT) -->
+<!--X-Message-Id: Pine.LNX.4.44.0501061448130.8037&#45;100000@autodrip.bloodandcoffee.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: Pine.GSO.4.60.0501061235040.917@cascade.cs.ubc.ca -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: SRFI 61: A more general COND clause (fwd)</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[Date Prev][<a href="msg00001.html">Date Next</a>][Thread Prev][<a href="msg00001.html">Thread Next</a>][<a href="maillist.html#00000">Date Index</a>][<a href="threads.html#00000">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: SRFI 61: A more general COND clause (fwd)</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Christopher Dutchyn &lt;<a href="mailto:cdutchyn@DOMAIN.HIDDEN">cdutchyn@xxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: SRFI 61: A more general COND clause (fwd)</li>
+<li><em>From</em>: Taylor Campbell &lt;<a href="mailto:campbell@DOMAIN.HIDDEN">campbell@xxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 6 Jan 2005 15:50:22 -0800 (PST)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-61@DOMAIN.HIDDEN">srfi-61@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-61@DOMAIN.HIDDEN">srfi-61@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:Pine.GSO.4.60.0501061235040.917@DOMAIN.HIDDEN">Pine.GSO.4.60.0501061235040.917@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>On Thu, 6 Jan 2005, Christopher Dutchyn wrote:
+
+&gt; I'm unconvinced of the utility of your proposal.  First, I would recommend 
+&gt; placing the guard before the generator, it reads so much better.  Your examples 
+&gt; become:
+&gt;  	(char? (read-port port) =&gt; (lambda (c) ...))
+&gt; and
+&gt;  	(proj0 (table-entry &lt;table&gt; &lt;key&gt;) =&gt; (lambda (present? value) ...))
+&gt; 
+&gt; It becomes clear that you're just distingishing the number of terms before the 
+&gt; =&gt;; R5RS section 4.2.1 gave a single alternate for (&lt;test&gt; =&gt; &lt;exp&gt;).
+
+That sounds reasonable.  I'll consider it.  However, it might be a bit
+deceptive or confusing in the syntax, in that it looks like a regular
+procedure call at first, though it's not.  Also, the guard is usually
+in that position in similar constructions that linearize nested
+conditionals: SYNTAX-CASE, Andrew Wright's MATCH, &amp;c.
+
+&gt; But, once I write your examples in the more legible way, I realize that I 
+&gt; already have what I want using the accepted definition that only #f is false 
+&gt; (R5RS section 6.3.1):
+&gt; 
+&gt; (define anaphoric-char? (lambda (c) (if (char? c) c #f)))
+&gt; (define myproj0 (lambda p?v (if (car p?v) p?v #f)))
+&gt; 
+&gt; and your examples in R5RS syntax become
+&gt; 
+&gt;  	((anaphoric-char? (read-port port)) =&gt; (lambda (c) ...))
+&gt; and
+&gt;  	((myproj0 (table-entry &lt;table&gt; &lt;key&gt;)) =&gt; (lambda p?v ...))
+&gt; 
+&gt; Is there something about your proposal that I'm missing?
+
+Yes.  What you suggest here are some workarounds for the real problem,
+which is having more general way to conditionalize.  Essentially, this
+proposal more cleanly separates the condition from a temporary value
+that is useful if the condition holds true, while the existing COND =&gt;
+syntax multiplexes the temporary value and the condition.
+
+Not only do your suggested workarounds require either writing several
+new routines for every possible application or inserting clumsy IFs in
+COND clauses, but they may also require complicating the matter by
+constructing temporary boxes to hide #F if it is a possible useful
+temporary value.  This overhead is also necessary in order to support
+multiple possibly useful temporary values, which you must store in a
+temporary list; such a list is harder for a compiler to optimize than
+the way I have designed it.
+
+(The way I have designed it, the temporary rest argument list used by
+the second argument to the CALL-WITH-VALUES is both ephemeral and used
+only as the second argument to APPLY, in immediate succession.  This is
+trivial for a compiler to optimize into code that just reuses the same
+registers or the same stack frame for the arguments to the guard and
+the receiver.  With your workarounds, however, the list has arbitrary
+extent, and it is operated on with heap-accessing list processing
+routines.)
+
+(By the way, your MY-PROJ0 example wouldn't work.  It would need to
+instead be (CALL-WITH-VALUES (LAMBDA () (TABLE-ENTRY TABLE KEY))
+MY-PROJ0), given the way I described TABLE-ENTRY.)
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Next by Date:
+<strong><a href="msg00001.html">Re: SRFI 61: A more general COND clause (fwd)</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00001.html">Re: SRFI 61: A more general COND clause (fwd)</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00000"><strong>Date</strong></a></li>
+<li><a href="threads.html#00000"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

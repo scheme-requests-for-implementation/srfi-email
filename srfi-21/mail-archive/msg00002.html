@@ -1,0 +1,136 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: boost, exceptions, names -->
+<!--X-From-R13: [nep Trryrl <srryrlNWDA.G[bagerny.QO> -->
+<!--X-Date: Sat, 9 Sep 2000 23:21:08 &#45;0500 (CDT) -->
+<!--X-Message-Id: 200009100421.AAA05459@trex.IRO.UMontreal.CA -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>boost, exceptions, names</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00001.html">Date Prev</a>][<a href="msg00003.html">Date Next</a>][<a href="msg00001.html">Thread Prev</a>][<a href="msg00003.html">Thread Next</a>][<a href="maillist.html#00002">Date Index</a>][<a href="threads.html#00002">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>boost, exceptions, names</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-21@DOMAIN.HIDDEN">srfi-21@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: boost, exceptions, names</li>
+<li><em>From</em>: Marc Feeley &lt;<a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 10 Sep 2000 00:21:06 -0400</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>There has been little activity on this mailing list for a long time
+and it is soon time to finalize the SRFI.  I have continued
+implementing the SRFI and have gained some insight that require some
+modifications to the SRFI.  In no particular order:
+
+1) It is wrong to apply the priority boost when a thread is created.
+   It can cause very long servicing delays in server type applications
+   that spawn threads to respond to requests.  The priority boost should
+   only be applied when a thread blocks.
+
+2) There is a need for special exceptions that are detected by
+   the scheduler:
+
+      deadlock exception   raised when there are no runnable threads and
+                           no threads that could possibly unblock (i.e.
+                           there are no threads blocked on an I/O operation
+                           and no threads waiting for a timeout)
+
+      scheduler exception  raised when the scheduler detects an exception
+                           that it cannot handle (for example
+                           a low-level call, such as &quot;select&quot;, that
+                           returns an error code, or a heap overflow);
+                           a scheduler exception object contains a &quot;reason&quot;
+                           which is the exception object that can't be
+                           handled by the scheduler
+
+   But in which thread are these exceptions raised?  It can't be the
+   &quot;scheduler&quot; thread, because no such thing exists in my model (and
+   circularity problems would occur if it did exist).  Instead, it is the
+   primordial thread that is made runnable and the exception is raised in
+   that thread.  Notice that the primordial thread is guaranteed to exist
+   because the program exits when the primordial thread terminates.  The
+   primordial thread thus has a special role and it is in that thread
+   that any handler for these exceptions should be placed.  If the handler
+   returns normally, the primordial thread resumes what it was doing
+   before (such as blocking again).
+
+   The procedures needed are:
+
+      (deadlock-exception? obj)         ; test for deadlock exception
+      (scheduler-exception? obj)        ; test for scheduler exception
+      (scheduler-exception-reason exc)  ; get the reason
+
+3) The use of a trailing exclamation point on some procedure names is
+   a bit pedantic.  For example &quot;thread-yield!&quot; and &quot;thread-sleep!&quot; do
+   have side-effects on the program, but they are rather benign.
+   Which of the following should drop their &quot;!&quot; if any?
+
+      thread-start!
+      thread-yield!
+      thread-sleep!
+      thread-join!
+      thread-terminate!
+      mutex-lock!
+      mutex-unlock!
+      condition-variable-signal!
+      condition-variable-broadcast!
+
+   The last 5 should probably keep the &quot;!&quot;, but I'm not sure about
+   the first 4.  Any strong opinions one way or the other?
+
+Marc
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00001.html">real-time extensions</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00003.html">New revision of SRFI 21 on srfi.schemers.org</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00001.html">real-time extensions</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00003.html">New revision of SRFI 21 on srfi.schemers.org</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00002"><strong>Date</strong></a></li>
+<li><a href="threads.html#00002"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

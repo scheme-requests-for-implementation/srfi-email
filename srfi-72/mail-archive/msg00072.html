@@ -1,0 +1,194 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: The power of Lists -->
+<!--X-From-R13: =?WEA&#45;8859&#45;1?C?Xraf_Okry_E=T8tnneq?= <wrafnkryNfbrtnneq.arg> -->
+<!--X-Date: Mon, 15 Aug 2005 22:43:24 +0200 (DFT) -->
+<!--X-Message-Id: 4300FE32.5040709@soegaard.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200508150313.j7F3DX2R002970@fcs12.free&#45;comp&#45;shop.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: The power of Lists</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00071.html">Date Prev</a>][<a href="msg00073.html">Date Next</a>][<a href="msg00064.html">Thread Prev</a>][<a href="msg00073.html">Thread Next</a>][<a href="maillist.html#00072">Date Index</a>][<a href="threads.html#00072">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: The power of Lists</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Keith Wright &lt;<a href="mailto:kwright@DOMAIN.HIDDEN">kwright@xxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: The power of Lists</li>
+<li><em>From</em>: Jens Axel S&#xF8;gaard &lt;<a href="mailto:jensaxel@DOMAIN.HIDDEN">jensaxel@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 15 Aug 2005 22:42:26 +0200</li>
+<li><em>Cc</em>: <a href="mailto:srfi-72@DOMAIN.HIDDEN">srfi-72@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-72@DOMAIN.HIDDEN">srfi-72@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:200508150313.j7F3DX2R002970@DOMAIN.HIDDEN">200508150313.j7F3DX2R002970@xxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:200508150313.j7F3DX2R002970@DOMAIN.HIDDEN">200508150313.j7F3DX2R002970@xxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mozilla Thunderbird 1.0.2 (Windows/20050317)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+Hi Keith,
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+If it were done with some procedural macro system that represents
+syntax as a special type, it could not have been tested on lists of
+symbols, it would have been full of syntax-&gt;list and list-&gt;syntax
+conversions in non-obvious places, and I just don't think it would
+have been so much fun that I would have stayed up half the night
+working on it, or finished it before morning.
+</pre></blockquote><pre style="margin: 0em;">
+
+I liked your example so much I decided to put in the conversions.
+
+(define wall '#(wall))  ;; and end marker
+
+The first change is that the table isn't syntax, but a list.
+You defined the table as
+
+    (define table (syntax ((:= . 8)(or . 7) (and . 6)
+                           (&lt; . 5) (= . 4)(+ . 3)(* . 2))))
+
+although it is only the identifiers are syntax-objects in
+this context. (Btw - that's an example of &quot;breaking the abstraction&quot;)
+The assocations from identifiers to weights can be written directly as:
+
+(define table `((,#':= . 8) (,#'or . 7) (,#'and . 6)
+                (,#'&lt; . 5)  (,#'= . 4)  (,#'+ . 3) (,#'* . 2)))
+
+or if you prefer your way better, then the a syntax-&gt;list
+must be added, since table needs to be a list.
+
+(define table (syntax-&gt;list
+                  (syntax ((:= . 8)(or . 7) (and . 6)
+                           (&lt; . 5) (= . 4)(+ . 3)(* . 2)))))
+
+These versions will work in both macro systems.
+
+
+The definitions of assoid and weight requires no changes.
+
+(define (assoid key == tab)
+  (let look ((tab tab))
+    (if (null? tab)
+        (begin (display (list key &quot; not found in &quot; table)) (newline) #f)
+        (if (== key (caar tab))
+            (cdar tab)
+            (look (cdr tab))))))
+
+(define (weight op)
+  (if (eq? op wall)
+      500
+      (assoid op free-identifier=? table)))
+
+
+The routine parse is changed to be a function which
+takes a list of syntax-objects representing sub-expressions
+as input.
+
+Since parse is recursive and calls it selv with a subexpression
+(which now is syntax-object) we let parse convert a syntax-objects
+representing lists into lists of syntax-objects automaticcally.
+I.e. the body of parse is changed from (get 10) into
+(if (syntax? tokens) (parse (syntax-&gt;list tokens)) (get 10)).
+
+Since your version uses list? and pair? to check whether a
+subexpression is a compound expression, we need stx-list?
+and stx-pair? when checking for compund subexpressions.
+
+(require (lib &quot;stx.ss&quot; &quot;syntax&quot;))  ; for stx-list? and stx-pair?
+
+; parse : (list stx) -&gt; stx
+(define (parse tokens)
+  ; this : -&gt; stx
+  (define (this) (if (null? tokens) wall (car tokens)))
+  (define (next) (set! tokens (cdr tokens)))
+
+  (define (get greed)
+    (if (zero? greed)
+        (let ((a (this)))
+          (next)
+          (if (stx-list? (this))
+              (let ((arg (this)))
+                (next)
+                (list a (parse arg)))
+              (if (stx-pair? a) (parse a) a)))
+        (let ((a  (get (- greed 1))))
+          (let more ((a a)
+                     (op (this)))
+            (if (&lt; greed (weight op))
+                a
+                (begin
+                  (next)
+                  (let ((b (get (- greed 1))))
+                    (list op a (more b (this))))))))))
+
+  (if (syntax? tokens)
+      (parse (syntax-&gt;list tokens))
+      (get 10))) ; parse just primes the pump
+
+(parse #'((1 + 2) * 3))
+
+--
+Jens Axel S&#xF8;gaard
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00073" href="msg00073.html">Re: The power of Lists</a></strong>
+<ul><li><em>From:</em> Keith Wright</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00064" href="msg00064.html">The power of Lists</a></strong>
+<ul><li><em>From:</em> Keith Wright</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00071.html">Re: Namespaces</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00073.html">Re: The power of Lists</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00064.html">The power of Lists</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00073.html">Re: The power of Lists</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00072"><strong>Date</strong></a></li>
+<li><a href="threads.html#00072"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

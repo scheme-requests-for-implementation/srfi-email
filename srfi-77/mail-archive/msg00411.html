@@ -1,0 +1,600 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Integer residue&#45;classes [was: Questions about srfi&#45;77 Generic Arithmetic] -->
+<!--X-From-R13: Eronfgvna Stare <fronfgvna.rtareNcuvyvcf.pbz> -->
+<!--X-Date: Tue, 21 Feb 2006 12:06:40 +0100 (CET) -->
+<!--X-Message-Id: OF3E57F1E9.819AEC7D&#45;ONC125711C.003B5628&#45;C125711C.003D00CD@philips.com -->
+<!--X-Content-Type: multipart/alternative -->
+<!--X-Reference: cxTYEB.A.D6J.1mH&#45;DB@rotkohl -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Integer residue-classes [was: Questions about srfi-77 Generic Arithmetic]</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00410.html">Date Prev</a>][<a href="msg00412.html">Date Next</a>][<a href="msg00410.html">Thread Prev</a>][<a href="msg00424.html">Thread Next</a>][<a href="maillist.html#00411">Date Index</a>][<a href="threads.html#00411">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Integer residue-classes [was: Questions about srfi-77 Generic Arithmetic]</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Integer residue-classes [was: Questions about srfi-77 Generic Arithmetic]</li>
+<li><em>From</em>: Sebastian Egner &lt;<a href="mailto:sebastian.egner@DOMAIN.HIDDEN">sebastian.egner@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 21 Feb 2006 12:04:59 +0100</li>
+<li><em>Cc</em>: <a href="mailto:lucier@DOMAIN.HIDDEN">lucier@xxxxxxxxxxxxxxx</a>, <a href="mailto:will@DOMAIN.HIDDEN">will@xxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:cxTYEB.A.D6J.1mH-DB@DOMAIN.HIDDEN">cxTYEB.A.D6J.1mH-DB@rotkohl</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+
+<br><font size=2><tt>Will wrote:</tt></font>
+<br><font size=2><tt>&gt; Brad wrote:</tt></font>
+<br><font size=2><tt>&gt; &gt; 8. &nbsp;Integer Divison.</tt></font>
+<br><font size=2><tt>&gt; &gt; (a) I think it is a really bad design to
+have the basic</tt></font>
+<br><font size=2><tt>&gt; &gt; operation of div+mod change when the second
+argument changes sign.</tt></font>
+<br><font size=2><tt>&gt; </tt></font>
+<br><font size=2><tt>&gt; I don't have much problem with that. &nbsp;These
+mathematical</tt></font>
+<br><font size=2><tt>&gt; operations aren't defined at zero, so they have
+to compare</tt></font>
+<br><font size=2><tt>&gt; against zero anyway. &nbsp;To quote Egner et
+al, &quot;the sign of</tt></font>
+<br><font size=2><tt>&gt; the modulus y determines which system of representatives</tt></font>
+<br><font size=2><tt>&gt; of the residue class ring Z/yZ is being chosen,
+either</tt></font>
+<br><font size=2><tt>&gt; non-negative (y &gt; 0), symmetric around zero
+(y &lt; 0), or</tt></font>
+<br><font size=2><tt>&gt; the integers (y = 0).&quot; &nbsp;Using the sign
+of y is ad hoc,</tt></font>
+<br><font size=2><tt>&gt; but it's an ad hoc choice anyway.</tt></font>
+<br>
+<br><font size=2><tt>No, it is not &quot;ad hoc.&quot; It is based on the
+mathematics of </tt></font>
+<br><font size=2><tt>the integers---in the sense of elementary number theory,
+</tt></font>
+<br><font size=2><tt>not in the sense of Brad's &quot;any notion of mathematical
+</tt></font>
+<br><font size=2><tt>division,&quot; whatever that may be.</tt></font>
+<br>
+<br><font size=2><tt>This posting is for documenting the rationale of the
+design </tt></font>
+<br><font size=2><tt>for DIV and MOD we proposed in Egner et al. (Scheme
+Workshop </tt></font>
+<br><font size=2><tt>2004), an article discussing number types in Scheme.</tt></font>
+<br><font size=2><tt>As far as I know, the definition of DIV and MOD given
+there</tt></font>
+<br><font size=2><tt>is new. Of course this makes it an experimental design,</tt></font>
+<br><font size=2><tt>and will not be the most widely used. Nevertheless,
+I am</tt></font>
+<br><font size=2><tt>convinced that the DIV and MOD functions we propose
+are</tt></font>
+<br><font size=2><tt>exactly the right thing to define for a general purpose</tt></font>
+<br><font size=2><tt>programming language. Moreover, I am convinced that
+it makes</tt></font>
+<br><font size=2><tt>all other conventions, in particular R5RS's QUOTIENT,</tt></font>
+<br><font size=2><tt>MODULO and REMAINDER, obsolete---except maybe for
+backwards</tt></font>
+<br><font size=2><tt>compatibility in case the following definitions are
+too </tt></font>
+<br><font size=2><tt>much to ask for:</tt></font>
+<br>
+<br><font size=2><tt>(define (quotient n1 n2)</tt></font>
+<br><font size=2><tt>&nbsp; (if (zero? n2)</tt></font>
+<br><font size=2><tt>&nbsp; &nbsp; &nbsp; (error &quot;undefined&quot;)</tt></font>
+<br><font size=2><tt>&nbsp; &nbsp; &nbsp; (* (sign n1) (sign n2) (div (abs
+n1) (abs n2)))))</tt></font>
+<br>
+<br><font size=2><tt>(define (remainder n1 n2)</tt></font>
+<br><font size=2><tt>&nbsp; (if (zero? n2)</tt></font>
+<br><font size=2><tt>&nbsp; &nbsp; &nbsp; (error &quot;undefined&quot;)</tt></font>
+<br><font size=2><tt>&nbsp; &nbsp; &nbsp; (* (sign n1) (mod (abs n1) (abs
+n2)))))</tt></font>
+<br>
+<br><font size=2><tt>(define (modulo n1 n2)</tt></font>
+<br><font size=2><tt>&nbsp; (if (zero? n2)</tt></font>
+<br><font size=2><tt>&nbsp; &nbsp; &nbsp; (error &quot;undefined&quot;)</tt></font>
+<br><font size=2><tt>&nbsp; &nbsp; &nbsp; (* (sign n2) (mod (* (sign n2)
+n1) (abs n2)))))</tt></font>
+<br>
+<br><font size=2><tt>In Egner et al. the only rationale presented for DIV/MOD</tt></font>
+<br><font size=2><tt>is in the context of the main theme of the article:
+Design </tt></font>
+<br><font size=2><tt>of number types. The advantage is offered that DIV
+and MOD can </tt></font>
+<br><font size=2><tt>be used 'off the shelf' for constructing arbitrary
+signed and</tt></font>
+<br><font size=2><tt>unsigned finite-precision integer types. But there
+is more, </tt></font>
+<br><font size=2><tt>and this posting is an attempt to provide substance
+to my </tt></font>
+<br><font size=2><tt>claims that DIV and MOD as defined in Egner et al.
+are the </tt></font>
+<br><font size=2><tt>right thing to have in the language.</tt></font>
+<br>
+<br><font size=2><tt>I will first recap a few basic algebraic facts, in
+the </tt></font>
+<br><font size=2><tt>terminology of the Mathworld dictionary.</tt></font>
+<br>
+<br><font size=2><tt>Facts about the integers: Residue-class rings</tt></font>
+<br><font size=2><tt>---------------------------------------------</tt></font>
+<br>
+<br><font size=2><tt>1. The set Z of integers, together with the usual
+addition</tt></font>
+<br><font size=2><tt>and multiplication operation, has the following structure:</tt></font>
+<br><font size=2><tt>a) (Z, +, *) is a ring.</tt></font>
+<br><font size=2><tt>&nbsp; &nbsp;http://mathworld.wolfram.com/Ring.html</tt></font>
+<br><font size=2><tt>b) The ring Z is an integral domain.</tt></font>
+<br><font size=2><tt>&nbsp; &nbsp;http://mathworld.wolfram.com/IntegralDomain.html</tt></font>
+<br><font size=2><tt>&nbsp; &nbsp; &nbsp; This means if a product is zero
+at least one of the</tt></font>
+<br><font size=2><tt>&nbsp; &nbsp;factors is zero.</tt></font>
+<br><font size=2><tt>c) The integral domain Z is even a principal ideal
+domain (PID).</tt></font>
+<br><font size=2><tt>&nbsp; &nbsp;http://mathworld.wolfram.com/PrincipalIdealDomain.html</tt></font>
+<br><font size=2><tt>&nbsp; &nbsp; &nbsp; This effectively means that any
+equivalence relation on the </tt></font>
+<br><font size=2><tt>&nbsp; &nbsp; integers compatible with its ring structure
+is of the form</tt></font>
+<br><font size=2><tt>&nbsp; &nbsp; &nbsp; x ~ y &lt;=&gt; m divides (x
+- y),</tt></font>
+<br><font size=2><tt>&nbsp; &nbsp;for some fixed integer m. Here, m = 0
+should be interpreted </tt></font>
+<br><font size=2><tt>&nbsp; &nbsp;as x ~ y &lt;=&gt; x = y for reasons
+that will become clear later.</tt></font>
+<br>
+<br><font size=2><tt>An ideal of Z is a non-empty subset of Z which is
+closed</tt></font>
+<br><font size=2><tt>under addition and under multiplication with any element
+of Z.</tt></font>
+<br><font size=2><tt>&nbsp; &nbsp;http://mathworld.wolfram.com/Ideal.html</tt></font>
+<br>
+<br><font size=2><tt>Another way of saying c) is that every ideal is generated</tt></font>
+<br><font size=2><tt>by a single element, which I denote by m, and is of
+the </tt></font>
+<br><font size=2><tt>form m*Z = {m*k : k in Z}. To spell it out, the ideals</tt></font>
+<br><font size=2><tt>of the ring of integers are</tt></font>
+<br><font size=2><tt>&nbsp; 0*Z = {0}</tt></font>
+<br><font size=2><tt>&nbsp; 1*Z = (-1)*Z = Z = {..., -2, -1, 0, 1, 2, ...}</tt></font>
+<br><font size=2><tt>&nbsp; 2*Z = (-2)*Z = {..., -6, -4, -2, 0, 2, 4, 6,
+...}</tt></font>
+<br><font size=2><tt>&nbsp; 3*Z = (-3)*Z = {..., -6, -3, 0, 3, 6, ...}</tt></font>
+<br><font size=2><tt>&nbsp; etc.</tt></font>
+<br>
+<br><font size=2><tt>2. The important thing about ideals is that they define
+quotient</tt></font>
+<br><font size=2><tt>rings (which are even fields if m is prime): For integer
+m,</tt></font>
+<br>
+<br><font size=2><tt>&nbsp; Z/(m*Z) = { {x + m*k : k in Z} : x in Z }</tt></font>
+<br>
+<br><font size=2><tt>is itself a ring with addition and multiplication
+defined as</tt></font>
+<br>
+<br><font size=2><tt>&nbsp; {x + m*k : k in Z} + {y + m*k : k in Z} = {
+(x+y) + m*k : k in Z}</tt></font>
+<br><font size=2><tt>&nbsp; {x + m*k : k in Z} * {y + m*k : k in Z} = {
+(x*y) + m*k : k in Z}.</tt></font>
+<br>
+<br><font size=2><tt>(At this point it is usually proved that these definitions
+are</tt></font>
+<br><font size=2><tt>indeed well defined, and that the resulting structure
+is a ring.</tt></font>
+<br><font size=2><tt>But this is not a lecture in algebra, so I skip it.)</tt></font>
+<br>
+<br><font size=2><tt>The ring Z/m*Z is called 'quotient ring' or 'residue-class
+ring,'</tt></font>
+<br><font size=2><tt>its elements are called 'residue-classes.'</tt></font>
+<br><font size=2><tt>&nbsp; &nbsp;http://mathworld.wolfram.com/QuotientRing.html</tt></font>
+<br>
+<br><font size=2><tt>The quotient ring Z/m*Z is related to the base ring
+Z by the</tt></font>
+<br><font size=2><tt>function x -&gt; x + m*Z, mapping Z into Z/m*Z. This
+function is</tt></font>
+<br><font size=2><tt>called 'natural projection'. As we will see it is
+related to</tt></font>
+<br><font size=2><tt>a 'mod'-like feature.</tt></font>
+<br><font size=2><tt>&nbsp; &nbsp;http://mathworld.wolfram.com/NaturalProjection.html</tt></font>
+<br>
+<br><font size=2><tt>3. The last concept necessary to understand what is
+going </tt></font>
+<br><font size=2><tt>on with div/mod (or quotient, remainder, modulo...
+you name</tt></font>
+<br><font size=2><tt>it) is the notion of 'system of representatives'.</tt></font>
+<br><font size=2><tt>&nbsp; &nbsp;http://mathworld.wolfram.com/ClassRepresentative.html</tt></font>
+<br><font size=2><tt>&nbsp; &nbsp;(The equivalence relation is x ~ y &lt;=&gt;
+m divides (x - y).)</tt></font>
+<br><font size=2><tt>&nbsp; &nbsp;http://mathworld.wolfram.com/RightTransversal.html</tt></font>
+<br><font size=2><tt>&nbsp; &nbsp;(The group G is (Z, +); the subgroup
+H is (m*Z, +).)</tt></font>
+<br>
+<br><font size=2><tt>Since the residue classes x + m*Z = {x + m*k : k in
+Z} are</tt></font>
+<br><font size=2><tt>pairwise disjoint, we can pick a representative element</tt></font>
+<br><font size=2><tt>from each residue class and only work with representatives.</tt></font>
+<br><font size=2><tt>Such a selection, i.e. a subset of the integers containing</tt></font>
+<br><font size=2><tt>exactly one element per residue class modulo m, is
+called</tt></font>
+<br><font size=2><tt>a 'system of representatives' (more precisely: a minimal</tt></font>
+<br><font size=2><tt>complete system of representatives), or SOR for short.</tt></font>
+<br>
+<br><font size=2><tt>Mathematically, all SORs are equal:</tt></font>
+<br><font size=2><tt>{340, 744, 911} is as good for working in Z/3*Z as
+{0,1,2},</tt></font>
+<br><font size=2><tt>e.g. (340 + 3*Z) + (911 + 3*Z)= (744 + 3*Z).</tt></font>
+<br>
+<br><font size=2><tt>Programming with residue-class rings</tt></font>
+<br><font size=2><tt>------------------------------------</tt></font>
+<br>
+<br><font size=2><tt>For the purpose of programming, however, two SORs
+are much</tt></font>
+<br><font size=2><tt>more equal than all the others:</tt></font>
+<br><font size=2><tt>a) Representatives of minimal non-negative value.</tt></font>
+<br><font size=2><tt>b) Representatives of minimal absolute value, breaking
+ties</tt></font>
+<br><font size=2><tt>&nbsp; &nbsp;such that there is one more negative
+value.</tt></font>
+<br>
+<br><font size=2><tt>Spelling out the details of the two preferred SORs:</tt></font>
+<br><font size=2><tt>* Z/0*Z: SOR a) = SOR b) = Z = {..., -2, -1, 0, 1,
+2, ...}</tt></font>
+<br><font size=2><tt>* Z/1*Z: SOR a) = SOR b) = {0}</tt></font>
+<br><font size=2><tt>* Z/m*Z for m &gt;= 2, m even:</tt></font>
+<br><font size=2><tt>&nbsp; &nbsp; SOR a) {0..m-1}</tt></font>
+<br><font size=2><tt>&nbsp; &nbsp; SOR b) {-m/2..m/2-1}</tt></font>
+<br><font size=2><tt>* Z/m*Z for m &gt;= 3, m odd:</tt></font>
+<br><font size=2><tt>&nbsp; &nbsp; &nbsp;SOR a) {0..m-1}</tt></font>
+<br><font size=2><tt>&nbsp; &nbsp; &nbsp;SOR b) {-(m-1)/2..(m-1)/2}</tt></font>
+<br><font size=2><tt>* Z/m*Z for m &lt; 0: exactly the same as Z/((-m)*Z).</tt></font>
+<br>
+<br><font size=2><tt>SORs a) and b) are preferred because efficient algorithms</tt></font>
+<br><font size=2><tt>are known (e.g. Euclid's) for computing the representatives</tt></font>
+<br><font size=2><tt>of minimal value, the 'canonical representative.'</tt></font>
+<br><font size=2><tt>&nbsp; &nbsp;http://mathworld.wolfram.com/EuclideanRing.html</tt></font>
+<br>
+<br><font size=2><tt>4. In Scheme (or any other non-computer-algebra programming</tt></font>
+<br><font size=2><tt>language) we do not want to work with the residue-classes</tt></font>
+<br><font size=2><tt>themselves, i.e. with subsets of integers. Instead,
+we prefer</tt></font>
+<br><font size=2><tt>to work with representatives, only. (This wish is
+the source</tt></font>
+<br><font size=2><tt>of all confusion, and 'ad hoc'ity.)</tt></font>
+<br>
+<br><font size=2><tt>For this reason, there are 'DIV'- and 'MOD'-like procedures</tt></font>
+<br><font size=2><tt>mapping integers into integers, and possibly exceptions.</tt></font>
+<br><font size=2><tt>The purpose of (x mod m) is computing a canonical
+representative</tt></font>
+<br><font size=2><tt>of the residue-class (x + m*Z) in Z/m*Z, with respect
+to some </tt></font>
+<br><font size=2><tt>implicitly defined system of representatives. The
+purpose</tt></font>
+<br><font size=2><tt>of (x div m) is computing the associated multiple
+of m,</tt></font>
+<br><font size=2><tt>such that x -&gt; (x div m, x mod m) is one-to-one
+(bijective).</tt></font>
+<br><font size=2><tt>In other words, the 'DIV'-like feature computes an
+element</tt></font>
+<br><font size=2><tt>of the ideal defining the quotient ring, or rather
+some</tt></font>
+<br><font size=2><tt>integer (x div m) representing the ideal-element (x
+div m)*m.</tt></font>
+<br>
+<br><font size=2><tt>5. The &quot;trick&quot; presented in Egner et al.
+is using the sign of</tt></font>
+<br><font size=2><tt>m for selecting one of the preferred systems of representatives.</tt></font>
+<br><font size=2><tt>This is possible because the sign of m has no algebraic
+</tt></font>
+<br><font size=2><tt>relevance whatsoever for the residue class ring Z/(m*Z).</tt></font>
+<br><font size=2><tt>Of course there is no mathematical need for using
+the sign</tt></font>
+<br><font size=2><tt>of the modulus in this way---and in this sense this
+choice</tt></font>
+<br><font size=2><tt>is 'ad hoc.' But it turns out to be useful.</tt></font>
+<br>
+<br><font size=2><tt>Filling in the details, we define div and mod be the</tt></font>
+<br><font size=2><tt>following properties: For all integer x and m,</tt></font>
+<br><font size=2><tt>(1) x = (x div m)* m + (x mod m),</tt></font>
+<br><font size=2><tt>(2) if m &gt; 0: 0 &nbsp; &lt;= (x mod m) &lt; m</tt></font>
+<br><font size=2><tt>&nbsp; &nbsp; if m = 0: &nbsp; &nbsp; &nbsp; &nbsp;(x
+mod m) = x</tt></font>
+<br><font size=2><tt>&nbsp; &nbsp; if m &lt; 0: m/2 &lt;= (x mod m) &lt;
+-m/2, and</tt></font>
+<br><font size=2><tt>(3) (x div m) is integer.</tt></font>
+<br>
+<br><font size=2><tt>An alternative to the &quot;trick&quot; would be providing
+two </tt></font>
+<br><font size=2><tt>separate sets of DIV/MOD operations: one 'unsigned'
+and </tt></font>
+<br><font size=2><tt>one 'signed', aka SOR a) and b). This makes the system
+</tt></font>
+<br><font size=2><tt>of representatives a static property of the program,</tt></font>
+<br><font size=2><tt>but I doubt that this is helpful in any way. The down</tt></font>
+<br><font size=2><tt>side is that there is no representation readily available</tt></font>
+<br><font size=2><tt>for the choice of system of representives.</tt></font>
+<br>
+<br><font size=2><tt>As it happens, I had written a library for elementary
+</tt></font>
+<br><font size=2><tt>number theory. It turned out that DIV and MOD are
+exactly</tt></font>
+<br><font size=2><tt>the operations needed. This is no coincidence because
+they </tt></font>
+<br><font size=2><tt>were designed to be---after I had to track down too
+many </tt></font>
+<br><font size=2><tt>bugs originating from QUOTIENT/REMAINDER/MODULO.</tt></font>
+<br>
+<br><font size=2><tt>Design principles of DIV/MOD</tt></font>
+<br><font size=2><tt>----------------------------</tt></font>
+<br>
+<br><font size=2><tt>The operations DIV and MOD proposed in Egner et al.
+</tt></font>
+<br><font size=2><tt>are based on the following principles:</tt></font>
+<br>
+<br><font size=2><tt>#1: The algebraic ring structure of the integers is</tt></font>
+<br><font size=2><tt>transported into the residue-class ring. In other
+words,</tt></font>
+<br>
+<br><font size=2><tt>&nbsp; (mod (+ x y) m) &nbsp;equals &nbsp;(mod (+
+(mod x m) (mod y m)) m)</tt></font>
+<br><font size=2><tt>&nbsp; (mod (* x y) m) &nbsp;equals &nbsp;(mod (*
+(mod x m) (mod y m)) m)</tt></font>
+<br>
+<br><font size=2><tt>for all integer x, y and m.</tt></font>
+<br>
+<br><font size=2><tt>#2: DIV and MOD are associated to each other. In other
+words,</tt></font>
+<br>
+<br><font size=2><tt>&nbsp; (+ (* (div x m) m) (mod x m)) &nbsp;equals
+&nbsp;x</tt></font>
+<br>
+<br><font size=2><tt>for all integer x, m.</tt></font>
+<br>
+<br><font size=2><tt>#3: The system of representatives can be selected
+easily</tt></font>
+<br><font size=2><tt>(using the sign of the modulus m) and comprehensible:</tt></font>
+<br><font size=2><tt>Either minimal non-negative values, all integers,
+or </tt></font>
+<br><font size=2><tt>minimal absolute values.</tt></font>
+<br>
+<br><font size=2><tt>The design of QUOTIENT/REMAINDER/MODULO</tt></font>
+<br><font size=2><tt>---------------------------------------</tt></font>
+<br>
+<br><font size=2><tt>Brad wrote:</tt></font>
+<br><font size=2><tt>&gt; (a) I think it is a really bad design to have
+the basic</tt></font>
+<br><font size=2><tt>&gt; operation of div+mod change when the second argument
+</tt></font>
+<br><font size=2><tt>&gt; changes sign.</tt></font>
+<br>
+<br><font size=2><tt>The bad design here is that *neither* QUOTIENT/REMAINDER
+</tt></font>
+<br><font size=2><tt>nor QUOTIENT/MODULO form a consistent pair of residue-class</tt></font>
+<br><font size=2><tt>operations: QUOTIENT and REMAINDER are associated,
+but</tt></font>
+<br><font size=2><tt>REMAINDER does not transport the ring structure (Example
+1). </tt></font>
+<br><font size=2><tt>MODULO does transport the ring structure but is not</tt></font>
+<br><font size=2><tt>associated with QUOTIENT (Example 2) or any other
+procedure</tt></font>
+<br><font size=2><tt>available in R5RS.</tt></font>
+<br>
+<br><font size=2><tt>Example 1:</tt></font>
+<br><font size=2><tt>(= (remainder (+ 1 -3) 3)</tt></font>
+<br><font size=2><tt>&nbsp; &nbsp;(remainder (+ (remainder 1 3) (remainder
+-3 3)) 3)) =&gt; #f</tt></font>
+<br>
+<br><font size=2><tt>Example 2:</tt></font>
+<br><font size=2><tt>(= (+ (* (quotient -1 3) 3) (modulo -1 3)) -1) =&gt;
+#f</tt></font>
+<br>
+<br><font size=2><tt>Moreover, in R5RS the system of representatives is
+specified </tt></font>
+<br><font size=2><tt>implicitly by some relations between the signs of
+arguments </tt></font>
+<br><font size=2><tt>and of values in what I would call 'totally ad hoc'
+way. </tt></font>
+<br><font size=2><tt>In practice, when there is any chance of a negative
+argument </tt></font>
+<br><font size=2><tt>I fall back on trying examples to make sure the result
+is</tt></font>
+<br><font size=2><tt>what I need. DIV and MOD have removed this habit.</tt></font>
+<br>
+<br><font size=2><tt>The zero modulus case</tt></font>
+<br><font size=2><tt>---------------------</tt></font>
+<br>
+<br><font size=2><tt>Will wrote: </tt></font>
+<br><font size=2><tt>&gt; Brad wrote:</tt></font>
+<br><font size=2><tt>&gt; &gt; &nbsp; &nbsp;(b) I think it is a really
+bad design to have</tt></font>
+<br><font size=2><tt>&gt; &gt; &nbsp; &nbsp; &nbsp; &nbsp;(div x1 0) =&gt;
+0</tt></font>
+<br><font size=2><tt>&gt; &gt; It conflicts with the requirement in quotient+remainder,</tt></font>
+<br><font size=2><tt>&gt; &gt; quotient, remainder, and modulo that &quot;n2
+should be nonzero&quot;.</tt></font>
+<br><font size=2><tt>&gt; &gt; (Unless I read &quot;should&quot; here in
+the language lawyer sense,</tt></font>
+<br><font size=2><tt>&gt; &gt; i.e., that it is totally nonprescriptive.)
+The only way I can</tt></font>
+<br><font size=2><tt>&gt; &gt; think of making division by exact 0 make
+sense is by divorcing</tt></font>
+<br><font size=2><tt>&gt; &gt; the meaning of &quot;div&quot; from any
+notion of mathematical division.</tt></font>
+<br><font size=2><tt>&gt;</tt></font>
+<br><font size=2><tt>&gt; I don't have a strong opinion about this. &nbsp;It
+is totally</tt></font>
+<br><font size=2><tt>&gt; ad hoc, but the alternative is a principled (not
+ad hoc)</tt></font>
+<br><font size=2><tt>&gt; hole in the domain of div. &nbsp;I'm inclined
+to think that</tt></font>
+<br><font size=2><tt>&gt; passing 0 as the second argument to div is, in
+practice,</tt></font>
+<br><font size=2><tt>&gt; most likely an error for which it would be more
+useful</tt></font>
+<br><font size=2><tt>&gt; to signal an error than to return 0, but I'm
+willing to</tt></font>
+<br><font size=2><tt>&gt; listen to an argument for returning 0. &nbsp;So
+far as I can</tt></font>
+<br><font size=2><tt>&gt; see, no such argument has been made. &nbsp;In
+particular, the</tt></font>
+<br><font size=2><tt>&gt; paper by Egner et al contains no such argument.</tt></font>
+<br>
+<br><font size=2><tt>The definition (div x 0) =&gt; 0 is perfectly natural.
+It is</tt></font>
+<br><font size=2><tt>based on the fact that 0*Z = {0} is an ideal in Z,
+and so</tt></font>
+<br><font size=2><tt>there is a quotient ring R = Z/(0*Z), which happens
+to be </tt></font>
+<br><font size=2><tt>isomorphic to Z itself because x + 0*Z = y + 0*Z iff
+x = y.</tt></font>
+<br><font size=2><tt>Hence, working with representatives, (mod x 0) must
+be x</tt></font>
+<br><font size=2><tt>for all x---and #2 implies (div x 0) =&gt; 0. It looks
+funny,</tt></font>
+<br><font size=2><tt>but you get used to it quickly.</tt></font>
+<br>
+<br><font size=2><tt>In effect, design principles #1 and #2 (and #3) are
+valid</tt></font>
+<br><font size=2><tt>for all values of the modulus, including zero. </tt></font>
+<br>
+<br><font size=2><tt>Brad's reflex of interpreting &quot;(div x 0) =&gt;
+0&quot; as 'division </tt></font>
+<br><font size=2><tt>by zero' only means that he confuses residue-class
+operation </tt></font>
+<br><font size=2><tt>'div' with the *field* operation '/'. (For which,
+by the way,</tt></font>
+<br><font size=2><tt>division by [inexact] zero is not seen as much of
+a problem,</tt></font>
+<br><font size=2><tt>even though in this case no algebraically consistent
+way of </tt></font>
+<br><font size=2><tt>defining it exists; 1/0 := inf is just postponing
+the error.)</tt></font>
+<br>
+<br><font size=2><tt>Summarizing, (Brad) &quot;It conflicts with the requirement
+in </tt></font>
+<br><font size=2><tt>[...] modulo that 'n2 should be nonzero.'&quot; is
+correct,</tt></font>
+<br><font size=2><tt>except that the conflict exists because the requirement</tt></font>
+<br><font size=2><tt>in R5RS is arbitrary in the first place---a result
+of the</tt></font>
+<br><font size=2><tt>'ad hoc' definition of QUOTIENT, REMAINDER and MODULO.</tt></font>
+<br>
+<br><font size=2><tt>The residue-class constructing operation 'div' should
+not</tt></font>
+<br><font size=2><tt>be confused with the field operation '/', which is
+the </tt></font>
+<br><font size=2><tt>inverse of multiplication in a field. And to make
+life even</tt></font>
+<br><font size=2><tt>more complicated, neither 'div' nor '/' should be
+confused</tt></font>
+<br><font size=2><tt>with 'modular division', i.e. the inverse operation
+of</tt></font>
+<br><font size=2><tt>multiplication in the residue-class ring Z/m*Z (which
+comes</tt></font>
+<br><font size=2><tt>down to an extended gcd computation).</tt></font>
+<br>
+<br><font size=2><tt>Generalization to non-integer arguments</tt></font>
+<br><font size=2><tt>---------------------------------------</tt></font>
+<br>
+<br><font size=2><tt>The definition of DIV and MOD implies the following
+property:</tt></font>
+<br>
+<br><font size=2><tt>x div m = floor(x/m) &nbsp; &nbsp; &nbsp;if m &gt;
+0</tt></font>
+<br><font size=2><tt>&nbsp; &nbsp; &nbsp; &nbsp; | 0 &nbsp; &nbsp; &nbsp;
+&nbsp; &nbsp; &nbsp; &nbsp; if m = 0</tt></font>
+<br><font size=2><tt>&nbsp; &nbsp; &nbsp; &nbsp; | ceil(x/m - 1/2) if m
+&lt; 0. </tt></font>
+<br>
+<br><font size=2><tt>Taking this property as a definition of div, and defining
+</tt></font>
+<br><font size=2><tt>x mod m = m - (x div m)*m to satisfy (1), we obtain
+div/mod</tt></font>
+<br><font size=2><tt>that are meaningful for all real numbers x and m.</tt></font>
+<br>
+<br><font size=2><tt>As it turns out (not entirely coincidental), design
+</tt></font>
+<br><font size=2><tt>principles #1, #2 and #3 still hold in the generalization.</tt></font>
+<br>
+<br><font size=2><tt>The generalization of div/mod defined above is not
+based</tt></font>
+<br><font size=2><tt>on quotient rings, because these are boring if the
+base</tt></font>
+<br><font size=2><tt>ring is a field. </tt></font>
+<br>
+<br><font size=2><tt>The generalization above is based on equivalence:
+</tt></font>
+<br><font size=2><tt>Defining x ~ y as (x mod m) = (y mod m) for m != 0
+means </tt></font>
+<br><font size=2><tt>x - y is an integer multiple of m, even for non-integer
+m.</tt></font>
+<br><font size=2><tt>Such a structure is the 1-dimensional special case
+of a </tt></font>
+<br><font size=2><tt>'lattice', i.e. a Z-module embedded in a real vector
+space</tt></font>
+<br><font size=2><tt>(and the famous LLL-algorithm computes a pretty base.)</tt></font>
+<br>
+<br><font size=2><tt>The generalized DIV/MOD can be useful with bignum
+rationals</tt></font>
+<br><font size=2><tt>and floats, as in sin(x) = sin(x mod (2 pi)), but
+not many </tt></font>
+<br><font size=2><tt>programs really require the 1-dim. lattice reduction
+in my </tt></font>
+<br><font size=2><tt>experience. On the other hand, the generalization
+hardly ever</tt></font>
+<br><font size=2><tt>gets in the way of the integer functionality that
+matters.</tt></font>
+<br>
+<br><font size=2><tt>Sebastian</tt></font>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00424" href="msg00424.html">Re: Integer residue-classes [was: Questions about srfi-77 Generic Arithmetic]</a></strong>
+<ul><li><em>From:</em> Bradley Lucier</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00410.html">Re: Questions about srfi-77 Generic Arithmetic</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00412.html">Re: Integer residue-classes [was: Questions about srfi-77 Generic Arithmetic]</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00410.html">Re: Questions about srfi-77 Generic Arithmetic</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00424.html">Re: Integer residue-classes [was: Questions about srfi-77 Generic Arithmetic]</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00411"><strong>Date</strong></a></li>
+<li><a href="threads.html#00411"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

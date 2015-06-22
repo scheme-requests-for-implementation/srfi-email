@@ -1,0 +1,177 @@
+<!-- MHonArc v2.6.16 -->
+<!--X-Subject: datum comments of sweet&#45;expressions -->
+<!--X-From-R13: "Rnivq O. Iurryre" <qjurryreNqjurryre.pbz> -->
+<!--X-Date: Thu, 11 Jul 2013 04:05:23 +0200 (MST) -->
+<!--X-Message-Id: E1Ux6G0&#45;0008SR&#45;IE@rmm6prod02.runbox.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 87sj1647r6.fsf@tines.lan -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>datum comments of sweet-expressions</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00194.html">Date Prev</a>][<a href="msg00196.html">Date Next</a>][<a href="msg00194.html">Thread Prev</a>][<a href="msg00196.html">Thread Next</a>][<a href="maillist.html#00195">Date Index</a>][<a href="threads.html#00195">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>datum comments of sweet-expressions</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &quot;mhw&quot; &lt;<a href="mailto:mhw@DOMAIN.HIDDEN">mhw@xxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: datum comments of sweet-expressions</li>
+<li><em>From</em>: &quot;David A. Wheeler&quot; &lt;<a href="mailto:dwheeler@DOMAIN.HIDDEN">dwheeler@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 10 Jul 2013 22:05:20 -0400 (EDT)</li>
+<li><em>Cc</em>: &quot;srfi-110&quot; &lt;<a href="mailto:srfi-110@DOMAIN.HIDDEN">srfi-110@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-110@DOMAIN.HIDDEN">srfi-110@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:87sj1647r6.fsf@DOMAIN.HIDDEN">87sj1647r6.fsf@xxxxxxxxx</a>&gt;</li>
+<li><em>Reply-to</em>: <a href="mailto:dwheeler@DOMAIN.HIDDEN">dwheeler@xxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>On 29 May 2013 02:31:25 -0400, Mark H Weaver posted a long set of comments.
+One recommendation was to supporting datum comments of sweet-expressions
+(#; + whitespace).  The idea makes sense, and I did anticipate this.
+However, the obvious ways imply some additional trickiness in grammar
+and implementation.  Here's how I'm thinking about tackling this, but
+if anyone has a better idea, *please* speak up!!
+
+
+The current SRFI-110 says:
+&quot;Scheme&#xE2;s datum comments (#;datum) comment out the next neoteric
+expression, not the next sweet expression (and please don&#xE2;t follow the
+semicolon with whitespace).&quot;
+
+Mark H Weaver recommends:
+&quot;I often put &quot;#;&quot; on the preceeding line, which you're now asking me
+not to do. What is the purpose of this request? Also, &quot;#;&quot; becomes
+much less useful if it cannot comment out an entire sweet expression.
+Perhaps &quot;#;&quot; should have a similar rule as the traditional
+abbreviations: if it is followed by whitespace, then the following
+/sweet expression/ is ignored, otherwise the following /neoteric
+expression/ is ignored. What do you think?&quot;
+
+I have *definitely* thought about this.  Indeed, I wrote the text
+&quot;don't follow the semicolon with whitespace&quot; so that supporting
+datum comments of sweet-expressions could be added as a future addition.
+
+But if we add this as a *requirement*
+to SRFI-110, then the grammar rules and sample implementation
+have to be modified to handle it.  For example:
+a b
+  c
+  #; e
+     f
+  g
+=&gt; (a b c g)
+
+
+THE CHALLENGE: Properly supporting this requires properly supporting
+datum comments of a sweet-expression if it is the *last* item, e.g.:
+fee fie
+  foe
+  fum
+  #; blood
+    Englishman
+=&gt; (fee fie foe fum)
+
+Handling *last* items turns out to be trickier to do, and I think
+that trickiness has nothing to do with whether or not the grammar is LL(1).
+Currently there isn't a good way to handle lines that produce no value.
+In particular, the &quot;it_expr&quot; rule *must* return a datum.
+In the case of lines that begin with &quot;#!sweet&quot;, the grammar rules
+recurse so they can have something to return.  This recursion
+is why the GROUP_SPLIT rule is so complicated.  That approach
+won't work here, because the datum comment might be the last group
+at that indent level.
+
+So for the moment, let's say that we'll try to fix up the existing
+LL(1) rules instead of rewriting the grammar rules in a completely
+different notation.  Even if we do that, I want to do that as a separate
+stage, and I think we should explore simplification further first.
+So...  how could we do this?
+
+One approach would be to fiddle with all the grammar rules that
+invoke it_expr.  However, I think that would be really ugly and involve
+a lot of repetition in the rules.  The problem is that the calling
+rules each have to handle identification of the situation AND
+invoke a different action rule for that case.  Ugh.
+
+I think a better approach would be to modify the
+key production &quot;it_expr&quot; so that it can return an &quot;EMPTY&quot; value,
+distinct from a valid datum like (), that indicates
+&quot;no value at all&quot;.  This would require some the action rules
+to handle &quot;EMPTY&quot; values.  I think that could be handled by
+a few tweaked procedures, e.g., some &quot;cons&quot; can be replaced with &quot;econs&quot;
+(aka &quot;empty-handling cons&quot;):
+(define (econs x y)
+  (cond
+    ((eq? y EMPTY) x)
+    ((eq? x EMPTY) y)
+    (#t (cons x y))))
+
+If we do this, one side-effect is that the GROUP_SPLIT rules could
+probably become much simpler.  We'd no longer need to recurse deeply,
+because there'd be a way to signal that we saw an empty result.
+
+Thoughts?  Comments?  Is there a better way I'm not seeing?
+
+--- David A. Wheeler
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00196" href="msg00196.html">Re: datum comments of sweet-expressions</a></strong>
+<ul><li><em>From:</em> Alan Manuel Gloria</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00179" href="msg00179.html">More comments, and the ANTLR code is too complex</a></strong>
+<ul><li><em>From:</em> Mark H Weaver</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00194.html">Re: More comments, and the ANTLR code is too complex</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00196.html">Re: datum comments of sweet-expressions</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00194.html">Re: More comments, and the ANTLR code is too complex</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00196.html">Re: datum comments of sweet-expressions</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00195"><strong>Date</strong></a></li>
+<li><a href="threads.html#00195"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

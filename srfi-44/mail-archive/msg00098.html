@@ -1,0 +1,228 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Traits, dictionaries -->
+<!--X-From-R13: "Penqq I. Embalr" <oenqq+fesvNfmbalr.pbz> -->
+<!--X-Date: Mon, 20 Oct 2003 21:48:26 +0200 (DFT) -->
+<!--X-Message-Id: 20031020194820.GC4433@ogre.szonye.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20031016105959.GG8421@loki.vpn.szonye.com -->
+<!--X-Reference: 20031016170717.GA9033@freenetproject.org -->
+<!--X-Reference: 20031016192923.GC2858@ogre.szonye.com -->
+<!--X-Reference: 20031020185704.GB26827@freenetproject.org -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Traits, dictionaries</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00097.html">Date Prev</a>][<a href="msg00099.html">Date Next</a>][<a href="msg00108.html">Thread Prev</a>][<a href="msg00100.html">Thread Next</a>][<a href="maillist.html#00098">Date Index</a>][<a href="threads.html#00098">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Traits, dictionaries</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Traits, dictionaries</li>
+<li><em>From</em>: &quot;Bradd W. Szonye&quot; &lt;<a href="mailto:bradd%2Bsrfi@DOMAIN.HIDDEN">bradd+srfi@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 20 Oct 2003 12:48:20 -0700</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20031020185704.GB26827@DOMAIN.HIDDEN">20031020185704.GB26827@xxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Mail-followup-to</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>References</em>: &lt;<a href="mailto:20031016105959.GG8421@DOMAIN.HIDDEN">20031016105959.GG8421@xxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20031016170717.GA9033@DOMAIN.HIDDEN">20031016170717.GA9033@xxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20031016192923.GC2858@DOMAIN.HIDDEN">20031016192923.GC2858@xxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20031020185704.GB26827@DOMAIN.HIDDEN">20031020185704.GB26827@xxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mutt/1.4i</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>On Mon, Oct 20, 2003 at 01:57:04PM -0500, scgmille@xxxxxxxxxxxxxxxxxx wrote:
+&gt;&gt; I think the SRFI is only missing two important feature traits:
+&gt;&gt; 
+&gt;&gt;     reversible-collection?      supports collection-reverse-fold
+&gt;&gt;     finite-collection?          collection-fold will halt on its own
+
+&gt; I've added the reversible collection attribute to the SRFI and updated 
+&gt; at <a  rel="nofollow" href="http://sgmiller.org/code/srfi-44.html">http://sgmiller.org/code/srfi-44.html</a>.  
+
+Great, thanks!
+
+&gt; finite-collection? is arguably the same as (not (collection-size 
+&gt; collection)).
+
+Hey, good catch! Except that you got it backwards. Finite-collection? is
+usually the same as (collection-size c), except that the latter returns
+a useful value.
+
+&gt; Others are permitted to do so if they cannot determine their own size
+&gt; efficiently.
+
+I don't think that'll cause problems in practice.
+
+&gt; Circular lists and simliar collections can be created using the
+&gt; negative index trick hinted at by the SRFI, but I'm unsure whether
+&gt; folds should proceed indefinitely over finite collections.  Other
+&gt; thoughts?
+
+I'm a little more worried about these. Consider a circular list with 10
+nodes. What should it report as its size, 10 or #f? More specifically,
+which value should collection-size report:
+
+1. The number of nodes, or
+2. The number of times collection-fold will call its argument?
+
+If the latter, then finite-collection? is effectively identical to
+collection-size. If the former, then I still see a need for the
+predicate.
+
+Consider me mostly convinced. Either way, we may not *need* the finite
+predicate. However, I would like to see *-size clarified slightly for
+cases like the circular list. Specifically, the spec should clearly
+state one of the following:
+
+1. Infinite collections should always report #f.
+2. Infinite collections should report the &quot;decycled&quot; size, if possible.
+3. Either #1 or #2 is OK so long as you document it.
+4. It's unspecified, and users should beware.
+
+I personally prefer #1. A circular list might provide its own method for
+determining the cycle length (i.e., (clist-cycle-size L)), but it should
+report #f for clist-size.
+
+Note: I think the SRFI already requires this, but I'm not certain.
+
+Regarding ! and !!:
+
+&gt; The !/!! distinction is to aid in the readability of code primarily
+&gt; .... Imagine this following piece of code occurs in a program:
+&gt; 
+&gt; (define (add-two collection a b)
+&gt;   (bag-add! collection a)
+&gt;   (bag-add! collection b))
+&gt; 
+&gt; If ! is the same as !!, this code may break in a bizarre way if the 
+&gt; input collection is changed at some point from a mutable to non-mutable
+&gt; collection.
+
+Solution:
+
+    (define (add-two collection a b)
+      (assert mutable-collection? collection)
+      (bag-add! collection a)
+      (bag-add! collection b))
+
+I think that's the right way to do it. *! and *!! are equivalent for an
+otherwise purely-functional program; impure programs can rely on the
+mutable shortcut but *only* if they check first. It simplifies the
+namespace and does a better job of expressing what the code really
+means.
+
+This isn't a deal-breaker for me, but I would like to see the change.
+
+&gt;&gt; 2. The bidirectional-collection? and random-access-collection?
+&gt;&gt;    performance traits would be HELPFUL for generic programming.
+
+&gt; I'd prefer that be left to another SRFI.
+
+OK.
+
+&gt;&gt; For unordered dictionaries, key-eqv? and val-eqv? both default to
+&gt;&gt; eqv?. Ordered dictionaries are similar, except that they can derive
+&gt;&gt; key-eqv? from less?, as long as it's a strict weak order (which
+&gt;&gt; includes &lt; but not partial orders like &lt;=).
+
+&gt; I almost agree.  I'd prefer the value equivalence function be the
+&gt; default, as it fits with the rest of the SRFI that values, not keys,
+&gt; are the default visible element of a dictionary when used ignorantly.
+
+Definitely agreed!
+
+&gt;&gt; ... the equivalence function is supposed to &quot;return true if they
+&gt;&gt; should be considered equivalent for the purposes of contains?, value
+&gt;&gt; insertion, removal, and key lookup.&quot;
+
+&gt; I prefer making *-equivalence-function return the value equivalence
+&gt; function as above, but change the wording of the above sentence to
+&gt; match.
+
+Works for me! Actually, I like this much better than my earlier
+suggestion. It's also more &quot;orthogonal&quot; with the fold and fold-keys
+procedures.
+
+&gt; I argue [*-equivalence-function] should return the value comparator,
+&gt; *-key-equivalence-function returns the key comparator ...
+
+Yes, definitely.
+
+&gt; and specifying only one equivalence function causes both key and value
+&gt; to use said function.
+
+Hm, I'll have to think on this one. At first glance, it sounds OK.
+Really, it should be up to the collection, with a recommendation that:
+
+1. Ordered dictionaries derive key-eqv? from the ordering function.
+2. Other dictionaries default key-eqv? to value-eqv?.
+-- 
+Bradd W. Szonye
+<a  rel="nofollow" href="http://www.szonye.com/bradd">http://www.szonye.com/bradd</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00100" href="msg00100.html">Re: Traits, dictionaries</a></strong>
+<ul><li><em>From:</em> scgmille</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00083" href="msg00083.html">Bidirectionality and other comments</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+<li><strong><a name="00086" href="msg00086.html">Re: Bidirectionality and other comments</a></strong>
+<ul><li><em>From:</em> scgmille</li></ul></li>
+<li><strong><a name="00090" href="msg00090.html">Traits, dictionaries</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+<li><strong><a name="00094" href="msg00094.html">Re: Traits, dictionaries</a></strong>
+<ul><li><em>From:</em> scgmille</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00097.html">Re: s/-LEFT//g?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00099.html">Re: Traits, dictionaries</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00108.html">Name and API conflicts, and some wording</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00100.html">Re: Traits, dictionaries</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00098"><strong>Date</strong></a></li>
+<li><a href="threads.html#00098"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

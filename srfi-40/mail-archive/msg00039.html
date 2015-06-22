@@ -1,0 +1,186 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: correspondences with SRFI&#45;1 -->
+<!--X-From-R13: Buvy Prjvt <corjvtNfjoryy.arg> -->
+<!--X-Date: Wed, 19 Mar 2003 08:51:45 +0100 (NFT) -->
+<!--X-Message-Id: y9lof47aj5c.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20030318.092111.41657707.Sven.Hartrumpf@FernUni&#45;Hagen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: correspondences with SRFI-1</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00038.html">Date Prev</a>][<a href="msg00040.html">Date Next</a>][<a href="msg00037.html">Thread Prev</a>][<a href="msg00047.html">Thread Next</a>][<a href="maillist.html#00039">Date Index</a>][<a href="threads.html#00039">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: correspondences with SRFI-1</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-40@DOMAIN.HIDDEN">srfi-40@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: correspondences with SRFI-1</li>
+<li><em>From</em>: Phil Bewig &lt;<a href="mailto:pbewig@DOMAIN.HIDDEN">pbewig@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 19 Mar 2003 08:51:43 +0100</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-40@DOMAIN.HIDDEN">srfi-40@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20030318.092111.41657707.Sven.Hartrumpf@DOMAIN.HIDDEN">20030318.092111.41657707.Sven.Hartrumpf@xxxxxxxxxxxxxxxx</a>&gt; (Sven Hartrumpf's message of &quot;Tue, 18 Mar 2003 09:21:11 +0100 (CET)&quot;)</li>
+<li><em>References</em>: &lt;<a href="mailto:20030318.092111.41657707.Sven.Hartrumpf@DOMAIN.HIDDEN">20030318.092111.41657707.Sven.Hartrumpf@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Gnus/5.090015 (Oort Gnus v0.15) XEmacs/21.5 (cabbage)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+On Tuesday, March 18, 2003 2:21 AM, Sven Hartrumpf [SMTP:Sven.Hartrumpf@xxxxxxxxxxxxxxxx] wrote:
+&gt; I am not a stream expert, so I will concentrate on interface design
+&gt; questions. This _lazy list SRFI_ should IMHO be closer to the popular
+&gt; _list SRFI_ (SRFI-1).
+&gt; 
+Since streams and lists are significantly different, conceptually,
+I used the Haskell prelude as my primary model, not SRFI-1,
+although I do admit some correspondence to SRFI-1.  Of course,
+since Haskell doesn't have lists in the Scheme sense, I felt free
+to modify the names where I felt it was appropriate.  I also
+applied some sense of &quot;schemeliness&quot; to the names, though
+I am happy to admit that your sense of &quot;schemeliness&quot; may
+be different than mine.
+
+&gt; Here are my comments in textual order:
+&gt; 
+&gt; Drop:
+&gt; stream-take-until, stream-drop-until
+&gt; (No equivalent in SRFI-1 and stream-take-while/stream-drop-while
+&gt; might suffice.)
+&gt; 
+&gt; Rename:
+&gt; stream-split       -&gt; stream-split-at
+&gt; stream-split-until -&gt; stream-break
+&gt; stream-split-while -&gt; stream-span
+&gt; 
+
+Break and span are the Haskell names for these functions.  I
+didn't use them because I can never remember which is which.
+
+&gt; The one line definition of stream-partition seems to be incomplete.
+&gt; 
+&gt; Rename:
+&gt; stream-fold-left -&gt; stream-fold
+&gt; (Is the order of arguments for func reversed compared to SRFI-1?)
+&gt; stream-scan... -&gt; ...? (fold-pair...?, is this the corresponding function?)
+&gt; stream-fold-..-one -&gt; stream-reduce (with slightly different semantics!)
+&gt; 
+The order of arguments follows the Haskell prelude.  The names are
+like Haskell, but spelled out in full instead of abbreviated.  Personally,
+I prefer accumulate and reduce for foldleft and foldright, but most other
+people seem to have the opposite preference, and accumulate and
+reduce don't promote to scanleft and scanright in any sensible way.
+Looking at SRFI-1, Olin Shivers spent a lot of time discussing the
+relative merits of these names, and finally decided that he was the
+SRFI author so he got to pick the names he liked, since there is no
+particular reason to prefer any one over the others.
+
+&gt; Restricted usefulness:
+&gt; port-&gt;word-stream (because it relies on char-alphabetic?, similarly for
+&gt; port-&gt;line-stream
+&gt; How about a predicate for characters as an argument?
+&gt; 
+You can specify your own reader function to the generic port-&gt;stream.
+Port-&gt;line-stream is frequently useful for text-processing filters, and
+port-&gt;word-stream has analogues in every scripting language I can
+think of (awk, perl, python, lua, tcl, etc), so I think it is okay to have
+it in the library.	
+
+&gt; Rename:
+&gt; stream-concat -&gt; stream-concatenate
+&gt; ... and probably some more ...
+&gt; You get the idea what I am after :-)
+&gt; 
+Unix shell programmers would spell this stream-cat.  And there
+is another message in this discussion about how the names
+are already too long.  I'll never make everybody happy.
+
+&gt; And:
+&gt; People should report functions (inspired by SRFI-1) that
+&gt; - make sense for streams AND
+&gt; - are currently not in SRFI-40.
+&gt; 
+
+I am generally not too worried about function names, and am
+happy to change a name if there is some reason, or due to a
+strong sentiment from the group.  For instance, stream-init
+was changed to stream-butlast, at the suggestion of a reader
+of a preliminary draft of the SRFI, on the grounds that stream-init
+sounded too much like a function that initializes something
+rather than what it really does.  However, absent some
+compelling reason such as that, I am reasonably happy with
+the names I have chosen, which seem to me both descriptive
+and &quot;schemely,&quot; and won't lightly change them at this point.
+
+That's not to say there aren't problems.  The family of functions
+stream-merge, stream-interleave, and stream-alternate are
+confusingly named, and any suggestions would certainly be
+considered.  There will certainly be a problem naming the
+suggested variants of unfoldn.  The name stream-transform
+has been used in this discussion, but doesn't really describe
+what it does.  There are probably other examples as well.  If
+you want to propose a name that solves some of these
+problems, feel free.
+
+&gt; Greetings
+&gt; Sven
+
+Many thanks for your comments.
+
+Phil
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00037" href="msg00037.html">correspondences with SRFI-1</a></strong>
+<ul><li><em>From:</em> Sven Hartrumpf</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00038.html">Re: abbreviate &quot;stream&quot;?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00040.html">Re: abbreviate &quot;stream&quot;?</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00037.html">correspondences with SRFI-1</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00047.html">comprehensions</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00039"><strong>Date</strong></a></li>
+<li><a href="threads.html#00039"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

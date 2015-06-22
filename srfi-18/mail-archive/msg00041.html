@@ -1,0 +1,157 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: The Scheduler -->
+<!--X-From-R13: [nep Trryrl <srryrlNWDA.G[bagerny.QO> -->
+<!--X-Date: Thu, 13 Apr 2000 09:16:55 &#45;0500 (CDT) -->
+<!--X-Message-Id: 200004131416.KAA14692@trex.IRO.UMontreal.CA -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 002901bfa3e1$83e14190$11969fd0@fitzgerald_nt -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: The Scheduler</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00040.html">Date Prev</a>][<a href="msg00042.html">Date Next</a>][<a href="msg00040.html">Thread Prev</a>][<a href="msg00042.html">Thread Next</a>][<a href="maillist.html#00041">Date Index</a>][<a href="threads.html#00041">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: The Scheduler</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:fitzgerald@DOMAIN.HIDDEN">fitzgerald@xxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: The Scheduler</li>
+<li><em>From</em>: Marc Feeley &lt;<a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 13 Apr 2000 10:16:53 -0400</li>
+<li><em>Cc</em>: <a href="mailto:srfi-18@DOMAIN.HIDDEN">srfi-18@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:002901bfa3e1%2483e14190%2411969fd0@DOMAIN.HIDDEN"><a href="msg00040.html">002901bfa3e1$83e14190$11969fd0@fitzgerald_nt</a></a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:002901bfa3e1%2483e14190%2411969fd0@DOMAIN.HIDDEN"><a href="msg00040.html">002901bfa3e1$83e14190$11969fd0@fitzgerald_nt</a></a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; I'm curious why the scheduler wasn't made a data type, too, and, in
+&gt; particular, why the scheduling algorithm isn't changeable.
+
+Well, a thread system could be built with a changeable scheduler but
+this would have some consequences that I don't like:
+
+1) The properties of the thread system will depend on the scheduler
+   supplied by the user, so a library can't use threads because their
+   semantics is not well defined.
+
+2) The scheduler is a global resource, so different modules can't
+   install their own scheduler.  So which module is responsible for
+   installing the scheduler, and which scheduler do you get when the
+   system starts?
+
+3) Decoupling the thread primitives from the scheduler makes it harder
+   to implement the scheduler.  For example if you want the &quot;mutex-lock!&quot;
+   primitive to essentially do:
+
+      if mutex is unlocked
+        then lock it and return  ; note: atomic with test
+        else call the scheduler method &quot;block-on-mutex!&quot; with the mutex
+             (this method will block the current thread on the mutex)
+
+   then you need to somehow guarantee that the program does not
+   service preemption timer interrupts between the test &quot;mutex is
+   unlocked&quot; and entry of the method &quot;block-on-mutex!&quot;.  The clean
+   solution would be to use an extra (lower-level) mutex which is
+   locked on entry to &quot;mutex-lock!&quot; and unlocked somewhere inside
+   &quot;block-on-mutex!&quot;.  But this raises some issues:
+
+     - who is responsible for implementing these lower-level mutexes?
+     - are the lower-level mutexes powerful enough to work on multiprocessors?
+     - is there a lower-level scheduler that blocks the current thread
+       if the lower-level mutex is locked?  how does the lower-level
+       scheduler interact with the higher-level scheduler?
+     - if two schedulers are needed, then why not view SRFI-18 as
+       specifying the lower-level mutexes and scheduler, and
+       implement the higher-level scheduler on top of that?
+
+4) I don't really anticipate very big savings (in development time) in
+   a changeable scheduler.  You'll end up re-implementing most of the
+   thread system because the thread primitives and the scheduler are
+   closely coupled.  In any case, it should be relatively
+   straightforward to modify the implementation I will supply with the
+   SRFI (or the one supplied with your Scheme system if it is
+   open-source) to get a specific semantics.
+
+   By the way, I would like to see how you would structure a
+   changeable scheduler that supports all the features proposed in
+   SRFI-18.
+
+&gt; Further (and relatedly), I'm curious why priority and quantum are
+&gt; defined as the only thread-related data that affect the scheduling. If
+&gt; the scheduling algorithm were separate, there might be other data it
+&gt; would want to consider (e.g., deadlines).
+
+This is an open-ended issue.  I'm proposing a basic (but not minimal)
+thread system with features similar to those found in mainstream
+thread systems.  In fact the thread system I propose is more powerful
+than most mainstream thread systems (for example few thread systems
+support per thread quantums and absolute timeouts).  If there is a
+need for other &quot;non-mainstream&quot; features, such as deadlines, then a
+new SRFI can be proposed.  My hope is that it will be a pure extension
+of SRFI-18 (that is why it is important to have a scheduling semantics
+that is not too restrictive).
+
+Marc
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00042" href="msg00042.html">RE: The Scheduler</a></strong>
+<ul><li><em>From:</em> Will Fitzgerald</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00040" href="msg00040.html">The Scheduler</a></strong>
+<ul><li><em>From:</em> Will Fitzgerald</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00040.html">The Scheduler</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00042.html">RE: The Scheduler</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00040.html">The Scheduler</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00042.html">RE: The Scheduler</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00041"><strong>Date</strong></a></li>
+<li><a href="threads.html#00041"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

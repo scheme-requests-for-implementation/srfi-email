@@ -1,0 +1,153 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: non&#45;local exits are icky -->
+<!--X-From-R13: [vpunry Ecreore <fcreoreNvasbezngvx.hav&#45;ghrovatra.qr> -->
+<!--X-Date: Sat, 27 Dec 2003 17:16:06 +0100 (NFT) -->
+<!--X-Message-Id: y9l65g22q4b.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200312232331.PAA19112@morrowfield.regexps.com -->
+<!--X-Reference: y9l3cb7a8n0.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: 200312261838.KAA27859@morrowfield.regexps.com -->
+<!--X-Reference: y9lwu8j77pb.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: 200312261943.LAA28146@morrowfield.regexps.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: non-local exits are icky</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00089.html">Date Prev</a>][<a href="msg00091.html">Date Next</a>][<a href="msg00084.html">Thread Prev</a>][<a href="msg00094.html">Thread Next</a>][<a href="maillist.html#00090">Date Index</a>][<a href="threads.html#00090">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: non-local exits are icky</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Tom Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: non-local exits are icky</li>
+<li><em>From</em>: Michael Sperber &lt;<a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 27 Dec 2003 17:16:04 +0100</li>
+<li><em>Cc</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:200312261943.LAA28146@DOMAIN.HIDDEN">200312261943.LAA28146@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt; (Tom Lord's message of &quot;Fri, 26 Dec 2003 11:43:38 -0800 (PST)&quot;)</li>
+<li><em>References</em>: &lt;<a href="mailto:200312232331.PAA19112@DOMAIN.HIDDEN">200312232331.PAA19112@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:y9l3cb7a8n0.fsf@DOMAIN.HIDDEN">y9l3cb7a8n0.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:200312261838.KAA27859@DOMAIN.HIDDEN">200312261838.KAA27859@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:y9lwu8j77pb.fsf@DOMAIN.HIDDEN">y9lwu8j77pb.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:200312261943.LAA28146@DOMAIN.HIDDEN">200312261943.LAA28146@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Gnus/5.090019 (Oort Gnus v0.19) XEmacs/21.5 (celeriac, berkeley-unix)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt;&gt;&gt;&gt;&gt; &quot;Tom&quot; == Tom Lord &lt;lord@xxxxxxx&gt; writes:
+
+&gt;&gt; From: Michael Sperber &lt;sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx&gt;
+
+Tom&gt; Since the mechanism of these non-local exits is not
+Tom&gt; specified and can not be modified by C code, the FFI
+Tom&gt; contains no provision for them to perform unwind protection
+Tom&gt; --- that's a serious omission.
+
+&gt;&gt; But SCHEME_CALL takes you back to Scheme, where you can use
+&gt;&gt; DYNAMIC-WIND.
+
+&gt;&gt; I think I misunderstand your point.
+
+
+Tom&gt; A sketch that illustrates the issue:
+
+
+Tom&gt;   my_fn ()
+Tom&gt;   {
+Tom&gt;     int fd;
+
+Tom&gt;     fd = open (&quot;somefile&quot;, O_RDONLY, 0);
+
+Tom&gt;     SCHEME_CALL ( [...] );
+
+Tom&gt;     close (fd);
+Tom&gt;   }
+
+
+Of course, you're not supposed to do this.  You're supposed to do
+(very roughly):
+
+scheme_value my_open()
+{
+    return SCHEME_ENTER_LONG((long) open (&quot;somefile&quot;, O_RDONLY, 0));
+}
+
+...
+
+scheme_value my_close(scheme_value fd)
+{
+    close((int) SCHEME_EXTRACT_LONG(fd));
+}
+
+... and handle the non-local control flow from Scheme.  C just isn't
+powerful enough to play these games gracefully.
+
+-- 
+Cheers =8-} Mike
+Friede, V&#xF6;lkerverst&#xE4;ndigung und &#xFC;berhaupt blabla
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00094" href="msg00094.html">Re: non-local exits are icky</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00041" href="msg00041.html">non-local exits are icky</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00073" href="msg00073.html">Re: non-local exits are icky</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+<li><strong><a name="00078" href="msg00078.html">Re: non-local exits are icky</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00079" href="msg00079.html">Re: non-local exits are icky</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+<li><strong><a name="00084" href="msg00084.html">Re: non-local exits are icky</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00089.html">Re: handling multiple scheme instances</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00091.html">Re: no constants please</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00084.html">Re: non-local exits are icky</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00094.html">Re: non-local exits are icky</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00090"><strong>Date</strong></a></li>
+<li><a href="threads.html#00090"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

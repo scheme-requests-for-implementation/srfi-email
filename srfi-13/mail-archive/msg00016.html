@@ -1,0 +1,288 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Update -->
+<!--X-From-R13: fuvirefNnv.zvg.rqh -->
+<!--X-Date: Sat, 13 Nov 1999 17:01:02 &#45;0600 (CST) -->
+<!--X-Message-Id: 199911132257.RAA09731@mongkok.ai.mit.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Update</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00015.html">Date Prev</a>][<a href="msg00017.html">Date Next</a>][<a href="msg00014.html">Thread Prev</a>][<a href="msg00017.html">Thread Next</a>][<a href="maillist.html#00016">Date Index</a>][<a href="threads.html#00016">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Update</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-13@DOMAIN.HIDDEN">srfi-13@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Update</li>
+<li><em>From</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxx</a></li>
+<li><em>Date</em>: Sat, 13 Nov 1999 17:57:51 -0500</li>
+<li><em>Reply-to</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>I have altered the SRFI to make the following changes:
+  - &quot;prefix-count&quot;/&quot;suffix-count&quot; lexeme changed to
+    &quot;prefix-length&quot;/&quot;suffix-length&quot;
+      These				are now these
+      -------------------------	--------------------------
+      string-prefix-count           string-prefix-length      
+      string-suffix-count           string-suffix-length      
+      string-prefix-count-ci        string-prefix-length-ci   
+      string-suffix-count-ci        string-suffix-length-ci   
+      substring-prefix-count        substring-prefix-length   
+      substring-suffix-count        substring-suffix-length   
+      substring-prefix-count-ci     substring-prefix-length-ci
+      substring-suffix-count-ci     substring-suffix-length-ci
+
+  - string-comparison functions now return a simple boolean
+
+	string&lt;&gt;     string=    string&lt;    string&gt;    string&lt;=    string&gt;=
+	string-ci&lt;&gt;  string-ci= string-ci&lt; string-ci&gt; string-ci&lt;= string-ci&gt;=
+
+	substring=  substring&lt;&gt; substring-ci=  substring-ci&lt;&gt;
+	substring&lt;  substring&gt;  substring-ci&lt;  substring-ci&gt;
+	substring&lt;= substring&gt;= substring-ci&lt;= substring-ci&gt;=
+
+    Note that these comparison functions still return a mismatch index:
+	string-compare    substring-compare
+	string-compare-ci substring-compare-ci
+
+What follows is general discussion and replies to msgs from Oleg &amp; Dan.
+    -Olin
+
+-------------------------------------------------------------------------------
+    From: oleg@xxxxxxxxx
+
+	    If I may I'd like to propose two more functions,
+    string-&gt;integer  and string-split.
+
+A general STRING-SPLIT is just too complicated for me. Here are the variants
+we want to support:
+   - Variant grammars, e.g. tolerant-infix, strict-infix, and suffix
+   - Optional substring indices
+   - Number of fields to parse. You might want
+	    - as many as exist,
+	    - exactly N, or error,
+	    - at least N, or error.
+   - Do contiguous runs of delimiter chars make a single delimiter, or
+     to they designate empty-string tokens?
+
+Scheme makes it difficult to have different, independent sets of optional
+args, since you have to order them. The &quot;field parser&quot; utilities I wrote
+for scsh's awk utility (see the scsh manual) handle all this complexity,
+and more -- you can specify tokens or delimiters with general regexps, not
+just char sets. But this is much hairier machinery than I feel is appropriate
+for a basic string library.
+
+I dodged at least the grammar issue with STRING-TOKENIZE by having you
+specify not the separator chars but the token chars -- contiguous runs
+of token chars make a token. End of story. And I just punted the
+number-of-fields issue, leaving only the substring indices as possible
+optional args, so things worked out -- given my low ambitions.
+
+    Some problems
+    are more elegantly and efficiently expressed in terms of inclusion,
+    some other are in terms of delimiting. I found for example that in
+    Perl and Python split() is a rather often-used function.
+
+Yeah, perl hackers use split() a lot, for sure. But the char-set SRFI provides
+a CHAR-SET:GRAPHIC set, which makes it as easy to use STRING-TOKENIZE to pick
+out non-whitespace tokens as it is for perl hackers to use split() to break
+tokens at whitespace. So I really think STRING-TOKENIZE is going to take care
+of you for the simple cases, and if you've got fancier requirements... then
+you probably oughta code up a little custom parser for your app, anyway.
+
+	    R5RS procedure string-&gt;number is far more generic than the
+    proposed string-&gt;integer -- and this may be a problem IMHO.  For
+    example, string-&gt;number will try to read strings like &quot;1/2&quot; &quot;1S2&quot;
+    &quot;1.34&quot; and even &quot;1/0&quot; (the latter causing a zero-divide error). Note
+    that to Gambit's string-&gt;number, &quot;1S2&quot; is a valid representation of an
+    _inexact_ integer (100 to be precise).  Oftentimes we want to be more
+    restrictive about what we consider a number; we want merely to read an
+    integral label.
+
+	    -- procedure+: string-&gt;integer STR START END
+
+    Makes sure a substring of the STR from START (inclusive) till END
+    (exclusive) is a representation of a non-negative integer in decimal
+    notation. If so, this integer is returned. Otherwise -- when the
+    substring contains non-decimal characters, or when the range from
+    START till END is not within STR, the result is #f.
+
+This is a can of worms. string-&gt;integer is undoubtedly useful. But so is
+string-&gt;floating-point. What about base? Return #f or raise an error on
+bad syntax?
+
+Bornstein had a nice summary of the complexities involved:
+    I don't like this particularly. I can think of a kabillion variants on
+    parsing strings into numbers that I might find useful. The one that's
+    built-in is the right one since it's about Scheme read form (which you
+    gotta implement anyway). The moment you step into the territory of other
+    number formats, you should be ready to define a full suite of procedures to
+    deal with the plethora of possibilities.
+
+    &gt; [SRFI-13]
+    &gt; string-concatenate string-list -&gt; string
+    &gt;     Append the elements of STRING-LIST together into a single _list_.
+    &gt;     Guaranteed to return a freshly allocated _list_.
+
+    Did you mean to say a 'string' (instead of a _list_)?
+
+Yes, you are quite correct. Thanks; I've fixed the text.
+
+    SRFI-13 mentions that string-unfold is also called &quot;anamorphism&quot;.
+    Do you want to point out that a foldr combinator (e.g.,
+    string-fold-right) is also called a &quot;catamorphism&quot;?
+
+Excellent! Done.
+
+    From: Dan Bornstein &lt;danfuzz@xxxxxxxx&gt;
+
+    Olin writes:
+    &gt;C'mon. Do you really think that people would use STRING-SET ?
+    &gt;STRING-FILL is an easier case to make. Let's see, that would be
+
+    Actually, my suggestions come from actual use. The Scheme variant that I'm
+    working on for work started out life as a functional-only system (that is,
+    no mutable data *at all*), and I ended up implementing string-set and using
+    it quite a bit. Do I have to rehash the issues of why working with
+    immutable data can be a big win?
+
+    Anyway, the straightforward implementation is simple:
+
+	(define (string-set str k ch)
+	  (set! str (string-copy str)) ; or substring or whatever
+	  (string-set! str k ch)
+	  str)
+
+Careful with that axe, Eugene! Never use SET! unless you really need a 
+true side-effect. Use LET:
+	(define (string-set str k ch)
+	  (let ((str (string-copy str)))
+	    (string-set! str k ch)
+	    str))
+
+    and it (I know I harp on this) maintains the overall consistency of the
+    library. More consistency means easier to learn and easier to understand.
+    Big win.
+
+I'm still maintaining that you are a freak with strange programming needs,
+and that STRING-SET is really an uncommon op. Does anybody besides Dan
+want to stand up for a pure-functional STRING-SET ?
+
+    I'd actually just as soon drop string-fill! as add string-fill (I don't
+    think I've ever had a compelling reason to use either), but I'm more in
+    favor of doing one or the other than leaving the asymmetry. For the
+    record:
+
+	(define (string-fill str ch)
+	   (make-string (string-length str) ch))
+
+Uhh... I'll add STRING-FILL if I get more support for it. 
+
+    &gt;&gt;[issue with string-copy and string-copy! not taking parallel args]
+    &gt;Yeah, you're right. However, your non-side-effecting STRING-COPY is subsumed
+    &gt;by the STRING-REPLACE Welsh proposes below. I think I'll leave things as-is.
+
+    If by &quot;as-is&quot; you mean dropping the proposal for string-copy! then I'm for
+    that. If you mean simply leaving your original proposal where the two
+    procedures take different sets of args, then I'm against that. Again, I'm
+    not against the particular functionality (which seems useful to me), just
+    against calling two essentially different procedures by essentially similar
+    names.
+
+I mean (1) adding STRING-REPLACE, and (2) keeping both my STRING-COPY and
+my STRING-COPY!. I recognise the non-parallelism, but do not think it's
+a big deal. However,
+  - I'm open to a better name for STRING-COPY or STRING-COPY!, to break
+    the bogus parallelism. I've considered STRING-BLT and STRING-MOVE;
+    don't think they're too good.
+  - I'm open to being beaten on more by others who want to back Dan up.
+
+    &gt;[mismatch index with the (in)equality procedures] It turns out to be a
+    &gt;handy value to have around if you are comparing strings.
+
+    However, requiring it means that implementations are precluded from using
+    certain short-cut optimizations, in particular, = and &lt;&gt; can't return
+    quickly based on the length of the arguments. I'm against returning
+    mismatch indices in the standard (in)equality functions, but do see their
+    benefit and would be in favor of specifying explicit
+    mismatch-index-returning procedures, not just because of the above
+    efficiency tweak but also because they would signal programmer intent. I
+    don't have a strong opinion about what these functions would be named,
+    &quot;stringOP-mismatch-index&quot; is an off-the-top-of-my-head suggestion.
+
+	string=-mismatch-index
+	string&lt;-mismatch-index
+	etc.
+
+Oops. Precluding short-cut optimisations is a bad thing. Hmm. 
+
+OK, here's my proposal: the string-length shortcuts are only available
+for string= and string&lt;&gt;. So we will back out the mismatch-index
+functionality from all the STRING=, STRING&lt;, etc. functions -- they
+now only return boolean values.
+
+However, I know of no shortcuts for the STRING-COMPARE procedures that
+are precluded by returning mismatch indices. So we'll leave that functionality
+in place.
+
+Now programmers can choose what they want.
+
+I *could* have restricted only = and &lt;&gt;, and left &lt;, &gt;, &lt;=, &gt;= alone --
+but that seems a little ugly to me.
+
+I have modified the SRFI to reflect this change.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00015.html">Re: Round 2 discussion</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00017.html">Open issues summary #2 (and a list of resolved issues)</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00014.html">A suggestion: string-split, string-&gt;integer</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00017.html">Open issues summary #2 (and a list of resolved issues)</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00016"><strong>Date</strong></a></li>
+<li><a href="threads.html#00016"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

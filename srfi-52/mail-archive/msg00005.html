@@ -1,0 +1,168 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: case mappings, character sets &#38; character properties -->
+<!--X-From-R13: orne <orneNfbavp.arg> -->
+<!--X-Date: Tue, 10 Feb 2004 05:56:39 +0100 (NFT) -->
+<!--X-Message-Id: Pine.LNX.4.58.0402092007570.23827@bolt.sonic.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 87k72vbowi.wl@strelka.synthcode.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: case mappings, character sets &amp; character properties</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00004.html">Date Prev</a>][<a href="msg00006.html">Date Next</a>][<a href="msg00004.html">Thread Prev</a>][<a href="msg00006.html">Thread Next</a>][<a href="maillist.html#00005">Date Index</a>][<a href="threads.html#00005">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: case mappings, character sets &amp; character properties</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Alex Shinn &lt;<a href="mailto:foof@DOMAIN.HIDDEN">foof@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: case mappings, character sets &amp; character properties</li>
+<li><em>From</em>: bear &lt;<a href="mailto:bear@DOMAIN.HIDDEN">bear@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 9 Feb 2004 20:56:24 -0800 (PST)</li>
+<li><em>Cc</em>: Tom Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>&gt;, <a href="mailto:srfi-52@DOMAIN.HIDDEN">srfi-52@xxxxxxxxxxxxxxxxx</a>,	<a href="mailto:pika-dev@DOMAIN.HIDDEN">pika-dev@xxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-52@DOMAIN.HIDDEN">srfi-52@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:87k72vbowi.wl@DOMAIN.HIDDEN">87k72vbowi.wl@xxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:87k72vbowi.wl@DOMAIN.HIDDEN">87k72vbowi.wl@xxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+On Tue, 10 Feb 2004, Alex Shinn wrote:
+
+&gt;First, a few notes on terminology.
+&gt;
+&gt;  &quot;Letter,&quot; by all standard definitions and consistent with Unicode
+&gt;  usage, specifically refers an element of an alphabet.  It therefore
+&gt;  would not apply to syllabic or ideographic characters.
+&gt;
+&gt;  &quot;Ideograph&quot; applied to all Han characters is technically incorrect.
+&gt;  Linguists prefer the term &quot;sinogram&quot; which refers to Chinese-derived
+&gt;  characters.  &quot;Sinogram&quot; fits all uses being applied to the term
+&gt;  &quot;ideograph&quot; in these discussions (at least until Unicode adds
+&gt;  hieroglyphs).  Since the usage of ideograph is fairly ubiquitous,
+&gt;  however, it may not be worth fighting it.
+
+Hm, okay.  Duly noted, I will try to stop misusing the term.
+
+&gt;The concept of case is orthogonal to being alphabetic.  There are
+&gt;alphabetic characters with no case, and (Unicode-classified) symbols
+&gt;which are given case mappings such as Circled-A (U+24B6).
+
+Argh. Yes.  Thank you.
+
+&gt;Defining anything in terms of character level case procedures seems like
+&gt;a bad idea, since any individual character can map to 0-3 characters
+&gt;(German eszett, although the most famous, is not by any means the only
+&gt;exception here).
+
+Characters which casemap to characters outside the single-codepoint
+character set are not a problem for me since my characters aren't
+limited to a single codepoint.  I'm mostly here trying to avoid
+getting the Right Thing defined out of existence in favor of kluges
+and hacks designed to accomodate the shortcomings of single-codepoint
+character sets.
+
+Eszett is unique (and the only case where I share this problem with
+schemes having only a single-codepoint character set) in that it case
+maps not just to a multi-codepoint character, but to multiple separate
+characters!
+
+&gt; For Schemes that wish to provide a full linguistic folding of
+&gt; identifiers, you definitely want some sort of locale-neutral
+&gt; folding.  I posted the general possible combinations on
+&gt; c.l.s. earlier.  Unicode does define locale-neutral case-foldings
+&gt; which are a subset of those combinations - they break it down into
+&gt; whether or not you unify Turkish i (and ignore other accent marks),
+&gt; and whether or not to allow folding to more than one character (as
+&gt; an optimization).  The &quot;one-character&quot; folding seems fairly
+&gt; arbitrary and undesirable if you're going the whole hog anyway.
+
+True.  The fundamental relationship that must hold seems to be that
+two symbols foo and bar will be read as the same identifier if and
+only if:
+
+(string=? (symbol-&gt;string foo)
+          (symbol-&gt;string bar)) =&gt; #t
+
+Looks so simple, doesn't it?  It turns out we've got a lot more going
+on in terms of dependent properties and definitions.
+
+&gt;Core Unicode character properties can be provided as SRFI-14 char-sets.
+
+Agreed.  I'd recommend adding one char-set to the list, charset:1code,
+the set of characters that can be represented as single unicode
+codepoints.
+
+&gt;(Unicode Character Database).  The question remains how to handle R5RS
+&gt;character predicates related to these values:
+
+&gt;  * char-alphabetic? char
+&gt;  * char-numeric? char
+&gt;  * char-whitespace? char   ; rename to char-white-space? please!
+&gt;  * char-upper-case? char   ; rename to char-uppercase? please!
+&gt;  * char-lower-case? char   ; rename to char-lowercase? please!
+
+:-)  So that bugs you, too, huh?  I agree, those predicates ought
+to be renamed. I also agree that there's some question about how
+to handle the predicates. I think the correct response is to simply
+drop the requirement of char-alphabetic having anything to do with
+the case predicates.
+
+				Bear
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00004" href="msg00004.html">case mappings, character sets &amp; character properties</a></strong>
+<ul><li><em>From:</em> Alex Shinn</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00004.html">case mappings, character sets &amp; character properties</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00006.html">introduction</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00004.html">case mappings, character sets &amp; character properties</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00006.html">introduction</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00005"><strong>Date</strong></a></li>
+<li><a href="threads.html#00005"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

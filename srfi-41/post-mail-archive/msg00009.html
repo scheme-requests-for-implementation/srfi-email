@@ -1,0 +1,190 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: [Chicken&#45;users] Which eggs to migrate from Chicken 3 first? -->
+<!--X-From-R13: Oyrk Euvaa <nyrkfuvaaNtznvy.pbz> -->
+<!--X-Date: Thu,  7 May 2009 06:32:11 +0000 (UTC) -->
+<!--X-Message-Id: y9ltz3xmniq.fsf@deinprogramm.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20090422161112.GA721@mercury.ccil.org -->
+<!--X-Reference: da4fbdb30904220916y46def0e6y48d69ebbe2a679d2@mail.gmail.com -->
+<!--X-Reference: 20090506021620.GR11542@freaks&#45;unidos.net -->
+<!--X-Reference: da4fbdb30905060732x5604d8f8n8776ae926d99abc6@mail.gmail.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: [Chicken-users] Which eggs to migrate from Chicken 3 first?</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00008.html">Date Prev</a>][<a href="msg00010.html">Date Next</a>][<a href="msg00007.html">Thread Prev</a>][<a href="msg00010.html">Thread Next</a>][<a href="maillist.html#00009">Date Index</a>][<a href="threads.html#00009">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: [Chicken-users] Which eggs to migrate from Chicken 3 first?</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-41@DOMAIN.HIDDEN">srfi-41@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: [Chicken-users] Which eggs to migrate from Chicken 3 first?</li>
+<li><em>From</em>: Alex Shinn &lt;<a href="mailto:alexshinn@DOMAIN.HIDDEN">alexshinn@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 07 May 2009 08:32:13 +0200</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-41@DOMAIN.HIDDEN">srfi-41@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:da4fbdb30905060732x5604d8f8n8776ae926d99abc6@DOMAIN.HIDDEN">da4fbdb30905060732x5604d8f8n8776ae926d99abc6@xxxxxxxxxxxxxx</a>&gt; (Phil Bewig's message of &quot;Wed\, 6 May 2009 09\:32\:35 -0500&quot;)</li>
+<li><em>Old-date</em>: Thu, 07 May 2009 06:56:28 +0900</li>
+<li><em>References</em>: &lt;<a href="mailto:20090422161112.GA721@DOMAIN.HIDDEN">20090422161112.GA721@xxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:da4fbdb30904220916y46def0e6y48d69ebbe2a679d2@DOMAIN.HIDDEN">da4fbdb30904220916y46def0e6y48d69ebbe2a679d2@xxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:20090506021620.GR11542@DOMAIN.HIDDEN">20090506021620.GR11542@xxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:da4fbdb30905060732x5604d8f8n8776ae926d99abc6@DOMAIN.HIDDEN">da4fbdb30905060732x5604d8f8n8776ae926d99abc6@xxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Gnus/5.110011 (No Gnus v0.11) XEmacs/21.5-b28 (darwin)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Hi,
+
+Phil Bewig &lt;pbewig@xxxxxxxxx&gt; writes:
+
+&gt; Streams are not lists.  Scheme ensures there are
+&gt; substantial disadvantages to using streams rather than
+&gt; lists, due to the underlying promises that require
+&gt; numerous type conversions, so streams should be used only
+&gt; when the sequence of elements is truly infinite (such as
+&gt; mathematical series) or when there is some clear advantage
+&gt; of laziness (such as reducing the number of passes through
+&gt; a large data set).
+
+I also find that any data structure in general which is
+built on I/O works well as a stream.  For the current NLP
+app I'm working on, I need to build a parse graph from a
+port.  Slurping up the whole input at once could require too
+much memory, and also would prevent the parser acting as a
+proper (buffered) Unix filter.  On the other hand, since the
+algorithm for determining how much text I need to work with
+is dynamic, I can't just read chunks at a time (the basic
+unit I want to work on is a sentence, but I don't know what
+a sentence is until the parse is finished).  So I build the
+graph as a lazy stream of nodes, and the algorithm
+transparently expands only as much input as needed.
+
+&gt;From what I've seen Alejandro also uses streams primarily
+with I/O - it's a very natural combination.
+
+&gt; Writing a library that duplicates SRFI-1 for streams seems
+&gt; to me to be folly.
+
+Well, if you have streams at all, even if they are only
+suited to a special class of algorithms, it makes sense to
+provide a complete library of basic operations.  Otherwise
+people will continuously reinvent the same utilities, and
+sometimes get them wrong.
+
+In fact, it is specifically desirable to provide an exact
+match of the SRFI-1 API for easy conversions and
+comparisons.  In any module system with import prefixing
+(including Chicken 4), you can write everything with a
+stream- prefix and swap the backend from streams to lists
+with:
+
+  (import srfi-41)
+  (import (prefix stream-) srfi-1)
+
+Going the other direction (writing for SRFI-1 but then
+switching to streams) is only a little more verbose,
+requiring renaming of the individual identifiers you use.
+
+&gt; Some certainly don't belong in a general-purpose library
+&gt; -- if you need symbol-&gt;stream to convert the name of a
+&gt; symbol into a stream of characters, you can write it as
+&gt; part of your program.
+
+Sure:
+
+   (define (symbol-&gt;stream sym)
+     (string-&gt;stream (symbol-&gt;string sym)))
+
+That's just trivial and probably borderline enough that it
+isn't needed in the library.  string-&gt;stream or equivalent
+functionality should be included, though, because the most
+efficient implementation of this may vary wildly depending
+on the Scheme implementation.
+
+However, the name may be unintuitive if you're not coming
+from a &quot;streams as I/O&quot; perspective.  It may be both simpler
+to specify and easier to understand if you replace most of
+the foo-&gt;stream procedures with:
+
+  (write-to-character-stream object)
+  (display-to-character-stream object)
+
+&gt; Many -- such as stream-butlast -- make sense only for
+&gt; lists (which are materialized in their entirety) and not
+&gt; for streams (which may never be materialized).
+
+I think it's a little unfair to pick on stream-butlast when
+SRFI-41 includes stream-length, stream-&gt;list,
+stream-reverse, etc.  As you yourself say, not all streams
+are infinite, and for finite streams these can be useful.
+Otherwise you'll repeatedly find people who when working
+entirely with streams (for type signature compatibility, and
+because all of their utilities are designed for streams, not
+lists), write things like
+
+  (list-&gt;stream (butlast (stream-&gt;list stream)))
+
+when they really do need all but the last element of a
+stream they know to be finite.
+
+[I would argue the name and API should be changed to
+stream-drop-right to match SRFI-1, though.]
+
+Now, if you want to argue that the SRFI-1 API is too large,
+that's another story :)
+
+-- 
+Alex
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00005" href="msg00005.html">Re: [Chicken-users] Which eggs to migrate from Chicken 3 first?</a></strong>
+<ul><li><em>From:</em> Phil Bewig</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00008.html">Re: [Chicken-users] Which eggs to migrate from Chicken 3 first?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00010.html">Re: [Chicken-users] Which eggs to migrate from Chicken 3 first?</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00007.html">Re: [Chicken-users] Which eggs to migrate from Chicken 3 first?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00010.html">Re: [Chicken-users] Which eggs to migrate from Chicken 3 first?</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00009"><strong>Date</strong></a></li>
+<li><a href="threads.html#00009"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

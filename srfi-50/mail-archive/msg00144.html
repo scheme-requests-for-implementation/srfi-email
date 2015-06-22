@@ -1,0 +1,372 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: no constants please -->
+<!--X-From-R13: Fbz Zbeq <ybeqNrzs.arg> -->
+<!--X-Date: Sun,  4 Jan 2004 22:13:28 +0100 (NFT) -->
+<!--X-Message-Id: 200401042139.NAA20720@morrowfield.regexps.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: E1AdEWM&#45;0002e2&#45;00@mail.mumble.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: no constants please</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00143.html">Date Prev</a>][<a href="msg00145.html">Date Next</a>][<a href="msg00143.html">Thread Prev</a>][<a href="msg00145.html">Thread Next</a>][<a href="maillist.html#00144">Date Index</a>][<a href="threads.html#00144">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: no constants please</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:kelsey@DOMAIN.HIDDEN">kelsey@xxxxxxx</a></li>
+<li><em>Subject</em>: Re: no constants please</li>
+<li><em>From</em>: Tom Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 4 Jan 2004 13:39:06 -0800 (PST)</li>
+<li><em>Cc</em>: <a href="mailto:felix@DOMAIN.HIDDEN">felix@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>, <a href="mailto:tb@DOMAIN.HIDDEN">tb@xxxxxxxxxx</a>,	<a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:E1AdEWM-0002e2-00@DOMAIN.HIDDEN">E1AdEWM-0002e2-00@xxxxxxxxxxxxxxx</a>&gt; (message from Richard Kelsey	on Sun, 04 Jan 2004 15:06:46 -0500)</li>
+<li><em>References</em>: &lt;<a href="mailto:E1AdEWM-0002e2-00@DOMAIN.HIDDEN">E1AdEWM-0002e2-00@xxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+    &gt; From: Richard Kelsey &lt;kelsey@xxxxxxx&gt;
+
+    &gt;    Date: Sun, 04 Jan 2004 20:28:02 +0100
+    &gt;    From: felix &lt;felix@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx&gt;
+
+    &gt;    I think the overhead is largely unimportant. Unless you are interacting
+    &gt;    with near-c-speed-sufficiently-smart-scheme-compilers (better think of
+    &gt;    crawling-lame-naive-bytecode-interpreter) the overhead of this will
+    &gt;    be completely lost in the noise the Scheme implementation produces.
+
+    &gt; I meant the overhead of manipulating Scheme objects from C code,
+    &gt; which is independent of the speed at which the Scheme code runs.
+    &gt; It would be nice if the C code ran at near-C speed, no matter how
+    &gt; lame or otherwise the speed of the Scheme code.
+
+FWIW, I do care very much about performance in Pika -- yet I'm using
+Pika-style calling conventions as the _native_ interface to primitive
+functions in Pika.  It's still speculative at this point, but I've
+come to the conclusion that the delta between &quot;best possible code&quot; and
+what a fairly straightforward implementation of these conventions will
+actually produce is quite small -- small enough that the ease of use
+and safety make it worthwhile.
+
+Meanwhile, in other Scheme implementations, the overhead of the Pika
+conventions are probably smaller than you think.  It's very difficult
+to quanitfy any of this at this stage.  However:
+
+Let's suppose that we have a Scheme implementation that wants to
+provide a Pika-style FFI.  Let's assume that this particular Scheme
+implementation does not have thread issues or async issues -- indeed,
+that it uses a conservative-stack-scanning GC.  SCM might
+provide a reasonable example of such an implementation.
+
+An FFI user will write something like:
+
+
+      list2 (scheme_value answer,
+             scheme_instance instance,
+             scheme_value * a,
+             scheme_value * b)
+      {
+	struct my_frame
+        {
+          scheme_value nil;
+          scheme_value last_pair;
+        } f; 
+
+        SCHEME_GCPRO (f);
+
+        SCHEME_MAKE_NIL (&amp;f.nil, instance);
+        SCHEME_CONS (&amp;f.last_pair, instance, b, &amp;f.nil);
+        SCHEME_CONS (answer, instance, a, &amp;f.last_pair);
+
+        SCHEME_GCUNPRO (my_frame);
+      }
+
+Since we're using conservative stack scanning, that reduces to:
+
+      list2 (scheme_value answer,
+             scheme_instance instance,
+             scheme_value * a,
+             scheme_value * b)
+      {
+	struct my_frame
+        {
+          scheme_value nil;
+          scheme_value last_pair;
+        } f; 
+
+        SCHEME_MAKE_NIL (&amp;f.nil, instance);
+        SCHEME_CONS (&amp;f.last_pair, instance, b, &amp;f.nil);
+        SCHEME_CONS (answer, instance, a, &amp;f.last_pair);
+      }
+
+because GCPRO and GCUNPRO are noops.  (Actually, there is a good
+reason to make GC(UN)PRO _not_ be a noop -- but for now, assume they
+are noops -- I'll correct this later).
+
+NIL is indeed an immedate constant so one macro expansion we 
+get is:
+
+      list2 (scheme_value answer,
+             scheme_instance instance,
+             scheme_value * a,
+             scheme_value * b)
+      {
+	struct my_frame
+        {
+          scheme_value nil;
+          scheme_value last_pair;
+        } f; 
+
+        *(&amp;f.nil) = scm_nil;
+        SCHEME_CONS (&amp;f.last_pair, instance, b, &amp;f.nil);
+        SCHEME_CONS (answer, instance, a, &amp;f.last_pair);
+      }
+
+SCM-class interpreters need no read or write barriers and so macro
+expansion can also leave us with:
+
+      list2 (scheme_value answer,
+             scheme_instance instance,
+             scheme_value * a,
+             scheme_value * b)
+      {
+	struct my_frame
+        {
+          scheme_value nil;
+          scheme_value last_pair;
+        } f; 
+
+        *(&amp;f.nil) = scm_nil;
+        *(&amp;f.last_pair) = scm_cons (*b, *(&amp;f.nil));
+        *answer = scm_cons (*a, *(&amp;f.last_pair));
+      }
+
+I _believe_ (might be mistaken but I'm fairly sure) that GCC can and
+will optimize away f.nil through simple constant folding:
+
+
+      list2 (scheme_value answer,
+             scheme_instance instance,
+             scheme_value * a,
+             scheme_value * b)
+      {
+	struct my_frame
+        {
+          scheme_value nil;
+          scheme_value last_pair;
+        } f; 
+
+        *(&amp;f.last_pair) = scm_cons (*b, scm_nil);
+        *answer = scm_cons (*a, *(&amp;f.last_pair));
+      }
+
+In fact, this should generate the same code as if the locals weren't
+in a structure at all leaving:
+
+      list2 (scheme_value answer,
+             scheme_instance instance,
+             scheme_value * a,
+             scheme_value * b)
+      {
+        scheme_value last_pair;
+
+        *(&amp;f.last_pair) = scm_cons (*b, scm_nil);
+        *answer = scm_cons (*a, *(&amp;f.last_pair));
+      }
+
+and, again, I'm fairly certain that this will indeed be optimized to:
+
+      list2 (scheme_value answer,
+             scheme_instance instance,
+             scheme_value * a,
+             scheme_value * b)
+      {
+        *answer = scm_cons (*a, scm_cons (*b, scm_nil));
+      }
+
+All in all, the overhead here (dereferencing `answer', `a', and `b')
+is pretty slight.
+
+In fact, it's not even quite right to call that `overhead':  it's more
+likely to be safety.  Here's why:
+
+Let's suppose that in the SCM implementation of the FFI, we want
+SCHEME_EXTRACT_CHARS not to copy characters but to return a pointer to
+the string held by the Scheme heap.
+
+If we write (using the draft proposal's calling conventions):
+
+	write_string (scheme_value str)
+        {
+          char * str_contents;
+          size_t str_len;
+
+          str_contents = SCHEME_EXTRACT_CHARS (str);
+          str_len = SCHEME_STRING_BYTE_LENGTH (str);
+
+          /* A */
+
+          &lt; do stuff that might cause GC &gt;;
+
+          /* B */
+
+          write (1, str, str_len);
+        }
+
+we have a bug.  As far as the C compiler is concerned, `str' is a dead
+value at /*A*/ and between /*A*/ and /*B*/, the characters addressed
+by `str_contents' may be freed.  If our caller has a similar bug,
+we're screwed.  (This kind of bug is _not_ theoretical: I've been
+bitten by it in Guile and Systas.)
+
+Pika-style calling conventions evade that problem by making GCUNPRO
+_not_  be a noop, even in SCM-style implementations.   A caller would
+have something like:
+
+	call_write_string ([...])
+        {
+          struct my_frame
+          {
+            scheme_value str;
+            [...]
+          } f;
+          SCHEME_GCPRO (f);
+          [...];
+          write_string (instance, &amp;f.str);
+          [...];
+          SCHEME_GCUNPRO (f);
+        }
+
+We'll want to expand SCHEME_GCPRO and UNPRO otherwise:
+
+	call_write_string ([...])
+        {
+          struct my_frame
+          {
+            scheme_value str;
+            [...]
+          } f;
+
+          extern_noop_fn (&amp;f);
+
+          [...];
+          write_string (instance, &amp;f.str);
+          [...];
+
+          extern_noop_fn (&amp;f);
+        }
+
+thus assuring `write_string' that its `str' parameter is, indeed,
+protected.  (The expansion of SCHEME_GCPRO is stunningly paranoid: it
+is highly likely with most compilers that it could have an empty
+expansion which would lead to better optimizations -- but the
+expansion shown is required by the strict letter of the C standard.)
+(Also, one would have to carefully study the aliasing rules of C to
+make sure that extern_noop_fn is appropriately declared -- I'm not
+sure off the top of my head whether it can be declared just once and
+take a void * pointer or whether it will need to be multiply declared
+for various frame structure types.)
+
+This trick effects our earlier expansion of list2.  We'll get (after
+optimizations):
+
+      list2 (scheme_value answer,
+             scheme_instance instance,
+             scheme_value * a,
+             scheme_value * b)
+      {
+	struct my_frame
+        {
+          scheme_value nil;
+          scheme_value last_pair;
+        } f; 
+
+        extern_noop_fn (&amp;f);
+
+        &lt;reg1&gt; = f.nil = scm_nil;
+        &lt;reg2&gt; = f.last_pair = scm_cons (*b, &lt;reg1&gt;);
+        *answer = scm_cons (*a, &lt;reg2&gt;);
+
+        extern_noop_fn (&amp;f);
+      }
+
+(where the &lt;regN&gt; assignments suggest where values are likely to be
+carried from one expression to the next via registers.)  Which is
+still pretty good, I think.  This code is only _slightly_ pessimized
+from what a native-SCM coder would write -- and then only in ways that
+prevent the kinds of subtle mistakes a native-SCM coder sometimes
+makes.
+
+JNI/Minor-style conventions are, I think, somewhat harder to optimize
+-- at least in the form that jimb's minor spec gives them.  As far as
+I can tell, unlike the Pika-style, they actually require the separate
+allocation and freeing of handle objects.  Even an scm-style
+implementation would wind up needing to memory manage `min_ref'
+structures.
+
+One fuzzy way to look at it that might be helpful anyway:  you can
+regard Pika-style conventions as what you'd get if you started with
+JNI/Minor-style and tried to eliminate that requirement for `min_ref'
+structures that can't be optimized away.
+
+-t
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00143" href="msg00143.html">Re: no constants please</a></strong>
+<ul><li><em>From:</em> Richard Kelsey</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00143.html">Re: no constants please</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00145.html">Re: no constants please</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00143.html">Re: no constants please</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00145.html">Re: no constants please</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00144"><strong>Date</strong></a></li>
+<li><a href="threads.html#00144"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

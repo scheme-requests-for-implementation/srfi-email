@@ -1,0 +1,437 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Simpler implementation -->
+<!--X-From-R13: Syv Pnemvynl <ryvNonemvynl.bet> -->
+<!--X-Date: Fri, 20 Oct 2006 09:11:35 +0200 (MST) -->
+<!--X-Message-Id: 17720.30197.81838.271635@lithuanian.ccs.neu.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: Pine.GSO.4.60.0610191223370.13921@now.het.brown.edu -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Simpler implementation</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00012.html">Date Prev</a>][<a href="msg00014.html">Date Next</a>][<a href="msg00010.html">Thread Prev</a>][<a href="msg00016.html">Thread Next</a>][<a href="maillist.html#00013">Date Index</a>][<a href="threads.html#00013">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Simpler implementation</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Andre van Tonder &lt;<a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Simpler implementation</li>
+<li><em>From</em>: Eli Barzilay &lt;<a href="mailto:eli@DOMAIN.HIDDEN">eli@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 20 Oct 2006 03:08:37 -0400</li>
+<li><em>Cc</em>: <a href="mailto:srfi-45@DOMAIN.HIDDEN">srfi-45@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-45@DOMAIN.HIDDEN">srfi-45@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:Pine.GSO.4.60.0610191223370.13921@DOMAIN.HIDDEN">Pine.GSO.4.60.0610191223370.13921@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:Pine.GSO.4.60.0610191223370.13921@DOMAIN.HIDDEN">Pine.GSO.4.60.0610191223370.13921@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Sender</em>: Eli Barzilay &lt;<a href="mailto:eli@DOMAIN.HIDDEN">eli@xxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>[This post is going to be long.]
+
+On Oct 19, Andre van Tonder wrote:
+&gt; Inspired by Eli Barzilay's solutions, here is a simpler box-less
+&gt; implementation that should have much better performance than the
+&gt; reference implementation.
+
+Nice!  -- This is very similar to the code in my last post, which I
+said that I didn't like because of some redundancy.  I just started to
+look further into it (I'm trying to compare the speed on the different
+implementation styrategies now), and you managed to get simplify it
+further and get rid of the redundancy.  (You even wrote a second
+version that I'd like more, which is funny because in my last post I
+used a more srfi45-like approach...)  I'll also note that the main
+trick here is the
+
+  (lazy (make-promise (list exp)))
+
+encoding for `delay' which makes it create a promise that stops the
+force loop without requiring a new kind of tag.  I also like the
+optimization and the cycle detection in your last post, which I will
+use at the end of this post.
+
+BTW, I was talking about all of this two days ago, trying to formally
+compare the properties of the two approaches (which is interesting
+regardless of the problem that these implementations solve).  The key
+point in that discussion was to compare the pointer structure that you
+get with the two pieces of code, and find a matching between them --
+doing this, it was very clear that the original-srfi-code picture
+clearly matches the picture that my code gets, with the main
+difference being the extra box in each link in the chain.
+
+The code below is making the exact same picture that my code does, so
+I think that we reached a fixpoint in the implementation strategy.
+
+There is also the approach to types which was different in my original
+correspondence with Andre.  Since this was discussed privately, I'll
+repeat this very briefly: the srfi approach follows the typing rules
+that Andre specified in the text.  My approach was different in regard
+to types: my goal is implementing a lazy language rather than a lazy
+library, and for this purpose, distinguishing promises from their
+values does not make any sense.  So what I did was to make an iterated
+`force' that is iterated on promises until it reaches a value, which
+made my `delay' play both roles of the srfi meanings of `delay' and
+`lazy'.  My approach is typed only if you do not consider `Promise a'
+to be a new type that is different from `a': in a lazy language
+setting, this is just an implementation detail that you cannot observe
+from inside the lazy language.  I label the srfi45 approach as
+`library' and mine as `language'.
+
+I think that following the two first bullets from the last paragraph
+of section 20.3 of the R6RS draft makes the resulting library follow
+the language approach.
+
+So, another nice property of this code is that it is easy to switch
+between the library and the language approaches.  I'll show this now,
+using the code in the second version.  Beginning with Andre's code,
+reformatted (used PLT's (or R6RS's) `unless' and some brackets).  The
+only real change in this code is that I changed
+
+  (error &quot;Not a promise&quot;)
+
+to
+
+  (error &quot;Invalid promise, contains&quot; p)
+
+because it *is* a promise, except that it is malformed one (I see that
+Andre did the same in the reentrant-forbidding version).  Here's the
+code:
+
+  (define-struct promise (p))
+
+  (define-syntax lazy
+    (syntax-rules ()
+      [(lazy exp) (make-promise (lambda () exp))]))
+
+  (define-syntax delay
+    (syntax-rules ()
+      [(delay exp) (lazy (make-promise (list exp)))]))
+
+  (define (force promise)
+    (let ([p (promise-p promise)])
+      (cond [(procedure? p)
+             (let ([promise* (p)])
+               (unless (pair? (promise-p promise))
+                 (set-promise-p! promise (promise-p promise*))
+                 (set-promise-p! promise* promise))
+               (force promise))]
+            [(pair? p)    (car p)]
+            [(promise? p) (force p)]
+            [else         (error &quot;Invalid promise, contains&quot; p)])))
+
+One way that makes this code fail is:
+
+  &gt; (force (lazy 3))
+  promise-p: expects argument of type &lt;struct:promise&gt;; given 3
+
+The `promise*' result needs to be verified for this code to be robust:
+
+  (define (force promise)
+    (let ([p (promise-p promise)])
+      (cond [(procedure? p)
+             (let ([promise* (p)])
+               (unless (pair? (promise-p promise))
+                 (if (promise? promise*)
+                   (begin (set-promise-p! promise (promise-p promise*))
+                          (set-promise-p! promise* promise))
+                   (error &quot;Invalid promise, contains&quot; promise*)))
+               (force promise))]
+            [(pair? p)    (car p)]
+            [(promise? p) (force p)]
+            [else         (error &quot;Invalid promise, contains&quot; p)])))
+
+The new point that can throw an error happens only when you create a
+promise that holds a thunk that returns some non-promise value.  If
+the exposed interface is {lazy,delay,force,promise?}, then this can
+only happen when `lazy' is used with a non-promise expression (which
+is why the error was added).
+
+And now the nice trick is that this is the only point that
+distinguishes the library approach from the language approach is
+whether `lazy' promises can be used with any value (language) or only
+with promises (library).  Now, instead of throwing an error in that
+situation, you can just use the resulting value:
+
+  (define (force promise)
+    (let ([p (promise-p promise)])
+      (cond [(procedure? p)
+             (let ([promise* (p)])
+               (unless (pair? (promise-p promise))
+                 (if (promise? promise*)
+                   (begin (set-promise-p! promise (promise-p promise*))
+                          (set-promise-p! promise* promise))
+                   (set-promise-p! promise (list promise*))))
+               (force promise))]
+            [(pair? p)    (car p)]
+            [(promise? p) (force p)]
+            [else         (error &quot;Invalid promise, contains&quot; p)])))
+
+Another thing that the language approach requires, is that `delay' of
+an expression is equivalent to the expression -- so, instead of
+translating `(delay exp)' to `(lazy (make-promise (list exp)))' which
+is
+
+  (make-promise (lambda () (make-promise (list exp))))
+
+instead of this, we can skip the extra promise and use
+
+  (make-promise (lambda () exp))
+
+which is exactly like `lazy' -- but that's obvious, because the whole
+point of delays in the lazy language is that they have a &quot;transparent&quot;
+meaning (can wrap them freely around values and other promises).
+
+
+So, finally -- if the above `force' is used then:
+
+* {lazy,delay,force,promise?} have exactly the same meaning that is
+  used by the library approach -- things like `(lazy 3)' are not well
+  formed to begin with.  In particular, it is as efficient as it was
+  before (the new code is used only when previously an error
+  happened).
+
+* {lazy,force,promise?} is a sufficient interface for the language
+  approach.  Furthermore, using `delay' is still possible: it creates
+  a promise that stops the `force' iterations in exactly the same way
+  it did with my previous implementation -- requiring one `force' for
+  each `delay' (more precisely for each `lazy,lazy,...,delay' chain):
+
+    &gt; (force (delay 3))
+    3
+    &gt; (force (lazy 3))
+    3
+    &gt; (force (lazy (lazy 3)))
+    3
+    &gt; (force (lazy (lazy (delay 3))))
+    3
+    &gt; (force (lazy (lazy (delay (lazy (lazy 3))))))
+    #&lt;struct:promise&gt;
+    &gt; (force (force (lazy (lazy (delay (lazy (lazy 3)))))))
+    3
+    &gt; (force (force (lazy (lazy (delay (lazy (lazy (delay 3))))))))
+    3
+
+  but note that `(force 3)' does not work.
+
+* I suspect that some people will not like the fact that an error is
+  not thrown when there is a type error.  This is easily fixed with:
+
+    (define-syntax safe-lazy
+      (syntax-rules ()
+        [(safe-lazy exp)
+         (make-promise (lambda ()
+                         (let ([v exp])
+                           (if (promise? v)
+                             v
+                             (error ...)))))]))
+
+  And it doesn't even need to be in the library:
+
+    (define-syntax safe-lazy
+      (syntax-rules ()
+        [(safe-lazy exp)
+         (lazy (let ([v exp]) (if (promise? v) v (error ...))))]))
+
+* In a similar way, the `force' that is used in the language
+  approach, can be achieved by a small fix for `force' that can be
+  define outside of the library:
+
+    (define (force* x) (if (promise? x) (force x) x))
+
+
+I'm providing three versions of the code below.  Each version is a PLT
+module that uses mzscheme-no-promises as a base language (defined at
+the top).  The three modules are:
+
+* lazy1: contains the full version of the above code.
+
+* lazy2: adds the ideas from Andre's following post -- detect and
+  forbid cycles, and sets the result once at the end of the force
+  chain.  This is modified to fit the same style -- uses `#f' to mark
+  a currently computed promise.
+
+* lazy3: adds multiple values.  It makes the code look a little messy,
+  but it's all just technicalities.  (The check for `promise?' should
+  also check that it's a single-value result; `loop2' is added to
+  avoid a full loop that involves a re-check.)
+
+
+(module lazy1 mzscheme-no-promises
+
+  (provide lazy delay force promise?)
+
+  (define-struct promise (p))
+
+  (define-syntax lazy
+    (syntax-rules ()
+      [(lazy exp) (make-promise (lambda () exp))]))
+
+  (define-syntax delay
+    (syntax-rules ()
+      [(delay exp) (lazy (make-promise (list exp)))]))
+
+  (define (force promise)
+    (let ([p (promise-p promise)])
+      (cond [(procedure? p)
+             (let ([promise* (p)])
+               (unless (pair? (promise-p promise))
+                 (if (promise? promise*)
+                   (begin (set-promise-p! promise (promise-p promise*))
+                          (set-promise-p! promise* promise))
+                   (set-promise-p! promise (list promise*))))
+               (force promise))]
+            [(pair? p)    (car p)]
+            [(promise? p) (force p)]
+            [else         (error &quot;Invalid promise, contains&quot; p)]))))
+
+(module lazy2 mzscheme-no-promises
+
+  (provide lazy delay force promise?)
+
+  (define-struct promise (p))
+  ;; &lt;promise&gt; ::= (make-promise &lt;thunk of promise&gt;) (delayed promise)
+  ;;             | (make-promise (list &lt;object&gt;))    (forced promise)
+  ;;             | (make-promise &lt;promise&gt;)          (shared promise)
+  ;;             | (make-promise #f)                 (current running promise)
+
+  (define-syntax lazy
+    (syntax-rules ()
+      [(lazy exp) (make-promise (lambda () exp))]))
+
+  (define-syntax delay
+    (syntax-rules ()
+      [(delay exp) (lazy (make-promise (list exp)))]))
+
+  (define (force promise)
+    (let ([p (promise-p promise)])
+      (cond [(procedure? p)
+             (set-promise-p! promise #f) ; mark root for cycle detection
+             (let loop ([promise* (p)])
+               (if (promise? promise*)
+                 (let ([p* (promise-p promise*)])
+                   (set-promise-p! promise* promise) ; share with root
+                   (cond [(procedure? p*) (loop (p*))]
+                         [(pair? p*) (set-promise-p! promise p*)
+                                     (car p*)]
+                         [(promise? p*) (loop p*)]
+                         [(not p*) (error &quot;Reentrant promise&quot;)]
+                         [else (error &quot;Invalid promise, contains&quot; p*)]))
+                 (begin ;; error here for &quot;library approach&quot;
+                        (set-promise-p! promise (list promise*))
+                        promise*)))]
+            [(pair? p)    (car p)]
+            [(promise? p) (force p)]
+            [(not p)      (error &quot;Reentrant promise&quot;)]
+            [else         (error &quot;Invalid promise, contains&quot; p)]))))
+
+(module lazy3 mzscheme-no-promises
+
+  (provide lazy delay force promise?)
+
+  (define-struct promise (p))
+  ;; &lt;promise&gt; ::= (make-promise &lt;thunk of promise&gt;) (delayed promise)
+  ;;             | (make-promise (list &lt;object&gt;))    (forced promise values)
+  ;;             | (make-promise &lt;promise&gt;)          (shared promise)
+  ;;             | (make-promise #f)                 (current running promise)
+
+  (define-syntax lazy
+    (syntax-rules ()
+      [(lazy exp) (make-promise (lambda () exp))]))
+
+  (define-syntax delay
+    (syntax-rules ()
+      [(delay exp)
+       (lazy (make-promise (call-with-values (lambda () exp) list)))]))
+
+  (define (force promise)
+    (let ([p (promise-p promise)])
+      (cond [(procedure? p)
+             (set-promise-p! promise #f) ; mark root for cycle detection
+             (let loop1 ([vals* (call-with-values p list)])
+               (if (and (pair? vals*)
+                        (null? (cdr vals*))
+                        (promise? (car vals*)))
+                 (let loop2 ([promise* (car vals*)])
+                   (let ([p* (promise-p promise*)])
+                     (set-promise-p! promise* promise) ; share with root
+                     (cond [(procedure? p*) (loop1 (call-with-values p* list))]
+                           [(or (pair? p*) (null? p*))
+                            (set-promise-p! promise p*)
+                            (apply values p*)]
+                           [(promise? p*) (loop2 p*)]
+                           [(not p*) (error &quot;Reentrant promise&quot;)]
+                           [else (error &quot;Invalid promise, contains&quot; p*)])))
+                 (begin ;; error here for &quot;library approach&quot;
+                        (set-promise-p! promise vals*)
+                        (apply values vals*))))]
+            [(or (pair? p) (null? p))
+             (apply values p)]
+            [(promise? p)
+             (force p)]
+            [(not p) (error &quot;Reentrant promise&quot;)]
+            [else    (error &quot;Invalid promise, contains&quot; p)]))))
+
+-- 
+          ((lambda (x) (x x)) (lambda (x) (x x)))          Eli Barzilay:
+                  <a  rel="nofollow" href="http://www.barzilay.org/">http://www.barzilay.org/</a>                 Maze is Life!
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00016" href="msg00016.html">Exceptions</a></strong>
+<ul><li><em>From:</em> Eli Barzilay</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00010" href="msg00010.html">Simpler implementation</a></strong>
+<ul><li><em>From:</em> Andre van Tonder</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00012.html">Re: Reentrancy-detecting, faster implementation</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00014.html">stream? issue</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00010.html">Simpler implementation</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00016.html">Exceptions</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00013"><strong>Date</strong></a></li>
+<li><a href="threads.html#00013"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

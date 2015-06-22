@@ -1,0 +1,218 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Integer residue&#45;classes [was: Questions about srfi&#45;77 Generic Arithmetic] -->
+<!--X-From-R13: Ivyyvnz R Qyvatre <jvyyNppf.arh.rqh> -->
+<!--X-Date: Tue, 21 Feb 2006 16:56:36 +0100 (CET) -->
+<!--X-Message-Id: E1FBZrx&#45;0000iM&#45;4B@adara.ccs.neu.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Integer residue-classes [was: Questions about srfi-77 Generic Arithmetic]</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00411.html">Date Prev</a>][<a href="msg00413.html">Date Next</a>][<a href="msg00424.html">Thread Prev</a>][<a href="msg00413.html">Thread Next</a>][<a href="maillist.html#00412">Date Index</a>][<a href="threads.html#00412">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Integer residue-classes [was: Questions about srfi-77 Generic Arithmetic]</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:sebastian.egner@DOMAIN.HIDDEN">sebastian.egner@xxxxxxxxxxx</a>, <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Integer residue-classes [was: Questions about srfi-77 Generic Arithmetic]</li>
+<li><em>From</em>: William D Clinger &lt;<a href="mailto:will@DOMAIN.HIDDEN">will@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 21 Feb 2006 10:56:05 -0500</li>
+<li><em>Cc</em>: <a href="mailto:lucier@DOMAIN.HIDDEN">lucier@xxxxxxxxxxxxxxx</a>, <a href="mailto:will@DOMAIN.HIDDEN">will@xxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; Will wrote:
+&gt; &gt; Brad wrote:
+&gt; &gt; &gt; 8.  Integer Divison.
+&gt; &gt; &gt; (a) I think it is a really bad design to have the basic
+&gt; &gt; &gt; operation of div+mod change when the second argument changes sign.
+&gt; &gt; 
+&gt; &gt; I don't have much problem with that.  These mathematical
+&gt; &gt; operations aren't defined at zero, so they have to compare
+&gt; &gt; against zero anyway.  To quote Egner et al, &quot;the sign of
+&gt; &gt; the modulus y determines which system of representatives
+&gt; &gt; of the residue class ring Z/yZ is being chosen, either
+&gt; &gt; non-negative (y &gt; 0), symmetric around zero (y &lt; 0), or
+&gt; &gt; the integers (y = 0).&quot;  Using the sign of y is ad hoc,
+&gt; &gt; but it's an ad hoc choice anyway.
+&gt; 
+&gt; No, it is not &quot;ad hoc.&quot; It is based on the mathematics of 
+&gt; the integers---in the sense of elementary number theory, 
+&gt; not in the sense of Brad's &quot;any notion of mathematical 
+&gt; division,&quot; whatever that may be.
+
+Denying the ad hockitude doesn't make it go away.  The
+background material you provided will help me to explain
+how little is at stake here to those who are wondering
+what this is about, and I thank you for that.  In my
+opinion, your failure to understand Brad's objection,
+and to recognize the ad hockitude even after two other
+mathematicians have pointed it out, also provides some
+persuasive evidence for Brad's contention that ordinary
+Scheme programmers are likely to be confused by this
+unless we fix it.
+
+&gt; Another way of saying c) is that every ideal is generated
+&gt; by a single element, which I denote by m, and is of the 
+&gt; form m*Z = {m*k : k in Z}. To spell it out, the ideals
+&gt; of the ring of integers are
+&gt;   0*Z = {0}
+&gt;   1*Z = (-1)*Z = Z = {..., -2, -1, 0, 1, 2, ...}
+&gt;   2*Z = (-2)*Z = {..., -6, -4, -2, 0, 2, 4, 6, ...}
+&gt;   3*Z = (-3)*Z = {..., -6, -3, 0, 3, 6, ...}
+&gt;   etc.
+
+In particular, 3*Z=(-3)*Z.  A programmer would therefore
+expect either (div 5 3) and (div 5 -3) to be equal, or
+perhaps (mod 5 3) and (mod 5 -3) to be equal, or perhaps
+even both.  In SRFI 77, however:
+
+    (div 5 3)    ==&gt;  1
+    (div 5 -3)   ==&gt;  -2
+
+    (mod 5 3)    ==&gt;  2
+    (mod 5 -3)   ==&gt;  -1
+
+That is not just ad hoc, it is confusing.  Another way
+to see that the definitions of div and mod in SRFI 77
+are ad hoc is to observe that
+
+&gt; (2) if m &gt; 0: 0   &lt;= (x mod m) &lt; m
+&gt;     if m = 0:        (x mod m) = x
+&gt;     if m &lt; 0: m/2 &lt;= (x mod m) &lt; -m/2, and
+
+could be changed to
+
+ (2) if m &lt; 0: 0   &lt;= (x mod m) &lt; m
+     if m = 0:        (x mod m) = x
+     if m &gt; 0: m/2 &lt;= (x mod m) &lt; -m/2, and
+
+while preserving all of the important mathematical properties
+you claimed for div and mod.
+
+&gt; Since the residue classes x + m*Z = {x + m*k : k in Z} are
+&gt; pairwise disjoint, we can pick a representative element
+&gt; from each residue class and only work with representatives.
+
+There are infinitely many ways we could choose represenatives
+from those residue classes.  As you observe, however, two
+particular choices of representatives are convenient for
+programming:
+
+&gt; a) Representatives of minimal non-negative value.
+&gt; b) Representatives of minimal absolute value, breaking ties
+&gt;    such that there is one more negative value.
+
+In defining div and mod for your paper at the Scheme workshop,
+you made an ad hoc decision to select between these two based
+on the sign of the second argument.  SRFI 77 just perpetuated
+that ad hoc decision.  Now, &quot;ad hoc&quot; is not necessarily
+pejorative in American mathematical English, so the fact that
+it was an ad hoc decision does not necessarily imply it was
+a bad one.
+
+Before we commit to an ad hoc design, however, we should
+compare it to a similar design that is not so ad hoc.
+Consider, therefore, the following definitions of div, mod,
+quo, and rem:
+
+    (div q1 q2)                  ==&gt; nd
+    (mod q1 q2)                  ==&gt; qm
+
+    (quo q1 q2)                  ==&gt; nq
+    (rem q1 q2)                  ==&gt; qr
+
+where:
+
+   1. q1 = nd * q2 + qm
+   2. 0 &lt;= qm &lt; q2          if q2 &lt;&gt; 0
+   3. q1 = nq * q2 + qr
+   4. q2/2 &lt;= qr &lt; -q2/2    if q2 &lt;&gt; 0
+
+With this definition,
+
+    (div 5 3)    ==&gt;  1
+    (div 5 -3)   ==&gt;  -1
+
+    (mod 5 3)    ==&gt;  2
+    (mod 5 -3)   ==&gt;  2
+
+    (quo 5 3)    ==&gt;  2
+    (quo 5 -3)   ==&gt;  -2
+
+    (rem 5 3)    ==&gt;  -1
+    (rem 5 -3)   ==&gt;  -1
+
+To make these procedures as similar as possible to the div
+and mod of SRFI 77, let nd=nq=0 and qm=qr=q1 when q2=0.
+
+I claim that div, mod, quo, and rem have all of the desired
+properties claimed for SRFI 77's div and mod, but without
+the ad hoc choice of representative based on the sign of the
+second argument.
+
+I believe that div, mod, quo, and rem as defined in this
+message would answer Dr Lucier's objection, except perhaps
+for the case in which q2=0.
+
+I therefore raise this as an issue:  Should we choose the
+representatives based on the sign of the second argument,
+as in Egner et al and in SRFI 77, or should we redefine
+div and mod to choose the representatives consistently in
+all cases, and define a second pair of procedures that use
+the second most important choice of representatives?
+
+Will
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00411.html">Integer residue-classes [was: Questions about srfi-77 Generic Arithmetic]</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00413.html">Re: Integer residue-classes [was: Questions about srfi-77 Generic Arithmetic]</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00424.html">Re: Integer residue-classes [was: Questions about srfi-77 Generic Arithmetic]</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00413.html">Re: Integer residue-classes [was: Questions about srfi-77 Generic Arithmetic]</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00412"><strong>Date</strong></a></li>
+<li><a href="threads.html#00412"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

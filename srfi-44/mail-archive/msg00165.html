@@ -1,0 +1,330 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: [oleg@pobox.com: Interface view of dictionaries] -->
+<!--X-From-R13: fptzvyyrNserrargcebwrpg.bet -->
+<!--X-Date: Tue, 28 Oct 2003 02:28:21 +0100 (NFT) -->
+<!--X-Message-Id: 20031028012813.GB12968@freenetproject.org -->
+<!--X-Content-Type: multipart/signed -->
+<!--X-Derived: pgpIFQFYjobKk.pgp -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>[oleg@xxxxxxxxx: Interface view of dictionaries]</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00164.html">Date Prev</a>][<a href="msg00166.html">Date Next</a>][<a href="msg00147.html">Thread Prev</a>][<a href="msg00167.html">Thread Next</a>][<a href="maillist.html#00165">Date Index</a>][<a href="threads.html#00165">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>[oleg@xxxxxxxxx: Interface view of dictionaries]</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: <a href="mailto:%5Boleg@DOMAIN.HIDDEN">[oleg@xxxxxxxxx</a>: Interface view of dictionaries]</li>
+<li><em>From</em>: <a href="mailto:scgmille@DOMAIN.HIDDEN">scgmille@xxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Date</em>: Mon, 27 Oct 2003 19:28:13 -0600</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Mail-followup-to</em>: <a href="mailto:scgmille@DOMAIN.HIDDEN">scgmille@xxxxxxxxxxxxxxxxx</a>,	<a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Mutt/1.5.4i</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+Ray Dillinger wrote:
+&gt; And when joe code writer is looking at the API going, I want
+&gt; something that applies a function to each mapping, &quot;foreach&quot; is
+&gt; going to attract his attention.  
+
+Allow me to paraphrase your argument: &quot;When Joe the coder looks at
+Scheme for a non-local-exit, he would probably look for something like
+GOTO, BREAK, or RETURN. But he finds none of that. He might come
+across call-with-current-continuation (because it's such a long name),
+but it probably will not attract his attention as GOTO would have.&quot; Is
+it a reasonable paraphrase? Should R5RS authors have added BREAK,
+RETURN and GOTO to Scheme, as CL has done? It seems the authors have
+chosen a different approach -- they added the most general control
+function, call-with-current-continuation. The latter can be used to
+write break, return, goto, throw. We can also employ
+call-with-current-continuation to implement YIELD, for example, which
+became quite fashionable lately. Python and now C# have to add the
+corresponding keyword to the language. OTH, Scheme already has it.
+
+The analogy between fold and call/cc is actually deep. The existence
+of call/cc does not mean that GOTO or RETURN are banned. Just the
+contrary. If a programmer needs them, he can easily get them, in a
+generic and easy way. The same with fold. I have never argued that
+cursors should be outlawed. I do say that cursors are useful and even
+indispensable (although not as often as one might think). 
+
+&gt; If you provide fold-left and fold-right, the first thing joe coder is
+&gt; going to do with them is implement iterators, because iterators are
+&gt; simpler to use.
+If that Joe finds cursors are the right tool for him, he can get them.
+Let me quote the conversion function:
+
+(define (lfold-&gt;lazy-list lfold collection)
+  (delay
+    (call-with-current-continuation
+      (lambda (k-main)
+        (lfold collection
+          (lambda (val seed)
+            ;(cerr (list val seed) nl)
+            (values
+              (call-with-current-continuation
+                (lambda (k-reenter)
+                  (k-main
+                    (cons val
+                      (delay
+                        (call-with-current-continuation
+                          (lambda (k-new-main)
+                            (set! k-main k-new-main)
+                            (k-reenter #t))))))))
+              seed))
+          '())                          ; Initial seed
+        (k-main '())))))
+
+
+The second half of
+	<a  rel="nofollow" href="http://pobox.com/~oleg/ftp/Scheme/enumerators-callcc-code.scm">http://pobox.com/~oleg/ftp/Scheme/enumerators-callcc-code.scm</a>
+shows the enumerator for files and the test cases.
+
+As you can see, the conversion code works with EVERY SRFI-44 fold, for
+every possible collection -- present and future. So Joe never needs to
+implement cursors. He merely needs to invoke the conversion function
+and pass it the enumerator function of the desired collection. If
+call/cc is implemented efficiently (as it is on Chez, Gambit, and now
+Scheme48; On Chicken, call/cc is free), the cursor obtained from the
+enumerator _is_ efficient. See below on folding over multiple
+collections.
+
+&gt; I've seen it.  The &quot;Hazards&quot; arise when attempting to misuse them, eg,
+&gt; using them for things that aren't finite, using them across mutations
+&gt; of things, etc. 
+
+I don't remember arguing about hazards of cursors on infinite
+collections. I claimed that cursors are difficult to write. If a
+collection is based on an advanced (tree) structure, writing a cursor
+is quite a challenge. No wonder the Python community is so excited about
+'yield' (which is the inverted enumerator). The other notable problem
+with cursors is their indeterminate extent. It's not clear when you're
+done.
+
+&gt; If you provide fold-left and fold-right, the first thing joe coder is
+&gt; going to do with them is implement iterators, because iterators are
+&gt; simpler to use.
+
+The opinion expressed in the latter phrase reminds me of assertions
+that &quot;imperative code is more natural&quot; or &quot;the infix notation is
+simpler to use&quot;. USENET brings a host of such assertions every
+month. Guido van Rossum has publicly stated recently that &quot;loops may
+be theoretically inferior to recursion, but I have no doubt that the
+human brain has special reasoning abilities for loops, and many
+real-world problems are most naturally expressed using loops rather
+than recursion.&quot;
+
+The other day I was re-reading my notes on Jeffrey Ullman's book
+&quot;Principles of Database Systems&quot; and came across an amusing comparison
+between a cursor-based network database query language DBTG, and
+SQL. Jeffrey Ullman says that experience has shown that cursor-based
+code is error-prone. In contrast, SQL's SELECT encapsulates the
+traversal without leaking the state and thus makes application code
+safer without compromising efficiency.
+
+If you read the Haskell mailing list you probably noticed a great
+amount of angst about IO. One person wrote that his favorite method of
+accessing a file is an _enumerator_ (of a file considered as a
+collection of characters, lines, or words). Many of the problems that
+plague IO in Haskell just disappear.
+
+I exhort you, could we just stop using the word 'iterator'? It means
+completely different things in C++ and Ocaml, for example.
+
+&gt;&gt; (*-fetchfirst dict number) ;; returns number entries
+&gt; [B] Trivially implemented with collection-fold-left
+
+I don't think the argument about efficiency of implementing
+*-fetchfirst via a collection-fold-left is productive. If a particular
+collection permits an efficient implementation of *-fetchfirst, and if
+a programmer writes an application that truly needs an efficient
+*-fetchfirst, then the programmer can go ahead an write that efficient
+*-fetchfirst for his particular collection. As I understand, SRFI-44
+does not prohibit additional, collection-specific operations. True,
+these operations make code less generic. OTH, there is always a
+trade-off between genericity and specialization/performance, which has
+to be resolved by a programmer using his judgment and considering all
+circumstances. 
+
+If I read the intent of SRFI-44 correctly, its goal is not to provide
+all things for all people. Rather, the goal is to define the framework
+and to describe a _minimal_ set of core functions plus a _limited_ set
+of very common extensions. The intent is not to make it unnecessary to
+add more API in future SRFIs. Rather, the intent is to make it
+unnecessary to remove SRFI-44 features in future SRFIs.
+
+In this vein, I argue we do need to pay attention to consistency, both
+within the SRFI and in regards to other extensions. I believe concerns
+raised by Shiro Kawai ought to be addressed (at least by discussing
+them in the text of SRFI and noting the rationale for the deviations
+were they exist).
+
+
+People who want rich APIs have stated their preference. Probably I
+should be allowed to state mine: I do not like rich APIs, both as a
+user and an implementor. I have not yet encountered any need for a
+*-fetchfirst function, for example. It is unlikely therefore I would
+implement that function _natively_ in any of my collections. What if
+someone really needs a very efficient realization of *-fetchfirst?
+Well, he would find a collection that does that. That would not be
+mine collection -- and that's fine. I don't want my code to be the
+last word. I don't write code to fit everybody's purpose. I don't have
+problem implementing extras (which I don't use) if it gives a notable
+benefit of generality. I would not like implementing a lot of features
+just because there is one person who needed that particular feature
+once or twice. In general I don't like writing code that I don't
+extensively use and thus have little experience using.
+
+
+About experience using SRFI-44. I can see how to change my
+implementation of treaps to fit SRFI-44. I have implemented TIFF
+dictionaries to be somewhat like SRFI-44 collections. I didn't
+implement everything that SRFI-44 requires -- and a good thing I
+didn't as the standard is still evolving. I wrote %-fold-left for
+files, TIFF dictionaries. I have been using folds for database
+connections, in a _production_ code. Previously, I was using for-each
+and realized that wasn't the best thing.
+
+
+About fold-right. I'd rather wish to see fold-right gone. In a strict
+language, it's not too useful, in my experience. Furthermore, if a
+programmer wishes to apply fold-left to a reverse collection, perhaps
+he should do just that (see below).
+
+Reversible collections is another thing that I'm uneasy about. A
+concept of views has received quite a lot of attention recently. In
+that vein, we might wish for a function *-reverse that creates a
+reverse view of a collection, if it's possible to do so efficiently.
+	*-reverse coll -&gt; coll
+
+I can see how *-reverse can be *efficiently* implemented for a treap
+(without copying the whole treap, of course). If we take the advantage
+of an OO system, reverse can be a wrapper that creates a different
+(sub)type, which will cause dispatch to (efficient) fold, getfirst,
+etc. functions without exposing those functions to a programmer. So,
+if we wish to enumerate the collection in reverse, we would write
+	(collection-fold-left (collection-reverse coll) fn seed ...)
+
+I'm uneasy to submit this approach for consideration into SRFI-44.  I
+have not used it. I don't know how well it works. I'd prefer the
+reverse view approach, if it is feasible at all, explained in a
+separate SRFI, after we have implemented and used it.
+
+
+Bradd W. Szonye wrote:
+&gt; Why the heck did SRFI-1 define the folding function to accept the seed
+&gt; argument *last*? There's only one seed but many lists, which naturally
+&gt; suggests a (f seed . data) signature for folding functions that can
+&gt; work on any number of lists. Instead, it specifies (f datum0 datum1
+&gt; ... seed). Why?!
+
+My database interface actually works this way: one seed and multiple
+data items. Most of the time I actually need several seeds. I noticed
+that I constantly do packing and unpacking of these seeds into one
+argument. I found therefore that multiple seeds work better in
+practice. Furthermore, unlike folds on lists, folds over several
+collections aren't that useful, see below. It's far more convenient to
+arrange the variable number of seeds to be the last arguments.
+
+Bradd W. Szonye wrote:
+&gt; And, most importantly, can you show how to implement a
+&gt; multiple-collection fold without cursors?
+&gt;
+&gt;     (nfold f seed c1 c2 c3 ...)
+
+First of all, who said that we should ban cursors completely? When
+traversing multiple collections, cursors are actually useful and
+should be used, in my opinion. In contrast, folds over multiple
+collections don't seem to be useful. For one thing, a fold over two
+collections traverses the collections in a &quot;lock-step&quot;. However, we
+often need to enumerate each collection at its own pace (especially
+when computing a join). Furthermore, the great benefit of an
+enumerator is that it is privy to collection's internals and therefore
+can do traversal efficiently. It's hard to make an enumerator that is
+privy to details of two different collections. When dealing with
+several collections, it's quite often in my experience that these
+collections are of different types.
+
+Of course, if one wishes for nfold, one can easily implement it: use
+enumerators for c1, c2, c3, invert them into cursors, and use the
+latter to write nfold. nfold can be written; it doesn't have to be
+provided _natively_, as a primitive.
+
+
+Given the calls for vote, I vote for finalizing. I see the benefit of
+a stable API, which I can look up to when writing new collections or
+updating the old ones.
+
+
+Are you going to LL3? I'll have a poster presentation at LL3 -- about
+enumerators, cursors. I also touch upon generators and iteration
+inversion in languages without first-class continuations (such as
+Haskell).
+
+
+
+----- End forwarded message -----
+
+-- 
+</pre><p><strong>Attachment:
+<a href="pgpIFQFYjobKk.pgp" ><tt>pgpIFQFYjobKk.pgp</tt></a></strong><br>
+<em>Description:</em> PGP signature</p>
+
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00167" href="msg00167.html">Re: [oleg@xxxxxxxxx: Interface view of dictionaries]</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00164.html">Re: Interface view of dictionaries</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00166.html">Re: Interface view of dictionaries</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00147.html">Re: Experience issues</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00167.html">Re: [oleg@xxxxxxxxx: Interface view of dictionaries]</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00165"><strong>Date</strong></a></li>
+<li><a href="threads.html#00165"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

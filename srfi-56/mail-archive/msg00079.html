@@ -1,0 +1,134 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: finalize or withdraw? -->
+<!--X-From-R13: Oyrk Euvaa <nyrkfuvaaNtznvy.pbz> -->
+<!--X-Date: Mon, 22 Aug 2005 06:17:53 +0200 (DFT) -->
+<!--X-Message-Id: 5fb7e087050821211763f7f10f@mail.gmail.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 5fb7e08705081821246fa303c6@mail.gmail.com -->
+<!--X-Reference: y9lhddl2j4a.fsf@sams.informatik.uni&#45;tuebingen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: finalize or withdraw?</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00078.html">Date Prev</a>][<a href="msg00080.html">Date Next</a>][<a href="msg00078.html">Thread Prev</a>][<a href="msg00080.html">Thread Next</a>][<a href="maillist.html#00079">Date Index</a>][<a href="threads.html#00079">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: finalize or withdraw?</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Michael Sperber &lt;<a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: finalize or withdraw?</li>
+<li><em>From</em>: Alex Shinn &lt;<a href="mailto:alexshinn@DOMAIN.HIDDEN">alexshinn@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 22 Aug 2005 13:17:50 +0900</li>
+<li><em>Cc</em>: <a href="mailto:srfi-56@DOMAIN.HIDDEN">srfi-56@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-56@DOMAIN.HIDDEN">srfi-56@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Domainkey-signature</em>: a=rsa-sha1; q=dns; c=nofws;        s=beta; d=gmail.com;        h=received:message-id:date:from:to:subject:cc:in-reply-to:mime-version:content-type:content-transfer-encoding:content-disposition:references;        b=NpPgVmqbtGCJOaEOSkSiMtoEZ8rrQGFisGbLaIjBzF6qOltWb2+Fqn3u3Z5Ev8PrEHbRgY9DEXC/O2Lj6f2i5Lj4mGAtIRnjYvrUUiqXsebuF3hNtallYot2kuQsUphJKPZfiPyXVC8UeN8D1gJ6RBFk8L/zDkHi3A1oVTU1A+M=</li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:y9lhddl2j4a.fsf@DOMAIN.HIDDEN">y9lhddl2j4a.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:5fb7e08705081821246fa303c6@DOMAIN.HIDDEN">5fb7e08705081821246fa303c6@xxxxxxxxxxxxxx</a>&gt;	 &lt;<a href="mailto:y9lhddl2j4a.fsf@DOMAIN.HIDDEN">y9lhddl2j4a.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>On 8/20/05, Michael Sperber &lt;sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx&gt; wrote:
+&gt; 
+&gt; You have seen that SRFI 68 addresses all of these issues, right?
+
+Yes, SRFI-68 can easily handle all of these issues, simply using
+READ/WRITE-U8 for READ/WRITE-BYTE.  This is because SRFI-68 makes no
+distinction between binary and character ports.  If we're willing to
+drop that distinction, then the whole problem disappears, but we've
+abandoned implementations that don't let you directly mix binary and
+text operations (notably all Java implementations, and C implementations
+using wchar).
+
+Another way of looking at it is that SRFI-68 is flexible enough to allow
+us to create new port types with an explicit binary vs character
+distinction.  If we were to do that, then what API should we use when we
+inevitably need to serialize/deserialize Scheme string objects to/from
+binary ports?  A SRFI-68 approach might be to combine READ-BLOB-N with a
+utility procedure
+
+  (BLOB-&gt;STRING str [encoding])
+
+probably implemented on top of blob-input-stream and transcoder.
+This generalizes into the first category of solutions, using specific
+procedures to read and write text to binary ports.
+
+A variation on this approach is simply to unify those procedures with
+the standard character port procedures.  In other words, READ/WRITE-CHAR
+would be guaranteed to work on any port, including binary-ports, and in
+some implementations this would involve a check to see if the port is
+binary and if so use a separate path from the native underlying port
+operation.  This is why SISC is able to provide READ/WRITE-CHAR for its
+binary ports and thus pass the integer part of the test suite - when a
+character procedure is called on a binary port it just returns a single
+octet value (as though the port were Latin-1), instead of signalling an
+error as the underlying Java library would.  UTF-8 could just as easily
+be used.  Using this strategy we would still not guarantee binary
+operations on a character port - if you need to mix I/O, use a binary
+port.  It's a little more work for the Java implementations, but a simpler API.
+
+-- 
+Alex
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00080" href="msg00080.html">Re: finalize or withdraw?</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00072" href="msg00072.html">finalize or withdraw?</a></strong>
+<ul><li><em>From:</em> Alex Shinn</li></ul></li>
+<li><strong><a name="00078" href="msg00078.html">Re: finalize or withdraw?</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00078.html">Re: finalize or withdraw?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00080.html">Re: finalize or withdraw?</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00078.html">Re: finalize or withdraw?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00080.html">Re: finalize or withdraw?</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00079"><strong>Date</strong></a></li>
+<li><a href="threads.html#00079"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

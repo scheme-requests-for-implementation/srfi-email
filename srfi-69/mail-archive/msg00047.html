@@ -1,0 +1,146 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: should hash function upper bound be exclusive? -->
+<!--X-From-R13: Bre Pbguare <creNobguare.pbz> -->
+<!--X-Date: Wed, 10 Aug 2005 06:52:30 +0200 (DFT) -->
+<!--X-Message-Id: 42F987FA.8000009@bothner.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 42F8E871.5070903@bothner.com -->
+<!--X-Reference: Pine.LNX.4.58.0508091632550.969@bolt.sonic.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: should hash function upper bound be exclusive?</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00046.html">Date Prev</a>][<a href="msg00048.html">Date Next</a>][<a href="msg00046.html">Thread Prev</a>][<a href="msg00050.html">Thread Next</a>][<a href="maillist.html#00047">Date Index</a>][<a href="threads.html#00047">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: should hash function upper bound be exclusive?</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: bear &lt;<a href="mailto:bear@DOMAIN.HIDDEN">bear@xxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: should hash function upper bound be exclusive?</li>
+<li><em>From</em>: Per Bothner &lt;<a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 09 Aug 2005 21:52:10 -0700</li>
+<li><em>Cc</em>: <a href="mailto:srfi-69@DOMAIN.HIDDEN">srfi-69@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-69@DOMAIN.HIDDEN">srfi-69@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:Pine.LNX.4.58.0508091632550.969@DOMAIN.HIDDEN">Pine.LNX.4.58.0508091632550.969@xxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:42F8E871.5070903@DOMAIN.HIDDEN">42F8E871.5070903@xxxxxxxxxxx</a>&gt; &lt;<a href="mailto:Pine.LNX.4.58.0508091632550.969@DOMAIN.HIDDEN">Pine.LNX.4.58.0508091632550.969@xxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mozilla Thunderbird 1.0.6-1.1.fc4 (X11/20050720)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+bear wrote:
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+On the other hand, the largest fixnum is likely to be either a power
+of two, or one less than a power of two; as hashes are conventionally
+implemented (via modulus operations) these are poor choices for a hash
+range boundary.  Numerical theory indicates  that a much better choice
+is the highest prime fixnum representable, or at least a fixnum with
+no small factors.
+</pre></blockquote><pre style="margin: 0em;">
+
+I'm afraid I don't see your point.  A &quot;default bound&quot; is a generic
+hash value that has a larger range than indexes for a hash table,
+which means you *will* be doing a modulo operation to convert the
+generic hash value to an index.
+
+Yes, some people recommend that that *the number of buckets* be a
+prime number, but I don't how well-founded that is.  If the hash
+function is properly &quot;random&quot;, does it matter?  This faq:
+<a  rel="nofollow" href="http://burtleburtle.net/bob/hash/hashfaq.html">http://burtleburtle.net/bob/hash/hashfaq.html</a> says:
+  Anything with a modulo prime at the end is probably bad; a decent
+  hash function could use a power of two and wouldn't need to rely on
+  the modulo prime to further mix anything.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Otherwise you run into rehash problems where the
+system may be able to find no valid rehash value even though the table
+is not full.
+</pre></blockquote><pre style="margin: 0em;">
+
+If by &quot;rehash&quot; you mean linear probing (secondary hashing, IIRC),
+then obviously the sequence of probes should be exhaustive,
+and one easy way to do that is to have an increment that is
+relatively prime to the number of buckets.  Howwever, if each bucket
+contains a chain (as in the referernce implementation) that's
+not an issue.
+
+If by &quot;rehash&quot; you mean resizing (increasing the number of buckets),
+I still don't see the relevance.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Definitely; when you have the capability of resizing the table, you
+must be able to rehash everything in the table.  Usually you can make
+that much faster by caching the hashes.  Caching the hashes also makes
+it much faster (in the average case) to check and make sure that you
+are looking at an actual *match* rather than something else that
+hashed into the same bucket.
+</pre></blockquote><pre style="margin: 0em;">
+
+If we can resize (and don't want to recalculate hashes when resizing)
+then the cached hash needs to be table-size-independent.  It should use
+an implementation-tuned range, and a reasonable choice matches the
+fixnum range (or the non-negative fixnum range).  It also makes
+sense that this range match the default bound when the hash functions
+are called with only one parameter.
+--
+	--Per Bothner
+per@xxxxxxxxxxx   <a  rel="nofollow" href="http://per.bothner.com/">http://per.bothner.com/</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00045" href="msg00045.html">should hash function upper bound be exclusive?</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+<li><strong><a name="00046" href="msg00046.html">Re: should hash function upper bound be exclusive?</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00046.html">Re: should hash function upper bound be exclusive?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00048.html">Re: hash for eq?</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00046.html">Re: should hash function upper bound be exclusive?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00050.html">Re: should hash function upper bound be exclusive?</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00047"><strong>Date</strong></a></li>
+<li><a href="threads.html#00047"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

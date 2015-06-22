@@ -1,0 +1,131 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Comparing the performance of the index&#45;mapping implementations -->
+<!--X-From-R13: "sryvk" <sryvkhaqqhavNserrarg.qr> -->
+<!--X-Date: Tue, 19 Mar 2002 12:08:13 +0100 (NFT) -->
+<!--X-Message-Id: 005501c1cf34$63607780$0100a8c0@here -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Comparing the performance of the index-mapping implementations</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00084.html">Date Prev</a>][<a href="msg00086.html">Date Next</a>][<a href="msg00084.html">Thread Prev</a>][<a href="msg00086.html">Thread Next</a>][<a href="maillist.html#00085">Date Index</a>][<a href="threads.html#00085">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Comparing the performance of the index-mapping implementations</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &lt;<a href="mailto:srfi-25@DOMAIN.HIDDEN">srfi-25@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Comparing the performance of the index-mapping implementations</li>
+<li><em>From</em>: &quot;felix&quot; &lt;<a href="mailto:felixundduni@DOMAIN.HIDDEN">felixundduni@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 19 Mar 2002 11:43:04 +0100</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-25@DOMAIN.HIDDEN">srfi-25@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Here is a comparison of the performance of the three index-mapping
+schemes provided with the reference implementation of SRFI-25.
+All tests were done on a PII/350Mhz with 256M RAM under Linux 2.2.17.
+Implementations tested were Gambit-C 3.0 and Chicken 1024.
+The array-representation used is `as-procedure.scm'. The test itself
+consists just of 
+
+cat [gambit-prelude.scm] as-procedure.scm array.scm op-XXXX.scm \
+  ix-XXXX.scm arlib.scm test.scm list.scm &gt;bench.scm
+
+Optimization-switches:
+
+Gambit:
+  (declare (standard-bindings) (extended-bindings) (fixnum) (not interrupts-enabled))
+  -O3 -fomit-frame-pointer -D___SINGLE_HOST
+
+Chicken:
+  -optimize-level 2 -fixnum-arithmetic -disable-interrupts
+  -O3 -fomit-frame-pointer -fstrict-aliasing
+
+Gambit(unsafe):
+  (declare (standard-bindings) (extended-bindings) (fixnum) (not interrupts-enabled) (not safe) (block))
+  -O3 -fomit-frame-pointer -D___SINGLE_HOST
+
+Chicken(unsafe):
+  -benchmark-mode
+  -O3 -fomit-frame-pointer -fstrict-aliasing
+
+             Gambit   Chicken   Gambit(unsafe)  Chicken(unsafe)
+
+ctor          1.60     0.46        0.29            0.24
+mbda          1.44     0.51        0.36            0.32
+tter          1.43     0.50        0.33            0.28
+
+(I tried Stalin and mzc also, but they both failed either while
+compiling (Stalin 0.9) or when executing (Mzc 103))
+
+It seems that with all optimizations the ctor indexing is
+the fastest - most of the work done in `op-ctor.scm' involves
+primitive vector- and math-operations that can be optimized
+nicely by the compiler if generic arithmetic is switched off.
+
+Of course much of the code can be tuned to a specific implementation,
+and this will change the timings accordingly. This is just an attempt
+to find a general idea about performance of the reference implementation(s).
+(Multiple values under Gambit have been simulated with simple lists, so
+there is a lot of room for improvement).
+
+All files (makefile, SRFI-25 ref.impl. with some minor bugs fixed
+and preludes for Gambit) can be obtained at
+<a  rel="nofollow" href="http://www.call-with-current-continuation.org/srfi-25-bench.tar.gz">http://www.call-with-current-continuation.org/srfi-25-bench.tar.gz</a>
+
+
+cheers,
+felix
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00084.html">Re: Can array-ref return (values ...) ?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00086.html">Yo, whassup?</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00084.html">Re: Can array-ref return (values ...) ?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00086.html">Yo, whassup?</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00085"><strong>Date</strong></a></li>
+<li><a href="threads.html#00085"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

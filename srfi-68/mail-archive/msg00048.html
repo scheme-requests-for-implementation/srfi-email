@@ -1,0 +1,150 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: finishing output translating stream -->
+<!--X-From-R13: Euveb Ynjnv <fuvebNynin.arg> -->
+<!--X-Date: Tue, 21 Jun 2005 02:00:26 +0200 (DFT) -->
+<!--X-Message-Id: 20050620.140017.337753448.shiro@lava.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: y9l7jh58evy.fsf@sams.informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: 20050607.230814.960003208.shiro@lava.net -->
+<!--X-Reference: y9lhdg86ptg.fsf@sams.informatik.uni&#45;tuebingen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: finishing output translating stream</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00047.html">Date Prev</a>][<a href="msg00049.html">Date Next</a>][<a href="msg00027.html">Thread Prev</a>][<a href="msg00051.html">Thread Next</a>][<a href="maillist.html#00048">Date Index</a>][<a href="threads.html#00048">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: finishing output translating stream</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: finishing output translating stream</li>
+<li><em>From</em>: Shiro Kawai &lt;<a href="mailto:shiro@DOMAIN.HIDDEN">shiro@xxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 20 Jun 2005 14:00:17 -1000 (HST)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-68@DOMAIN.HIDDEN">srfi-68@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-68@DOMAIN.HIDDEN">srfi-68@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:y9lhdg86ptg.fsf@DOMAIN.HIDDEN">y9lhdg86ptg.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:y9l7jh58evy.fsf@DOMAIN.HIDDEN">y9l7jh58evy.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:20050607.230814.960003208.shiro@DOMAIN.HIDDEN">20050607.230814.960003208.shiro@xxxxxxxx</a>&gt;	&lt;<a href="mailto:y9lhdg86ptg.fsf@DOMAIN.HIDDEN">y9lhdg86ptg.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Belated response...
+
+From: Michael Sperber &lt;sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx&gt;
+Subject: Re: finishing output translating stream
+Date: Thu, 09 Jun 2005 07:51:07 +0200
+
+&gt; Now, this flushing business makes me a little concerned: What you're
+&gt; proposing means my output data is different depending on when I call
+&gt; flush.  However, I always thought of this invariant as pretty
+&gt; fundamental to what flush does---that it does not change the data.
+
+Hm, that is a reasonable concern.  On the other hand, I regard
+'flush' as to flush out any pending state in the I/O subsystem
+and start it over from a clean state---the state includes pending
+data in the buffer, or an unclosed escape sequence.  
+
+If you want to keep the invariance, you wouldn't know flushing
+really flushes the buffer (Cf. &lt;U+30AB&gt; &lt;U+309A&gt; case).  What's
+the use of 'flush', then?
+
+&gt; It seems what you really should do to solve your problem is send a
+&gt; message to the translator to insert the closing escape sequence into
+&gt; the output stream, and have the *translator* flush after it has
+&gt; encountered the message and written the closing sequence.  You could
+&gt; just use U+0003 (END OF TEXT) or something for that purpose.  Would
+&gt; this be reasonable?
+
+This is probably the logically cleaner solution, although I think
+it doesn't follow the convention.  The application should be
+agnostic to the presense of translator stream.   It used to
+be customary to call flush to tell I/O subsystem that &quot;I'm done
+on the output for a while&quot;.
+
+Another practical (although slightly outdated) example:
+A command-line interactive application which prompts the user
+input.  The cliche for the application to print the prompt would
+be something like this:
+
+  (begin (display *prompt*) (flush-output-port))
+
+If the terminal uses iso2022 encoding, and the prompt contains
+non-ASCII character---you do want to make sure the closing escape
+sequence is output before waiting for the user input.  But you
+wouldn't know the user uses these settings.  Do you
+suggest that all applications now should be written as this?
+
+  (begin (display *prompt*) (display #\EOT) (flush-output-port))
+
+I don't strongly insist my position, though, for there's usually
+workarounds for this problem.  However, the translator can always
+discard the flushing message if it doesn't need it, so it doesn't
+hurt if flush-output-stream sends a special message to the
+translator.
+
+--shiro
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00051" href="msg00051.html">Re: finishing output translating stream</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00020" href="msg00020.html">Re: finishing output translating stream</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+<li><strong><a name="00022" href="msg00022.html">Re: finishing output translating stream</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+<li><strong><a name="00027" href="msg00027.html">Re: finishing output translating stream</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00047.html">Re: output streams vs output ports</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00049.html">Re: output streams vs output ports</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00027.html">Re: finishing output translating stream</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00051.html">Re: finishing output translating stream</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00048"><strong>Date</strong></a></li>
+<li><a href="threads.html#00048"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,163 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: limit function -->
+<!--X-From-R13: Bnhy Epuyvr <fpuyvrNpbzpnfg.arg> -->
+<!--X-Date: Sun, 10 Jul 2005 18:17:13 +0200 (DFT) -->
+<!--X-Message-Id: BEF6C242.AC74%schlie@comcast.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20050709022515.C74C61B77B4@voluntocracy.org -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: limit function</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00113.html">Date Prev</a>][<a href="msg00115.html">Date Next</a>][<a href="msg00112.html">Thread Prev</a>][<a href="msg00110.html">Thread Next</a>][<a href="maillist.html#00114">Date Index</a>][<a href="threads.html#00114">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: limit function</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Aubrey Jaffer &lt;<a href="mailto:agj@DOMAIN.HIDDEN">agj@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: limit function</li>
+<li><em>From</em>: Paul Schlie &lt;<a href="mailto:schlie@DOMAIN.HIDDEN">schlie@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 10 Jul 2005 12:17:06 -0400</li>
+<li><em>Cc</em>: &lt;<a href="mailto:srfi-70@DOMAIN.HIDDEN">srfi-70@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-70@DOMAIN.HIDDEN">srfi-70@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20050709022515.C74C61B77B4@DOMAIN.HIDDEN">20050709022515.C74C61B77B4@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Microsoft-Entourage/11.1.0.040913</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt;  | &gt;  | Thereby all functions will be legitimately valued at all points
+&gt;  | &gt;  | with no need of ambiguous value representation, however who's
+&gt;  | &gt;  | value may be more precisely determined at a specific limit through
+&gt;  | &gt;  | the use of a limit macro as desired.
+&gt;  | &gt;  |
+&gt;  | &gt;  | Thereby hypothetically: (presuming sufficient numerical precision)
+&gt;  | &gt;  | 
+&gt;  | &gt;  | (tan pi/2) =&gt; 0
+&gt;  | &gt;  | (limit (lambda (x) (tan x)) (pi/2 -0/1)) =&gt; +1/0
+&gt;  | &gt;  | (limit (lambda (x) (tan x)) (pi/2 +0/1)) =&gt; -1/0
+&gt;  | &gt;  | 
+&gt;  | &gt;  | (+ 4. (/ (abs 0) 0)) =&gt; 4.0
+&gt;  | &gt;  | (limit (lambda (x) (+ 4. (/ (abs x) x))) (0 -0/1)) =&gt; 3.0
+&gt;  | &gt;  | (limit (lambda (x) (+ 4. (/ (abs x) x))) (0 +0/1)) =&gt; 5.0
+&gt;  | &gt; 
+&gt;  | &gt; LIMIT already handles these cases correctly.  But I am unconvinced
+&gt;  | &gt; that a procedure can automatically pick the evaluation points given
+&gt;  | &gt; no information about the test function.
+&gt;  | 
+&gt;  | - it seems fairly straight foreword to for +-0/1 to imply the use
+&gt;  | of the smallest value representable by an implementation as the
+&gt;  | delta value in it's calculation of a limit value its argument's
+&gt;  | value?
+&gt; 
+&gt; That doesn't work in general.  Intermediate quantities in a
+&gt; calculation can overflow or underflow if the delta is too small.
+&gt; 
+&gt; (define (func x) (expt (+ (/ x) (exp (/ x)) (exp (/ 2 x))) x))
+&gt; 
+&gt; ;;The mathematically correct answer is e^2 = 7.3890560989306504:
+&gt;
+&gt; (limit func 0 1/40) ==&gt; 7.3890560989306504
+&gt; (limit func 0 1/41) ==&gt; #i0/0
+&gt; (limit func 0 1/42) ==&gt; #f
+&gt; (limit func 0 1/43) ==&gt; #i+/0
+&gt; (limit func 0 1/444) ==&gt; #i+/0
+&gt; (limit func 0 1e-323) ==&gt; #i+/0
+
+- Yup.  However, I don't believe attempting to guess haphazardly, as
+  implied is required using the proposed limit function, is reasonable.
+
+  Given that the precision about any value is known in a given inexact
+  implementation, and correspondingly so is the resolvable domain of all
+  primitive functions; it seems reasonable to define a macro that is able
+  to determine the delta about an arbitrary point given an arbitrary
+  composite function, which represents the minimum deviation about that
+  point which should not corrupt the result due to a intermediate overflow
+  if possible.
+
+  Possibly something along the line of [using macro's as the expression
+  argument needs to be parsed to determine it's reverse operation order]:
+
+  (delta &lt;expression&gt; (&lt;variable&gt; &lt;value&gt;))  =&gt; &lt;min-delta-value&gt;
+
+  Such that hypothetically:
+
+  (delta- a (b c)) :: (- c (delta a (b c))
+  (delta+ a (b c)) :: (+ c (delta a (b c))
+  (delta x (x 0)) :: (* (+ (abs x) 1e-290) 1e-10)) =&gt; 1e-300
+  (delta (exp (/ x)) (x 0)) :: (/ (abs (log (delta x (x 0)))) =&gt; 0.00145..
+  ...
+
+  Where then:
+
+  (limit  &lt;expression&gt; (&lt;variable&gt; &lt;value&gt;)) =&gt; &lt;mean-limit&gt;
+  (limit- &lt;expression&gt; (&lt;variable&gt; &lt;value&gt;)) =&gt; &lt;lower-limit&gt;
+  (limit+ &lt;expression&gt; (&lt;variable&gt; &lt;value&gt;)) =&gt; &lt;upper-limit&gt;
+
+  may compute the limit by automatically deriving a delta based upon
+  the composite expression directly. Where if given for example:
+
+  (expt (exp (/ x)) x) ; which otherwise yields +inf at 0, due to overflow.
+  
+  It's lower (and/or upper or mean) limit may then be accurately computed:
+
+  (limit- (expt (exp (/ x)) x) (x 0)) ::
+  (let ((x (delta- (expt (exp (/ x)) x) (x 0))))) (expt (exp (/ x)) x)) ::
+  (let ((x -0.00145..)) (expt (exp (/ x)) x)) =&gt; 2.718..
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00112" href="msg00112.html">Re: comparison operators and *typos</a></strong>
+<ul><li><em>From:</em> Aubrey Jaffer</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00113.html">Revision of SRFI 70 available</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00115.html">Re: Nitpick with FLOOR etc.</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00112.html">Re: comparison operators and *typos</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00110.html">Re: comparison operators and *typos</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00114"><strong>Date</strong></a></li>
+<li><a href="threads.html#00114"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

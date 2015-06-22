@@ -1,0 +1,174 @@
+<!-- MHonArc v2.6.16 -->
+<!--X-Subject: Re: Simplifying SRFI 109, part 1: entities -->
+<!--X-From-R13: Bre Pbguare <creNobguare.pbz> -->
+<!--X-Date: Sun, 31 Mar 2013 04:18:56 +0200 (MST) -->
+<!--X-Message-Id: 51579CFF.3020101@bothner.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20130210080446.GD19521@mercury.ccil.org -->
+<!--X-Reference: 512C5A2F.7010800@bothner.com -->
+<!--X-Reference: 20130330232727.GO29250@mercury.ccil.org -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Simplifying SRFI 109, part 1: entities</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00021.html">Date Prev</a>][<a href="msg00023.html">Date Next</a>][<a href="msg00021.html">Thread Prev</a>][<a href="msg00023.html">Thread Next</a>][<a href="maillist.html#00022">Date Index</a>][<a href="threads.html#00022">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Simplifying SRFI 109, part 1: entities</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: John Cowan &lt;<a href="mailto:cowan@DOMAIN.HIDDEN">cowan@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Simplifying SRFI 109, part 1: entities</li>
+<li><em>From</em>: Per Bothner &lt;<a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 30 Mar 2013 19:18:39 -0700</li>
+<li><em>Cc</em>: <a href="mailto:srfi-109@DOMAIN.HIDDEN">srfi-109@xxxxxxxxxxxxxxxxx</a>, <a href="mailto:srfi-107@DOMAIN.HIDDEN">srfi-107@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-109@DOMAIN.HIDDEN">srfi-109@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20130330232727.GO29250@DOMAIN.HIDDEN">20130330232727.GO29250@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:20130210080446.GD19521@DOMAIN.HIDDEN">20130210080446.GD19521@xxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:512C5A2F.7010800@DOMAIN.HIDDEN">512C5A2F.7010800@xxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20130330232727.GO29250@DOMAIN.HIDDEN">20130330232727.GO29250@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mozilla/5.0 (X11; Linux x86_64; rv:17.0) Gecko/20130311 Thunderbird/17.0.4</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+On 03/30/2013 04:27 PM, John Cowan wrote:
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Per Bothner scripsit:
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Not hard-wiring in entity names is especially important for STFI-107,
+since the XML/SGML model does allow user-defined entity names.
+</pre></blockquote><pre style="margin: 0em;">
+
+But only if they are declared in a DTD, either externally or internally.
+SRFI 107 makes no provision for doing so, so I consider that argument to
+be unsound.
+</pre></blockquote><pre style="margin: 0em;">
+
+DTDs and specifically entity declarations are tied to the specific
+syntactic form of XML.  SRFI 107 supports that at the &quot;local syntax&quot;
+level, but not the &quot;file syntax&quot; level.  It is more important to
+preserve the XML conceptual &quot;information model&quot;, and in that sense
+an entity reference corresponds to a variable reference, and an
+entity definition corresponds to a variable definitions.
+
+Also, some XML API preserve EntityRef as a unexpanded Node.
+For example Scala:
+  <a  rel="nofollow" href="http://www.scala-lang.org/api/current/index.html#scala.xml.EntityRef">http://www.scala-lang.org/api/current/index.html#scala.xml.EntityRef</a>
+I wouldn't want to preclude that kind of API.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+If SRFI 107 is to allow arbitrary entity names, getting their values
+from corresponding Scheme variables is a sensible approach.  However,
+in that case the SRFI 107 model must be extended to include at least
+a mechanism for declaring an external subset as part of a new &quot;XML
+document&quot; constructor.
+</pre></blockquote><pre style="margin: 0em;">
+
+SRFI 107 as currently written does not support the concept of an
+XML document - whether we mean:
+(1) XML document as a file format.
+(2) DOM Document as a data type for representing the &quot;significant&quot;
+information
+SRFI-107 doesn't directly support either.  I think APIs supporting
+both are desirable - and SRFI-107 should hopefully work well with
+such APIs.  However, this process has dragged on long enough, and
+working with documents seems like new functionality that I think
+should be saved for future work.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+The SRFI 107 reader need not read this subset:
+it can be a programmer responsibility to keep it in sync with the
+definitions of entity names at the Scheme level.  Alternatively, only
+the standard five entities should be allowed.
+</pre></blockquote><pre style="margin: 0em;">
+
+For SRFI-108/-109 I think we should have &amp;lbrace; and &amp;rbrace; -
+obviously they're not needed for SRFI-107.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+I should probably also state that an implementation MUST support the
+standard Scheme character names.
+</pre></blockquote><pre style="margin: 0em;">
+
+You don't say which list of standard names you are referring to.
+R5RS mandates only &quot;space&quot; and &quot;newline&quot;; R6RS mandates &quot;nul&quot;, &quot;alarm&quot;,
+&quot;backspace&quot;, &quot;tab&quot;, &quot;linefeed&quot;, &quot;newline&quot;, &quot;vtab&quot;, &quot;page&quot;, &quot;return&quot;,
+&quot;esc&quot;, &quot;space&quot;, and &quot;delete&quot;; R7RS-small mandates &quot;null&quot;, &quot;alarm&quot;,
+&quot;backspace&quot;, &quot;tab&quot;, &quot;newline&quot;, &quot;return&quot;, &quot;escape&quot;, &quot;space&quot;, and &quot;delete&quot;.
+</pre></blockquote><pre style="margin: 0em;">
+
+Indeed, that is rather vague - and raises these questions:
+(1) What are &quot;standard Scheme character names&quot;? I suggest going with the
+R7RS names.
+(2) When it comes to an implementation supporting &quot;standard Scheme
+character names&quot;, is this a &quot;must&quot; or a &quot;should&quot;?  I could go either way.
+(3) Do we want a different answer for SRFI-17 and SRFI-108/-109?
+I'd prefer not.
+--
+	--Per Bothner
+per@xxxxxxxxxxx   <a  rel="nofollow" href="http://per.bothner.com/">http://per.bothner.com/</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00023" href="msg00023.html">Re: Simplifying SRFI 109, part 1: entities</a></strong>
+<ul><li><em>From:</em> John Cowan</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00007" href="msg00007.html">Simplifying SRFI 109, part 1: entities</a></strong>
+<ul><li><em>From:</em> John Cowan</li></ul></li>
+<li><strong><a name="00012" href="msg00012.html">Re: Simplifying SRFI 109, part 1: entities</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+<li><strong><a name="00021" href="msg00021.html">Re: Simplifying SRFI 109, part 1: entities</a></strong>
+<ul><li><em>From:</em> John Cowan</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00021.html">Re: Simplifying SRFI 109, part 1: entities</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00023.html">Re: Simplifying SRFI 109, part 1: entities</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00021.html">Re: Simplifying SRFI 109, part 1: entities</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00023.html">Re: Simplifying SRFI 109, part 1: entities</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00022"><strong>Date</strong></a></li>
+<li><a href="threads.html#00022"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

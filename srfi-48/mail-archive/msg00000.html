@@ -1,0 +1,140 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Format strings are wrong -->
+<!--X-From-R13: [nep Trryrl <srryrlNWDA.G[bagerny.QO> -->
+<!--X-Date: Tue, 25 Nov 2003 22:12:55 +0100 (NFT) -->
+<!--X-Message-Id: 200311252107.hAPL7waO018953@baro.iro.umontreal.ca -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Format strings are wrong</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[Date Prev][<a href="msg00001.html">Date Next</a>][Thread Prev][<a href="msg00004.html">Thread Next</a>][<a href="maillist.html#00000">Date Index</a>][<a href="threads.html#00000">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Format strings are wrong</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-48@DOMAIN.HIDDEN">srfi-48@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Format strings are wrong</li>
+<li><em>From</em>: Marc Feeley &lt;<a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 25 Nov 2003 16:07:58 -0500</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-48@DOMAIN.HIDDEN">srfi-48@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Ken, I believe that format strings, as used in the proposed &quot;format&quot;
+procedure as well as C's &quot;printf&quot;, is very wrong.
+
+The first objection is that it is difficult to type check statically,
+because it requires the parsing of the format string, which may be
+computed at run time.
+
+Secondly, it is hard to remember the meaning of the one letter
+escapes.  How come &quot;~y&quot; does pretty-printing and not &quot;~p&quot;, how come
+&quot;~%&quot; prints a newline instead of &quot;~n&quot;, etc, etc.
+
+Thirdly, the logical link between a particular escape in the format
+string and the parameter it formats is not reinforced.  They are too
+far appart in the source and it is easy to get the order wrong or
+miss one parameter.
+
+Finally it is not composable.  Scheme is a nice functional language
+where we can define functions for each operation we need to do, and we
+can easily compose one function with another to get new
+functionnality.  With format strings these operations are hidden
+behind escape codes that need the &quot;format&quot; interpreter to work.  Why
+not expose those operations as true Scheme functions (that produce
+strings or produce text on the current output port).
+
+Here is a quick example to show what I mean (this is not a complete
+proposal...).  Suppose we had a function called &quot;field&quot; (it could even
+be called &quot;format&quot; or simply &quot;!&quot; depending on your tastes) that
+converts any object (symbol, boolean, number, etc) to a string.  This
+function takes the object as the first argument, and accepts optional
+arguments.  The first optional argument &quot;field-width&quot; gives the
+minimal width of the resulting string (it defaults to 0).  If the
+object's external representation requires more characters than this
+then the resulting string is longer that the minimal width.  If the
+object's external representation requires fewer characters then spaces
+are used as padding, either on the left if field-width is positive, or
+on the right if field-width is negative.  The next optional argument,
+which only has meaning for numbers in the object, gives the number of
+decimal digits after the period (it defaults to #f which means use as
+many as number-&gt;string would use).  Then we can do things like:
+
+  (string-append &quot;Hello, &quot; (field &quot;World!&quot; 10))
+  =&gt;  &quot;Hello,   \&quot;World!\&quot;&quot;
+
+  (string-append &quot;list: &quot; (field '(one &quot;two&quot; 3)))
+  =&gt;  &quot;list: (one \&quot;two\&quot; 3)&quot;
+
+  (string-append &quot;list: &quot; (field '(one &quot;two&quot; 3) 0 1))
+  =&gt;  &quot;list: (one \&quot;two\&quot; 3.0)&quot;
+
+  (string-append (field 1/2 6 3) &quot; ^ 2 = &quot; (field 1/4 6 3))
+  =&gt;  &quot; 0.500 ^ 2 =  0.250&quot;
+
+To make printing easier, a general purpose function called &quot;print&quot;
+could be added with this definition:
+
+  (define (print . lst) (for-each display lst))
+
+allowing
+
+  (print &quot;list: &quot; (field '(one &quot;two&quot; 3)))
+
+Anyway, I don't want to get lost in details.  My main point is that a
+functional interface is much more elegant and versatile that format
+strings.
+
+Marc
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00004" href="msg00004.html">Re: Format strings are wrong</a></strong>
+<ul><li><em>From:</em> Charles Stewart</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Next by Date:
+<strong><a href="msg00001.html">Various things</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00004.html">Re: Format strings are wrong</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00000"><strong>Date</strong></a></li>
+<li><a href="threads.html#00000"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

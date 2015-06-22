@@ -1,0 +1,156 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: How about dropping semi&#45;variable&#45;arity? -->
+<!--X-From-R13: "Brgebsfxl, Fur Drireraq Oy" <nyNcrgebsfxl.bet> -->
+<!--X-Date: Thu, 19 May 2005 04:01:48 +0200 (DFT) -->
+<!--X-Message-Id: 200505190201.TAA21662@radish.petrofsky.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 428BA5FA.80701@cs.uvm.edu -->
+<!--X-Reference: 17035.47875.552634.701818@christy.neilvandyke.org -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>How about dropping semi-variable-arity?</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00017.html">Date Prev</a>][<a href="msg00019.html">Date Next</a>][<a href="msg00017.html">Thread Prev</a>][<a href="msg00023.html">Thread Next</a>][<a href="maillist.html#00018">Date Index</a>][<a href="threads.html#00018">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>How about dropping semi-variable-arity?</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-71@DOMAIN.HIDDEN">srfi-71@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: How about dropping semi-variable-arity?</li>
+<li><em>From</em>: &quot;Petrofsky, The Reverend Al&quot; &lt;<a href="mailto:al@DOMAIN.HIDDEN">al@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 18 May 2005 19:01:40 -0700</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-71@DOMAIN.HIDDEN">srfi-71@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>References</em>: &lt;<a href="mailto:428BA5FA.80701@DOMAIN.HIDDEN">428BA5FA.80701@xxxxxxxxxx</a>&gt; &lt;<a href="mailto:17035.47875.552634.701818@DOMAIN.HIDDEN">17035.47875.552634.701818@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Sebastian Egner wrote:
+
+&gt; At the point I decide to drop rest-list values the SRFI will be
+&gt; withdrawn, I promise.  The whole point of this SRFI is to integrate
+&gt; multiple values in all their beauty smoothly into the Scheme
+&gt; language.
+
+I can imagine you sometimes might not know how many values something
+will produce, and thus it's important to be able to receive an
+arbitrary number of values in a list.
+
+However, if that is provided, are you wedded to the idea that lambda's
+feature of semi-variable-arity argument lists like (a b . c) must also
+be supported?
+
+If you're thinking you want that so that you can use a destructuring
+idiom like:
+
+  (let* ((foo '(1 2 3 4 5))
+	 ((values x y . z) (unlist foo)))
+    (list x y (apply + z)))
+  =&gt; (1 2 12)
+
+I would like to point out that that requires Z to be bound to a list
+of three new pairs and *not* to the cddr of FOO, so this really isn't
+an appropriate idiom for the typical operation of extracting the first
+few elements of a list and the remainder.  As has been suggested, the
+appropriate construct for that would be a pattern-match facility.
+
+If you drop support for semi-variable-arity, and you drop support for
+zero-value clauses (which I will discuss more below) then you can dump
+the VALUES keyword entirely, because (values . x) clauses can be more
+simply and clearly written -- without the triple-open-paren -- using
+values-&gt;list:
+
+  (let (((values . x) (foo)))
+    &lt;body&gt;)
+
+becomes
+
+  (let ((x (values-&gt;list (foo))))
+    &lt;body&gt;)
+
+With respect to zero-valued clauses: I'm not sure it really makes
+sense to allow &quot;binding clauses&quot; that do not actually create any
+bindings.  In what situations are you thinking these would be useful?
+The only kind of LET in which I can imagine them being used is a LET*
+into which you want to insert some expression for effect.  Would that
+perhaps be better expressed with BEGIN?  That is, a sequence of LET*
+binding clauses like this:
+
+  ((values) (foo))
+  (x y (bar))
+
+could instead be written:
+
+  (x y (begin (foo) (bar))
+
+At least, it would be equivalent if the specification of BEGIN were a
+little different than it is.  If your goal is to update the basic
+syntaxes, like LET, to be more multiple-values aware, then it might
+make sense to also specify two begins: STRICT-BEGIN and LOOSE-BEGIN.
+STRICT-BEGIN is the one you would use in the above example.  It would
+require all the expressions but the last to return zero values.
+LOOSE-BEGIN would allow the non-terminal expressions to return any
+number of values.  The name of LOOSE-BEGIN should perhaps be just
+BEGIN.  I understand the r5rs authors came very close to deciding to
+specify BEGIN as having the semantics of LOOSE-BEGIN, but the change
+did not make it into the final draft.
+
+-al
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00016" href="msg00016.html">Rest and patterns</a></strong>
+<ul><li><em>From:</em> David Van Horn</li></ul></li>
+<li><strong><a name="00017" href="msg00017.html">Re: Rest and patterns</a></strong>
+<ul><li><em>From:</em> Neil W. Van Dyke</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00017.html">Re: Rest and patterns</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00019.html">Re: Difference between values-&gt;list and list</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00017.html">Re: Rest and patterns</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00023.html">Re: Rest and patterns</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00018"><strong>Date</strong></a></li>
+<li><a href="threads.html#00018"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,341 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: arithmetic issues -->
+<!--X-From-R13: Ohoerl Xnssre <ntwNnyhz.zvg.rqh> -->
+<!--X-Date: Fri, 21 Oct 2005 16:53:48 +0200 (MST) -->
+<!--X-Message-Id: 20051021145326.816C11B77BB@home.voluntocracy.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>arithmetic issues</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00075.html">Date Prev</a>][<a href="msg00077.html">Date Next</a>][<a href="msg00052.html">Thread Prev</a>][<a href="msg00077.html">Thread Next</a>][<a href="maillist.html#00076">Date Index</a>][<a href="threads.html#00076">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>arithmetic issues</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: arithmetic issues</li>
+<li><em>From</em>: Aubrey Jaffer &lt;<a href="mailto:agj@DOMAIN.HIDDEN">agj@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 21 Oct 2005 10:53:26 -0400 (EDT)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre> | Members of the Scheme community are encouraged to express themselves
+ | on the following issues:
+
+ | * Instead of requiring the full numeric tower, R6RS could require
+ |   only the fixnum/flonum base, and make the full tower available
+ |   as modules in the standard library.
+
+SCM has compile-time conditionals which enable bignums, flonums, and
+complex flonums.  This selectivity has been used to port SCM and JACAL
+to small platforms like the Pocket-PC.
+
+SCM's primary target application is JACAL, a symbolic math system.
+JACAL does not use inexact numbers.  I am open to mandating bignums.
+Flonums often are the most difficult feature to port to new
+architectures.  But computer science is a half-centry old already --
+tiny implementations can say they implement a subset of R6RS.
+
+If fixnums and flonums are the minimum tower, then &quot;/&quot; of fixnums
+(which don't divide evenly) should be required to return the closest
+flonum.
+
+ | * The main problem with banishing the full tower to a library is
+ |   that read, write, and several other procedures must know about
+ |   the external representations of all numbers.
+
+For an interpreter this would mean that 1/2 read before the full-tower
+module was loaded could be an inexact 0.5; but after loading 1/2 would
+read as an exact 1/2.  Unpredictability is bad.
+
+ | * Should a minimum precision be required for fixnums or flonums?
+
+The Common-Lisp specification
+&lt;<a  rel="nofollow" href="http://www.cs.cmu.edu/Groups/AI/html/hyperspec/HyperSpec/Body/convar_most-p_ative-fixnum.html">http://www.cs.cmu.edu/Groups/AI/html/hyperspec/HyperSpec/Body/convar_most-p_ative-fixnum.html</a>&gt;
+mandates a fixnum precision of at least 16.bit:
+
+  MOST-POSITIVE-FIXNUM, MOST-NEGATIVE-FIXNUM
+
+  Constant Value:
+
+  implementation-dependent.
+
+  Description:
+
+  most-positive-fixnum is that fixnum closest in value to positive
+  infinity provided by the implementation, and greater than or equal
+  to both 2^15 - 1 and array-dimension-limit.
+
+  most-negative-fixnum is that fixnum closest in value to negative
+  infinity provided by the implementation, and less than or equal to
+  -2^15.
+
+I recommend 12.bits minimum precision for both fixnums and flonums.
+
+ | * Should the range of a fixnum be restricted to a power of two? To
+ |   a two's complement range?
+
+No strong preferences.
+
+Both Common-Lisp and SLIB implement MOST-POSITIVE-FIXNUM and
+MOST-NEGATIVE-FIXNUM, which would be good additions to R6RS.
+
+ | * The fixnum operations provide efficient fixnums that &quot;wrap.&quot;
+ |   However, they do not give efficient access to the hardware
+ |   facilities for carry and overflow. This would be desirable to
+ |   implement efficient generic arithmetic on fixnums portably. On
+ |   the other hand, there isn't much experience with formulating a
+ |   portable interface to these facilities.
+
+In well-written interpreted implementations, fixnum operations would
+provide no speed increase.  SCM's type dispatch for immediate numbers
+is just 3 instructions: mask, test, and conditional jump.  With modern
+processors executing scores of instructions in the time it takes for a
+single cache line to be retrieved from memory, most data type
+dispatches use time which would otherwise be spent waiting for program
+or data caches.
+
+The same would hold true for many nontrivial compiled Scheme programs.
+
+ | * The fixnum operators wrap on overflow, i.e., they perform modular
+ |   arithmetic.  For many purposes, it would be better for them to
+ |   signal an error in safe mode.  Since the modulus is
+ |   implementation-dependent, portable code cannot generally take
+ |   advantage of the wrapping.  Instead, applications are likely to
+ |   use fixnums simply to avoid the overhead of generic arithmetic
+ |   under the assumption that all quantities computed fit in the
+ |   fixnum range, and feedback if this turns out not to be the case
+ |   will be valuable.  On the other hand, the wrapping semantics can
+ |   also be useful, i.e., in the coding of a practical implementation
+ |   of bignums in terms of fixnums.  It may be that we should
+ |   consider including two sets of operators: fx operators that
+ |   signal an error upon overflow and wfx operators that wrap.
+
+SCM has real-only operations like $log and $sin, which I never use;
+even though I do substantial floating point computing.  In most
+nontrivial computations, a couple percent speed improvement from
+fiddling with the minutia of low-level procedures is dwarfed by the
+speed improvements netted by memoizing the results of certain
+sub-calculations or vectorizing computations in SRFI-63 uniform
+arrays.
+
+Its time to move beyond the machine-language mindset.  I code in
+Scheme because I want a high-level language.
+
+ | * Should the binary fixnum/flonum operations allow other than two
+ |   arguments?
+
+Yes; because these operations are pointless for interpreters, and
+variable arity invokes no penalty in compiled code.
+
+ | * What are the semantics of &quot;safe mode&quot; and &quot;unsafe mode&quot;?  (This
+ |   is a much larger question that R6RS should address.)
+
+Global modes destroy modularity.  In a compiled implementation, the
+assumption that safe and unsafe compiled modules could be linked
+together is unwarranted.
+
+ | * Should R6RS allow other inexact reals beside the flonums?  This
+ |   draft does allow them, at the cost of some complications and
+ |   additions such as real-&gt;flonum.  (See the Design Rationale.)
+
++inf.0, -inf.0, and NaNs should be inexacts.
+
+ | * Should the R5RS procedures for generic arithmetic (e.g. +)
+ |   remain in R6RS?  Here are five possible answers, phrased in terms
+ |   of the + procedure:
+
+ |      1. + is not defined in R6RS.
+
+ |      2. + is defined to be a synonym for the ex+, so its domain is
+ | 	restricted to exact arguments, and always returns an exact
+ | 	result.
+
+ |      3. + is defined as the union of the ex+ and in+ procedures,
+ | 	so all of its arguments are required to have the same
+ | 	exactness, and the exactness of its result is the same as
+ | 	the exactness of its arguments.
+
+ |      4. + is defined as in R5RS, but with the increased
+ | 	portability provided by requiring the full numeric
+ | 	tower.  This alternative is described in the section
+ | 	R5RS-style Generic Arithmetic.
+
+ |      5. + is defined to return an exact result in all cases, even
+ | 	if one or more of its arguments is inexact.  This
+ | 	alternative is described in the section Generic Exact
+ | 	Arithmetic.
+
+ |   Will Clinger prefers the 4th possibility, Mike Sperber the 5th.
+
+I want a sixth option:
+
+     6. + is defined as in R5RS (and SRFI-70).
+
+ | * If R6RS does not adopt a R5RS-style model for the generic
+ |   arithmetic, should it still provide more R5RS-compatible generic
+ |   arithmetic as a library?
+
+Replacing the numeric subsystem including uniform arrays would change
+too many procedures; we are then talking about two languages.
+
+ | * The external representations of 0.0, -0.0, infinities and NaNs
+ |   must be specified.  The notations used here are used by several
+ |   other languages, and have been adopted by several
+ |   implementations of Scheme, but other notations are possible.
+
+Adding syntax for infinities is good.
+
+Being error objects, syntax for NaNs should be unspecified.
+
+None of the examples in SRFI-77 return -0.0 unless they are passed
+-0.0 as an argument.  Does -0.0 result only from a literal -0.0
+constant?
+
+In an implementation with -0.0, what is the result of (* -5.0 0.0)?
+
+-0.0 is insufficiently specified by SRFI-77; it will be a portability
+killer.
+
+ | * The fixnum, flonum, and inexact arithmetic come with a full deck
+ |   of operations, including some that are defined in terms of
+ |   integers (such as quotient+remainder, gcd and lcm), and others
+ |   that are easily abused (such as fxabs).  Should these be pruned?
+
+quotient+remainder introduces a new procedure naming convention which
+doesn't play well with -.
+
+The mathematical term for quotient with remainder is division; the
+verb form being divide.  How about changing QUOTIENT+REMAINDER to
+DIVIDE.
+
+ | * The R5RS says this:
+
+ |       Rationale: Magnitude is the same as abs for a real argument,
+ |       but abs must be present in all implementations, whereas
+ |       magnitude need only be present in implementations that
+ |       support general complex numbers.
+
+ |   Given that this SRFI suggests requiring all implementations to
+ |   support the general complex numbers, should abs (and exabs and
+ |   inabs) be removed?
+
+No.  Absolute-value is a common name for the operation.
+
+ | * The real?, rational?, and integer?  predicates must return false
+ |   for complex numbers with an imaginary part of inexact zero, as
+ |   non-realness is now contagious.  This causes possibly unexpected
+ |   behavior: `(zero? 0+0.0i)' returns true despite `(integer?
+ |   0+0.0i)' returning false.  Possibly, new predicates realistic?,
+ |   rationalistic?, and integral?  should be added to say that a
+ |   number can be coerced to the specified type (and back) without
+ |   loss.  (See the Design Rationale.)
+
+Mathematically, mixed exactness complex numbers makes no sense.
+Twisting the whole numeric tower around this artifice is wrong.
+
+If the goal is to make real inexacts and complex inexacts separate
+types, then state it that way.  I am open to separating complex from
+real; I am strongly opposed to mixed exactness.
+
+ | * Most Scheme implementations represent an inexact complex number
+ |   as a pair of two inexact reals, representing the real and
+ |   imaginary parts of the number, respectively.  Should R6RS mandate
+ |   the presence of such a representation (while allowing additional
+ |   alternative representations), thus allowing it to more
+ |   meaningfully discuss semantic issues such as branch cuts?
+
+The procedures REAL-PART, IMAG-PART, and MAKE-RECTANGULAR already
+guarantee that the orthogonal representation is available.  The
+language should not constrain an internal representation which is
+transparent to the user.
+
+ | * The x|53 default for the mantissa width discriminates against
+ |   implementations that default to unusually good representations,
+ |   such as IEEE extended precision.  Are there any such
+ |   implementations?  Do we expect such implementations in the near
+ |   future?
+
+Not that I know of.
+
+ | * Should `(floor +inf.0)' return +inf.0 or signal an error
+ |   instead?  (Similarly for ceiling, flfloor, infloor, etc.)
+
+Floor is specified to return an integer.  +inf.0 is not an integer.
+Thus it is an error.
+
+ | * The bitwise operations operate on exact integers only.  Should
+ |   they live in the section on exact arithmetic?  Should they carry
+ |   ex prefixes?  Or should they be extended to work on inexact
+ |   integers as well?
+
+They should work on all exact integers.
+
+Arithmetic-shift is not good as a low level operation on many CPUs.
+For low level it should be split into left shift and right shift
+procedures.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00077" href="msg00077.html">Re: arithmetic issues</a></strong>
+<ul><li><em>From:</em> John.Cowan</li></ul></li>
+<li><strong><a name="00079" href="msg00079.html">Re: arithmetic issues</a></strong>
+<ul><li><em>From:</em> Marcin 'Qrczak' Kowalczyk</li></ul></li>
+<li><strong><a name="00082" href="msg00082.html">Re: arithmetic issues</a></strong>
+<ul><li><em>From:</em> Taylor Campbell</li></ul></li>
+<li><strong><a name="00091" href="msg00091.html">Re: arithmetic issues</a></strong>
+<ul><li><em>From:</em> Alan Watson</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00075.html">Re: Exactness</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00077.html">Re: arithmetic issues</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00052.html">Re: Arithmetic issues</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00077.html">Re: arithmetic issues</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00076"><strong>Date</strong></a></li>
+<li><a href="threads.html#00076"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

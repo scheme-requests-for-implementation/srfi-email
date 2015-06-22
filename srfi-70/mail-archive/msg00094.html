@@ -1,0 +1,167 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: comparison operators and *typos -->
+<!--X-From-R13: Ohoerl Xnssre <ntwNnyhz.zvg.rqh> -->
+<!--X-Date: Fri,  1 Jul 2005 17:57:36 +0200 (DFT) -->
+<!--X-Message-Id: 20050701033224.2770B1B77B4@voluntocracy.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: BEEA0257.AAEE%schlie@comcast.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: comparison operators and *typos</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00093.html">Date Prev</a>][<a href="msg00095.html">Date Next</a>][<a href="msg00093.html">Thread Prev</a>][<a href="msg00095.html">Thread Next</a>][<a href="maillist.html#00094">Date Index</a>][<a href="threads.html#00094">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: comparison operators and *typos</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:schlie@DOMAIN.HIDDEN">schlie@xxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: comparison operators and *typos</li>
+<li><em>From</em>: Aubrey Jaffer &lt;<a href="mailto:agj@DOMAIN.HIDDEN">agj@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 30 Jun 2005 23:32:24 -0400 (EDT)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-70@DOMAIN.HIDDEN">srfi-70@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-70@DOMAIN.HIDDEN">srfi-70@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:BEEA0257.AAEE%25schlie@DOMAIN.HIDDEN">BEEA0257.AAEE%schlie@xxxxxxxxxxx</a>&gt; (message from Paul Schlie on	Thu, 30 Jun 2005 20:11:03 -0400)</li>
+<li><em>References</em>: &lt;<a href="mailto:BEEA0257.AAEE%25schlie@DOMAIN.HIDDEN">BEEA0257.AAEE%schlie@xxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre> | Date: Thu, 30 Jun 2005 20:11:03 -0400
+ | From: Paul Schlie &lt;schlie@xxxxxxxxxxx&gt;
+ | 
+ | &gt; If we make (/ +1 0.0) ==&gt; #i+1/0, then (/ -1 0.0) ==&gt; #i-1/0.
+ | &gt; This choice is arbitrary; ...
+ | 
+ | - which seems very reasonable.
+ | 
+ | &gt;  | &gt; Inexact infinities have reciprocals: zero.  Their reciprocals
+ | &gt;  | &gt; are not unique, but that is already the case with IEEE-754
+ | &gt;  | &gt; floating-point representations:
+ | &gt; ...
+ | &gt; Zero is at the center of 0.0's neighborhood.  R5RS division by 0.0
+ | &gt; is an error; leaving latitude for SRFI-70's response.
+ | 
+ | - also seems very reasonable, and provide the opportunity to reconsider
+ |   eliminating IEEE-754's otherwise inconsistent asymmetry, by defining:
+ | 
+ |   (/ #i-0/1) =&gt; #i-1/0 ; -inf.0
+ |   (/ #i+0/1) =&gt; #i+1/0 ; +inf.0
+ | 
+ |   thereby truly consistently symmetric with the above:
+ | 
+ |   (/ #i-1/0) =&gt; #i-0/1 ; -0.0
+ |   (/ #i+1/0) =&gt; #i+0/1 ; +0.0
+
+It does not remove the asymmetry -- which neighborhood does (unsigned)
+0.0 belong to: -0.0 or +0.0?
+
+ | &gt; Most neighborhoods mapping through piecewise-continuous functions
+ | &gt; project onto adjacent neighborhoods.  But / near 0 is not the
+ | &gt; only function which does not.  TAN near pi/2 is another example.
+ | 
+ | - and please reconsider this may be consistently symmetrically defined:
+ |   [where ~ denotes a value being simultaneously positive and negative]
+ | 
+ |   (/ #i~0) =&gt; #i~1/0 ; ~inf.0
+ |   (/ #i~1/0) =&gt; #i~0 ;   ~0.0
+
+#i~0 is not a real number because it cannot be ordered (relative to
+0.0).  Damaging the total ordering of the real numbers is too high a
+price for symmetry.
+
+ |   (tan pi/2) =&gt; #i~1/0 ; ~inf.0
+
+  (atan #i+1/0)			==&gt; 1.5707963267948965
+
+The next larger IEEE-754 number is  1.5707963267948967.
+But there is no IEEE-754 number whose tangent is infinite:
+
+  (tan 1.5707963267948965)	==&gt; 16.331778728383844e15
+  (tan 1.5707963267948967)	==&gt; -6.218352966023783e15
+
+Note that the one-sided LIMIT gets it right without needing any new
+numbers:
+
+  (limit tan 1.5707963267948965 -1.0e-15)       ==&gt; +1/0
+  (limit tan 1.5707963267948965 1.0e-15)        ==&gt; -1/0
+
+ |   (abs ~inf.0) =&gt; +inf.0
+ |   (- (abs ~inf.0) =&gt; -inf.0
+ |   (abs ~0.0) =&gt; +0.0
+ |   (- (abs ~0.0)) -0.0
+ | 
+ |   (+ +0.0 -0.0) =&gt; ~0.0
+ | 
+ |   Where I believe it's reasonable to redefine the use of IEEE's NAN
+ |   values to encode these values, as arguably ~inf.0 may be thought
+ |   of as being NAN, and ~0.0 as being 1/NAN (leaving 0.0 == +0.0)
+
+For some expressions returning #i0/0, no number has any more claim to
+correctness than any other.  For example any number x satisfies:
+
+  0*x=0.
+
+So #i0/0 could be any number (if we forget that division by zero is
+undefined).  The reciprocal of this #i0/0 potentially maps to any
+number; which is represented by #i0/0.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00095" href="msg00095.html">Re: comparison operators and *typos</a></strong>
+<ul><li><em>From:</em> Paul Schlie</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00093" href="msg00093.html">Re: comparison operators and *typos</a></strong>
+<ul><li><em>From:</em> Paul Schlie</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00093.html">Re: comparison operators and *typos</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00095.html">Re: comparison operators and *typos</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00093.html">Re: comparison operators and *typos</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00095.html">Re: comparison operators and *typos</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00094"><strong>Date</strong></a></li>
+<li><a href="threads.html#00094"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

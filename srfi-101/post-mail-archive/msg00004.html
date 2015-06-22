@@ -1,0 +1,102 @@
+<!-- MHonArc v2.6.18 -->
+<!--X-Subject: SRFI&#45;101 ported to Kawa -->
+<!--X-From-R13: Bre Pbguare <creNobguare.pbz> -->
+<!--X-Date: Sat, 19 Oct 2013 22:02:03 +0200 (MST) -->
+<!--X-Message-Id: 5262E504.7000705@bothner.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>SRFI-101 ported to Kawa</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00003.html">Date Prev</a>][Date Next][<a href="msg00003.html">Thread Prev</a>][Thread Next][<a href="maillist.html#00004">Date Index</a>][<a href="threads.html#00004">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>SRFI-101 ported to Kawa</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-101@DOMAIN.HIDDEN">srfi-101@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: SRFI-101 ported to Kawa</li>
+<li><em>From</em>: Per Bothner &lt;<a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 19 Oct 2013 13:01:08 -0700</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-101@DOMAIN.HIDDEN">srfi-101@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Mozilla/5.0 (X11; Linux x86_64; rv:17.0) Gecko/20130805 Thunderbird/17.0.8</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+FYI: I checked into Kawa's subversion repository a port of the SRFI-101
+(Purely Functional Random-Access Pairs and Lists) reference implementation:
+<a  rel="nofollow" href="http://www.gnu.org/software/kawa/Getting-Kawa.html">http://www.gnu.org/software/kawa/Getting-Kawa.html</a>
+<a  rel="nofollow" href="http://www.gnu.org/software/kawa/news.html">http://www.gnu.org/software/kawa/news.html</a>
+
+Noteworthy is that this is implemented using a RAPair class
+that extends Kawa's generic pair type, which means that most code
+that expects a standard list will work on ra-lists as well.
+
+I re-wrote the lower-level parts in Java because I considered
+using these lists pervasively for immutable lists (as returned
+by the reader).  However, I don't think ra-lists are a good
+general representation for that, because cdr may do memory allocation.
+Traversal code (like map) goes to some convolutions to avoid that,
+but user code can't (and shouldn't) do that.
+
+Instead, I've been experimenting with a variation where each
+interior node is also a pair, and each pair has a direct cdr link.
+This makes the cdr operation (and thus traversal in general)
+fast and cheap, while still providing logarithmic list-ref
+and list-tail.  Thus I think it makes for a better general
+replacement for immutable lists (i.e. something read can return,
+by default).  The biggest downside is we lose random-access
+update.  (If you allow modifying the car but not the cdr you can
+still have random-access but non-functional update.)
+Another downside is 2 extra fields in each pair compared
+to plains lists.  Finally, cons is worst-case logarithmic, but
+I think that is ok since it is still amortized constant.
+--
+	--Per Bothner
+per@xxxxxxxxxxx   <a  rel="nofollow" href="http://per.bothner.com/">http://per.bothner.com/</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00003.html">Re: srfi-101 reference implementation missing ra:for-each</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00003.html">Re: srfi-101 reference implementation missing ra:for-each</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00004"><strong>Date</strong></a></li>
+<li><a href="threads.html#00004"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

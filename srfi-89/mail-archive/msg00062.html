@@ -1,0 +1,181 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: An alternative proposal -->
+<!--X-From-R13: "Oyrk Euvaa" <nyrkfuvaaNtznvy.pbz> -->
+<!--X-Date: Sun, 16 Apr 2006 09:27:30 +0200 (MST) -->
+<!--X-Message-Id: 5fb7e0870604160027x525ab111x8772acdcfa86ee1@mail.gmail.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: bd22bd7a0604151420x85f1d62g92e3a53c4d1d564f@mail.gmail.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: An alternative proposal</title>
+<link rev="made" href="mailto:alexshinn@gmail.com">
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00061.html">Date Prev</a>][<a href="msg00063.html">Date Next</a>][<a href="msg00060.html">Thread Prev</a>][<a href="msg00063.html">Thread Next</a>][<a href="maillist.html#00062">Date Index</a>][<a href="threads.html#00062">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: An alternative proposal</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &quot;felix winkelmann&quot; &lt;<a href="mailto:bunny351%40gmail.com">bunny351@gmail.com</a>&gt;</li>
+<li><em>Subject</em>: Re: An alternative proposal</li>
+<li><em>From</em>: &quot;Alex Shinn&quot; &lt;<a href="mailto:alexshinn%40gmail.com">alexshinn@gmail.com</a>&gt;</li>
+<li><em>Date</em>: Sun, 16 Apr 2006 16:27:24 +0900</li>
+<li><em>Cc</em>: <a href="mailto:srfi-89%40srfi.schemers.org">srfi-89@srfi.schemers.org</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-89%40srfi.schemers.org">srfi-89@srfi.schemers.org</a></li>
+<li><em>Domainkey-signature</em>: a=rsa-sha1; q=dns; c=nofws;        s=beta; d=gmail.com;        h=received:message-id:date:from:to:subject:cc:in-reply-to:mime-version:content-type:content-transfer-encoding:content-disposition:references;        b=DbZn9t1iW+3LMY8E5D4zPOLgpBnOds8tjd2CBO2fdv8FC3jvpjkmsUW07szWX+1PkbvxZDBXjOvexAvfN01+gNm9gz6km/Pzg7m26XalPi/SJLtpks/pz/awCggiMYAvAP3uNmKTEn11+JZ+aMdeqJUHIznhVwVTVEbpMdxPJsg=</li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:bd22bd7a0604151420x85f1d62g92e3a53c4d1d564f%40mail.gmail.com"><a href="msg00060.html">bd22bd7a0604151420x85f1d62g92e3a53c4d1d564f@mail.gmail.com</a></a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:bd22bd7a0604151420x85f1d62g92e3a53c4d1d564f%40mail.gmail.com"><a href="msg00060.html">bd22bd7a0604151420x85f1d62g92e3a53c4d1d564f@mail.gmail.com</a></a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>On 4/16/06, felix winkelmann &lt;bunny351@gmail.com&gt; wrote:
+&gt;
+&gt; [syntax] (let-keywords* &lt;ARGLIST&gt; ((&lt;VARIABLE&gt; &lt;KEYWORD&gt; [&lt;DEFAULT&gt;])
+&gt;              ...) BODY ...)
+
+This is similar to Gauche's LET-KEYWORDS*, but Gauche also allows
+&lt;KEYWORD&gt; to be omitted, defaulting to (make-keyword '&lt;variable&gt;)
+[which in Gauche happens to be a disjoint keyword type with a prefix
+colon].
+
+  (define (number-&gt;string n . args)
+    (let-keywords* args ((radix 10)
+                         (precision #f))
+      ...))
+
+  (number-&gt;string n :radix 16)
+
+Not specifying a default keyword avoids the whole prefix/suffix
+debate, but in this case that could cause more trouble than it's
+worth, since you could end up with different libraries that use
+multiple conflicting styles:
+
+  (button ':text &quot;OK&quot; ':action click-ok)
+
+  (button 'text: &quot;OK&quot; 'action: click-ok)
+
+  (button 'text &quot;OK&quot; 'action click-ok)
+
+I don't think there's much to be gained by encouraging this
+diversity, and people may have trouble remembering which library uses
+which style.  This is, of course, orthogonal to whether or not the
+keywords are a disjoint type.
+
+Also, it's probably a good idea to also provide a KEY-LAMBDA or
+OPT-LAMBDA form, and analogous LET-KEYWORDS (no *).  This avoids an
+extra level of passing an argument list, which can make it easier for
+compilers to optimize.  It also has the advantage that you're free to
+bind the parameters in any order.
+
+The most parametrized procedure I've ever written took exactly 49
+keyword arguments (I'm not proud).  Even though this was for a very
+generalized SEARCH procedure which I expected to take hours or days
+to run, the O(MN) LET-KEYWORDS* behaviour bothered me, so I wrote a
+version that looped over the actual passed keywords rather than all
+keywords.
+
+(define *plist-undef* (list '*plist-undef*))
+
+(define-syntax %let-plist
+  (syntax-rules ()
+    ((%let-plist ls (binds ...) ((var keyword default) . rest) . body)
+     (%let-plist ls (binds ... (var keyword default)) rest . body))
+    ((%let-plist ls (binds ...) ((var default) . rest) . body)
+     (%let-plist ls (binds ... (var var default)) rest . body))
+    ((%let-plist ls (binds ...) ((var) . rest) . body)
+     (%let-plist ls (binds ... (var var #f)) rest . body))
+    ((%let-plist ls (binds ...) (var . rest) . body)
+     (%let-plist ls (binds ... (var var #f)) rest . body))
+    ((%let-plist ls ((var keyword default) ...) () . body)
+     ;; fast path, rest-var not used
+     (let ((var *plist-undef*) ...)
+       (let loop ((pls ls))
+         (unless (null? pls)
+           (case (car pls) ((keyword) (set! var (cadr pls))) ...)
+           (loop (cddr pls))))
+       (if (eq? var *plist-undef*) (set! var default)) ...
+       . body))
+    ((%let-plist ls ((var keyword default) ...) rest-var . body)
+     (let ((var *plist-undef*) ...)
+       (let loop ((pls ls) (acc '()))
+         (cond
+           ((null? pls)
+            (if (eq? var *plist-undef*) (set! var default)) ...
+            (let ((rest-var (reverse! acc)))
+              . body))
+           (else
+            (loop (cddr pls)
+                  (case (car pls)
+                    ((keyword) (set! var (cadr pls)) acc) ...
+                    (else (cons (cadr pls) (cons (car pls) acc))))))))))
+    ((%let-plist . ?)
+     (syntax-error &quot;malformed let-plist &quot; (let-plist ?)))))
+
+(define-syntax let-plist
+  (syntax-rules ()
+    ((let-plist ls specs . body)
+     (%let-plist ls () specs . body))))
+
+(let-plist '(a 1 b 2 d 4) ((a 4) (b 5) (c 6) . rest)
+  (list a b c rest))
+=&gt;
+(1 2 6 (d 4))
+
+--
+Alex
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00060" href="msg00060.html">An alternative proposal</a></strong>
+<ul><li><em>From:</em> &quot;felix winkelmann&quot; &lt;bunny351@gmail.com&gt;</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00061.html">Re: highly parametric interfaces</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00063.html">Simple symbols as keywords</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00060.html">An alternative proposal</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00063.html">Simple symbols as keywords</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00062"><strong>Date</strong></a></li>
+<li><a href="threads.html#00062"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,150 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: arithmetic issues -->
+<!--X-From-R13: Fnlybe Qnzcoryy <pnzcoryyNzhzoyr.arg> -->
+<!--X-Date: Fri, 21 Oct 2005 22:24:58 +0200 (MST) -->
+<!--X-Message-Id: 20051021202455.E15B098029@pluto.mumble.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20051021145326.816C11B77BB@home.voluntocracy.org -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: arithmetic issues</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00081.html">Date Prev</a>][<a href="msg00083.html">Date Next</a>][<a href="msg00102.html">Thread Prev</a>][<a href="msg00084.html">Thread Next</a>][<a href="maillist.html#00082">Date Index</a>][<a href="threads.html#00082">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: arithmetic issues</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:agj@DOMAIN.HIDDEN">agj@xxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: arithmetic issues</li>
+<li><em>From</em>: Taylor Campbell &lt;<a href="mailto:campbell@DOMAIN.HIDDEN">campbell@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 21 Oct 2005 20:24:55 +0000 (UTC)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20051021145326.816C11B77BB@DOMAIN.HIDDEN">20051021145326.816C11B77BB@xxxxxxxxxxxxxxxxxxxxx</a>&gt; (<a href="mailto:agj@DOMAIN.HIDDEN">agj@xxxxxxxxxxxx</a>)</li>
+<li><em>Sender</em>: Taylor Campbell &lt;<a href="mailto:campbell@DOMAIN.HIDDEN">campbell@xxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: IMAIL/1.21; Edwin/3.116; MIT-Scheme/7.7.90.+</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>   Date: Fri, 21 Oct 2005 10:53:26 -0400 (EDT)
+   From: Aubrey Jaffer &lt;agj@xxxxxxxxxxxx&gt;
+
+   Its time to move beyond the machine-language mindset.  I code in
+   Scheme because I want a high-level language.
+
+I very strongly agree with this.  On that note, I'd like to suggest a
+somewhat different alternative from what many people have been
+suggesting here: I'm ambivalent about exactness and mathematical
+accuracy of the general operations provided, but I think high-level
+numerical operations should be provided nevertheless, with all general
+argument dispatching &amp;c.  Indeed, it might even be useful to allow
+extensions like what scmutils provides to allow passing functions to
+operators like +.  Provided with user declarations/proclamations that
+certain quantities will be valid array or vector indices, for which I
+think a syntax ought to be standardized, the problem of flow analysis
+to elide numerical dispatch on these indices is reduced dramatically,
+and there is no longer any need for an arbitrary 'fixnum' range, which
+is less specific anyway than that of array or vector indices.
+
+The notion of 'fixnum' and 'flonum' is an implementation detail; it
+should really not be exposed to the user, as this simply shows a
+weakness in the expressiveness of the language.  What is needed,
+though, is a method of specifying modular or inexact arithmetic more
+precisely than the vague fixnum and flonum mechanism.  Many
+applications work with 32-bit or 64-bit modular integer arithmetic,
+such as cryptographic applications.  Many other applications require
+operations on IEEE floating point numbers, and for these operators
+should be provided _specifically_ for IEEE floating point operations;
+e.g., IEEE-FLO32+ or IEEE-FLO64-EXPT, &amp;c.  These are not performance
+considerations, but necessary for the correct semantics of many
+applications.  Additionally to arithmetic routines, binary decoding
+and encoding of IEEE floats should be provided, probably on SRFI 74
+blobs.
+
+I'm not sure what the best way to specify general modular arithmetic
+is, but I imagine something like a MODULAR-ADDER, MODULAR-SHIFTER,
+&amp;c., could be defined; e.g.,
+
+  ((modular-adder 32) 123 456)               =&gt; 579
+  ((modular-adder 32) (- (expt 2 32) 1) 1)   =&gt; 0
+  ((modular-shifter 32) 3 13)                =&gt; 24576
+  ((modular-shifter 32) 1 32)                =&gt; 0
+
+With constant operands, these can be optimized trivially to machine
+addition, and they conduce flow analysis needed to store integer
+quantities in 32-bit scratch registers -- wider than most Scheme
+systems can provide with tagged fixnums.  A convenient syntax might be
+added on top of this, such as:
+
+  (with-modular-arithmetic 32 (+ arithmetic-shift)
+    (+ 1 (bitwise-not (arithmetic-shift -1 32))))
+    =&gt; 0
+  
+(The first operand specifies the modulus; the second, a list of names
+to be bound to appropriate arithmetic operations.  I'm not entirely
+sure whether this is the right kind of syntax, but it is one
+possibility.)
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00084" href="msg00084.html">Re: arithmetic issues</a></strong>
+<ul><li><em>From:</em> Thomas Bushnell BSG</li></ul></li>
+<li><strong><a name="00296" href="msg00296.html">Re: arithmetic issues</a></strong>
+<ul><li><em>From:</em> Aubrey Jaffer</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00076" href="msg00076.html">arithmetic issues</a></strong>
+<ul><li><em>From:</em> Aubrey Jaffer</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00081.html">Re: Exactness</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00083.html">Re: Exactness</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00102.html">Re: arithmetic issues</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00084.html">Re: arithmetic issues</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00082"><strong>Date</strong></a></li>
+<li><a href="threads.html#00082"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,168 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: more srfi&#45;12 rationale? -->
+<!--X-From-R13: Rnir [nfba <qznfbaNfnet.elrefba.pn> -->
+<!--X-Date: Sun, 17 Oct 1999 08:55:48 &#45;0500 (CDT) -->
+<!--X-Message-Id: 199910171354.JAA22926@sarg.Ryerson.CA -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 199910171226.IAA19500@kima.nj.nec.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: more srfi-12 rationale?</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00012.html">Date Prev</a>][<a href="msg00014.html">Date Next</a>][<a href="msg00012.html">Thread Prev</a>][<a href="msg00016.html">Thread Next</a>][<a href="maillist.html#00013">Date Index</a>][<a href="threads.html#00013">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: more srfi-12 rationale?</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Richard Kelsey &lt;<a href="mailto:kelsey@DOMAIN.HIDDEN">kelsey@xxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: more srfi-12 rationale?</li>
+<li><em>From</em>: Dave Mason &lt;<a href="mailto:dmason@DOMAIN.HIDDEN">dmason@xxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 17 Oct 1999 09:54:20 -0400</li>
+<li><em>Cc</em>: <a href="mailto:srfi-12@DOMAIN.HIDDEN">srfi-12@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: Your message of &quot;Sun, 17 Oct 1999 08:26:24 EDT.&quot;             &lt;<a href="mailto:199910171226.IAA19500@DOMAIN.HIDDEN">199910171226.IAA19500@xxxxxxxxxxxxxxx</a>&gt; </li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt;&gt;&gt;&gt;&gt; On Sun, 17 Oct 1999 08:26:24 -0400, Richard Kelsey &lt;kelsey@xxxxxxxxxxxxxxxxxxx&gt; said:
+
+&gt; Works fine for me.  The barf exception gets passed to the outer
+&gt; exception handler.
+
+Ah yes.  The problem was my initial *current-exn-handler*.  I
+*thought* the model implementation should work, but when my example
+didn't, I thought that I somehow misunderstood something about the
+call/cc and dynamic-wind interaction.
+
+&gt; He may have convinced you, but he hasn't convinced me.  As Per
+&gt; Bothner said, exception systems are normally used to separate normal
+&gt; from abnormal results.  Why should sending abnormal results need to
+&gt; be *very* cheap?  Or even particularly cheap at all?  It's the
+&gt; normal results that have to be delivered quickly.
+
+This may be my ML experience showing.  call/cc isn't part of portable
+ML, so people use exceptions to implement short-circuit evaluation and
+such-like that I guess you'd claim should be implemented directly with
+call/cc in Scheme.  But I still think we should facilitate an
+inexpensive implementation, even if the reference implementation uses
+generic scheme.
+
+&gt; References: &lt;199910160912.FAA15873@xxxxxxxxxxxxxxx&gt; Date: Sun, 17
+&gt; Oct 1999 00:22:18 -0400 From: Dave Mason &lt;dmason@xxxxxxxxxxxxxxx&gt;
+
+&gt;&gt; The SRFI-12 exception mechanism *is* cheap, but the *condition*
+&gt;&gt; mechanism isn't cheap at all.  It requires (in general) creating an
+&gt;&gt; object for every raised exception.
+
+&gt; You don't have to use conditions if you don't want to.  (Perhaps
+&gt; this is the reason for allowing non-conditions to be signalled?)
+
+&gt; And if you do use conditions, there is nothing that requires that a
+&gt; fresh condition be signalled each time.  You can make one and use it
+&gt; over and over again.  The values in it can be changed via a side
+&gt; effect, if you want.
+
+I'm not worried about explicit aborts in my program - I can do as you
+say.  My concern is built-in low-level aborts.  Like (/ x 0).  If
+these dynamically create ``condition'' values, it will be expensive.
+
+&gt;&gt; I don't like the fact that it needs to do a dynamic-wind and a
+&gt;&gt; call/cc to set up an exception and the continuation is actually
+&gt;&gt; called whether or not an exception is raised (because it appears
+&gt;&gt; that dynamic-wind isn't values-aware).
+
+&gt; I don't understand.  `With-exception-handler' does a dynamic-wind
+&gt; but not a call/cc.  Given the handler's dynamic extent there is no
+&gt; way to avoid the dynamic-wind (unless you go outside R5RS; some
+&gt; implementations have shortcuts for dynamic variables).
+
+&gt; The call/cc is needed in `handle-exceptions' to allow the handler to
+&gt; return from from `handle-exceptions'.  The call to the continuation
+&gt; for the non-exception case isn't required, that is just the way they
+&gt; wrote the code.
+
+I think that handle-exceptions is what virtually everyone will use
+(because the exception should run in the enclosing exception
+environment).  Hence, they'll get both the call/cc and the
+dynamic-wind.
+
+&gt; R5RS says that `dynamic-wind' should handle multiple values.
+
+Quite right.  There was a detail of the implementation that I didn't
+understand, which led me to believe that it was dynamic-wind that was
+complaining when I tried to get rid of the normal-case continuation call.
+
+&gt; I agree with you, although for different reasons.  Restarts should
+&gt; be left to another SRFI.
+
+Without restarts, WITH-EXCEPTION-HANDLER doesn't have to be exposed in
+the programming interface, and I see implementation approaches that
+could make HANDLE-EXCEPTIONS much lower cost.  With restarts, you
+essentially need the dynamic-wind, call/cc pair to do
+HANDLE-EXCEPTIONS.  If most built-in exceptions call the
+*current-exn-handler* with a constant argument (regardless of whether
+or not there are ``condition''s), an abort-only mechanism could
+certainly be as efficient as I'd like to see.
+
+../Dave
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00016" href="msg00016.html">Re: more srfi-12 rationale?</a></strong>
+<ul><li><em>From:</em> Richard Kelsey</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00012" href="msg00012.html">Re: more srfi-12 rationale?</a></strong>
+<ul><li><em>From:</em> Richard Kelsey</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00012.html">Re: more srfi-12 rationale?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00014.html">conditions</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00012.html">Re: more srfi-12 rationale?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00016.html">Re: more srfi-12 rationale?</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00013"><strong>Date</strong></a></li>
+<li><a href="threads.html#00013"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

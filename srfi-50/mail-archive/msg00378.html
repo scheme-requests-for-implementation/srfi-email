@@ -1,0 +1,188 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Parsing Scheme [was Re: strings draft] -->
+<!--X-From-R13: Fbz Zbeq <ybeqNrzs.arg> -->
+<!--X-Date: Fri, 23 Jan 2004 21:07:07 +0100 (MET) -->
+<!--X-Message-Id: 200401232020.MAA26771@morrowfield.regexps.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200401220511.VAA18432@morrowfield.regexps.com -->
+<!--X-Reference: 200401230907.27619.Ken.Dickey@allvantage.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Parsing Scheme [was Re: strings draft]</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00377.html">Date Prev</a>][<a href="msg00379.html">Date Next</a>][<a href="msg00404.html">Thread Prev</a>][<a href="msg00381.html">Thread Next</a>][<a href="maillist.html#00378">Date Index</a>][<a href="threads.html#00378">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Parsing Scheme [was Re: strings draft]</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:Ken.Dickey@DOMAIN.HIDDEN">Ken.Dickey@xxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Parsing Scheme [was Re: strings draft]</li>
+<li><em>From</em>: Tom Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 23 Jan 2004 12:20:16 -0800 (PST)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:200401230907.27619.Ken.Dickey@DOMAIN.HIDDEN">200401230907.27619.Ken.Dickey@xxxxxxxxxxxxxx</a>&gt; (message from Ken	Dickey on Fri, 23 Jan 2004 09:07:27 +0100)</li>
+<li><em>References</em>: &lt;<a href="mailto:200401220511.VAA18432@DOMAIN.HIDDEN">200401220511.VAA18432@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:200401230907.27619.Ken.Dickey@DOMAIN.HIDDEN">200401230907.27619.Ken.Dickey@xxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+    &gt; From: Ken Dickey &lt;Ken.Dickey@xxxxxxxxxxxxxx&gt;
+
+    &gt; Excuse me if the obvious has already been addressed, but..
+
+    &gt; It would be a *bad thing* if in going from one locale to another
+    &gt; changed a working Scheme program into a broken Scheme program.
+
+    &gt; So, please be sure that the specification of character and
+    &gt; string encoding and of portable Scheme source code defines
+    &gt; Scheme source as being locale indepent (by construction).
+
+
+Do you agree that this is a portable, standard Scheme program?:
+
+	(define i 42)			[a]
+        (display i)
+        (newline)
+
+What about this next one?   As nearly as I can tell, the formal syntax
+in chapter 7 says that this next program is _not_ portable, but the
+language in chapters 2 and 6 suggests that that is an unintended
+deficiency of chapter 7:
+
+	(DEFINE I 42)			[b]
+        (DISPLAY I)
+        (NEWLINE)
+
+and if that is legal, is this a portable, standard Scheme program with
+equivalent behavior?
+
+
+	(DEFINE I 42)			[c]
+        (display i)
+        (newline)
+
+
+Strictly speaking, R5RS seems to say that [a] is portable, [b] is not,
+and among implementations on which [b] and [c] both run, they are not
+required to be identical in meaning.  The same strict reading implies
+that the following is _not_ a portable Scheme program:
+
+	&quot;H2O&quot;
+
+
+and that this is permitted:
+
+	(string-ci=? &quot;define&quot; &quot;DEFINE&quot;) =&gt; #f
+
+I tend to think that R5RS is deficient (relative to the authors'
+intentions) in that regard.  These restrictions would make it a real
+mess (at best) to try to write a portable Scheme program that could
+process Scheme source texts containing identifiers which use any
+letters other than #\a..#\z.
+
+For example, I would like this portable, standard program to produce
+as output a one-line, portable, standard Scheme expression:
+
+	(display (char-downcase (char-upcase #\i)))
+        (newline)
+
+however, the strictest reading of R5RS suggests that it is not
+guaranteed to do so.
+
+On the other hand, if [a], [b], and [c] are all portable, equivalent,
+standard Scheme programs -- then in Turkish implementations,
+CHAR-UPCASE, CHAR-DOWNCASE and friends must behave in a linguistically
+odd manner.  I'm not so sure that that's terrible (and my proposals
+for R6RS reflect that assessment): those procedures are doomed to
+behave in a linguistically odd manner for a substantial number of
+reasons, in many other contexts besides Turkish implementations.
+While they _may_ behave in linguistically ideal ways in _some_
+contexts -- that can not be what they are for.  (Even where they must
+behave oddly, they can provide a good _approximation_ of something
+linguistically useful.)
+
+Rather, I propose that the standard character procedures be explicitly
+related to both the syntax of portable standard Scheme and the syntax
+of particular implementations.  For example, R6RS should require that:
+
+	(char-downcase #\I) =&gt; #\i
+
+and require that within a given implementation, if:
+
+	(char-alphabetic c) =&gt; #t
+
+then
+
+	(display c) (newline)
+
+produces as output a one line expression that consists of a valid
+identifier in that implementation.
+
+
+-t
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00381" href="msg00381.html">Re: Parsing Scheme [was Re: strings draft]</a></strong>
+<ul><li><em>From:</em> Thomas Bushnell, BSG</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00342" href="msg00342.html">strings draft</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00371" href="msg00371.html">Parsing Scheme [was Re: strings draft]</a></strong>
+<ul><li><em>From:</em> Ken Dickey</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00377.html">Re: strings draft</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00379.html">Re: Parsing Scheme [was Re: strings draft]</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00404.html">Re: Parsing Scheme [was Re: strings draft]</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00381.html">Re: Parsing Scheme [was Re: strings draft]</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00378"><strong>Date</strong></a></li>
+<li><a href="threads.html#00378"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

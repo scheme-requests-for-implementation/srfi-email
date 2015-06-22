@@ -1,0 +1,143 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Couple things... -->
+<!--X-From-R13: Xvz Pynaql <wvzoNerqung.pbz> -->
+<!--X-Date: Wed, 24 Dec 2003 17:29:15 +0100 (NFT) -->
+<!--X-Message-Id: vt2ekuu9o9r.fsf@zenia.home -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: opr0lf0hi7w2xcd0@mx.freenet.de -->
+<!--X-Reference: vt265g7bcxe.fsf@zenia.home -->
+<!--X-Reference: opr0oo4rx4w2xcd0@mx.freenet.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Couple things...</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00053.html">Date Prev</a>][<a href="msg00055.html">Date Next</a>][<a href="msg00052.html">Thread Prev</a>][<a href="msg00103.html">Thread Next</a>][<a href="maillist.html#00054">Date Index</a>][<a href="threads.html#00054">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Couple things...</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: felix &lt;<a href="mailto:felix@DOMAIN.HIDDEN">felix@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Couple things...</li>
+<li><em>From</em>: Jim Blandy &lt;<a href="mailto:jimb@DOMAIN.HIDDEN">jimb@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: 24 Dec 2003 11:25:04 -0500</li>
+<li><em>Cc</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:opr0oo4rx4w2xcd0@DOMAIN.HIDDEN">opr0oo4rx4w2xcd0@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:opr0lf0hi7w2xcd0@DOMAIN.HIDDEN">opr0lf0hi7w2xcd0@xxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:vt265g7bcxe.fsf@DOMAIN.HIDDEN">vt265g7bcxe.fsf@xxxxxxxxxx</a>&gt;	&lt;<a href="mailto:opr0oo4rx4w2xcd0@DOMAIN.HIDDEN">opr0oo4rx4w2xcd0@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Sender</em>: <a href="mailto:jimb@DOMAIN.HIDDEN">jimb@xxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Gnus/5.09 (Gnus v5.9.0) Emacs/21.3</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+felix &lt;felix@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx&gt; writes:
+&gt; Chicken for example uses the C-stack as the first generation of
+&gt; a generational GC scheme (as described in Henry Baker's Cheney-on-
+&gt; the-MTA paper). Calling C from Scheme is no problem, if the code
+&gt; returns properly, but a callback/GC would possibly invalidate the portion
+&gt; of the stack below the currently pending C stack-frame, and uncontrolled
+&gt; shrinking of the nursery would quickly result in problems. To prevent
+&gt; this, the nursery (1st gen. / C-stack) has to be resized, by pulling
+&gt; out live data (and cleaning up the nursery) before calling the C
+&gt; code, and then setting the &quot;watermark&quot; that marks the lower end of the
+&gt; stack. One method would be to simply disallow callbacks (as Baker
+&gt; proposes in his paper), but we don't want that, of course...
+&gt; Another issue is threads: the blocking behaviour mentioned in SRFI-50
+&gt; on returning from callbacks would not have to be checked, if it is
+&gt; known that the invocation of C from Scheme has no chance of calling
+&gt; back into Scheme.
+
+Okay, I think I see.
+
+When using Cheney-on-the-MTA, collection entails popping off the
+entire portion of the C stack you're using for your nursery, after
+scavenging all the live objects out of it.  Any active C frame is a
+live object, but you don't have enough information to scavenge those,
+so your nursery must always be free of active C frames.  (Otherwise
+you'd have to put off collecting the portion below the youngest active
+C frame until it exits, and you have no idea how long they'll stick
+around...)
+
+So your C stack is divided into two portions:
+- at the older end, you have active C frames, and
+- at the younger end, you have your nursery.
+
+The &quot;watermark&quot; that you mentioned indicates the boundary between
+these two portions.
+
+So, to invoke a C function that might perform callbacks, you must
+collect and pop your nursery, to allow you to place that call's frame
+at the (now exposed) younger end of the C frame area.  In contrast, to
+call a C function that you know will not perform callbacks, none of
+that is necessary; you just make the call on top of whatever nursery
+you've got.
+
+It seems to me that the called function also must not allocate any
+heap objects.  Or do you simply allocate them directly in the next
+older generation, bypassing the nursery altogether?
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00103" href="msg00103.html">Re: Couple things...</a></strong>
+<ul><li><em>From:</em> felix</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00004" href="msg00004.html">Couple things...</a></strong>
+<ul><li><em>From:</em> felix</li></ul></li>
+<li><strong><a name="00035" href="msg00035.html">Re: Couple things...</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+<li><strong><a name="00052" href="msg00052.html">Re: Couple things...</a></strong>
+<ul><li><em>From:</em> felix</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00053.html">Re: Couple things...</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00055.html">Re: GC safety and return values</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00052.html">Re: Couple things...</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00103.html">Re: Couple things...</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00054"><strong>Date</strong></a></li>
+<li><a href="threads.html#00054"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

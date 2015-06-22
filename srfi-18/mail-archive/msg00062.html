@@ -1,0 +1,135 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: extensibility to real&#45;time multithreading -->
+<!--X-From-R13: [nep Trryrl <srryrlNWDA.G[bagerny.QO> -->
+<!--X-Date: Sat, 22 Apr 2000 17:06:18 &#45;0500 (CDT) -->
+<!--X-Message-Id: 200004222206.SAA04847@trex.IRO.UMontreal.CA -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>extensibility to real-time multithreading</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00061.html">Date Prev</a>][<a href="msg00063.html">Date Next</a>][<a href="msg00066.html">Thread Prev</a>][<a href="msg00067.html">Thread Next</a>][<a href="maillist.html#00062">Date Index</a>][<a href="threads.html#00062">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>extensibility to real-time multithreading</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-18@DOMAIN.HIDDEN">srfi-18@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: extensibility to real-time multithreading</li>
+<li><em>From</em>: Marc Feeley &lt;<a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 22 Apr 2000 18:06:16 -0400</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>A major incompatibility between SRFI-18 as it currently stands and a
+real-time multithreading system is that priorities are strictly under
+the control of the user (i.e. thread-priority-set!).  In a real-time
+system, priority inheritance (or a similar dynamic priority mechanism)
+is needed to avoid the priority inversion problem.
+
+A brief explanation of the priority inversion problem: assume threads
+T1 and T3 have priority 1 and 3 respectively, and that T1 owns a mutex
+that T3 wants to lock, if a long-running thread T2 of priority 2
+starts before T1 releases the mutex, T1 will be preempted by T2 and T3
+will have to wait for a long time before it can lock the mutex... T3's
+priority is effectively lowered to that of T1's.  The priority
+inheritance solution is to raise T1's priority to T3's for as long as
+it is the owner of the mutex that T3 wants to lock.  More formally,
+the &quot;effective priority&quot; of a thread T is the maximum value between
+its base priority and the priority of all threads that are blocked on
+a mutex owned by T.
+
+I see no easy way of relaxing the fairness constraints to accomodate
+priority inheritance, while still giving a useful meaning to
+priorities.  But because I want SRFI-18 to be extensible to a
+real-time SRFI, I see no other choice than to drop the concepts of
+priority, quantum, preemption, and thread-yield!.  These things will
+be specified by a real-time multithreading SRFI (that I may or may not
+write...).
+
+Below are the changes I propose to the &quot;fairness&quot; section.
+
+
+&lt;H4&gt;Fairness&lt;/H4&gt;
+
+&lt;P&gt;
+In various situations the scheduler must select one thread from a set
+of threads (e.g. the next thread to run, the thread to wakeup when a
+mutex unlocks or a condition variable is signaled).  The constraints
+on the selection process determine the scheduler's &quot;fairness&quot;.  For
+example, the selection may depend on the order in which threads
+blocked on a mutex, or on some &quot;priority&quot; attached to the threads.
+&lt;/P&gt;
+
+&lt;P&gt;
+Because we do not wish to preclude extensions to this SRFI (such as
+for real-time multithreading) that require specific fairness
+constraints, there are no fairness constraints imposed by this SRFI.
+It is expected however that implementations of Scheme that support
+this SRFI will document the fairness constraints they provide.
+&lt;/P&gt;
+
+
+
+The following procedures are also dropped:
+
+  thread-priority
+  thread-priority-set!
+  thread-min-priority
+  thread-max-priority
+  thread-quantum
+  thread-quantum-set!
+  thread-yield!
+
+Marc
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00061.html">non critical-section uses of mutexes</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00063.html">Re: non critical-section uses of mutexes</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00066.html">Re: non critical-section uses of mutexes</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00067.html">threads &amp; dynamic environment &amp; continuations</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00062"><strong>Date</strong></a></li>
+<li><a href="threads.html#00062"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

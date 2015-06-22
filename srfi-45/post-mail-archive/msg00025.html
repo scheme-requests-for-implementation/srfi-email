@@ -1,0 +1,127 @@
+<!-- MHonArc v2.6.16 -->
+<!--X-Subject: Compatible support for multiple values in SRFI&#45;45 -->
+<!--X-From-R13: [nex V Irnire <zujNargevf.bet> -->
+<!--X-Date: Sat, 23 Mar 2013 09:56:40 +0100 (MET) -->
+<!--X-Message-Id: y9lr4j6sddj.fsf@deinprogramm.de -->
+<!--X-Content-Type: multipart/mixed -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Compatible support for multiple values in SRFI-45</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00024.html">Date Prev</a>][<a href="msg00026.html">Date Next</a>][<a href="msg00024.html">Thread Prev</a>][<a href="msg00026.html">Thread Next</a>][<a href="maillist.html#00025">Date Index</a>][<a href="threads.html#00025">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Compatible support for multiple values in SRFI-45</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-45@DOMAIN.HIDDEN">srfi-45@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Compatible support for multiple values in SRFI-45</li>
+<li><em>From</em>: Mark H Weaver &lt;<a href="mailto:mhw@DOMAIN.HIDDEN">mhw@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 23 Mar 2013 09:56:40 +0100</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-45@DOMAIN.HIDDEN">srfi-45@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Gnus/5.110011 (No Gnus v0.11) XEmacs/21.5-b33 (darwin)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Here's another approach to supporting multiple values in SRFI-45, which
+will most likely be deployed in Guile 2.0.8.  In this approach, 'eager'
+remains a procedure, but one that accepts any number of arguments.  It
+is therefore used in the same way as 'values'.
+
+This approach has the benefit of full compatibility with existing code
+that uses SRFI-45.  Furthermore, the attached patch maintains _binary_
+compatibility [1] with code that was compiled for the unmodified SRFI-45
+reference implementation (a requirement for inclusion in the Guile 2.0
+stable series): although the 'delay' macro has changed, code that was
+expanded using the old 'delay' macro will continue to work properly with
+the new procedures.
+
+Comments and suggestions welcome.
+
+    Regards,
+      Mark
+
+[1] Assuming that neither 'eager' nor 'force' are inlined in the
+    compiled code.
+
+</pre><pre>--- srfi-45.scm	2013-03-19 10:59:29.024514686 -0400
++++ srfi-45-with-mv.scm	2013-03-19 11:00:52.046923561 -0400
+@@ -13,17 +13,19 @@
+     ((lazy exp)
+      (box (cons 'lazy (lambda () exp))))))
+ 
+-(define (eager x)
+-  (box (cons 'eager x)))
++(define (eager . xs)
++  (box (cons 'eager xs)))
+ 
+ (define-syntax delay
+   (syntax-rules ()
+-    ((delay exp) (lazy (eager exp)))))
++    ((delay exp) (lazy (call-with-values
++                           (lambda () exp)
++                         eager)))))
+ 
+ (define (force promise)
+   (let ((content (unbox promise)))
+     (case (car content)
+-      ((eager) (cdr content))
++      ((eager) (apply values (cdr content)))
+       ((lazy)  (let* ((promise* ((cdr content)))        
+                       (content  (unbox promise)))                      ; * 
+                  (if (not (eqv? (car content) 'eager))                 ; *
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00026" href="msg00026.html">Re: Compatible support for multiple values in SRFI-45</a></strong>
+<ul><li><em>From:</em> Eli Barzilay</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00024.html">Simpler implementations incorrect!</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00026.html">Re: Compatible support for multiple values in SRFI-45</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00024.html">Simpler implementations incorrect!</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00026.html">Re: Compatible support for multiple values in SRFI-45</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00025"><strong>Date</strong></a></li>
+<li><a href="threads.html#00025"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,239 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: How many arguments to a macro transformer? -->
+<!--X-From-R13: Oaqer ina Fbaqre <naqerNyngre.urg.oebja.rqh> -->
+<!--X-Date: Thu,  4 Aug 2005 15:46:49 +0200 (DFT) -->
+<!--X-Message-Id: 200508041346.j74Dkkec019512@later.het.brown.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: How many arguments to a macro transformer?</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00011.html">Date Prev</a>][<a href="msg00013.html">Date Next</a>][<a href="msg00011.html">Thread Prev</a>][<a href="msg00020.html">Thread Next</a>][<a href="maillist.html#00012">Date Index</a>][<a href="threads.html#00012">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: How many arguments to a macro transformer?</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-72@DOMAIN.HIDDEN">srfi-72@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: How many arguments to a macro transformer?</li>
+<li><em>From</em>: Andre van Tonder &lt;<a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 4 Aug 2005 09:46:46 -0400 (EDT)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-72@DOMAIN.HIDDEN">srfi-72@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Reply-to</em>: Andre van Tonder &lt;<a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+ Apologies for the imcomplete message - my mail program had a hiccup and
+ sent the message off unsolicited...
+
+ 
+   Thanks again for the comments, Keith.  For those who may be puzzled,
+   they refer to an updated version of the SRFI that is available at 
+   
+     <a  rel="nofollow" href="http://www.het.brown.edu/people/andre/macros/srfi-72.html">http://www.het.brown.edu/people/andre/macros/srfi-72.html</a>
+     
+   until the editor has had a chance to update the official page.  
+  
+   &gt; I got the new version 1.9, merged it with the changes I had
+   &gt; made, and tried the result on the old test cases.  I noticed
+   &gt; that the old test sequence started with the definition of
+   &gt; |swap!| and then went on to
+   &gt; 
+   &gt;   ;; This macro may also be expressed as:
+   &gt;   
+   &gt;   (define-syntax swap!
+   &gt;     (lambda (form)
+   &gt;       (let ((a (cadr  form))
+   &gt;             (b (caddr form)))
+   &gt;         `(,(syntax let) ((,(syntax temp) ,a))
+   &gt;           (,(syntax set!) ,a ,b)
+   &gt;           (,(syntax set!) ,b ,(syntax temp))))))
+   &gt;
+   &gt; This second form has been removed from the new test sequence.
+   &gt; Indeed, it does not seem to work anymore.  Is it broken on
+   &gt; purpose, or have I got something screwed up again?
+   
+   No, it is broken on purpose.  The model changed a little from the 
+   previous version.  Now, for increased safety, identifiers can only 
+   capture each other if they were introduced in a single evaluation of 
+   a SYNTAX or QUASISYNTAX expression.  So the two instances of TEMP above are 
+   actually different and the expanded code will fail. 
+   
+   One could still make QUASISYNTAX macro-expressible by 
+   introducing a form, maybe called WITH-SINGLE-RENAMING-FUNCTION
+   (the opposite to WITH-FRESH-RENAMING-SCOPE of the previous version)
+   that overrides this default in the obvious way, so that one would write  
+   
+      (define-syntax swap!
+        (lambda (form)
+          (let ((a (cadr  form))
+                (b (caddr form)))
+            (with-single-renaming-function    
+             `(,(syntax let) ((,(syntax temp) ,a))
+               (,(syntax set!) ,a ,b)
+               (,(syntax set!) ,b ,(syntax temp)))))))
+  
+   I considered addihg such a form, but then realized that it is the same as 
+   the trivial combination (quasisyntax (unquote ...)), i.e.,
+   
+      (define-syntax swap!
+        (lambda (form)
+          (let ((a (cadr  form))
+                (b (caddr form)))
+            (quasisyntax   
+             ,`(,(syntax let) ((,(syntax temp) ,a))
+                (,(syntax set!) ,a ,b)
+                (,(syntax set!) ,b ,(syntax temp))))))))
+   
+   so one might as well introduce quasisyntax from the beginning and
+   avoid polluting the namespace with an extra form that would never be
+   used except for implementing quasisyntax.  (An advantage of the current
+   choice is that with-fresh-renaming-scope is no longer necessary and has 
+   been dropped).  
+    
+   &gt; KW &gt; The appendix of R4RS says that it has been suggested (it doesn't
+   &gt; KW &gt; say by whom) that #'&lt;datum&gt; and #`&lt;datum&gt; would be felicitous
+   &gt; KW &gt; abbreviations for (syntax &lt;datum&gt;) and (quasisyntax &lt;datum&gt;).
+   &gt; KW &gt; Could this be added to the SRFI?
+   &gt; &gt;  
+   &gt; &gt;  I will add that as a recommendation in the next revision.
+   &gt; 
+   &gt; Did that happen?  I don't see it.
+   
+   Sorry - it slipped under the radar.  I'll put it in the following version.
+   
+  
+   &gt; &gt;    * I am specifying an improvement in the semantics of syntax-case
+   &gt; &gt;      for better hygiene.
+   &gt; 
+   &gt; That's good (I think).  So when you are discussing that improvement
+   &gt; you certainly need to put what you are discussing into the examples.
+   
+   
+   Actually, in the new version the hygiene modification is now 
+   orthogonal to syntax-case, so this particular reason falls away.  
+   
+   
+   &gt; &gt;    * A proposal that does not come with some form of pattern matching 
+   &gt; &gt;      won't be regarded as usable by many Schemers.  
+   &gt; 
+   &gt; They will certainly demand that you _can_ implement pattern matching
+   &gt; in your system, but if your system does no more than provide an
+   &gt; implementation of syntax-case then they are likely to stay with
+   &gt; their own implementation.  In order to understand and love
+   &gt; the proposal it would be good to have as many examples as
+   &gt; possible of the new stuff.
+   
+   Agreed.  I have replaced some examples that did not need pattern matching
+   for clarity.  The reference implementation comes with some more, but they
+   are mixed in with syntax-case examples.  Maybe I whould put in more 
+   examples in the document - though the length is becoming a problem.
+   A separate tutorial might be also be a good idea.  
+   
+   In the &quot;improved hygiene&quot; section, I used mostly syntax-rules and 
+   syntax-case examples so that 
+   
+    * people could run them on existing implementations and see the results
+    * people could see that the proposed improvements can be integrated
+      in syntax-case even if they are not interested in the rest of the 
+      proposal
+ 
+   &gt; By the way, the changes I have made to your code are to
+   &gt; make a version of simple-macros.scm with the modules
+   &gt; ripped out.  This is not because I think modules are a bad
+   &gt; idea, I am just trying to understand macros by boiling
+   &gt; the implementation down to its bare core.  So I need test
+   &gt; cases that use only the core constructs.
+   
+   The tests file has quite a number of these (though not enough, I admit).
+   You just have to sort them out, I'm afraid.  
+   
+   &gt; KW &gt; The link to Andrew Wright's pattern matcher
+   &gt; KW &gt;  <a  rel="nofollow" href="http://download.plt-scheme.org/.../match.ss">http://download.plt-scheme.org/.../match.ss</a>
+   &gt; KW &gt; at the end of kffd-match-tut.htm seems to be broken.
+   &gt; &gt;  
+   &gt; &gt;  Thank you - I removed it.  
+   &gt; 
+   &gt; Is it still available anywhere else?  I would like to know
+   &gt; what you had to change to adapt the run-time pattern matcher to
+   &gt; work with macros.  
+   
+   
+   See for example,
+   
+     <a  rel="nofollow" href="http://sol.cs.wcu.edu/~bhauman/scheme/pattern.php">http://sol.cs.wcu.edu/~bhauman/scheme/pattern.php</a>
+   
+   which has links to the original documentation.
+   
+   I only added one pattern: (syntax id) that will match 
+   id using literal-identifier=?  That's the only addition. 
+   
+   
+   &gt; Is there any reason that there could not
+   &gt; be one matcher for both purposes?  
+   
+   
+   That is indeed a more minimalistic solution.
+   
+   Cheers
+   Andre
+ 
+     
+   
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00020" href="msg00020.html">Re: How many arguments to a macro transformer?</a></strong>
+<ul><li><em>From:</em> Keith Wright</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00011.html">Re: How many arguments to a macro transformer?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00013.html">Re: How many arguments to a macro transformer?</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00011.html">Re: How many arguments to a macro transformer?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00020.html">Re: How many arguments to a macro transformer?</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00012"><strong>Date</strong></a></li>
+<li><a href="threads.html#00012"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

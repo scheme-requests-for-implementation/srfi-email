@@ -1,0 +1,172 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: when GC is permitted -->
+<!--X-From-R13: Xvz Pynaql <wvzoNerqung.pbz> -->
+<!--X-Date: Thu,  8 Jan 2004 20:11:37 +0100 (NFT) -->
+<!--X-Message-Id: vt2hdz6gt1k.fsf@zenia.home -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: E1AeMEw&#45;0005uG&#45;00@mail.mumble.net -->
+<!--X-Reference: 200401072314.PAA05456@morrowfield.regexps.com -->
+<!--X-Reference: vt2vfnnrz9y.fsf@zenia.home -->
+<!--X-Reference: opr1f4lapl1ushe7@post.strato.de -->
+<!--X-Reference: vt2r7yahm8p.fsf@zenia.home -->
+<!--X-Reference: opr1f8iyou1ushe7@post.strato.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: when GC is permitted</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00231.html">Date Prev</a>][<a href="msg00233.html">Date Next</a>][<a href="msg00228.html">Thread Prev</a>][<a href="msg00233.html">Thread Next</a>][<a href="maillist.html#00232">Date Index</a>][<a href="threads.html#00232">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: when GC is permitted</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Felix Winkelmann &lt;<a href="mailto:felix@DOMAIN.HIDDEN">felix@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: when GC is permitted</li>
+<li><em>From</em>: Jim Blandy &lt;<a href="mailto:jimb@DOMAIN.HIDDEN">jimb@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: 08 Jan 2004 14:05:27 -0500</li>
+<li><em>Cc</em>: Tom Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>&gt;, <a href="mailto:kelsey@DOMAIN.HIDDEN">kelsey@xxxxxxx</a>,	<a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:opr1f8iyou1ushe7@DOMAIN.HIDDEN">opr1f8iyou1ushe7@xxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:E1AeMEw-0005uG-00@DOMAIN.HIDDEN">E1AeMEw-0005uG-00@xxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:200401072314.PAA05456@DOMAIN.HIDDEN">200401072314.PAA05456@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:vt2vfnnrz9y.fsf@DOMAIN.HIDDEN">vt2vfnnrz9y.fsf@xxxxxxxxxx</a>&gt; &lt;<a href="mailto:opr1f4lapl1ushe7@DOMAIN.HIDDEN">opr1f4lapl1ushe7@xxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:vt2r7yahm8p.fsf@DOMAIN.HIDDEN">vt2r7yahm8p.fsf@xxxxxxxxxx</a>&gt; &lt;<a href="mailto:opr1f8iyou1ushe7@DOMAIN.HIDDEN">opr1f8iyou1ushe7@xxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Sender</em>: <a href="mailto:jimb@DOMAIN.HIDDEN">jimb@xxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Gnus/5.09 (Gnus v5.9.0) Emacs/21.3</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+Felix Winkelmann &lt;felix@xxxxxxxxxxxxx&gt; writes:
+&gt; I should have been more precise there: I understand the intention
+&gt; behind the &quot;critical section&quot;. My point is that with an extra-indirection
+&gt; (as proposed by Tom or as used in JNI/minor - if I understand it right)
+&gt; the second class values point to something opaque. The values inside
+&gt; C locals and registers point to some &quot;box&quot; object that could easily be
+&gt; registered
+&gt; with the collector. Since the user can only access the data via
+&gt; extraction forms, it's completely transparent.
+&gt; 
+&gt; This means that the problem would simply go away (IMHO), provided the
+&gt; current draft proposal is changed in an appropriate manner.
+
+Oh, I see now.  Yes, you're right --- JNI-style interfaces don't have
+this problem; all their critical sections can be wrapped up inside the
+API functions themselves.
+
+But you need to be clear about exactly what JNI-style really implies.
+Here's the implementation of mn_car, with run-time typechecking
+removed:
+
+    mn_ref *
+    mn_car (mn_call *call, mn_ref *pair)
+    {
+      mn_ref *result;
+
+      mn__begin_incoherent (call);
+      {
+        result = mn__make_local_ref (mn__untag_pair (pair-&gt;obj)-&gt;car);
+      }
+      mn__end_incoherent (call);
+
+      return result;
+    }
+
+mn__make_local_ref is an allocation.  Sure, it's implemented with free
+lists, and when the free list is empty, it'll just bump a pointer to
+get the next ref out of a block, which is initialized lazily, and each
+new block is allocated to be twice the size of the previous one, so
+you're doing log (n) mallocs for n references, blah blah blah.
+
+But here's the alternative.  Under a SRFI-50 style interface, here's
+the implementation of car:
+
+    scheme_value
+    SCHEME_CAR (scheme_value pair)
+    {
+      return untag_pair (pair)-&gt;car;
+    }
+
+Under most reasonable tagging systems, untag_pair can be a
+subtraction; the '-&gt;car' is a subsequent addition, which can be folded
+in with the untagging; and then the whole thing can be easily inlined,
+and possibly turned into an offset in the addressing mode of a load
+instruction.  So the whole thing turns into a single instruction.
+
+There's no comparison.  I think JNI entails at least one order of
+magnitude more instructions to implement 'car'.
+
+This is why Richard doesn't like JNI-style.
+
+(BTW, Tom will be quite disappointed with what GCC's optimizer will do
+to Pika-style code; go and try it.)
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00233" href="msg00233.html">Re: when GC is permitted</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00251" href="msg00251.html">Re: when GC is permitted</a></strong>
+<ul><li><em>From:</em> Felix Winkelmann</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00219" href="msg00219.html">Re: when GC is permitted</a></strong>
+<ul><li><em>From:</em> Richard Kelsey</li></ul></li>
+<li><strong><a name="00220" href="msg00220.html">Re: when GC is permitted</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00222" href="msg00222.html">Re: when GC is permitted</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+<li><strong><a name="00224" href="msg00224.html">Re: when GC is permitted</a></strong>
+<ul><li><em>From:</em> Felix Winkelmann</li></ul></li>
+<li><strong><a name="00227" href="msg00227.html">Re: when GC is permitted</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+<li><strong><a name="00228" href="msg00228.html">Re: when GC is permitted</a></strong>
+<ul><li><em>From:</em> Felix Winkelmann</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00231.html">Re: when GC is permitted</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00233.html">Re: when GC is permitted</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00228.html">Re: when GC is permitted</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00233.html">Re: when GC is permitted</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00232"><strong>Date</strong></a></li>
+<li><a href="threads.html#00232"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,209 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: new function or modify read -->
+<!--X-From-R13: [nep Trryrl <srryrlNWDA.G[bagerny.QO> -->
+<!--X-Date: Wed, 18 Dec 2002 16:47:47 +0100 (NFT) -->
+<!--X-Message-Id: 200212181547.gBIFlOP07622@baro.iro.umontreal.ca -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: Pine.LNX.4.40.0212171954550.26029&#45;100000@bolt.sonic.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: new function or modify read</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00021.html">Date Prev</a>][<a href="msg00023.html">Date Next</a>][<a href="msg00020.html">Thread Prev</a>][<a href="msg00021.html">Thread Next</a>][<a href="maillist.html#00022">Date Index</a>][<a href="threads.html#00022">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: new function or modify read</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:bear@DOMAIN.HIDDEN">bear@xxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: new function or modify read</li>
+<li><em>From</em>: Marc Feeley &lt;<a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 18 Dec 2002 10:47:24 -0500</li>
+<li><em>Cc</em>: <a href="mailto:kumo@DOMAIN.HIDDEN">kumo@xxxxxxxxxxxxx</a>, <a href="mailto:srfi-38@DOMAIN.HIDDEN">srfi-38@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-38@DOMAIN.HIDDEN">srfi-38@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:Pine.LNX.4.40.0212171954550.26029-100000@DOMAIN.HIDDEN">Pine.LNX.4.40.0212171954550.26029-100000@xxxxxxxxxxxxxx</a>&gt;	(message from bear on Tue, 17 Dec 2002 21:31:18 -0800 (PST))</li>
+<li><em>References</em>: &lt;<a href="mailto:Pine.LNX.4.40.0212171954550.26029-100000@DOMAIN.HIDDEN">Pine.LNX.4.40.0212171954550.26029-100000@xxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; &gt;  - Should hidden fields of an object be written or not?  This is
+&gt; &gt;    useful for debugging but also for saving an object to a file and
+&gt; &gt;    reading it back in later.
+&gt; 
+&gt; This is immaterial since &quot;hidden fields&quot; are a completely undefined
+
+The list of on/off switches I mentioned in my message was just an
+example to show that many variations exist.  I was not suggesting that
+you add them to the SRFI, in fact for most of the switches it is
+clearly premature to finalize a design.
+
+My point is that there are many variations to &quot;writing data so that it
+can be read back&quot;.  The fact that many of them are implementation
+dependent is not important.  It just means that individual
+implementors will be faced with the problem of expressing these
+variations.  Because there are so many variations (at least at some
+point in the future) and they are not mutually exclusive, the
+variations should not be expressed through the name of the procedure.
+Parameters should be used.  Your choices are:
+
+  1) positional parameters
+  2) keyword parameters
+  3) dynamically scoped parameter objects
+
+I have expressed my preference between these three.  But this
+preference is a detail.  The important thing is to have a
+parameterized procedure.
+
+Let me move on to a second topic.  Orthogonal to the particular
+parameter passing being used is the issue of whether the options
+should be packaged or not into one structure.  This can be a
+procedure, as you suggested, or as a data structure, that is the
+&quot;readtable&quot; that I suggested.  Now don't be fooled by the name
+&quot;readtable&quot; which was chosen for historical reasons (and because it is
+a short name).  It is really a data structure that specifies the
+external representation of data.  This information is both useful for
+&quot;write&quot; and for &quot;read&quot;.  In fact, to guarantee that &quot;read&quot; is able to
+read data that has been written with &quot;write&quot;, the same readtable must
+be supplied to &quot;read&quot; and &quot;write&quot;.  For example, here is some of the
+information that can be found in a Gambit-C readtable:
+
+  - Whether sharing is allowed (i.e. the notation #0#, #0=...).
+
+  - The maximum depth and length that should be written.
+
+  - Whether case should be preserved in symbols, character names, etc.
+    The choices are: yes, no and map to lowercase, no and map to uppercase.
+
+  - Whether keywords are allowed.
+    The choices are: no, yes and &quot;:&quot; is at end, yes and &quot;:&quot; is at start.
+
+  - Whether control characters in strings should be escaped.
+
+  - The set of characters that can be escaped in a string (i.e. \n, \\, etc).
+
+  - The set of characters that are named (i.e. #\space, #\newline, etc).
+
+  - The set of special #! objects (i.e. #!eof, #!void, etc).
+
+  - Whether evaluation is allowed (i.e. the notation #.&lt;expression&gt;).
+
+  - The formatting rules for pretty-printing.
+
+Once again this is just an example.  I'm not suggesting that you
+handle all of these.  You could limit yourself to the first one
+and leave the &quot;readtable&quot; type open for extensions.
+
+Readtables and dynamically scoped parameter objects can be combined in
+an interesting way.  Imagine that to each port is attached a parameter
+object that corresponds to the readtable that is used for calls to
+&quot;read&quot; and &quot;write&quot; on that port.  When a port is created some sort of
+&quot;standard&quot; readtable is used (which makes &quot;write&quot; and &quot;read&quot; behave as
+specified in R5RS).  Suppose that (port-readtable-parameter port)
+returns the parameter object that is attached to the port and that
+(readtable-shared-set readtable flag) returns a copy of the readtable
+where the &quot;shared&quot; option is set to flag (it does *not* mutate the
+readtable passed as an argument).  This gives a very flexible API:
+
+- You can &quot;write&quot; in a standard way:
+
+    (write X port)
+
+- You can setup a port so that all output is in a particular style:
+
+    (let ((port (open-output-port &quot;foo&quot;)))
+
+      (let ((rt-param (port-readtable-parameter port)))
+        (rt-param (readtable-shared-set (rt-param) #t)))
+
+      (write X port) ; uses the sharing notation
+      (write Y port) ; uses the sharing notation
+    )
+
+- You can temporarily do output in a particular style, on a specific port:
+
+    (let ((port (open-output-port &quot;foo&quot;)))
+
+      (let ((rt-param (port-readtable-parameter port)))
+        (parameterize ((rt-param (readtable-shared-set (rt-param) #t)))
+          (write X port))) ; uses the sharing notation
+
+      (write Y port) ; uses the standard notation
+    )
+
+- You can have different threads doing output in their own particular style
+  (this could be useful if you have a REPL thread and a &quot;main program&quot; thread
+  and you want output from the REPL to be in a particular style):
+
+    (let ((port (open-output-port &quot;foo&quot;)))
+
+      (thread-start!
+        (make-thread
+          (lambda ()
+            (let ((rt-param (port-readtable-parameter port)))
+              (parameterize ((rt-param (readtable-shared-set (rt-param) #t)))
+                ...body of the child thread...))))) ; uses the sharing notation
+
+      ... ; the parent thread uses the standard notation
+    )
+
+Again I'm not suggesting you go this far.  The main point of my
+message(s) is to make your procedure parameterizable so that such
+extensions are possible (to be defined in other SRFIs).
+
+Marc
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00018" href="msg00018.html">Re: new function or modify read</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00021.html">Re: new function or modify read</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00023.html">Re: new function or modify read</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00020.html">numbers; efficiency</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00021.html">Re: new function or modify read</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00022"><strong>Date</strong></a></li>
+<li><a href="threads.html#00022"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

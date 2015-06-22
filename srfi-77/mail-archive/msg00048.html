@@ -1,0 +1,239 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Arithmetic issues -->
+<!--X-From-R13: orne <orneNfbavp.arg> -->
+<!--X-Date: Wed, 19 Oct 2005 05:23:01 +0200 (MST) -->
+<!--X-Message-Id: Pine.LNX.4.58.0510181913570.8761@bolt.sonic.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: y9lzmp775oz.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: Pine.LNX.4.58.0510181143440.2071@bolt.sonic.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Arithmetic issues</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00047.html">Date Prev</a>][<a href="msg00049.html">Date Next</a>][<a href="msg00047.html">Thread Prev</a>][<a href="msg00049.html">Thread Next</a>][<a href="maillist.html#00048">Date Index</a>][<a href="threads.html#00048">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Arithmetic issues</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Michael Sperber &lt;<a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Arithmetic issues</li>
+<li><em>From</em>: bear &lt;<a href="mailto:bear@DOMAIN.HIDDEN">bear@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 18 Oct 2005 20:22:54 -0700 (PDT)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:Pine.LNX.4.58.0510181143440.2071@DOMAIN.HIDDEN">Pine.LNX.4.58.0510181143440.2071@xxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:y9lzmp775oz.fsf@DOMAIN.HIDDEN">y9lzmp775oz.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:Pine.LNX.4.58.0510181143440.2071@DOMAIN.HIDDEN">Pine.LNX.4.58.0510181143440.2071@xxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+
+On Mon, 17 Oct 2005, Michael Sperber wrote:
+
+
+&gt; Now, the Issues section in the SRFI is pretty long.  We were hoping
+&gt; to get some feedback on where people stand on these issues, so it'd
+&gt; be great if you could see it as some kind of questionnaire and just
+&gt; fire off your position on the issues where you have one.  You don't
+&gt; have to bother with a rationale.  (But of course rationales are
+&gt; always appreciated.)
+
+Okay.  now I can do the rest...
+
+&gt; If R6RS does not adopt a R5RS-style model for the generic
+&gt; arithmetic, should it still provide more R5RS-compatible generic
+&gt; arithmetic as a library?
+
+I wouldn't have a problem with that, but I guess the questions are how
+much to provide natively and how much to leave to libraries, and how
+to treat or signal errors.  Those are tough questions.
+
+If we intend for scheme systems to maintain the ability to be small
+and simple, then basic fixnum/flonum operations seem like the right
+thing to leave in the core language.  But that will give errors
+(either signalled errors, or &quot;returned errors&quot; like infinities, or
+&quot;silent&quot; errors like wraparounds) for a lot of operations that are no
+longer errors when the various math libraries (cf. bignums,
+extended-floats) get loaded.  How exactly should we treat those errors
+in the base language?
+
+Similarly, a series expansion in the base language that uses flonums
+could easily give an &quot;out-of-memory&quot; error or make the system
+cripplingly slow when math libraries (cf. infinite-precision
+rationals) are loaded.
+
+&gt; The external representations of 0.0, -0.0, infinities and NaNs must
+&gt; be specified. The notations used here are used by several other
+&gt; languages, and have been adopted by several implementations of
+&gt; Scheme, but other notations are possible
+
+It is more important that R6RS pick something than it is what exactly
+they pick.  Seriously, just make a decision that's not grotesquely
+verbose (nothing over, say, ten characters long) and doesn't get
+confused with an identifier, and I won't object.
+
+&gt; The fixnum, flonum, and inexact arithmetic come with a full deck of
+&gt; operations, including some that are defined in terms of integers
+&gt; (such as quotient+remainder, gcd and lcm), and others that are
+&gt; easily abused (such as fxabs). Should these be pruned?
+
+No need for that, but they should be placed in libraries as extensions.
+
+&gt; The R5RS says this:
+&gt; Rationale: Magnitude is the same as abs for a real argument, but abs
+&gt; must be present in all implementations, whereas magnitude need only
+&gt; be present in implementations that support general complex numbers.
+
+&gt; Given that this SRFI suggests requiring all implementations to
+&gt; support the general complex numbers, should abs (and exabs and
+&gt; inabs) be removed?
+
+I don't think that is reasonable.  I'd move them (and magnitude) to
+libraries, but not remove them.
+
+&gt; The real?, rational?, and integer? predicates must return false for
+&gt; complex numbers with an imaginary part of inexact zero, as
+&gt; non-realness is now contagious. This causes possibly unexpected
+&gt; behavior: `(zero? 0+0.0i)' returns true despite `(integer? 0+0.0i)'
+&gt; returning false. Possibly, new predicates realistic?,
+&gt; rationalistic?, and integral? should be added to say that a number
+&gt; can be coerced to the specified type (and back) without loss. (See
+&gt; the Design Rationale.)
+
+If something can be coerced to real, rational, or integer without loss
+of information, I think those predicates should return true.  A
+complex number with an inexact part is simply an inexact number, and
+if its imaginary part is zero, can be coerced to an inexact number of
+some other type without loss of information.
+
+&gt; Most Scheme implementations represent an inexact complex number as a
+&gt; pair of two inexact reals, representing the real and imaginary parts
+&gt; of the number, respectively. Should R6RS mandate the presence of
+&gt; such a representation (while allowing additional alternative
+&gt; representations), thus allowing it to more meaningfully discuss
+&gt; semantic issues such as branch cuts?
+
+I think branch cuts can be meaningfully discussed without mandating
+the presence of a cartesian representation.  Or, to the point
+considering the most common alternative, polar representation would
+facilitate the discussion of branch cuts just as much.  So I don't
+agree with the proposed rationale for mandating the presence of a
+cartesian representation.
+
+That's not to say it's a bad idea; but if we want a solid rationale
+for cartesian as opposed to polar representation we should be talking
+to a number theorist about the propagation of errors through
+complex-number calculations and see if there's a reason to believe
+that cartesian (or polar) representation generally gives more accurate
+results.
+
+&gt; The x|53 default for the mantissa width discriminates against
+&gt; implementations that default to unusually good representations, such
+&gt; as IEEE extended precision. Are there any such implementations? Do
+&gt; we expect such implementations in the near future?
+
+I think that it is *always* a bad idea to standardize in a way that
+discriminates against the best thing you can imagine an implementor
+doing.  I recall that Chicken and a few other schemata can be compiled
+with support for extended floating-point formats for people who want,
+eg, 512-bit mantissas and 128-bit exponents.  And I think that's a
+good thing, and the standard certainly should not forbid or
+discriminate against it.
+
+&gt; Should `(floor +inf.0)' return +inf.0 or signal an error instead?
+&gt; (Similarly for ceiling, flfloor, infloor, etc.)
+
+Hmmm.  Intuitively, I'd make an analogy from the result of 'floor' to
+the result of the subtraction of some fraction less than one.  If we
+don't return an error from the latter, we shouldn't return an error
+from the former.  So I'd treat infinities as an identity element for
+floor, ceiling, round, truncate, etc.  You would probably want to
+signal an error if some function tries to coerce an infinity to an
+exact number, though, and this usually happens with the results of
+these operations.
+
+&gt; The bitwise operations operate on exact integers only. Should they
+&gt; live in the section on exact arithmetic? Should they carry ex
+&gt; prefixes? Or should they be extended to work on inexact integers as
+&gt; well?
+
+I would say that having them operate on exact integers in the first
+place is questionable; These are operations on bit vectors, not
+operations on numbers, and their semantics require information (the
+vector length) which is not expressed by the numbers.  To say that
+they are defined on numbers is to confuse the number with a particular
+representation.
+
+I'd put them in a separate library for bitfield operations, and If
+possible I'd have them operate on bit vectors, datums distinct from
+integers entirely (but with their own external syntax and easy
+conversion).  If that's too radical, I'd at least require someone to
+specify the bit vector length s/he intends to use when that library of
+bit vector operations on &quot;integers&quot; is loaded.
+
+				Bear
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00049" href="msg00049.html">Re: Arithmetic issues</a></strong>
+<ul><li><em>From:</em> Andre van Tonder</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00035" href="msg00035.html">Arithmetic issues</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+<li><strong><a name="00042" href="msg00042.html">Re: Arithmetic issues</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00047.html">Re: Arithmetic issues</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00049.html">Re: Arithmetic issues</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00047.html">Re: Arithmetic issues</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00049.html">Re: Arithmetic issues</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00048"><strong>Date</strong></a></li>
+<li><a href="threads.html#00048"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

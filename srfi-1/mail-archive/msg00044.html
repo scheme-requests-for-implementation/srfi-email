@@ -1,0 +1,146 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: The type&#45;name prefix convention and LIST&#45;... -->
+<!--X-From-R13: Ayva Euviref <fuvirefNzbatxbx.nv.zvg.rqh> -->
+<!--X-Date: Fri, 19 Feb 1999 18:22:16 &#45;0600 (CST) -->
+<!--X-Message-Id: 199902200025.TAA25865@mongkok.ai.mit.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 007c01be5c45$9aeb18f0$7a01a8c0@meurglys&#45;v.intranet -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>The type-name prefix convention and LIST-...</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00043.html">Date Prev</a>][<a href="msg00045.html">Date Next</a>][<a href="msg00043.html">Thread Prev</a>][<a href="msg00049.html">Thread Next</a>][<a href="maillist.html#00044">Date Index</a>][<a href="threads.html#00044">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>The type-name prefix convention and LIST-...</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-1@DOMAIN.HIDDEN">srfi-1@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: The type-name prefix convention and LIST-...</li>
+<li><em>From</em>: Olin Shivers &lt;<a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 19 Feb 1999 19:25:14 -0500</li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:007c01be5c45%249aeb18f0%247a01a8c0@DOMAIN.HIDDEN">007c01be5c45$9aeb18f0$7a01a8c0@xxxxxxxxxxxxxxxxxxx</a>&gt;	(<a href="mailto:esl@DOMAIN.HIDDEN">esl@xxxxxxxxxxxxxxx</a>)</li>
+<li><em>Reply-to</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>   From: &quot;Sergei Egorov&quot; &lt;esl@xxxxxxxxxxxxxxx&gt;
+   Date: Fri, 19 Feb 1999 15:22:43 -0500
+
+   Does this proposal imply that (LENGTH &quot;abc&quot;) and (LENGTH '#(a b c)) return
+   0? If it does, it will conflict with probably more 'natural' attempts to
+   generalize LENGTH to accept other kinds of sequences. Calling it
+   LIST-LENGTH does not affect existing programs and does not introduce any
+   potential conflicts.
+
+You can't fix this issue by simply changing the name LENGTH to LIST-LENGTH,
+because it is pervasive throughout list-lib. You would have to change the
+names of all these procedures:
+   first second third fourth fifth sixth seventh eighth ninth tenth
+   take drop take! drop! last (times 2, most likely, if we split these l/r)
+   zip unzip2 unzip3 unzip4 unzip5
+   append! reverse-append reverse-append!
+   unfold unfold/tail foldl foldr reducel reducer
+   append-map append-map! map! filter-map map-in-order
+   filter  partition  remove
+   filter! partition! remove! 
+   find any every
+   del  delq  delv  delete 
+   del! delq! delv! delete!
+   mem ass
+   delq-duplicates  delv-duplicates  delete-duplicates  del-duplicates 
+   delq-duplicates! delv-duplicates! delete-duplicates! del-duplicates!
+   reverse!
+   append reverse
+   member memq memv assoc assq assv
+   map for-each
+
+Any future generalisation of these functions to some sort of &quot;sequence generic&quot;
+functions or OO messages will have to postulate an alternate module binding
+these names to the generic functions/messages. I'd suggest that such a spec
+would come in two parts: a spec for the new library, and a spec giving an
+alternate set of bindings for the list-lib procs.
+
+But this is really outside the bounds of this SRFI. I'm not willing to
+pervasively tack &quot;LIST-&quot; onto the front of all these names; it would lard
+up the names too much and would also break with current code practice in
+what seems to me to be gratuitous fashion.
+
+   Even with LIST-LENGTH, I still think that the proposed terminology shift
+   is not justified in general LISP/Scheme context. The fact that
+   (LIST-LENGTH 5) returns 0 makes you expect (LIST? 5) to return #t
+   etc. What was wrong with IMPROPER-LIST?
+
+Yes, this is a good point. If you have the notion that everything is a list,
+then any procedure named LIST? that isn't (LAMBDA (X) #t) is probably going
+to cause some confusion. This is exactly why my &quot;Everything is a list&quot;
+msg proposed these three predicates, which *aren't* misleading in this
+context:
+    circular-list? x -&gt; boolean
+    proper-list? x -&gt; boolean
+    dotted-list? x -&gt; boolean
+
+IMPROPER-LIST? is a perfectly fine thing. It's either of these:
+    (conjunction circular-list? dotted-list?)
+    (negate proper-list?)
+Given that PROPER-LIST? exists, is it important to define IMPROPER-LIST?
+
+Just to reiterate, I am now proposing to punt LIST? for exactly this reason,
+in favor of PROPER-LIST?, CIRCULAR-LIST?, DOTTED-LIST?.
+    -Olin
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00043" href="msg00043.html">Re: LIST-LENGTH &amp; circular lists</a></strong>
+<ul><li><em>From:</em> Sergei Egorov</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00043.html">Re: LIST-LENGTH &amp; circular lists</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00045.html">'everything is a list' as a separate issue</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00043.html">Re: LIST-LENGTH &amp; circular lists</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00049.html">Re: LIST-LENGTH &amp; circular lists</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00044"><strong>Date</strong></a></li>
+<li><a href="threads.html#00044"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,169 @@
+<!-- MHonArc v2.6.16 -->
+<!--X-Subject: Re: More comments, and the ANTLR code is too complex -->
+<!--X-From-R13: [nex V Irnire <zujNargevf.bet> -->
+<!--X-Date: Thu, 13 Jun 2013 20:32:33 +0200 (MST) -->
+<!--X-Message-Id: 8738slg8uo.fsf@tines.lan -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: E1Un7Kr&#45;0000AX&#45;Us@rmm6prod02.runbox.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: More comments, and the ANTLR code is too complex</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00188.html">Date Prev</a>][<a href="msg00190.html">Date Next</a>][<a href="msg00188.html">Thread Prev</a>][<a href="msg00190.html">Thread Next</a>][<a href="maillist.html#00189">Date Index</a>][<a href="threads.html#00189">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: More comments, and the ANTLR code is too complex</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:dwheeler@DOMAIN.HIDDEN">dwheeler@xxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: More comments, and the ANTLR code is too complex</li>
+<li><em>From</em>: Mark H Weaver &lt;<a href="mailto:mhw@DOMAIN.HIDDEN">mhw@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 13 Jun 2013 14:32:15 -0400</li>
+<li><em>Cc</em>: <a href="mailto:srfi-110@DOMAIN.HIDDEN">srfi-110@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-110@DOMAIN.HIDDEN">srfi-110@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:E1Un7Kr-0000AX-Us@DOMAIN.HIDDEN">E1Un7Kr-0000AX-Us@xxxxxxxxxxxxxxxxxxxxx</a>&gt; (David A. Wheeler's	message of &quot;Thu, 13 Jun 2013 09:13:05 -0400 (EDT)&quot;)</li>
+<li><em>References</em>: &lt;<a href="mailto:E1Un7Kr-0000AX-Us@DOMAIN.HIDDEN">E1Un7Kr-0000AX-Us@xxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Gnus/5.13 (Gnus v5.13) Emacs/24.3 (gnu/linux)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&quot;David A. Wheeler&quot; &lt;dwheeler@xxxxxxxxxxxx&gt; writes:
+
+&gt; Mark H Weaver &lt;mhw@xxxxxxxxxx&gt; wrote:
+&gt;&gt; For example, constraining yourself to an LL(1) grammar probably rules
+&gt;&gt; out a more elegant presentation.
+&gt;
+&gt; Hmm, I've always heard complaints about grammars that are NOT LL(1).
+&gt; The obvious way to make sure it's LL(1)... is to specify it as LL(1).
+
+I agree that the language should be _expressible_ as an LL(1) grammar.
+However, often a grammar must be obfuscated in order to make it LL(1).
+
+A classic example is:
+
+   E -&gt; E + T
+   E -&gt; T
+
+which is not LL(1), but is equivalent to the following LL(1) grammar:
+
+   E -&gt; T Z
+   Z -&gt; + T Z
+   Z -&gt; &lt;epsilon&gt;
+
+In the specification, I suggest that you optimize ease of understanding
+over efficiency.  I hope we can all agree which of the above grammars is
+easier to understand.  IMO, the LL(1) grammar belongs somewhere else,
+perhaps in the implementation section.
+
+Other examples of transformations needed to make a grammar LL(1) can be
+found here:
+
+  <a  rel="nofollow" href="https://en.wikipedia.org/wiki/LL_parser#Solutions_to_LL.281.29_Conflicts">https://en.wikipedia.org/wiki/LL_parser#Solutions_to_LL.281.29_Conflicts</a>
+
+&gt;&gt; Another big problem is the amount of redundancy in this grammar.
+&gt;
+&gt; We can look for that, at least!
+&gt;
+&gt;&gt; I suspect that the key to simplifying this grammar (apart from moving
+&gt;&gt; away from ANTLR for purposes of the specification) is to choose a
+&gt;&gt; different set of non-terminals.
+&gt;
+&gt; That may be true, but I'm not sure what they would be.
+&gt; I'll have to think about it, and if you have any other specific examples,
+&gt; please post!
+
+In order to make a grammar LL(1), it is often necessary to introduce
+auxilliary non-terminals (such as 'Z' in the example above) that don't
+correspond to the most natural intuitive notions.  On the other hand,
+you are probably missing some useful non-terminals that could eliminate
+much of redundancy in your grammar.
+
+For example, the R7RS draft grammar has a useful non-terminal called
+&lt;atmosphere&gt; that includes whitespace, comments, and directives.  In
+your grammar, whitespace and comments are stripped in several redundant
+places.
+
+&gt;&gt; One more nit while I'm on this subject: In the BNF conventions section,
+&gt;&gt; you write &quot;a sweet-expression reader MUST act as if it preprocessed its
+&gt;&gt; input as follows&quot;, but as far as I can tell it's not actually possible
+&gt;&gt; to implement this as a preprocessor.  This &quot;preprocessing&quot; must be
+&gt;&gt; interleaved with parser, because several syntactic elements affect the
+&gt;&gt; preprocessing.  For example, the &lt;* and *&gt; markers manipulate the
+&gt;&gt; preprocessor's stack, and yet you need a full parser to recognize those
+&gt;&gt; markers.
+&gt;
+&gt; You don't need a full parser.  ANTLR, for example, really does do
+&gt; manipulations of the parsing stack in its *lexer* when it sees &lt;* and *&gt;.
+&gt; In fact, there's no way in ANTLR for the parser to send messages back
+&gt; to the lexer; ANTLR lexes the entire stream before it calls the parser.
+
+Indeed, I stand corrected.  The preprocessing must be interleaved with
+the lexing, not the parsing.  The reason for my mistake is that I don't
+tend to think of the lexer as being distinct from the parser in a
+typical Scheme reader.
+
+     Regards,
+       Mark
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00190" href="msg00190.html">Re: More comments, and the ANTLR code is too complex</a></strong>
+<ul><li><em>From:</em> David A. Wheeler</li></ul></li>
+<li><strong><a name="00191" href="msg00191.html">Re: More comments, and the ANTLR code is too complex</a></strong>
+<ul><li><em>From:</em> David A. Wheeler</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00188" href="msg00188.html">Re: More comments, and the ANTLR code is too complex</a></strong>
+<ul><li><em>From:</em> David A. Wheeler</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00188.html">Re: More comments, and the ANTLR code is too complex</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00190.html">Re: More comments, and the ANTLR code is too complex</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00188.html">Re: More comments, and the ANTLR code is too complex</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00190.html">Re: More comments, and the ANTLR code is too complex</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00189"><strong>Date</strong></a></li>
+<li><a href="threads.html#00189"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

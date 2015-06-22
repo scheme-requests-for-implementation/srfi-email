@@ -1,0 +1,138 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Why are byte ports "ports" as such? -->
+<!--X-From-R13: orne <orneNfbavp.arg> -->
+<!--X-Date: Sun, 21 May 2006 16:31:42 +0200 (MST) -->
+<!--X-Message-Id: Pine.LNX.4.58.0605210717440.14258@bolt.sonic.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 443E9048.8000804@mazama.net -->
+<!--X-Reference: 3E48308A&#45;DDE7&#45;4CA3&#45;A497&#45;9D16079F0353@iro.umontreal.ca -->
+<!--X-Reference: 443EF463.6080907@mazama.net -->
+<!--X-Reference: A58B440E&#45;FFFF&#45;4912&#45;8731&#45;1058B24961A1@iro.umontreal.ca -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Why are byte ports &quot;ports&quot; as such?</title>
+<link rev="made" href="mailto:bear@sonic.net">
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00025.html">Date Prev</a>][<a href="msg00027.html">Date Next</a>][<a href="msg00006.html">Thread Prev</a>][<a href="msg00027.html">Thread Next</a>][<a href="maillist.html#00026">Date Index</a>][<a href="threads.html#00026">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Why are byte ports &quot;ports&quot; as such?</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Marc Feeley &lt;<a href="mailto:feeley%40iro.umontreal.ca">feeley@iro.umontreal.ca</a>&gt;</li>
+<li><em>Subject</em>: Re: Why are byte ports &quot;ports&quot; as such?</li>
+<li><em>From</em>: bear &lt;<a href="mailto:bear%40sonic.net">bear@sonic.net</a>&gt;</li>
+<li><em>Date</em>: Sun, 21 May 2006 07:31:31 -0700 (PDT)</li>
+<li><em>Cc</em>: Ben Goetter &lt;<a href="mailto:goetter%40mazama.net">goetter@mazama.net</a>&gt;, <a href="mailto:srfi-91%40srfi.schemers.org">srfi-91@srfi.schemers.org</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-91%40srfi.schemers.org">srfi-91@srfi.schemers.org</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:A58B440E-FFFF-4912-8731-1058B24961A1%40iro.umontreal.ca"><a href="msg00005.html">A58B440E-FFFF-4912-8731-1058B24961A1@iro.umontreal.ca</a></a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:443E9048.8000804%40mazama.net"><a href="msg00000.html">443E9048.8000804@mazama.net</a></a>&gt; &lt;<a href="mailto:3E48308A-DDE7-4CA3-A497-9D16079F0353%40iro.umontreal.ca"><a href="msg00003.html">3E48308A-DDE7-4CA3-A497-9D16079F0353@iro.umontreal.ca</a></a>&gt; &lt;<a href="mailto:443EF463.6080907%40mazama.net"><a href="msg00004.html">443EF463.6080907@mazama.net</a></a>&gt; &lt;<a href="mailto:A58B440E-FFFF-4912-8731-1058B24961A1%40iro.umontreal.ca"><a href="msg00005.html">A58B440E-FFFF-4912-8731-1058B24961A1@iro.umontreal.ca</a></a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+I do think that the semantics of having byte and character
+operations on the same port are a mess, and that the standard
+ought not require it.  I support the notion that byte ports
+and character ports ought to be separate types, opened by
+separate routines, and that it ought to be an error (or at
+least, invoke implementation-defined behavior) to attempt to
+read a char from a byte port or vice versa.
+
+When you read a byte, or a sequence of bytes, from a character
+port, what state do you leave that port in?  Likewise, when you
+read a character, or a sequence of characters, from a byte port,
+how many bytes are gone?  The answer, in a non-ascii universe,
+is that you just don't know.
+
+If you use a character encoding that has multibyte sequences
+for some unicode codepoints, you can be left with up to seven
+bytes that are the &quot;trailing part&quot; of a codepoint before the
+next codepoint begins.  And given combining codepoints and
+variation selectors, the next codepoint may not begin a new
+character itself.  It is just nuts to read arbitrary bytes off
+a character port and then try to read a character out of the
+random mess left behind.
+
+Conversely, the premier use for reading a specific number of
+bytes is implementation of comm protocols and other applications
+where you have fields of particular byte lengths coming from
+a serial connection or storage.  When you read a character off
+one of these, your byte counts go kablooey and you don't know
+where the next field starts.  Uniform-size records and length-
+delimited fields, as used in databases and C FFI's, simply cannot
+be handled by a port that you read a &quot;character&quot; off of.
+
+			Bear
+
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00027" href="msg00027.html">Re: Why are byte ports &quot;ports&quot; as such?</a></strong>
+<ul><li><em>From:</em> &quot;Jonathan S. Shapiro&quot; &lt;shap@eros-os.org&gt;</li></ul></li>
+<li><strong><a name="00028" href="msg00028.html">Re: Why are byte ports &quot;ports&quot; as such?</a></strong>
+<ul><li><em>From:</em> &quot;Jonathan S. Shapiro&quot; &lt;shap@eros-os.org&gt;</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00000" href="msg00000.html">Why are byte ports &quot;ports&quot; as such?</a></strong>
+<ul><li><em>From:</em> Ben Goetter &lt;goetter@mazama.net&gt;</li></ul></li>
+<li><strong><a name="00003" href="msg00003.html">Re: Why are byte ports &quot;ports&quot; as such?</a></strong>
+<ul><li><em>From:</em> Marc Feeley &lt;feeley@iro.umontreal.ca&gt;</li></ul></li>
+<li><strong><a name="00004" href="msg00004.html">Re: Why are byte ports &quot;ports&quot; as such?</a></strong>
+<ul><li><em>From:</em> Ben Goetter &lt;goetter@mazama.net&gt;</li></ul></li>
+<li><strong><a name="00005" href="msg00005.html">Re: Why are byte ports &quot;ports&quot; as such?</a></strong>
+<ul><li><em>From:</em> Marc Feeley &lt;feeley@iro.umontreal.ca&gt;</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00025.html">Re: Issues with Unicode</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00027.html">Re: Why are byte ports &quot;ports&quot; as such?</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00006.html">Re: Why are byte ports &quot;ports&quot; as such?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00027.html">Re: Why are byte ports &quot;ports&quot; as such?</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00026"><strong>Date</strong></a></li>
+<li><a href="threads.html#00026"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

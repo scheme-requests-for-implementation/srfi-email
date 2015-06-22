@@ -1,0 +1,197 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: The Scheduler -->
+<!--X-From-R13: Rnivq Dhfu <xhzbNoryyfbhgu.arg> -->
+<!--X-Date: Fri, 14 Apr 2000 10:14:52 &#45;0500 (CDT) -->
+<!--X-Message-Id: okfhfd4yatk.fsf@bellsouth.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 004901bfa56d$c377a640$11969fd0@fitzgerald_nt -->
+<!--X-Reference: okfog7dx993.fsf@bellsouth.net -->
+<!--X-Reference: 200004141347.JAA17687@trex.IRO.UMontreal.CA -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: The Scheduler</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00047.html">Date Prev</a>][<a href="msg00049.html">Date Next</a>][<a href="msg00047.html">Thread Prev</a>][<a href="msg00049.html">Thread Next</a>][<a href="maillist.html#00048">Date Index</a>][<a href="threads.html#00048">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: The Scheduler</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Marc Feeley &lt;<a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: The Scheduler</li>
+<li><em>From</em>: David Rush &lt;<a href="mailto:kumo@DOMAIN.HIDDEN">kumo@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: 14 Apr 2000 16:13:59 +0100</li>
+<li><em>Cc</em>: <a href="mailto:fitzgerald@DOMAIN.HIDDEN">fitzgerald@xxxxxxxxxxxx</a>, <a href="mailto:srfi-18@DOMAIN.HIDDEN">srfi-18@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: Marc Feeley's message of &quot;Fri, 14 Apr 2000 09:47:39 -0400&quot;</li>
+<li><em>References</em>: &lt;<a href="mailto:004901bfa56d%24c377a640%2411969fd0@DOMAIN.HIDDEN"><a href="msg00044.html">004901bfa56d$c377a640$11969fd0@fitzgerald_nt</a></a>&gt; &lt;<a href="mailto:okfog7dx993.fsf@DOMAIN.HIDDEN">okfog7dx993.fsf@xxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:200004141347.JAA17687@DOMAIN.HIDDEN">200004141347.JAA17687@xxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Marc Feeley &lt;feeley@xxxxxxxxxxxxxxxx&gt; writes:
+&gt; &gt; Caveat lector:
+  yadda yadda...
+&gt; The latest revision of SRFI-18 says:
+&gt;   Each thread has a &quot;priority&quot;, which is an exact integer (where higher
+&gt;   numerical values mean higher priority) ...
+&gt; is this not clear?
+
+It is clear. I was skimming, and other verbage led me to think it
+worked the other way. No, I don't remember which bit, I'll check again
+and let you know if it was more than just a brain fart.
+
+&gt; &gt; Which was Marc's main complaint about the THREAD-PRIORITY&gt;?
+&gt; &gt; primitive. But the fundamental problem is that whenever you have a
+&gt; &gt; change in the priority levels of the tasks in a system the scheduler
+&gt; &gt; has to stop and get its head screwed back on straight.
+&gt; 
+&gt; Yes, but this is much easier to implement if the scheduler has a
+&gt; builtin semantics for priority.
+
+called (for lack of a better term) THREAD-PRIORITY&gt;? :) Ultimately
+it's going to boil down to a call to &gt; in your code, right? Which in
+an arbitrary Scheme might not even be atomic (due to unboxing,
+etc. although this is something of a strawman). In some ways you have
+*more* control over the semantics of THREAD-PRIORITY&gt;? because you can
+specify its constraints in the SRFI specification.
+
+&gt; &gt; Which leads me to wonder if some form like
+&gt; &gt; 	(without-scheduling &lt;thunk&gt;)
+  ...
+&gt; This is not sufficient, because the actual exception handler you need
+&gt; depends on context.  In my example I was assuming that the exception
+&gt; handler exits the with-exception-handler, but this is not guaranteed
+&gt; since exception handlers can return (which is a good thing in
+&gt; general).
+
+Fair enough. I blindly took your implementation as exemplary, not as
+definitive. Nevertheless, it is very useful to be able to turn the
+scheduler off, particularly for an RT system. Now hard-core RT people
+won't be afraid to hack your implementation to bits to get the
+behavior they want, so in a certain sense it doesn't matter. But I
+gave you an example where the ability to turn the scheduler
+off temporarily simplifies implementing priority-management
+algorithms without hacking the scheduler code directly. The ability
+seems likely to be advantageous in any priority-management algorithm,
+I just haven't implemented that many.
+
+&gt; In my opinion, disabling scheduling with (without-scheduling &lt;thunk&gt;)
+&gt; or any other mechanism is not an option because the runtime system may
+&gt; depend critically on the thread system 
+
+Of course. But we're not talking about unbounded time in the
+WITHOUT-SCHEDULING block. Now if someone *does* such a foolish thing
+they get what they deserve, but it *is* useful to have some way that
+users can interact with the *scheduler's* critical section (reordering
+the priority tree) without having the rug yanked out from under
+them. When I built the priority-inheritance mutexes on top of pSOS, we
+(I had four people doing line-by-line reviews and simulations of my
+code) ended up needing a system-wide lock just to make sure that we
+didn't get the priorities wrong during mutex release. After consulting
+with a pSOS expert, he suggested that we bring the code inside the
+kernel so that we would be effectively running with the scheduler
+blocked.
+
+The need to temporarily stop the scheduler occurs. Doing so can have
+significant consequences, but it would be a good thing to export that
+ability to userland.
+
+&gt; Fundamentally, thread-priority&gt;? needs to be a lower-level procedure
+&gt; that lives by different rules.  It should not be at the Scheme
+&gt; level.
+
+Something makes me think that we are talking at cross-purposes
+here. All that matters is that the rules for THREAD-PRIORITY&gt;? be
+documented. If the constraints for writing THREAD-PRIORITY&gt;? can't be
+satisfied in Scheme, then there's something wrong with Scheme that
+should be addressed. I really don't get your objection here, people
+do this sort of thing in C all the time.
+
+&gt; &gt; There is nothing in Marc's objections which doesn't apply in
+&gt; &gt; the C world *and* which doesn't also apply to an attempt to map
+&gt; &gt; everything onto integer priorities. The only exception is not being
+&gt; &gt; able to make a procedure call, which  seems a harsh restriction, and
+&gt; &gt; one that you wouldn't encounter in a C based solution.
+&gt; 
+&gt; I'm not sure how much interesting work you'll be able to do without
+&gt; procedure call!
+
+I can certainly tail-recursively look at global data structures and
+other things to find out who *really* has the highest
+priority. Can we make a distinction between primitive language
+operations and procedures? Is it reasonable to expect + to be
+implemented atomically? If so, then I can probably do some basic
+arithmetic and comparisons. If not, you might well not be able to
+implement your thread system at all. Remember, we're not talking about
+serious amounts of work here; we're talking about figuring out if one
+process should run preferentially to another one.
+
+And finally, pushing THREAD-PRIORITY&gt;? out to userland enables you to
+punt on the open issue of priority aging in SRFI-18. All you need do
+is document the constraints under which THREAD-PRIORITY&gt;? must be
+implemented.
+
+david rush
+-- 
+As I've gained more experience with Perl it strikes me that it resembles
+Lisp in many ways, albeit Lisp as channeled by an awk script on acid.
+	-- Tim Moore (on comp.lang.lisp)
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00044" href="msg00044.html">RE: The Scheduler</a></strong>
+<ul><li><em>From:</em> Will Fitzgerald</li></ul></li>
+<li><strong><a name="00045" href="msg00045.html">Re: The Scheduler</a></strong>
+<ul><li><em>From:</em> David Rush</li></ul></li>
+<li><strong><a name="00047" href="msg00047.html">Re: The Scheduler</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00047.html">Re: The Scheduler</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00049.html">Re: The Scheduler</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00047.html">Re: The Scheduler</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00049.html">Re: The Scheduler</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00048"><strong>Date</strong></a></li>
+<li><a href="threads.html#00048"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

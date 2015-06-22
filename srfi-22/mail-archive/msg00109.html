@@ -1,0 +1,189 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: SRFI 22 release candidate #3 -->
+<!--X-From-R13: [nep Trryrl <srryrlNWDA.G[bagerny.QO> -->
+<!--X-Date: Fri, 22 Jun 2001 12:50:10 &#45;0500 (CDT) -->
+<!--X-Message-Id: 200106221750.f5MHo9Z19064@dino00.IRO.UMontreal.CA -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: y9l1yoc7mf3.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: SRFI 22 release candidate #3</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00108.html">Date Prev</a>][<a href="msg00110.html">Date Next</a>][<a href="msg00108.html">Thread Prev</a>][<a href="msg00110.html">Thread Next</a>][<a href="maillist.html#00109">Date Index</a>][<a href="threads.html#00109">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: SRFI 22 release candidate #3</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: SRFI 22 release candidate #3</li>
+<li><em>From</em>: Marc Feeley &lt;<a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 22 Jun 2001 13:50:09 -0400</li>
+<li><em>Cc</em>: <a href="mailto:srfi-22@DOMAIN.HIDDEN">srfi-22@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:y9l1yoc7mf3.fsf@DOMAIN.HIDDEN">y9l1yoc7mf3.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	(<a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>)</li>
+<li><em>References</em>: &lt;<a href="mailto:y9l1yoc7mf3.fsf@DOMAIN.HIDDEN">y9l1yoc7mf3.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; And here's another one.  You probably won't be too pleased with the
+&gt; changes:
+&gt; 
+&gt; - Because of the semantic issues, we decided to revert on the
+&gt;   parameter-passing issue.
+&gt; 
+&gt; - Because of the semantic issue and to keep the namespace clean, we
+&gt;   decided against putting in EXIT.  We have every intention to cover
+&gt;   this in a separate SRFI.
+&gt; 
+&gt; We're still willing to be convinced on these two issues, but we need
+&gt; better arguments than the ones we heard so far, along with resolutions
+&gt; of the problems mentioned.  We intend to release on
+
+You are correct... I am not pleased.
+
+Whether it is specified in this SRFI or another one, the exit
+procedure can either unwind the dynamic-wind stack or not:
+
+1) unwind: cleans things up nicely for code that uses dynamic-wind
+   without the user having to do anything special, but what happens if
+   some dynamic-wind &quot;after&quot; thunk needs to call exit because some
+   fatal error occurs.  R5RS leaves the precise behavior undefined,
+   and an infinite loop might occur.  [In case you don't already know,
+   I don't like dynamic-wind for many reasons... but that's a different
+   ballgame.]
+
+2) do not unwind: the program immediately exits (after minimal runtime
+   system cleanup like flushing stdout/stderr) and there are no
+   recursion issues (i.e. it is OK for an &quot;after&quot; thunk to call exit).
+   This is good because it makes exit modular (i.e. the pieces of code
+   that call exit don't have to be aware of the dynamic extent in
+   which they might be).  If the user prefers an &quot;unwinding&quot; exit he
+   can always do:
+
+   (define (main . arguments)
+     (let ((real-exit exit))
+       (real-exit
+         (call-with-current-continuation
+           (lambda (cont)
+             (set! exit cont)
+             ...body of main goes here
+             0)))))
+
+If you don't include an &quot;exit&quot; in SRFI-22 then a user who wants
+to exit with a particular status code has to write something like:
+
+   (define exit #f)
+
+   (define (main . arguments)
+     (call-with-current-continuation
+       (lambda (cont)
+         (set! exit cont)
+         ...body of main goes here)))
+
+and then he is stuck with an &quot;unwinding&quot; semantics for exit, which
+would be unfortunate.
+
+Note that this issue is not particular to Scheme, for example C has
+both &quot;exit&quot; and &quot;_exit&quot; for both types of exits.
+
+Why not simply leave the semantics of exit undefined when it is used
+in the dynamic extent of a dynamic-wind.  A future SRFI can go one way
+or the other for this particular case and still remain compatible with
+SRFI 22.
+
+As for the parameter passing protocol for &quot;main&quot;, I maintain that the
+best approach is for main to receive as many arguments as were passed
+to the script.  There is no loss of control (you can still specify a
+single rest parameter to give a EX_USAGE status if the number of
+arguments or their form is inappropriate) and it makes life easier for
+the naive script writer and &quot;lazy&quot; script writer (which I am), because
+the (fixed position) parameters are directly accessible and a
+reasonable error checking is done automatically.  I know that this
+means that most Scheme implementations will incorrectly return the
+status EX_SOFTWARE instead of EX_USAGE... but if you are willing to
+write your script so that it checks and returns EX_USAGE correctly
+then the only extra cost in my proposal is a &quot;. &quot; to add to the
+parameter list of main.
+
+And frankly, I don't see much usefulness in distinguising EX_USAGE and
+EX_SOFTWARE.  How would someone calling a script use this information,
+and for what purpose?  I've quickly tested a few Unix utility programs
+(under Linux) and none return EX_USAGE for usage errors:
+
+% ls -w ; echo $?
+ls: option requires an argument -- w
+Try `ls --help' for more information.
+1
+% grep -o ; echo $?
+grep: invalid option -- o
+Usage: grep [OPTION]... PATTERN [FILE]...
+Try `grep --help' for more information.
+2
+% wc -o ; echo $?
+wc: invalid option -- o
+Try `wc --help' for more information.
+1
+% perl -o ; echo $?
+Unrecognized switch: -o  (-h will show valid options).
+2
+
+Marc
+
+P.S. I'm soon leaving for a trip and will be out of touch for 10 days.
+So don't take my silence as a sign of lack of interest in SRFI-22.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00108" href="msg00108.html">SRFI 22 release candidate #3</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr. Preprocessor]</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00108.html">SRFI 22 release candidate #3</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00110.html">Re: SRFI 22 release candidate #3</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00108.html">SRFI 22 release candidate #3</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00110.html">Re: SRFI 22 release candidate #3</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00109"><strong>Date</strong></a></li>
+<li><a href="threads.html#00109"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

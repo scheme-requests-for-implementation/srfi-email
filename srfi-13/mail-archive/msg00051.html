@@ -1,0 +1,180 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: shared&#45;text substrings, start/end indices, xs><, etc. -->
+<!--X-From-R13: fuvirefNnv.zvg.rqh -->
+<!--X-Date: Mon, 24 Jan 2000 19:02:15 &#45;0600 (CST) -->
+<!--X-Message-Id: 200001250101.UAA10381@mongkok.smartleaf.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>shared-text substrings, start/end indices, xs&gt;&lt;, etc.</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00050.html">Date Prev</a>][<a href="msg00052.html">Date Next</a>][<a href="msg00065.html">Thread Prev</a>][<a href="msg00054.html">Thread Next</a>][<a href="maillist.html#00051">Date Index</a>][<a href="threads.html#00051">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>shared-text substrings, start/end indices, xs&gt;&lt;, etc.</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-13@DOMAIN.HIDDEN">srfi-13@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: shared-text substrings, start/end indices, xs&gt;&lt;, etc.</li>
+<li><em>From</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxx</a></li>
+<li><em>Date</em>: Mon, 24 Jan 2000 20:01:05 -0500</li>
+<li><em>Reply-to</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>    From: Tom Lord &lt;lord@xxxxxxx&gt;
+    * A reasonable alternative is to have two SRFI's: One, a
+      string library without ubiquitous index parameters and
+      without &quot;substring/shared&quot;, the other, a SRFI for
+      &quot;substring/shared&quot; in which that procedure is guaranteed to
+      return a value which shares state with its primary string
+      argument.
+
+SRFI-13 is trying to walk a third path. I'm not willing to *require*
+shared-text substrings. That's just not going to happen out there in
+Scheme-land, at least we can't just mandate it. I'm just trying to allow
+people to write portable code that can run reasonably efficiently across a
+wide range of platforms -- some with shared-text substrings, some without.
+It's not acceptable to say &quot;Those who want to use Scheme for hyper-efficient
+string processing are thereby encouraged to choose an implementation or
+environment which supports shared substrings.&quot; There are many reasons why
+someone might be limited to a particular Scheme implementation; that person
+might still need to write efficient code, even if his implementation doesn't
+provide shared-text substrings.
+
+		containing-string string =&gt; string start end
+
+	  which converts a shared substring to its parent string and
+	  indexes, and an ordinary string to itself, 0, and its
+	  length.
+
+I think others have beaten on this idea enough. It's none of my business
+from where a particular string came; I should just deal with it as a string.
+
+	  It is important that &quot;substring/shared&quot; return a truly
+	  shared substring so that side effects on its result are
+	  reflected in its argument.  That propagation of side effects
+	  is an essential part of using shared substrings to write
+	  code which manipulates strings efficiently.
+
+Not within the charter of SRFI-13. Should be handled by a specifically
+shared-text SRFI. Basically, Tom, you are saying that you want 
+shared-text functionality, because it's really good stuff. Agreed.
+But SRFI-13 has lower aspirations. SRFI-13's /SHARED prefixes *allow*
+the system to use shared-text, but they don't *require* it. You lose
+some efficiency... but gain the ability to run correctly in *non*-shared-text
+systems. Again, a shared-text string library *should* be defined, *after*
+we put SRFI-13 to bed. Perhaps you should lead the effort!
+
+    From: &quot;Sergei Egorov&quot; &lt;esl@xxxxxxxxxxxxxxx&gt;
+    Shared substrings are practically unknown to
+    the Scheme community and, even if they are
+    implemented somewhere, I see no reason to
+    make incompatible changes to the semantics
+    of SUBSTRING (adding SUBSTRING/SHARED is
+    definitely a better idea, but why put normal
+    and /SHARED versions in one SRFI?).
+
+OK, a message from the other camp!
+
+As you have probably seen lately, shared-text substrings have rabid fans
+in the guile community. I am among them, but that's not important. What's
+important is that I allow for people to code in a way that will be portable
+across shared-text and non-shared-text systems, but still leave open
+opportunities to gain efficiencies in either case.
+
+I am absolutely not interested in requiring shared-text substrings for
+SRFI-13. A shared-text library is a whole other task, one which could not
+be provided portably in Scheme 48, or Bigloo, or many other important 
+Scheme implementations. This is not what SRFI-13 is about.
+
+    From: David Rush &lt;drush@xxxxxxxxxxxx&gt;
+    Shared-substrings are a separate data type in other languages for good
+    reasons (I can't speak to Guile's issues, I use Guile, but I didn't even
+    know they were there, the documentation *is* being rewritten), the
+    simplest being that they have different lifecycle issues from 'full'
+    strings. 
+
+    Of course, because Olin is very clever, this will be mostly invisible
+    to the casual user of the library. I just feel very strongly that this
+    can be better treated in a shared-substring SRFI, which will probably
+    never get written if most of the functionality is already avaiable in
+    this one.
+
+Shared-text substrings are typically a subtype of general strings in most
+Schemes I know that provide them. But SRFI-13 is not going to prevent a
+shared-subtext SRFI from being developed, because there is a lot of stuff
+you would provide in such a SRFI that is not in SRFI-13. (For starters,
+a way to *reliably* even *make* a shared-text substring...) See old T
+manuals for examples.
+
+Oleg has proposed using an XS&gt;&lt; selector for marking substring arguments
+to string procedures. This relies on the mythical &quot;suitably optimising
+compiler,&quot; a beast that featured prominently in many CommonLisp discussions.
+With a suitably optimising compiler, we don't even need XS&gt;&lt;, we can just
+use SUBSTRING. 
+
+But there are no suitably optimising compilers. So no go.
+
+The START/END indices can be used to efficiently bound operations on strings
+without magic compiler analyses or shared-text substrings. That's why they are
+there.
+    -Olin
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00054" href="msg00054.html">Re: shared-text substrings, start/end indices, xs&gt;&lt;, etc.</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr. Preprocessor]</li></ul></li>
+<li><strong><a name="00064" href="msg00064.html">Re: shared-text substrings, start/end indices, xs&gt;&lt;, etc.</a></strong>
+<ul><li><em>From:</em> Mikael Ståldal</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00050.html">SRFI-13 -- bits &amp; pieces</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00052.html">char/char-set/pred</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00065.html">Re: SRFI-13 -- bits &amp; pieces</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00054.html">Re: shared-text substrings, start/end indices, xs&gt;&lt;, etc.</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00051"><strong>Date</strong></a></li>
+<li><a href="threads.html#00051"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

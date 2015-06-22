@@ -1,0 +1,213 @@
+<!-- MHonArc v2.6.16 -->
+<!--X-Subject: Another code sample &#45; symbolic derivatives -->
+<!--X-From-R13: "Rnivq O. Iurryre" <qjurryreNqjurryre.pbz> -->
+<!--X-Date: Tue,  9 Apr 2013 04:57:38 +0200 (MST) -->
+<!--X-Message-Id: E1UPOkb&#45;0002Mc&#45;Iv@rmm6prod02.runbox.com -->
+<!--X-Content-Type: multipart/mixed -->
+<!--X-Derived: bin2TnlrZpgrw.bin -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Another code sample - symbolic derivatives</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00094.html">Date Prev</a>][<a href="msg00096.html">Date Next</a>][<a href="msg00094.html">Thread Prev</a>][<a href="msg00096.html">Thread Next</a>][<a href="maillist.html#00095">Date Index</a>][<a href="threads.html#00095">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Another code sample - symbolic derivatives</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &quot;srfi-110&quot; &lt;<a href="mailto:srfi-110@DOMAIN.HIDDEN">srfi-110@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Another code sample - symbolic derivatives</li>
+<li><em>From</em>: &quot;David A. Wheeler&quot; &lt;<a href="mailto:dwheeler@DOMAIN.HIDDEN">dwheeler@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 08 Apr 2013 22:57:37 -0400 (EDT)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-110@DOMAIN.HIDDEN">srfi-110@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Reply-to</em>: <a href="mailto:dwheeler@DOMAIN.HIDDEN">dwheeler@xxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Here's a version of the &quot;Wizard book&quot; symbolic derivative calculation, using sweet-expressions.
+I've placed it below and put it in an attachment.
+
+Unsurprisingly, sweet-expression's ability to accept infix makes infix expressions nicer. E.G.:
+deriv '{{x * y} * {x + 3}} 'x
+
+My goal of working out examples like this is to see if there are any serious problems with the sweet-expression notation.  I don't see any problems with the notation in this case.  Granted, this has a bunch of especially short and simple definitions, but I don't see any sign of trouble.
+
+Comments?
+
+
+ --- David A. Wheeler
+
+
+#!/usr/bin/env sweet-run
+;#!guile -s
+;!#
+
+
+; Code to generate derivatives from the &quot;Wizard Book&quot; -
+; Hal Abelson's, Jerry Sussman's and Julie Sussman's
+; &quot;Structure and Interpretation of Computer Programs&quot;
+; (MIT Press, 1984; ISBN 0-262-01077-1),
+; <a  rel="nofollow" href="http://mitpress.mit.edu/sicp/full-text/sicp/book/node39.html">http://mitpress.mit.edu/sicp/full-text/sicp/book/node39.html</a>
+; <a  rel="nofollow" href="http://mitpress.mit.edu/sicp/code/index.html">http://mitpress.mit.edu/sicp/code/index.html</a>
+;;; SECTION 2.3.2
+
+
+
+define deriv(exp var)
+  cond
+    number?(exp) 0
+    variable?(exp)
+      if same-variable?(exp var) 1 0
+    sum?(exp)
+      make-sum deriv(addend(exp) var) deriv(augend(exp) var)
+    product?(exp)
+      make-sum
+        make-product multiplier(exp) deriv(multiplicand(exp) var)
+        make-product deriv(multiplier(exp) var) multiplicand(exp)
+    else error(&quot;unknown expression type -- DERIV&quot; exp)
+
+;; representing algebraic expressions
+
+define variable?(x) symbol?(x)
+
+define same-variable?(v1 v2)
+  {variable?(v1) and variable?(v2) and eq?(v1 v2)}
+
+define sum?(x)
+  {pair?(x) and eq?(car(x) '+)}
+
+define addend(s) cadr(s)
+
+define augend(s) caddr(s)
+
+define product?(x)
+  {pair?(x) and eq?(car(x) '*)}
+
+define multiplier(p) cadr(p)
+
+define multiplicand(p) caddr(p)
+
+
+;; Simplification
+
+define make-sum(a1 a2)
+  cond
+    =number?(a1 0) a2
+    =number?(a2 0) a1
+    {number?(a1) and number?(a2)} {a1 + a2}
+    else list('+ a1 a2)
+
+define =number?(exp num)
+  {number?(exp) and {exp = num}}
+
+define make-product(m1 m2)
+  cond
+    {=number?(m1 0) or =number?(m2 0)} 0
+    =number?(m1 1) m2
+    =number?(m2 1) m1
+    {number?(m1) and number?(m2)} {m1 * m2}
+    else list('* m1 m2)
+
+
+
+; Here are routines to display result in infix form:
+
+define infix-operators '(+ *)
+
+define infix-tail(op x)
+  cond
+    null?(x)
+      display &quot;}&quot;
+    pair?(x)
+      display &quot; &quot;
+      write op
+      display &quot; &quot;
+      my-write car(x)
+      infix-tail op cdr(x)
+    #t
+      error(&quot;Infix operator with improper list&quot;)
+
+define my-write(x)
+  cond
+    null?(x)
+      display &quot;()&quot;
+    pair?(x)
+      if {memq(car(x) infix-operators) and pair?(cdr(x))}
+        begin ; Display in infix order
+          display &quot;{&quot;
+          if not(null?(cdr(x)))
+            my-write cadr(x)
+          infix-tail car(x) cddr(x)
+        write x
+    #t
+      write x
+
+
+
+; Use demo - this should produce {{x * y} + {y * {x + 3}}}
+
+
+my-write
+  deriv '{{x * y} * {x + 3}} 'x
+
+
+</pre><p><strong>Attachment:
+<a href="bin2TnlrZpgrw.bin" ><tt>derivative.sscm</tt></a></strong><br>
+<em>Description:</em> Binary data</p>
+
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00096" href="msg00096.html">Re: Another code sample - symbolic derivatives</a></strong>
+<ul><li><em>From:</em> Mark H Weaver</li></ul></li>
+<li><strong><a name="00098" href="msg00098.html">Re: Another code sample - symbolic derivatives</a></strong>
+<ul><li><em>From:</em> Alan Manuel Gloria</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00094.html">Re: Need to change parse-hash in reference implementation</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00096.html">Re: Another code sample - symbolic derivatives</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00094.html">Re: Need to change parse-hash in reference implementation</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00096.html">Re: Another code sample - symbolic derivatives</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00095"><strong>Date</strong></a></li>
+<li><a href="threads.html#00095"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,182 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: why generative? -->
+<!--X-From-R13: Euveb Ynjnv <fuvebNynin.arg> -->
+<!--X-Date: Thu,  3 Sep 2009 09:46:30 +0000 (UTC) -->
+<!--X-Message-Id: 20090902.234625.218253167063573850.shiro@lava.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 13064863.437551251730478062.JavaMail.root@zimbra -->
+<!--X-Reference: 19598219.437571251730534999.JavaMail.root@zimbra -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: why generative?</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00054.html">Date Prev</a>][<a href="msg00056.html">Date Next</a>][<a href="msg00053.html">Thread Prev</a>][<a href="msg00061.html">Thread Next</a>][<a href="maillist.html#00055">Date Index</a>][<a href="threads.html#00055">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: why generative?</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:will@DOMAIN.HIDDEN">will@xxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: why generative?</li>
+<li><em>From</em>: Shiro Kawai &lt;<a href="mailto:shiro@DOMAIN.HIDDEN">shiro@xxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 02 Sep 2009 23:46:25 -1000 (HST)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-99@DOMAIN.HIDDEN">srfi-99@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-99@DOMAIN.HIDDEN">srfi-99@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:19598219.437571251730534999.JavaMail.root@DOMAIN.HIDDEN"><a href="msg00053.html">19598219.437571251730534999.JavaMail.root@zimbra</a></a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:13064863.437551251730478062.JavaMail.root@DOMAIN.HIDDEN">13064863.437551251730478062.JavaMail.root@zimbra</a>&gt;	&lt;<a href="mailto:19598219.437571251730534999.JavaMail.root@DOMAIN.HIDDEN"><a href="msg00053.html">19598219.437571251730534999.JavaMail.root@zimbra</a></a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>From: will@xxxxxxxxxxx
+Subject: Re: why generative?
+Date: Mon, 31 Aug 2009 10:55:35 -0400 (EDT)
+
+&gt; Shiro Kawai wrote:
+&gt; &gt; &gt; &gt; In other words, we make make-rtd behave
+&gt; &gt; &gt; &gt; functionally, meaning it returns eqv? objects for equivalent
+&gt; &gt; &gt; &gt; set of arguments.
+&gt; &gt; &gt;
+&gt; &gt; &gt; That could be done, but it's more complicated.
+&gt; &gt;
+&gt; &gt; Not necessarily.  If simplicity is important, you can
+&gt; &gt; just return a new structure from make-rtd.  When comparing
+&gt; &gt; rtds, the simplest way is to compare element-by-element
+&gt; &gt; (just like comparing complex numbers, for example.  that's
+&gt; &gt; how &quot;functional&quot; objects should be compared, semantically.)
+&gt; 
+&gt; Element-by-element comparisons are more complicated than
+&gt; pointer comparisons, even if you ignore performance.
+
+It's not a matter of &quot;which is complicated&quot;.  Some things
+should be compared element-by-element semantically, and some
+things are not.  (Of course, some things falls on the border,
+which some people feel natural to compare element-by-element
+and others don't).
+
+&gt; The performance of records is important.
+&gt; If programmers can't rely on record accesses to be reasonably
+&gt; fast, then they'll start to use vectors instead of records
+&gt; even when records would otherwise be more appropriate.
+
+Exactly.  
+
+&gt; &gt; Another optimization strategy may be that the implementation
+&gt; &gt; calculates a hash value from rtd fields and cache it in an rtd.
+&gt; 
+&gt; Even when an integer hash matches, you'd still have to
+&gt; perform the complicated comparison to confirm the match.
+
+Yeah, that was my mistake.  We don't even need to calculate
+a hash value.  Make-rtd can create a symbol that encodes the
+input values that matter (e.g. concatenating canonical
+representations of each value with a special separator).
+Such a symbol serves as a unique id.
+
+It still requires one pointer dereference compared to the
+eq?-style pointer comparison.  If I'd implement this idea
+in Gauche, I'd use weak hash table to memoize make-rtd
+so that semantically equivalent rtds will always be eq?.
+
+&gt; Yes.  Using the &quot;sufficiently clever implementation&quot; idea
+&gt; to pretend that performance and implementation complexity
+&gt; don't matter has gotten language designers into a lot of
+&gt; trouble in the past, and it did some harm even to the R6RS.
+
+I don't think I'm suggesting a &quot;clever implementation&quot;.
+The ideas to reduce the cost of rtd comparisons are nothing
+close to clever compared to efficient first-class
+continuations or R6RS equal? procedure.
+
+&gt; To programmers, generative record types defined at top level
+&gt; are equivalent to a non-generative record type defined at
+&gt; top level, so neither default adds any extra burden for that
+&gt; common case.
+
+Agreed.
+
+&gt; For record types that are not defined at top level, it is
+&gt; unclear whether generative or non-generative definitions are
+&gt; more common.  My intuition says it's likely to depend upon
+&gt; individual programmers' preferred styles, so no general rule
+&gt; applies generally.
+
+Probably this point is our difference.  I often like to use
+locally defined records to group values semantically, and
+such record types should be non-generative to avoid overhead.
+But that's a matter of personal preference, so I don't push
+this use case particularly.
+
+I do see it a big disadvantage that R6RS-style nongenerative
+uid implies a separate global namespace *semantically*.
+We've been very careful introducing separate namespaces, and
+I don't feel like this uid namespace is justified well.
+Making rtd &quot;functional&quot; is one way to eliminate this separate
+global namespace.
+
+Although SRFI-99 makes it optional to support R6RS semantics,
+I thought it would be nice if we can explore different options
+at this time.
+
+--shiro
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00061" href="msg00061.html">Re: why generative?</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00053" href="msg00053.html">Re: why generative?</a></strong>
+<ul><li><em>From:</em> will</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00054.html">Re: why generative?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00056.html">Re: why generative?</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00053.html">Re: why generative?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00061.html">Re: why generative?</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00055"><strong>Date</strong></a></li>
+<li><a href="threads.html#00055"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

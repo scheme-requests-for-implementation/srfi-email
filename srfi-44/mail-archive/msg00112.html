@@ -1,0 +1,172 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Orthogonality issues -->
+<!--X-From-R13: "Penqq I. Embalr" <oenqq+fesvNfmbalr.pbz> -->
+<!--X-Date: Thu, 23 Oct 2003 00:48:20 +0200 (DFT) -->
+<!--X-Message-Id: 20031022224813.GD12113@ogre.szonye.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20031021072047.GB26398@loki.vpn.szonye.com -->
+<!--X-Reference: 592223A6&#45;04CF&#45;11D8&#45;96A9&#45;000A95CCCEE4@evdev.ath.cx -->
+<!--X-Reference: 20031022221552.GC12113@ogre.szonye.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Orthogonality issues</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00111.html">Date Prev</a>][<a href="msg00113.html">Date Next</a>][<a href="msg00111.html">Thread Prev</a>][<a href="msg00113.html">Thread Next</a>][<a href="maillist.html#00112">Date Index</a>][<a href="threads.html#00112">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Orthogonality issues</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Orthogonality issues</li>
+<li><em>From</em>: &quot;Bradd W. Szonye&quot; &lt;<a href="mailto:bradd%2Bsrfi@DOMAIN.HIDDEN">bradd+srfi@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 22 Oct 2003 15:48:13 -0700</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20031022221552.GC12113@DOMAIN.HIDDEN">20031022221552.GC12113@xxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Mail-followup-to</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>References</em>: &lt;<a href="mailto:20031021072047.GB26398@DOMAIN.HIDDEN">20031021072047.GB26398@xxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:592223A6-04CF-11D8-96A9-000A95CCCEE4@DOMAIN.HIDDEN">592223A6-04CF-11D8-96A9-000A95CCCEE4@xxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20031022221552.GC12113@DOMAIN.HIDDEN">20031022221552.GC12113@xxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mutt/1.4i</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Bradd W. Szonye wrote:
+&gt; However, it just occurred to me that there's some ambiguity for
+&gt; ordered-collection -- dictionaries are usually in key order, but other
+&gt; collections are in value order. I think we actually need to separate
+&gt; them into &quot;ordered-collection&quot; and &quot;key-ordered-collection.&quot;
+&gt; Otherwise, you'll have problems with polymorphism ....
+&gt; 
+&gt; *-update is for sequences, *-update-key is for dictionaries. The
+&gt; reason for having two different functions is because key lookup is
+&gt; *not* the same thing as indexing ....
+
+&gt; *-remove takes a value out of a bag, and *-remove-key takes a key out
+&gt; of a dictionary. If you have a dictionary that is also a bag, those
+&gt; need to be two different methods.
+
+And related to these: I forgot to mention it earlier, but I changed
+collection-fold-keys to be defined *only* for dictionaries (not
+sequences) in my revision. That's because:
+
+1. If you overload them, you're screwed if you have a dictionary that is
+   also a sequence (e.g., alists).
+
+2. You can easily simulate collection-fold-indexes by passing the index
+   as a seed and incrementing it with each enumeration.
+
+In general, I tried to keep each interface distinct, so that &quot;mixed
+interface&quot; collections still make sense. However, as the first quoted
+paragraph states, &quot;ordered-collection&quot; is not very well defined.
+
+I think you could resolve this by changing &quot;order&quot; from a property of
+collections in general to a property of each collection type:
+
+    ordered-bag, ordered-set: you can access/retrieve values in order
+    ordered-sequence: ascending positions contain ascending values
+    ordered-dictionary: you can access/retrieve keys in order
+
+With this change, the semantics of *-ordering-function, *-fold-left, and
+all other *-method-direction functions would depend on the ordering
+semantics of *. For example, bag-ordering-function would give you an
+ordering-function for values, and dictionary-ordering-function would
+give you an ordering-function for keys. Here's the whole set:
+
+    collection-fold: arbitrary order
+
+    bag-fold: enumerate in arbitrary order
+    ordered-bag-fold: enumerate in arbitrary order
+    ordered-bag-fold-left: enumerate in bag order
+    ordered-bag-fold-right: enumerate in reverse bag order
+
+    set-fold: enumerate in arbitrary order
+    ordered-set-fold: enumerate in arbitrary order
+    ordered-set-fold-left: enumerate in bag order
+    ordered-set-fold-right: enumerate in reverse bag order
+
+    sequence-fold: enumerate sequence (forward)
+    sequence-fold-left: enumerate sequence (forward)
+    sequence-fold-right: enumerate reverse sequence
+    ordered-sequence-fold[-left/right]: same thing
+
+    dictionary-fold: enumerate key-value pairs
+    ordered-dictionary-fold-left: enumerate pairs in key order
+    ordered-dictionary-fold-right: enumerate pairs in reverse key order
+
+I'm not sure about dictionaries. Which is best?
+
+1. Dictionary-fold enumerates values, treating the dictionary like a
+   bag, and dictionary-fold-keys works like the original fold-keys.
+2. As #1, except dictionary-fold enumerates key-value pairs.
+3. As #2, except that there is no fold-keys.
+
+Again, there's the fundamental issue: &quot;Is a dictionary a bag with keys,
+or is it a collection of key-value pairs?&quot; I truly cannot decide which
+is better.
+-- 
+Bradd W. Szonye
+<a  rel="nofollow" href="http://www.szonye.com/bradd">http://www.szonye.com/bradd</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00113" href="msg00113.html">Re: Orthogonality issues</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00105" href="msg00105.html">Re: Procedures (interfaces)</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+<li><strong><a name="00109" href="msg00109.html">Re: Procedures (interfaces)</a></strong>
+<ul><li><em>From:</em> Taylor Campbell</li></ul></li>
+<li><strong><a name="00111" href="msg00111.html">Re: Procedures (interfaces)</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00111.html">Re: Procedures (interfaces)</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00113.html">Re: Orthogonality issues</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00111.html">Re: Procedures (interfaces)</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00113.html">Re: Orthogonality issues</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00112"><strong>Date</strong></a></li>
+<li><a href="threads.html#00112"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

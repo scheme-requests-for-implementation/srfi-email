@@ -1,0 +1,219 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: comments on and questions about SRFI 93 -->
+<!--X-From-R13: qloNpf.vaqvnan.rqh -->
+<!--X-Date: Mon, 26 Jun 2006 19:37:24 +0200 (MST) -->
+<!--X-Message-Id: 44a01b50.1oD/36HxBhfZ3WUg%dyb@garbo.cs.indiana.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 962D377D&#45;6E0E&#45;417A&#45;BB67&#45;6591B1E23C6E@zurich.csail.mit.edu -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: comments on and questions about SRFI 93</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00042.html">Date Prev</a>][<a href="msg00044.html">Date Next</a>][<a href="msg00033.html">Thread Prev</a>][<a href="msg00057.html">Thread Next</a>][<a href="maillist.html#00043">Date Index</a>][<a href="threads.html#00043">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: comments on and questions about SRFI 93</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-93@DOMAIN.HIDDEN">srfi-93@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: comments on and questions about SRFI 93</li>
+<li><em>From</em>: <a href="mailto:dyb@DOMAIN.HIDDEN">dyb@xxxxxxxxxxxxxx</a></li>
+<li><em>Date</em>: Mon, 26 Jun 2006 13:37:20 -0400</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-93@DOMAIN.HIDDEN">srfi-93@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:962D377D-6E0E-417A-BB67-6591B1E23C6E@DOMAIN.HIDDEN">962D377D-6E0E-417A-BB67-6591B1E23C6E@xxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:962D377D-6E0E-417A-BB67-6591B1E23C6E@DOMAIN.HIDDEN">962D377D-6E0E-417A-BB67-6591B1E23C6E@xxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: nail 11.25 7/29/05</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; * The abstract says that the design &quot;...also supports source-object
+&gt; correlation, ...  Did you mean only that the representation of syntax
+&gt; objects is up to the implementation, and that the implementation can
+&gt; therefore maintain additional information like source-object
+&gt; correlation?&quot; If so, the SRFI document should mention that somewhere.
+
+This is mentioned briefly in the first paragraph of Section 3.5.  Perhaps
+it should be made more explicit somewhere.
+
+&gt; It would be great if,
+&gt; perhaps in a later SRFI, a standard could be created for accessing and
+&gt; manipulating this information.
+
+I agree.
+
+&gt; * In this paragraph in section 3.1, &quot;references&quot; should be
+&gt; &quot;referenced:&quot;
+&gt;
+&gt;    Expansion of each variable definition right-hand side is deferred
+&gt;    until after all of the definitions have been seen so that each
+&gt;    keyword and variable references within the right-hand side resolves
+&gt;    to the local binding, if any.
+
+Thanks.
+
+&gt; * Also in section 3.1, this expression:
+&gt;
+&gt;    (lambda (x)
+&gt;      (define-syntax defun
+&gt;        (syntax-rules () [(_ (x . a) e) (define x (lambda a e))]))
+&gt;      (defun (even? n) (or (= n 0) (odd? (- n 1))))
+&gt;      (define-syntax odd? (syntax-rules () [(_ n) (not (even? n))]))
+&gt;      (odd? (if (odd? x) (* x x) x)))
+&gt;
+&gt; is said to expand to this:
+&gt;
+&gt;    (lambda (x)
+&gt;      (letrec* ([even? (lambda (n)
+&gt;                         (or (= n 0) (not (even? (- n 1)))))])
+&gt;        (even? x)))
+&gt;
+&gt; What happened to the squaring operation?  Shouldn't the expansion be
+&gt; this?:
+&gt;
+&gt;    (lambda (x)
+&gt;      (letrec* ([even? (lambda (n)
+&gt;                         (or (= n 0) (not (even? (- n 1)))))])
+&gt;        (not (even? (if (not (even? x)) (* x x) x)))))
+&gt;
+
+Definitely.  Thanks.
+
+&gt; * Near the end of section 3.5, the third bulleted item is:
+&gt;
+&gt;    a nonlist, novector, nonsymbol value, or
+&gt;
+&gt; &quot;Novector&quot; should be &quot;nonvector.&quot;
+
+Thanks.
+
+&gt; * In section 3.6, the paragraph describing ellipses says, &quot;otherwise,
+&gt; the expander would not be able to determine how many times the subform
+&gt; should be repeated in the output.&quot;  I've never understood precisely
+&gt; how Scheme macro systems decide how many expansions to do for a
+&gt; particular use of ellipses in the output template.  I can usually
+&gt; intuit what will happen, but I've never had a concrete understanding
+&gt; of the algorithm.  Would it be possible to expand on the algorithm
+&gt; here to make it absolutely clear?
+
+Probably.  I've made a note to try to do this at some point.
+
+&gt; For example, in the definition of `case' that follows in that section,
+&gt; how are the ellipses that I've marked &quot;question&quot; below expanded?  Both
+&gt; `k' and `e2' are followed by ellipses in the pattern, and both appear
+&gt; in the template expression there.  How do we know to expand the
+&gt; template expression once per that particular part of the pattern?
+&gt;
+&gt;    (define-syntax case
+&gt;      (lambda (x)
+&gt;        (syntax-case x (else)
+&gt;          [(_ e0 [(k ...) e1 e2 ...] ... [else else-e1 else-e2 ...])
+&gt;           #'(let ([t e0])
+&gt;               (cond
+&gt;                 [(memv t '(k ...)) e1 e2 ...]
+&gt;                 ...             ;; question
+&gt;                 [else else-e1 else-e2 ...]))]
+&gt;          [(_ e0 [(ka ...) e1a e2a ...] [(kb ...) e1b e2b ...] ...)
+&gt;           #'(let ([t e0])
+&gt;               (cond
+&gt;                 [(memv t '(ka ...)) e1a e2a ...]
+&gt;                 [(memv t '(kb ...)) e1b e2b ...]
+&gt;                 ...))])))
+
+Both k and e2 are directly followed by an ellipsis, and the pattern
+containing the two of them is also followed by an ellipsis.  So both must
+be followed by at least two ellipses in the output.  They are.  k and e2
+are each directly followed by an ellipsis in the template, and the
+template containing both is also followed by an ellipsis, the one you've
+marked.  If you think about each ellipsis as a mapping operation, the
+marked ellipsis maps a procedure that constructs one cond clause over a
+list of a list of k's, a list of e1's and a list of a list of e2's.  The
+ellipsis following k in the template maps the identity function over the
+list of k's---in other words, it simply returns the list of k's.
+
+&gt; * In section 3.10, a definition is given for `identifier-syntax', but
+&gt; the first clause appears to be missing a call to
+&gt; `make-variable-transformer', which I've added here:
+&gt;
+&gt;    (define-syntax identifier-syntax
+&gt;      (syntax-rules (set!)
+&gt;        [(_ e)
+&gt;         (make-variable-transformer  ;; Should this be added?
+&gt;           (lambda (x)
+&gt;             (syntax-case x ()
+&gt;               [id (identifier? #'id) #'e]
+&gt;               [(_ x (... ...)) #'(e x (... ...))])))]
+&gt;        [(_ (id exp1) ((set! var val) exp2))
+&gt;         (and (identifier? #'id) (identifier? #'var))
+&gt;         (make-variable-transformer
+&gt;           (lambda (x)
+&gt;             (syntax-case x (set!)
+&gt;               [(set! var val) #'exp2]
+&gt;               [(id x (... ...)) #'(exp1 x (... ...))]
+&gt;               [id (identifier? #'id) #'exp1])))]))
+
+Actually, the call to make-variable-transformer should not appear, so
+that the expander never passes a set! expression to the transformer when
+that form of identifier-syntax is used.
+
+Kent Dybvig
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00057" href="msg00057.html">Re: comments on and questions about SRFI 93</a></strong>
+<ul><li><em>From:</em> Arthur A. Gleckler</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00033" href="msg00033.html">comments on and questions about SRFI 93</a></strong>
+<ul><li><em>From:</em> Arthur A. Gleckler</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00042.html">Re: More semantics</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00044.html">Re: Wrapping</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00033.html">comments on and questions about SRFI 93</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00057.html">Re: comments on and questions about SRFI 93</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00043"><strong>Date</strong></a></li>
+<li><a href="threads.html#00043"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

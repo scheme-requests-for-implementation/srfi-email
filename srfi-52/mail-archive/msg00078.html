@@ -1,0 +1,165 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: RESET     [was Re: Encodings] -->
+<!--X-From-R13: "Penqq I. Embalr" <oenqq+fesvNfmbalr.pbz> -->
+<!--X-Date: Sat, 14 Feb 2004 20:38:46 +0100 (NFT) -->
+<!--X-Message-Id: 20040214193839.GC20947@ogre.szonye.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20040213175508.GA16778@ogre.szonye.com -->
+<!--X-Reference: BC52849E.A528%schlie@comcast.net -->
+<!--X-Reference: 20040213185332.GC16778@ogre.szonye.com -->
+<!--X-Reference: 200402140827.18633.Ken.Dickey@allvantage.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: RESET     [was Re: Encodings]</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00077.html">Date Prev</a>][<a href="msg00079.html">Date Next</a>][<a href="msg00077.html">Thread Prev</a>][<a href="msg00079.html">Thread Next</a>][<a href="maillist.html#00078">Date Index</a>][<a href="threads.html#00078">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: RESET     [was Re: Encodings]</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-52@DOMAIN.HIDDEN">srfi-52@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: RESET     [was Re: Encodings]</li>
+<li><em>From</em>: &quot;Bradd W. Szonye&quot; &lt;<a href="mailto:bradd%2Bsrfi@DOMAIN.HIDDEN">bradd+srfi@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 14 Feb 2004 11:38:39 -0800</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-52@DOMAIN.HIDDEN">srfi-52@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:200402140827.18633.Ken.Dickey@DOMAIN.HIDDEN">200402140827.18633.Ken.Dickey@xxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Mail-followup-to</em>: <a href="mailto:srfi-52@DOMAIN.HIDDEN">srfi-52@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>References</em>: &lt;<a href="mailto:20040213175508.GA16778@DOMAIN.HIDDEN">20040213175508.GA16778@xxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:BC52849E.A528%25schlie@DOMAIN.HIDDEN">BC52849E.A528%schlie@xxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20040213185332.GC16778@DOMAIN.HIDDEN">20040213185332.GC16778@xxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:200402140827.18633.Ken.Dickey@DOMAIN.HIDDEN">200402140827.18633.Ken.Dickey@xxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mutt/1.4.1i</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Ken Dickey wrote:
+&gt; Let's say there are two scheme source files, each of which uses the
+&gt; &quot;same&quot; identifier in the same global (module global) scope/context.
+&gt; We say that in a RNRS Scheme the identifier names or denotes the same
+&gt; value.
+&gt; 
+&gt; Let's say the two files are stored in different encodings (say utf-8
+&gt; and ucs-2) and processed by different but conforming Unicode systems
+&gt; (text editors, Scheme read/write, whatever) so that identifiers still
+&gt; appear the same when displayed but are stored in different encodings.
+&gt; 
+&gt; A Scheme implementation which properly reads the two files should end
+&gt; up with the identifier occurrences denoted above represented by
+&gt; symbols which are eq?  (NB: _not_ eqv?) to each other.  If not, I term
+&gt; this &quot;broken&quot;.
+
+That's the essence of the conformance requirement I quoted earlier. If a
+process claims to support Unicode, UTF-8, and UCS-2, then all of the
+many ways of encoding the same character or symbol *must* be recognized
+as canonically identical (EQ? in Scheme terms).
+
+Also, that's the whole reason that the &quot;normalization forms&quot; exist: They
+make it easier to compare text for canonical equivalence. They're very
+similar to the C function strxfrm, which changes a string to a form that
+is easier to compare and collate. (The major difference is that a normal
+form is still directly printable; the result of strxfrm is not.)
+
+A process *could* keep all text in its original format, with some
+characters in fully-composed (NFC) UTF-8 and others in fully-decomposed
+(NFD) UTF-32. Checking for canonical equivalence would involve some
+complicated function that interprets and normalizes characters on the
+fly (like using &quot;strcoll&quot; in C). But it's usually easier to transform
+all strings into some &quot;normal&quot; form -- make them all NFC UTF-32 first --
+and use a simple binary comparison (like usign &quot;strxfrm&quot; then &quot;strcmp&quot;
+in C).
+
+Your earlier idea of using separate programs to convert and then process
+characters was on the right track. The only flaw (and it's a big flaw)
+was the idea of putting them into completely separate processes.
+
+&gt; So if a glyph/character does not have a case variant, considering it
+&gt; to be lower case makes no logical sense.  I view this as an abuse of
+&gt; terminology.  Being outside of normal logic, I term this &quot;bizarre&quot; and
+&gt; if pressed, probably &quot;broken&quot; as well.
+
+In that case, the German language is &quot;broken.&quot; The &#xDF; character is
+lowercase, but it's generally impossible to use it in a round-trip
+&quot;raise and lower case&quot; process.
+
+There are many situations where you need to know what words mean in
+order to judge whether they're really the &quot;same thing.&quot; Computers aren't
+very good at that, so programmers need to be careful about (for example)
+using homonyms as identifiers. If you have two identifiers named
+&quot;resume,&quot; you can't expect the computer to tell them apart just because
+one of them means &quot;restart&quot; and the other means &quot;curriculum vitae.&quot;
+
+The trouble with &#xDF; is that the computer must understand the meaning of
+words just to do &quot;mechanical&quot; transformations like changing case! Many
+programmers assume that you can change case without understanding, but &#xDF;
+is the classic example of why that is impossible. (It's not the only
+example. For example, what's the lowercase version of SMITH? In English,
+that depends on whether it's a surname or a job title.)
+
+I think this is getting off on a bit of a tangent from what you're
+talking about, so please excuse me for going off on a rant! Programmers
+-- at least English-speaking ones -- have historically over-simplified
+the issues related to lettercasing, and some of the problems have made
+their way into the Scheme standard.
+-- 
+Bradd W. Szonye
+<a  rel="nofollow" href="http://www.szonye.com/bradd">http://www.szonye.com/bradd</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00044" href="msg00044.html">Re: Encodings.</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+<li><strong><a name="00048" href="msg00048.html">Re: Encodings.</a></strong>
+<ul><li><em>From:</em> Paul Schlie</li></ul></li>
+<li><strong><a name="00049" href="msg00049.html">Re: Encodings.</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+<li><strong><a name="00076" href="msg00076.html">RESET     [was Re: Encodings]</a></strong>
+<ul><li><em>From:</em> Ken Dickey</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00077.html">Re: RESET     [was Re: Encodings]</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00079.html">Tom's absence</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00077.html">Re: RESET     [was Re: Encodings]</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00079.html">Tom's absence</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00078"><strong>Date</strong></a></li>
+<li><a href="threads.html#00078"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

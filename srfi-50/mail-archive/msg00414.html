@@ -1,0 +1,151 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: strings draft -->
+<!--X-From-R13: Euveb Ynjnv <fuvebNynin.arg> -->
+<!--X-Date: Mon, 26 Jan 2004 05:57:47 +0100 (MET) -->
+<!--X-Message-Id: 20040125.185733.805760986.shiro@lava.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200401260301.TAA18438@morrowfield.regexps.com -->
+<!--X-Reference: 87r7xns9bl.wl@strelka.synthcode.com -->
+<!--X-Reference: 200401260327.TAA18856@morrowfield.regexps.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: strings draft</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00413.html">Date Prev</a>][<a href="msg00415.html">Date Next</a>][<a href="msg00413.html">Thread Prev</a>][<a href="msg00415.html">Thread Next</a>][<a href="maillist.html#00414">Date Index</a>][<a href="threads.html#00414">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: strings draft</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a></li>
+<li><em>Subject</em>: Re: strings draft</li>
+<li><em>From</em>: Shiro Kawai &lt;<a href="mailto:shiro@DOMAIN.HIDDEN">shiro@xxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 25 Jan 2004 18:57:33 -1000 (HST)</li>
+<li><em>Cc</em>: <a href="mailto:foof@DOMAIN.HIDDEN">foof@xxxxxxxxxxxxx</a>, <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:200401260327.TAA18856@DOMAIN.HIDDEN">200401260327.TAA18856@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:200401260301.TAA18438@DOMAIN.HIDDEN">200401260301.TAA18438@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:87r7xns9bl.wl@DOMAIN.HIDDEN">87r7xns9bl.wl@xxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:200401260327.TAA18856@DOMAIN.HIDDEN">200401260327.TAA18856@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>From: Tom Lord &lt;lord@xxxxxxx&gt;
+Subject: Re: strings draft
+Date: Sun, 25 Jan 2004 19:27:58 -0800 (PST)
+
+&gt; I'm not aware enough about the details of Shiro's.  All I'm (sort of)
+&gt; aware of is that he's dealing with a EUCJP -- which sounds very
+&gt; challenging if you want to wind up with an implementation suitable for
+&gt; intensive string processing.   (Unicode is similarly challenging.)
+
+To be precise, what I'm dealing with is to use a CES-independent
+multibyte string representation, currently including utf-8, EUC-JP,
+and Shift_JIS.  EUC-CN, EUC-TW and EUC-KR should be supported
+easily.   I exclude stateful encodings, like ISO2022
+with stateful escape sequences.  (EUC is subset of ISO2022,
+but it only uses single shift escape, thus effectively it's stateless).
+
+Tom, if you have specific instance that discourages mb string,
+I'm curious about hearing it, either off-list or on-list.
+
+The following is a discussion that why I think mb string is
+feasible.  Those who aren't interested can skip it.
+
+ * * *
+
+&quot;Intensive string processing&quot; would vary for application domains.
+The domain I'm looking at has these properties:
+
+  * very frequent use of regexp.
+  * strings are hardly mutated.
+  * lots of data passing between external programs/libraries.
+
+Regexp engine can be implemented on multibyte strings almost as
+efficient as &quot;uniform character array&quot; string, by compiling regexp
+into octet-stream NFA/DFA.  Currently the only penalty of my
+implementation is when you use a character range including large
+character set.  It can be optimized, I think.
+
+Regexp is heavily used to extract a part of string.  Returning
+substring directly is very efficient if you share the string body.
+Using string indices can be actually less efficient, even if you
+use uniform character array strings.
+
+Multibyte representation doesn't necessarily put a penalty to
+use large corpora; e.g. suffix array can be constructed and used
+efficiently using byte index (actually, any kind of string reference).
+
+Most external libraries and programs nowadays require strings
+to be passed in some sort of multibyte format.  If you can use
+the same multibyte format internally, sending and receiving
+data have little overhead.   It may not help when you're writing
+a program that will be used on wide variety of environments,
+but it is an advantage if you're writing in-house tools where
+you have knowledge of which encoding is used in the environment.
+
+Of course I don't insist multibyte strings is generally superior.
+Actually I'm not 100% sure multibyte strings doesn't have serious
+problems.  But I was curious, so I started implementing it,
+and haven't seen a serious problem yet, though there are
+some unresolved issues (like how to tread illegal byte sequences).
+
+--shiro
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00411" href="msg00411.html">Re: strings draft</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00412" href="msg00412.html">Re: strings draft</a></strong>
+<ul><li><em>From:</em> Alex Shinn</li></ul></li>
+<li><strong><a name="00413" href="msg00413.html">Re: strings draft</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00413.html">Re: strings draft</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00415.html">Re: strings draft</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00413.html">Re: strings draft</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00415.html">Re: strings draft</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00414"><strong>Date</strong></a></li>
+<li><a href="threads.html#00414"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

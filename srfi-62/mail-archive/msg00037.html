@@ -1,0 +1,152 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Formal spec; implementation; nesting -->
+<!--X-From-R13: Bnhy Epuyvr <fpuyvrNpbzpnfg.arg> -->
+<!--X-Date: Tue, 11 Jan 2005 23:29:42 +0100 (NFT) -->
+<!--X-Message-Id: BE09BD72.897F%schlie@comcast.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200501102321.PAA06096@radish.petrofsky.org -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Formal spec; implementation; nesting</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00036.html">Date Prev</a>][<a href="msg00038.html">Date Next</a>][<a href="msg00036.html">Thread Prev</a>][<a href="msg00038.html">Thread Next</a>][<a href="maillist.html#00037">Date Index</a>][<a href="threads.html#00037">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Formal spec; implementation; nesting</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Alpert Herb Petrofsky &lt;<a href="mailto:al@DOMAIN.HIDDEN">al@xxxxxxxxxxxxx</a>&gt;,	&lt;<a href="mailto:srfi-62@DOMAIN.HIDDEN">srfi-62@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Formal spec; implementation; nesting</li>
+<li><em>From</em>: Paul Schlie &lt;<a href="mailto:schlie@DOMAIN.HIDDEN">schlie@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 11 Jan 2005 17:29:22 -0500</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-62@DOMAIN.HIDDEN">srfi-62@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:200501102321.PAA06096@DOMAIN.HIDDEN">200501102321.PAA06096@xxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Microsoft-Entourage/11.1.0.040913</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>(sorry for my delayed response)
+
+&gt; From: Alpert Herb Petrofsky &lt;al@xxxxxxxxxxxxx&gt;
+&gt;&gt; Date: Mon, 10 Jan 2005 17:14:56 -0500
+&gt;&gt; From: Paul Schlie &lt;schlie@xxxxxxxxxxx&gt;
+&gt;&gt; 
+&gt;&gt; So in summary, it would seem that all reader actions invoked by a reader
+&gt;&gt; transform token should apply to the following correspondingly processed
+&gt;&gt; &lt;s-exp&gt;, implying: (showing only reader actions)
+&gt;&gt; 
+&gt;&gt;  (' ' &lt;s-exp&gt;) :: ({quote {quote &lt;s-exp&gt;}}) =&gt; ((quote (quote &lt;s-exp&gt;)))
+&gt;&gt; 
+&gt;&gt;  (#; #; &lt;s-exp&gt;) :: ({remove {remove &lt;s-exp&gt;}}) =&gt; ()
+&gt;&gt; 
+&gt;&gt;  (#; ' &lt;s-exp&gt;) :: ({remove {quote &lt;s-exp&gt;}}) =&gt; ()
+&gt;&gt;  
+&gt;&gt;  (' #; &lt;s-exp&gt;) :: ({quote {remove &lt;s-exp&gt;}}) =&gt; (') ; error, unbound 'quote
+&gt; 
+&gt; Would you agree that these should be equivalent?:
+&gt; 
+&gt;    (' #; a b)
+&gt;    ('      b)
+
+- no, just as I wouldn't expect (as it would be wrong):
+
+  (' ' a b) :: ({quote '} a b) =&gt; (' b c) :: ({quote b} c) =&gt; ((quote b) c)
+
+As clearly to be consistent with the present scope of the 'quote semantic
+action applied by the reader, a reader semantic action must be applied to
+its following correspondingly processed &lt;s-exp&gt; (right recursive), not prior
+to it, yielding:
+
+  (' ' a b) :: ({quote {quote a}} b) =&gt; ((quote (quote a)) b)
+
+Therefore by analogy: [presuming (') =&gt; &lt;nothing&gt;, as opposed to an error]
+
+  (' #; a b) :: ({quote {remove a}}) =&gt; (b)
+
+&gt; How about these?:
+&gt; 
+&gt;    (#; #; a b)
+&gt;    (#;      b)
+
+- as above.
+
+&gt; I think what you're missing in your comparison of ' and #; is this:
+&gt; 
+&gt; ' consumes one sexp and produces one sexp.  The resulting sexp can
+&gt; then be used as the argument of another '.  In contrast, #; consumes
+&gt; one sexp and produces zero sexps.  The resulting nothingness cannot be
+&gt; used as the argument to another #; because nothing is not a sexp.
+
+- I simply argue that the scope of the action is determined prior to
+  the semantic action, not following it; therefore the outer remove ends
+  up being applied to the &lt;s-exp&gt; which has already been removed by it's
+  preceding reader semantic action, (just as expression arguments are
+  first evaluated prior to the expression/function itself; but after
+  the expressions scope and arguments were previously determined.)
+
+Do you really see value in advocating:
+
+(#; #; a #; b c d #; e f) :: ({rem a} {rem b} {rem c} d {rem e} f)
+
+Being more useful than error prone (or simply nasty)?
+
+To me unfortunately, it would seem to be a big mistake.
+
+
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00035" href="msg00035.html">Formal spec; implementation; nesting</a></strong>
+<ul><li><em>From:</em> Alpert Herb Petrofsky</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00036.html">Re: Formal spec; implementation; nesting</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00038.html">Re: Formal spec; implementation; nesting</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00036.html">Re: Formal spec; implementation; nesting</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00038.html">Re: Formal spec; implementation; nesting</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00037"><strong>Date</strong></a></li>
+<li><a href="threads.html#00037"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

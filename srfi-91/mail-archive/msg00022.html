@@ -1,0 +1,147 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Issues with Unicode -->
+<!--X-From-R13: Euveb Ynjnv <fuvebNynin.arg> -->
+<!--X-Date: Wed, 10 May 2006 04:28:05 +0200 (MST) -->
+<!--X-Message-Id: 20060509.162828.739305433.shiro@lava.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: y9lbqushdsw.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: 803467D9&#45;D753&#45;4E8A&#45;AAEA&#45;2F03E97EDB42@iro.umontreal.ca -->
+<!--X-Reference: 1147187289.13545.134.camel@vmx.eros&#45;os.org -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Issues with Unicode</title>
+<link rev="made" href="mailto:shiro@lava.net">
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00021.html">Date Prev</a>][<a href="msg00023.html">Date Next</a>][<a href="msg00025.html">Thread Prev</a>][Thread Next][<a href="maillist.html#00022">Date Index</a>][<a href="threads.html#00022">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Issues with Unicode</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-91%40srfi.schemers.org">srfi-91@srfi.schemers.org</a></li>
+<li><em>Subject</em>: Re: Issues with Unicode</li>
+<li><em>From</em>: Shiro Kawai &lt;<a href="mailto:shiro%40lava.net">shiro@lava.net</a>&gt;</li>
+<li><em>Date</em>: Tue, 09 May 2006 16:28:28 -1000 (HST)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-91%40srfi.schemers.org">srfi-91@srfi.schemers.org</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:1147187289.13545.134.camel%40vmx.eros-os.org"><a href="msg00018.html">1147187289.13545.134.camel@vmx.eros-os.org</a></a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:y9lbqushdsw.fsf%40informatik.uni-tuebingen.de">y9lbqushdsw.fsf@informatik.uni-tuebingen.de</a>&gt;	&lt;<a href="mailto:803467D9-D753-4E8A-AAEA-2F03E97EDB42%40iro.umontreal.ca">803467D9-D753-4E8A-AAEA-2F03E97EDB42@iro.umontreal.ca</a>&gt;	&lt;<a href="mailto:1147187289.13545.134.camel%40vmx.eros-os.org"><a href="msg00018.html">1147187289.13545.134.camel@vmx.eros-os.org</a></a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Gauche has been supporting binary/character mixed port, as
+well as multiple character encoding schemes, for several
+years by now, and I have obtained some experience from it.
+
+I agree that mixing them is a semantic mess.  The fundamental
+issue here is that the port is an interface between the Scheme
+world and the external world, and the external world IS a mess.
+If you've written an application to process emails, collect
+documents from web, or search documents in your harddisk,
+you must know it---in general, you are given a file, and you
+don't know which encoding it is in until you actually read
+the content and examine it (you have to try several heuristics,
+and even need to guess sometime).
+
+The choice is either to make ports handle the mess, or to break
+up the concept of ports into layers and allow mess-handling
+code to be inserted between them.  I understand srfi-68 tried
+the latter, which is cleaner IMHO, but has an efficiency issue.
+Gauche chose the former (i.e. the native ports support char/binary
+mixed I/O, as well as various codec conversion) because of
+efficiency.
+
+As the aim differ among implmentations, I don't like the basic
+srfi to force an implementor to take a specific implementation
+strategy.  Mandating char/binary mixed port would cause difficulty
+in some implementations.  OTOH, mandating strict char/binary port
+separation would also cause efficiency issue in some
+implementations (see below for why one would want such mixed ports).
+
+So, I like the basic srfi that doesn't mandate, but allows,
+a char/binary mixed port.  The srfi can have a procedure that
+may create a binary port from a char port, which can be something
+like this:
+
+  (char-port-&gt;binary-port &lt;char-port&gt; [&lt;encoding&gt;])
+      =&gt; &lt;binary-port&gt;
+
+If the implementation supports char/binary mixed port and
+&lt;encoding&gt; matches its internal encoding, it can return
+&lt;char-port&gt; itself, avoiding the overhead.
+
+One use case of such mix is to read a document with the
+following characteristics: you know the beginning of the
+document consists of ASCII characters, which might contain
+an explicit specification of the character set of the following
+content.  If the beginning part doesn't contain character
+set spec, you use some default encoding which is an extension
+of ASCII.
+
+Large number of documents out there falls into this category:
+all XML and HTML documents, for example (as of HTML, I mean the
+line like
+&lt;meta http-equiv=&quot;content-type&quot; content=&quot;text/html; charset=euc-jp&quot;&gt;)
+Gauche also allows the Scheme program source contains charset
+spec in the comment near the beginning of the program.
+
+If you can mix char/binary port, you can create a port with a
+default encoding, read the beginning part.  If it doesn't
+have an explicit spec, presumably which is a typical case, you
+can just use the port without overhead; if it has an explicit
+char-set spec, you can insert some codec which reads the rest
+of the input as binary.
+
+--shiro
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00018" href="msg00018.html">Re: Issues with Unicode</a></strong>
+<ul><li><em>From:</em> &quot;Jonathan S. Shapiro&quot; &lt;shap@eros-os.org&gt;</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00021.html">Re: Issues with Unicode</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00023.html">Re: Issues with Unicode</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00025.html">Re: Issues with Unicode</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00022"><strong>Date</strong></a></li>
+<li><a href="threads.html#00022"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,234 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Some Questions -->
+<!--X-From-R13: Oaqer ina Fbaqre <naqerNurg.oebja.rqh> -->
+<!--X-Date: Sun,  5 Oct 2003 22:38:29 +0200 (DFT) -->
+<!--X-Message-Id: y9l4qynqv4q.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 01C38770.DAEF2B20.pbewig@swbell.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Some Questions</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00002.html">Date Prev</a>][<a href="msg00004.html">Date Next</a>][<a href="msg00002.html">Thread Prev</a>][<a href="msg00004.html">Thread Next</a>][<a href="maillist.html#00003">Date Index</a>][<a href="threads.html#00003">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Some Questions</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-45@DOMAIN.HIDDEN">srfi-45@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Some Questions</li>
+<li><em>From</em>: Andre van Tonder &lt;<a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 1 Oct 2003 13:15:29 -0400 (EDT)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-45@DOMAIN.HIDDEN">srfi-45@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:01C38770.DAEF2B20.pbewig@DOMAIN.HIDDEN">01C38770.DAEF2B20.pbewig@xxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Gnus/5.090019 (Oort Gnus v0.19) XEmacs/21.5 (cassava, berkeley-unix)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>On Tue, 30 Sep 2003, Phil Bewig wrote:
+
+&gt; Good job!  In fact, I have already appropriated your delay/force
+&gt; primitives for my SRFI-40 streams reference implementation, and
+&gt; all seems to be working well.  I have some questions:
+
+Thank you very much for your insightful post.  I'll try to answer the
+points you raised below: 
+
+&gt; 
+&gt; 1)  Given the minimalist spirit of Scheme, why did you decide to
+&gt; make lazy a primitive?  It doesn't have to be.  You could define
+&gt; delay and force by inlining the definitions of lazy and strict
+&gt; into delay:
+&gt; 
+&gt;     (define-syntax delay
+&gt;       (syntax-rules ()
+&gt;         ((delay exp)
+&gt;           (cons 'suspension
+&gt;             (lambda () (cons 'value exp))))))
+&gt; 
+&gt;     (define (force promise)
+&gt;       (case (car promise)
+&gt;         ((value)      (cdr promise))
+&gt;         ((suspension) (let ((val ((cdr promise))))
+&gt;                         (set-car! promise (car val))
+&gt;                         (set-cdr! promise (cdr val))
+&gt;                         (force promise)))))
+&gt; 
+&gt; Then (lazy ...) is just the composition of delay and force, as in
+&gt; Wadler's transformation, and is no longer primitive.  
+
+Unfortunately this would not work - with this suggested solution in
+MzScheme the (loop) example runs out of memory quickly, and for the same
+reason that the R5RS (delay (force ...)) does.  If you follow the
+execution of *force*, all the recursion would happen in the first line of
+the *let* form, which is not a tail call.  The nested calls to ((cdr
+promise)) would never return, so the heap would just keep growing.  
+
+So I still cannot see a way of avoiding the need for an &quot;atomic&quot; (lazy
+...).
+
+&gt; 
+&gt; 2)  R5RS suggests that calling force on an object that is not a
+&gt; promise may simply return the object instead of causing an error.
+&gt; In the reference implementation, something will eventually break
+&gt; if force is applied to an object that is not a promise, though
+&gt; the error may be signaled in a non-obvious way.  Did you consider
+&gt; allowing force to simply return if passed an object that is not a
+&gt; promise?  The advantage is that it eliminates a potential error
+&gt; message; the disadvantage is that it admits imprecision in dealing
+&gt; with types.
+
+A previous version that I had written worked this way (in fact, if we
+allow this, we can get away with just the two primitives *lazy* and
+*force* instead of three, which was a nice bonus).  I discarded it because
+the typing was not so pretty.  Also, even though the suggestion is not
+against the letter of R5RS, the Scheme implementations that I am familiar
+with, as well as the R5RS reference implementation, do not work this way.  
+
+Improved error checking is probably a good idea.  
+
+&gt; 
+&gt; 3)  Since you have created a new data type of promises (or maybe
+&gt; it is better to say you have re-created an old type of promises),
+&gt; would you perhaps like to specify a (promise? obj) function that
+&gt; takes an object and returns #t if the object is a promise and #f
+&gt; otherwise?  Would you also perhaps like to specify two additional
+&gt; predicates (forced-promise? obj) and (suspended-promise? obj)
+&gt; that can distinguish between a forced promise and a suspended
+&gt; promise?  Note that given your current reference implementation
+&gt; it is possible to distinguish a promise from its forced value,
+&gt; which R5RS says is not necessary for a conforming implementation,
+&gt; though it allows the possibility.
+
+This could be added.  However, I was hesitant to add features not in
+R5RS and that were not directly related to the problem of iterative
+behavior which the SRFI addresses.  Regarding this feature in particular,
+I was hesitant to try to address the question of type 
+opaqueness/disjointness, which is somewhat othogonal this SRFI, and
+to which I don't know the right answer.  Also, some Scheme implementations
+have a promise? predicate and others don't.  I'm curious about the
+reasons.  
+
+&gt; 
+&gt; For purposes of your reference implementation you could create
+&gt; these predicates using SRFI-9 records.  In fact, you could even
+&gt; replace the cons-pairs in your implementation with the fields of
+&gt; records:
+&gt; 
+
+True, but there may be some value in avoiding a dependency
+on another SRFI.  Also, since each Scheme has its own native way 
+of marking disjoint types and since various Schemes have their own
+native records with different syntaxes, maybe the issue is better left to
+implementors.   
+
+&gt; 4)  Could you please state explicitly how you have extended the
+&gt; semantics of R5RS force?  In particular, I am looking for a
+&gt; specific example where SRFI-45 force would give a different
+&gt; answer than R5RS force.  
+
+(force (lazy exp)) -&gt; (force exp) iteratively.
+
+Otherwise (if program does not contain &quot;lazy&quot;) no difference.  
+
+&gt; This is a hard question because different
+&gt; Scheme implementations give different semantics for R5RS force, as
+&gt; in the SRFI-40 discussion of my first reference implementation
+&gt; which worked in some Scheme implementations but not others (which
+&gt; of course begs the question of *exactly* what is the semantics of
+&gt; R5RS force).  When you answer, assume a Scheme implementation like
+&gt; scheme48 where my first reference implementation actually worked.
+
+This is very interesting.  I don't have access to Scheme48 but I would
+be very interested to know if the infinite loop benchmarks I provide are
+passed by Scheme48 using the native (delay (force ...)) instead of lazy.
+If someone has the time to run a couple of them, I would be grateful to
+hear about the results.    
+
+&gt; A corollary to this question is: would any program that uses the
+&gt; R5RS definitions of delay and force break if replaced by the
+&gt; SRFI-45 definitions of delay and force?
+&gt; 
+
+No.  They shouldn't.  
+
+&gt; 5)  In your Benchmarks, why did you decide to delay the result of
+&gt; stream-ref?  
+
+In previous attempts to solve the problem I had had unexpected leaks
+appear when composing lazy functions as in my version of the
+times3 example.  So I kept stream-ref lazy for the purpose of testing this
+issue.  
+
+&gt; 
+&gt; 6)  Why did you decide to order the arguments to stream-ref as
+&gt; (stream-ref index s) instead of (stream-ref s index)?  In SRFI-40,
+
+Since it is only a test suite, I didn't worry about this inconsistency.
+Initially I had it the other way around, but got tired of getting the 
+nesting level of the 3 wrong in e.g. 
+   (..... (stream-ref ( .....
+                        nontrivial expression
+                        ......)...)
+                      3)....)
+
+By the way, it does seem inconsistent to me that the order in
+stream-filter would differ from that in stream-ref.  To
+me they are morally similar... :-) 
+
+Best regards
+Andre
+
+
+                     
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00002.html">Re: Some Questions</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00004.html">Re: Some Questions</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00002.html">Re: Some Questions</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00004.html">Re: Some Questions</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00003"><strong>Date</strong></a></li>
+<li><a href="threads.html#00003"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

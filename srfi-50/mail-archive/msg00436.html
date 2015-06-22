@@ -1,0 +1,172 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Strings, one last detail. -->
+<!--X-From-R13: orne <orneNfbavp.arg> -->
+<!--X-Date: Sat, 31 Jan 2004 21:26:02 +0100 (MET) -->
+<!--X-Message-Id: Pine.LNX.4.58.0401311138240.31937@bolt.sonic.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20040122.190329.579644543.shiro@lava.net -->
+<!--X-Reference: 200401240045.QAA28248@morrowfield.regexps.com -->
+<!--X-Reference: 20040123.172656.899859146.shiro@lava.net -->
+<!--X-Reference: 20040125.235807.67880629.shiro@lava.net -->
+<!--X-Reference: Pine.LNX.4.58.0401301237450.3363@bolt.sonic.net -->
+<!--X-Reference: 200401310027.QAA22421@morrowfield.regexps.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Strings, one last detail.</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00435.html">Date Prev</a>][<a href="msg00437.html">Date Next</a>][<a href="msg00435.html">Thread Prev</a>][<a href="msg00437.html">Thread Next</a>][<a href="maillist.html#00436">Date Index</a>][<a href="threads.html#00436">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Strings, one last detail.</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Tom Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Strings, one last detail.</li>
+<li><em>From</em>: bear &lt;<a href="mailto:bear@DOMAIN.HIDDEN">bear@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 31 Jan 2004 12:25:50 -0800 (PST)</li>
+<li><em>Cc</em>: <a href="mailto:shiro@DOMAIN.HIDDEN">shiro@xxxxxxxx</a>, <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:200401310027.QAA22421@DOMAIN.HIDDEN">200401310027.QAA22421@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:20040122.190329.579644543.shiro@DOMAIN.HIDDEN">20040122.190329.579644543.shiro@xxxxxxxx</a>&gt; &lt;<a href="mailto:200401240045.QAA28248@DOMAIN.HIDDEN">200401240045.QAA28248@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20040123.172656.899859146.shiro@DOMAIN.HIDDEN">20040123.172656.899859146.shiro@xxxxxxxx</a>&gt; &lt;<a href="mailto:20040125.235807.67880629.shiro@DOMAIN.HIDDEN">20040125.235807.67880629.shiro@xxxxxxxx</a>&gt; &lt;<a href="mailto:Pine.LNX.4.58.0401301237450.3363@DOMAIN.HIDDEN">Pine.LNX.4.58.0401301237450.3363@xxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:200401310027.QAA22421@DOMAIN.HIDDEN">200401310027.QAA22421@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+
+
+On Fri, 30 Jan 2004, Tom Lord wrote:
+
+&gt; Bear wrote:
+&gt;    &gt; What's missing is an explicit declaration that it is unspecified
+&gt;    &gt; whether or not values written into the buffer pointed at by the
+&gt;    &gt; result of SCHEME_EXTRACT_STRING mutate the scheme string that
+&gt;    &gt; was originally referred to,
+&gt;
+&gt;Interesting conlusion.  I conclude that EXTRACT must allocate string
+&gt;data which the C code must explicitly free.  I arrived at this through
+&gt;a fairly systematic exploration of the design space (described below).
+
+It's true that having a multi-step procedure where C code asks for the
+string length, allocates the buffer, then aks for the characters to be
+copied into the buffer, does whatever it does, and then disposes of
+the buffer when it doesn't need it anymore, would be more stable and
+general and easily portable to more scheme implementations. That was
+what I initially proposed (that only values, and not pointers, should
+cross the FFI), and that's what I'd still rather see.
+
+However, the general response, as I understood it, was while string
+copying or string-translating costs for SCHEME_EXTRACT_STRING are
+inevitable for implementations that use odd string representations,
+most people felt that is not acceptable to impose a string-copying
+cost on scheme runtimes that *do* represent strings in some form
+comprehensible to C systems.  So, basically, I thought that the &quot;copy
+everything&quot; approach that you and I were advocating had been
+eliminated from discussion.
+
+*IF* the copy-everything approach is not on the table, and
+implementations that store strings internally in a C-comprehensible
+format are supposed to be spared the overhead of copying, then we need
+to warn developers that the pointer they get is unstable, and might
+cease to be valid on any string mutation from the scheme side or on
+garbage collection, and that writing to the buffer is not guaranteed
+to cause mutation to the scheme string.
+
+We need to warn them of this because the write-through question is not
+possible to solve just one way or the other.  Explicitly supporting
+direct write-through mutation is in fact not even possible for
+implementations that must provide SCHEME_EXTRACT_STRING by means of
+copying/translating some other internal representation, or which may
+change internal representations (and locations) on mutation, or which
+have copying garbage collectors.  Conversely, absolutely preventing
+direct write-through mutation entirely is impossible for most
+implementations that store strings in a form that the C code *can*
+understand and which implement SCHEME_EXTRACT_STRING without copying
+the string buffer.  Essentially this seems to partition every
+easily-possible implementation into three classes; either it cannot
+guarantee to support write-through mutation (like mine), or it cannot
+guarantee to prevent it (like S48), or it can guarantee neither (like
+a scheme that uses byte strings but may relocate them on mutation or
+GC).  Shiro's suggestion of forcing the C code to regard this buffer
+as const chars seems to be the best solution.
+
+But if the copy-everything still on the table, then I agree with you,
+that it's definitely a more general, stable, and portable approach,
+and I would support it.  However, I'd also agree with its detractors
+that it imposes a copying overhead on some implementations that could
+have provided visibility to their strings without copying them.  I
+regard this as an entirely acceptable cost, but then I may be biased as
+I couldn't possibly have avoided it anyway.
+
+				Bear
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00437" href="msg00437.html">Re: Strings, one last detail.</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00365" href="msg00365.html">Re: strings draft</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+<li><strong><a name="00388" href="msg00388.html">Re: strings draft</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00391" href="msg00391.html">Re: strings draft</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+<li><strong><a name="00416" href="msg00416.html">Octet vs Char (Re: strings draft)</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+<li><strong><a name="00432" href="msg00432.html">Strings, one last detail.</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+<li><strong><a name="00435" href="msg00435.html">Re: Strings, one last detail.</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00435.html">Re: Strings, one last detail.</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00437.html">Re: Strings, one last detail.</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00435.html">Re: Strings, one last detail.</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00437.html">Re: Strings, one last detail.</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00436"><strong>Date</strong></a></li>
+<li><a href="threads.html#00436"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

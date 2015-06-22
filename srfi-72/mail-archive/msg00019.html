@@ -1,0 +1,190 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: hygiene when using multiple instances of a macro..? -->
+<!--X-From-R13: Yrvgu Ievtug <xjevtugNserr&#45;pbzc&#45;fubc.pbz> -->
+<!--X-Date: Tue,  9 Aug 2005 04:28:40 +0200 (DFT) -->
+<!--X-Message-Id: 200508090227.j792RAW5003230@fcs12.free&#45;comp&#45;shop.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: Pine.GSO.4.60.0508081044380.6390@now.het.brown.edu -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: hygiene when using multiple instances of a macro..?</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00018.html">Date Prev</a>][<a href="msg00020.html">Date Next</a>][<a href="msg00018.html">Thread Prev</a>][<a href="msg00023.html">Thread Next</a>][<a href="maillist.html#00019">Date Index</a>][<a href="threads.html#00019">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: hygiene when using multiple instances of a macro..?</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-72@DOMAIN.HIDDEN">srfi-72@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: hygiene when using multiple instances of a macro..?</li>
+<li><em>From</em>: Keith Wright &lt;<a href="mailto:kwright@DOMAIN.HIDDEN">kwright@xxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 8 Aug 2005 22:27:10 -0400</li>
+<li><em>Cc</em>: <a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-72@DOMAIN.HIDDEN">srfi-72@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:Pine.GSO.4.60.0508081044380.6390@DOMAIN.HIDDEN">Pine.GSO.4.60.0508081044380.6390@xxxxxxxxxxxxxxxxx</a>&gt; (message	from Andre van Tonder on Mon, 8 Aug 2005 10:55:51 -0400 (EDT))</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; From: Andre van Tonder &lt;andre@xxxxxxxxxxxxxxxxx&gt;
+&gt; 
+&gt; Thank you for the example, but shouldn't that be instead:
+&gt; 
+&gt;    (define-syntax (can-we-stand-duplicates a-macro)
+&gt;      (quasisyntax
+&gt;       (if ',a-macro                     ; note quote
+&gt;           (let ((x 3)) (,a-macro #f))
+&gt;           x)))
+&gt; 
+&gt;    (test)    ;==&gt; reference to unidentified identifier: x#top
+
+&gt; On Mon, 8 Aug 2005, Panu wrote:
+&gt; 
+&gt; &gt; ... if it works wrong, it expands to (something that evaluates to) 3.
+&gt; &gt; If it works right, it expands to something that has an unbound
+&gt; &gt; identifier.
+
+I didn't see why the quote is needed, so I ran the original
+example.  When I got an undefined identifier I thought all
+was well, and was about to post a defence of Panu.  Then
+I noticed it was the _wrong_ undefined identifier.
+
+After an afternoon of breaking things and fixing them again
+I was a happier but wiser man.  In the course of my adventures
+I noticed the following code in the reference implementation.
+
+(define (expand-define-syntax t)
+  (let ((t (normalize-definition t #t))
+        (r (make-primitive-renaming-procedure)))
+    (bind-toplevel! (cadr t))
+     `(register-macro ',(binding-name (cadr t))
+                      ,(expand (caddr t)))))
+
+This expands a form like 
+
+ (define-syntax (test)
+   #`(can-we-stand-duplicates can-we-stand-duplicates))
+
+into a call to the |register-macro| procedure called with something
+that looks like
+
+      ((lambda (@test_406)
+	 (lambda (@form_407)
+	   (apply @test_406 @form_407))) ; make |test| take zero args
+       (lambda (@dummy_408)
+         ; make a renamer to apply to all ids in the quasisyntax
+	 (let ((rename_412 (make-meta-renaming-procedure)))
+           ; build the syntax list out of renamed ids
+	   (cons (rename_412 (quote _)
+			     (quote can-we-stand-duplicates)
+			     (quote can-we-stand-duplicates_)
+			     (quote __417))
+		 (cons (rename_412 (quote _)
+				   (quote can-we-stand-duplicates)
+				   (quote can-we-stand-duplicates_)
+				   (quote __417))
+		       (quote ()))))))))
+
+It is then left to the execution phase of the reepl
+(read-expand-execute-print loop) to evaluate that lambda
+expression and register it in the *syntax-environment*.
+Since the reepl always evaluates the top-level form right
+after expanding it, this gets the correct result in the
+end, but if you wanted your expand phase to produce an
+expanded form that could be executed separately, then this
+would be wrong.  You would want you lambda form evaluated
+to a procedure and registered _by the expander_.
+
+On the other hand, I was having so much fun looking at
+the raw lambda expressions that I did not want to evaluate
+them before I could see them.  So I changed it to:
+
+  (define (expand-define-syntax t)
+    (let ((t (normalize-definition t #t))
+          (r (make-primitive-renaming-procedure)))
+      (bind-toplevel! (cadr t))
+      (let ((proc-source (expand (caddr t))))
+        (register-macro (binding-name (cadr t))
+                        (eval proc-source))
+      `(registered-macro ',(binding-name (cadr t))
+                         ',proc-source))))
+
+(define (registered-macro name proc) (void))
+
+This evaluates and registers the transformer procedure
+in the expander phase and expands to something that
+does nothing and yields void at execution time.
+But it does nothing in a way that is fun to watch.
+
+By the way, my transformer procedure looks a bit different
+from yours because I had to change all the sharp signs #\#
+in the identifiers into underscores so that my Scheme
+could read them.  I have a reepl like procedure that
+goes through the file of test cases and compares against
+the correct answers.
+
+-- 
+     -- Keith Wright
+
+Programmer in Chief, Free Computer Shop
+ ---  Food, Shelter, Source code.  ---
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00023" href="msg00023.html">Re: hygiene when using multiple instances of a macro..?</a></strong>
+<ul><li><em>From:</em> Andre van Tonder</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00018" href="msg00018.html">Re: hygiene when using multiple instances of a macro..?</a></strong>
+<ul><li><em>From:</em> Andre van Tonder</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00018.html">Re: hygiene when using multiple instances of a macro..?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00020.html">Re: How many arguments to a macro transformer?</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00018.html">Re: hygiene when using multiple instances of a macro..?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00023.html">Re: hygiene when using multiple instances of a macro..?</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00019"><strong>Date</strong></a></li>
+<li><a href="threads.html#00019"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

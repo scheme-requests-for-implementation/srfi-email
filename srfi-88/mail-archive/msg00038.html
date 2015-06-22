@@ -1,0 +1,193 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Alternative formulations of keywords -->
+<!--X-From-R13: [nep Trryrl <srryrlNveb.hzbagerny.pn> -->
+<!--X-Date: Wed, 12 Apr 2006 06:54:32 +0200 (MST) -->
+<!--X-Message-Id: 53B1378F&#45;DCD9&#45;44AE&#45;B88D&#45;3BC2571CDF89@iro.umontreal.ca -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20060411223534.GD11196@ccil.org -->
+<!--X-Reference: 521C7FC6&#45;47B3&#45;4574&#45;BFA4&#45;C04AB06E2EA5@iro.umontreal.ca -->
+<!--X-Reference: 20060412025426.GG26770@ccil.org -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Alternative formulations of keywords</title>
+<link rev="made" href="mailto:feeley@iro.umontreal.ca">
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00037.html">Date Prev</a>][<a href="msg00039.html">Date Next</a>][<a href="msg00045.html">Thread Prev</a>][<a href="msg00050.html">Thread Next</a>][<a href="maillist.html#00038">Date Index</a>][<a href="threads.html#00038">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Alternative formulations of keywords</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: John Cowan &lt;<a href="mailto:cowan%40ccil.org">cowan@ccil.org</a>&gt;</li>
+<li><em>Subject</em>: Re: Alternative formulations of keywords</li>
+<li><em>From</em>: Marc Feeley &lt;<a href="mailto:feeley%40iro.umontreal.ca">feeley@iro.umontreal.ca</a>&gt;</li>
+<li><em>Date</em>: Wed, 12 Apr 2006 00:54:14 -0400</li>
+<li><em>Cc</em>: <a href="mailto:srfi-89%40srfi.schemers.org">srfi-89@srfi.schemers.org</a>, <a href="mailto:srfi-88%40srfi.schemers.org">srfi-88@srfi.schemers.org</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-88%40srfi.schemers.org">srfi-88@srfi.schemers.org</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20060412025426.GG26770%40ccil.org"><a href="msg00029.html">20060412025426.GG26770@ccil.org</a></a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:20060411223534.GD11196%40ccil.org"><a href="msg00021.html">20060411223534.GD11196@ccil.org</a></a>&gt; &lt;<a href="mailto:521C7FC6-47B3-4574-BFA4-C04AB06E2EA5%40iro.umontreal.ca"><a href="msg00028.html">521C7FC6-47B3-4574-BFA4-C04AB06E2EA5@iro.umontreal.ca</a></a>&gt; &lt;<a href="mailto:20060412025426.GG26770%40ccil.org"><a href="msg00029.html">20060412025426.GG26770@ccil.org</a></a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+On 11-Apr-06, at 10:54 PM, John Cowan wrote:
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+What are the use cases for computed keywords?
+</pre></blockquote><pre style="margin: 0em;">
+
+Here are a few use cases.
+
+</pre><tt>1) You want to write a trace facility to help show the function calls  
+</tt><tt>and returns that are performed.  On entry you want to print the  
+</tt><tt>arguments of the function and the result on exit.  So you write this  
+</tt><tt>higher order function:
+</tt><pre style="margin: 0em;">
+
+(define (trace name f)
+  (lambda args
+    (write (cons name args))
+    (newline)
+    (let ((result (apply f args)))
+      (write result)
+      (newline)
+      result)))
+
+and use it like this:
+
+(define (foo x #!key (y 11) (z 22))
+  (+ x y z))
+
+(set! foo (trace 'foo foo)) ; start tracing foo
+
+(foo 1 z: 2)    will print:   (foo 1 z: 2)
+                              14
+
+</pre><tt>2) You just got hold of this nice graphics library which has many  
+</tt><tt>functions accepting named optional parameters:
+</tt><pre style="margin: 0em;">
+
+(define (text str #!key (size 10) (color 'black)) ...)
+(define (rect x y #!key (width 10) (height 10) (color 'red)) ...)
+
+</pre><tt>You want your students to use it for their next homework.   
+</tt><tt>Unfortunately your students are french and don't know english too  
+</tt><tt>well so you would like to translate the keywords into french to make  
+</tt><tt>the code easier to read.  With computed keywords you get a modular  
+</tt><tt>solution:
+</tt><pre style="margin: 0em;">
+
+
+(define french-to-english
+  '((taille:  . size:)
+    (largeur: . width:)
+    (hauteur: . height:)
+    (append:  . concatener:)
+    (creer:   . create:)
+    (couleur: . color:)))
+
+(define (make-translator dict)
+  (lambda (x)
+    (let ((y (assoc x dict)))
+      (if y (cdr y) x))))
+
+(define translator (make-translator french-to-english))
+
+(define (translate-args args)
+  (if (null? args)
+      '()
+      (cons (translator (car args))
+            (cons (cadr args)
+                  (translate-args (cddr args))))))
+
+(define (translate0 f)
+  (lambda args (apply f (translate-args args))))
+
+(define (translate1 f)
+  (lambda (a . args) (apply f a (translate-args args))))
+
+(define (translate2 f)
+  (lambda (a b . args) (apply f a b (translate-args args))))
+
+(define (translate3 f)
+  (lambda (a b c . args) (apply f a b c (translate-args args))))
+
+
+With these functions you can then do:
+
+(set! text (translate1 text))
+(set! rect (translate2 rect))
+
+(rect 100 200 largeur: 300)
+
+
+</pre><tt>The same code could be used to implement synonyms for the named  
+</tt><tt>parameters (for example a long name and an abbreviation).
+</tt><pre style="margin: 0em;">
+
+Marc
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00050" href="msg00050.html">Re: Alternative formulations of keywords</a></strong>
+<ul><li><em>From:</em> John Cowan &lt;cowan@ccil.org&gt;</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00021" href="msg00021.html">Alternative formulations of keywords</a></strong>
+<ul><li><em>From:</em> John Cowan &lt;cowan@ccil.org&gt;</li></ul></li>
+<li><strong><a name="00028" href="msg00028.html">Re: Alternative formulations of keywords</a></strong>
+<ul><li><em>From:</em> Marc Feeley &lt;feeley@iro.umontreal.ca&gt;</li></ul></li>
+<li><strong><a name="00029" href="msg00029.html">Re: Alternative formulations of keywords</a></strong>
+<ul><li><em>From:</em> John Cowan &lt;cowan@ccil.org&gt;</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00037.html">Re: Alternative formulations of keywords</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00039.html">Re: Alternative formulations of keywords</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00045.html">Re: Alternative formulations of keywords</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00050.html">Re: Alternative formulations of keywords</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00038"><strong>Date</strong></a></li>
+<li><a href="threads.html#00038"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

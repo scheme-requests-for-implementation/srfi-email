@@ -1,0 +1,229 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: How many arguments to a macro transformer? -->
+<!--X-From-R13: Yrvgu Ievtug <xjevtugNserr&#45;pbzc&#45;fubc.pbz> -->
+<!--X-Date: Tue, 26 Jul 2005 05:14:15 +0200 (DFT) -->
+<!--X-Message-Id: 200507260313.j6Q3D5JD003961@fcs12.free&#45;comp&#45;shop.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200507230614.j6N6E25O003862@fcs12.free&#45;comp&#45;shop.com -->
+<!--X-Reference: Pine.GSO.4.60.0507231002230.735@now.het.brown.edu -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: How many arguments to a macro transformer?</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00008.html">Date Prev</a>][<a href="msg00010.html">Date Next</a>][<a href="msg00007.html">Thread Prev</a>][<a href="msg00010.html">Thread Next</a>][<a href="maillist.html#00009">Date Index</a>][<a href="threads.html#00009">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: How many arguments to a macro transformer?</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-72@DOMAIN.HIDDEN">srfi-72@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: How many arguments to a macro transformer?</li>
+<li><em>From</em>: Keith Wright &lt;<a href="mailto:kwright@DOMAIN.HIDDEN">kwright@xxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 25 Jul 2005 23:13:05 -0400</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-72@DOMAIN.HIDDEN">srfi-72@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:Pine.GSO.4.60.0507231002230.735@DOMAIN.HIDDEN">Pine.GSO.4.60.0507231002230.735@xxxxxxxxxxxxxxxxx</a>&gt; (message from	Andre van Tonder on Sat, 23 Jul 2005 10:21:04 -0400 (EDT))</li>
+<li><em>References</em>: &lt;<a href="mailto:200507230614.j6N6E25O003862@DOMAIN.HIDDEN">200507230614.j6N6E25O003862@xxxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:Pine.GSO.4.60.0507231002230.735@DOMAIN.HIDDEN">Pine.GSO.4.60.0507231002230.735@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; From: Andre van Tonder &lt;andre@xxxxxxxxxxxxxxxxx&gt;
+&gt; 
+&gt; On Sat, 23 Jul 2005, Keith Wright wrote:
+&gt; 
+&gt; &gt; Oops!  I said:
+&gt; &gt;
+&gt; &gt;&gt; On the other hand, it seems more consistant if
+&gt; &gt;&gt;
+&gt; &gt;&gt;  (define-syntax (swap! a b) &lt;body)
+&gt; &gt;&gt;
+&gt; &gt;&gt; were the same as
+&gt; &gt;&gt;
+&gt; &gt;&gt;  (define-syntax swap! (lambda ( _ a b) &lt;body&gt; ))
+&gt; &gt;&gt;
+&gt; &gt;&gt; which implies that swap! is right and the rest of
+&gt; &gt;&gt; the program is wrong.
+&gt; &gt;
+&gt; &gt; I just noticed that this is a change you made in
+&gt; &gt; the last revision,
+&gt; 
+&gt; Yes, I indeed made the change
+
+Sorry.  As I said, I was playing with it, not just
+downloading and running.  I got the versions mixed
+and it broke, of course.  I stayed up half the night
+debugging, and when I figured out where it was going
+wrong, I was so proud that I forgot the rule
+&quot;Never post a message after midnight&quot;.
+It's working now.
+
+Oh well, sometimes somebody who doesn't know what he
+is talking about can get the discussion started.
+
+&gt; so that the short form
+&gt; 
+&gt;    (define-syntax (swap! a b)
+&gt; 
+&gt; corresponds to the long form
+&gt; 
+&gt;    (define-syntax swap!
+&gt;      (lambda (form)
+&gt;        (let ((a (cadr  form))
+&gt;              (b (caddr form)))
+&gt; 
+&gt; and /not/
+&gt; 
+&gt;    (define-syntax swap!
+&gt;      (lambda (_ a b) ....
+&gt; 
+&gt; which I had before.
+
+And after a bit of thought I fully endorse this change.
+
+The short form is wonderful; we should keep it just as it is.
+
+(1) It is not possible to make the relation of long form to short
+form for |define-syntax| exactly parallel to that for |define|
+without major changes to the language.  Given that they must be
+different, it is less likely to cause confusion if the difference
+is large.
+
+(2) It is a long tradition that a macro has one argument which is
+bound to the entire form of the macro call.  I think that both
+LISP 1.5 and Common Lisp do it that way.
+
+&gt; While this latter (discarded) format would have been more brief
+&gt; for certain simple (especially lexical) macros, notice that it
+&gt; requires the input form to be a proper list and is therefore
+&gt; less general than the long form
+&gt; 
+&gt;    (define-syntax swap!
+&gt;      (lambda (form)
+&gt; 
+&gt; which can accept dotted lists or (perhaps in future) even single
+&gt; identifiers.
+
+It seems that (lambda form ... ), without the parentheses, would
+be just as general, and the short form is even briefer for the
+simple cases.  But let's just forget that.  Macro procedures have
+just one argument; that's easy to remember.
+
+&gt; The long form is now compatible with the SYNTAX-CASE system.
+
+So there's a third reason.
+
+&gt; However, the short form above is not.  Indeed, I find the short form
+&gt; 
+&gt;    (define-syntax (swap! a b)
+&gt; 
+&gt; more useful than the relatively recently introduced SYNTAX-CASE one:
+&gt; 
+&gt;    (define-syntax (swap! form)
+&gt; 
+&gt; even though the latter would conform more to one's expectations from
+&gt; experience with DEFINE.
+
+I agree that the first of those is better, it makes the definition
+look like the thing it defines.  In fact, the second form seems
+totally perverse.  Please make them stop.
+
+My experience with |define| would lead me to expect that the
+latter is a definition of a one-argument |swap!| macro.  If it is
+not that (I assume), I am left wondering whether |form| is bound
+to the entire call, or only to the argument list.  In either case,
+what is the point?  You still need |car| and |cdr| to get the
+arguments.
+
+------
+Random thoughts:
+
+The appendix of R4RS says that it has been suggested (it doesn't
+say by whom) that #'&lt;datum&gt; and #`&lt;datum&gt; would be felicitous
+abbreviations for (syntax &lt;datum&gt;) and (quasisyntax &lt;datum&gt;).
+Could this be added to the SRFI?
+
+Since |syntax| is already analogous to |quote|, is |syntax-quote|
+really the right name for the third way?  If I understood it
+better, I might be able to name it better.  How about
+|syntax-reuse|?
+
+As a stylistic matter, I think it would be better to remove uses
+of |syntax-case| and |with-syntax| from the examples, except
+where comparison with |syntax-case| is the point of the example.
+
+In particular, the example given under the description of
+|syntax-quote| is confusing because it requires a rather deep
+understanding of |syntax-case| in order to follow.  A better
+example would be built out of the the forms defined by the
+SRFI only.  I bet it would actually come out shorter that
+way, but I won't venture to try to make the example this
+close to midnight.  It would also help to have two examples,
+identical except that one uses |syntax| and the other
+uses |syntax-quote| with different results.
+
+The link to Andrew Wright's pattern matcher
+ <a  rel="nofollow" href="http://download.plt-scheme.org/.../match.ss">http://download.plt-scheme.org/.../match.ss</a>
+at the end of kffd-match-tut.htm seems to be broken.
+
+-- 
+     -- Keith Wright
+
+Programmer in Chief, Free Computer Shop
+ ---  Food, Shelter, Source code.  ---
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00006" href="msg00006.html">Re: How many arguments to a macro transformer?</a></strong>
+<ul><li><em>From:</em> Keith Wright</li></ul></li>
+<li><strong><a name="00007" href="msg00007.html">Re: How many arguments to a macro transformer?</a></strong>
+<ul><li><em>From:</em> Andre van Tonder</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00008.html">Chicken language extension for SRFI-72</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00010.html">Re: How many arguments to a macro transformer?</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00007.html">Re: How many arguments to a macro transformer?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00010.html">Re: How many arguments to a macro transformer?</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00009"><strong>Date</strong></a></li>
+<li><a href="threads.html#00009"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

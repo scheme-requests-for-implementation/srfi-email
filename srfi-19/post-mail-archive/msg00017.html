@@ -1,0 +1,146 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Apparent divide&#45;by&#45;zero bug in date&#45;>julian&#45;day -->
+<!--X-From-R13: Ivyy Tvgmtrenyq <jvyy.svgmtrenyqNcbobk.pbz> -->
+<!--X-Date: Thu,  1 Jul 2004 21:55:21 +0200 (DFT) -->
+<!--X-Message-Id: 20040701195520.74820.qmail@web81305.mail.yahoo.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: y9ly8m5r28r.fsf@sams.informatik.uni&#45;tuebingen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Apparent divide-by-zero bug in date-&gt;julian-day</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00016.html">Date Prev</a>][<a href="msg00018.html">Date Next</a>][<a href="msg00016.html">Thread Prev</a>][<a href="msg00018.html">Thread Next</a>][<a href="maillist.html#00017">Date Index</a>][<a href="threads.html#00017">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Apparent divide-by-zero bug in date-&gt;julian-day</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: John Clements &lt;<a href="mailto:clements@DOMAIN.HIDDEN">clements@xxxxxxxxxxxxxxxx</a>&gt;,	<a href="mailto:srfi-19@DOMAIN.HIDDEN">srfi-19@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Apparent divide-by-zero bug in date-&gt;julian-day</li>
+<li><em>From</em>: Will Fitzgerald &lt;<a href="mailto:will.fitzgerald@DOMAIN.HIDDEN">will.fitzgerald@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 1 Jul 2004 12:55:20 -0700 (PDT)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-19@DOMAIN.HIDDEN">srfi-19@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:y9ly8m5r28r.fsf@DOMAIN.HIDDEN">y9ly8m5r28r.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Reply-to</em>: <a href="mailto:will.fitzgerald@DOMAIN.HIDDEN">will.fitzgerald@xxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>John,
+
+Thanks for the report -- I'll work on it as I have
+time. Do you want to make the changes and write some
+tests?
+
+Will F
+
+--- John Clements &lt;clements@xxxxxxxxxxxxxxxx&gt; wrote:
+&gt; 
+&gt; date-&gt;julian-day can result in a divide-by-zero
+&gt; error:
+&gt; 
+&gt; (require (lib &quot;time.ss&quot; &quot;srfi&quot; &quot;19&quot;))
+&gt; (date-&gt;julian-day (make-srfi:date 0 0 0 0 29 6 2004
+&gt; 0))
+&gt; 
+&gt; =&gt;
+&gt; 
+&gt; /: Division by 0
+&gt; 
+&gt; 
+&gt; The problem appears to be in date-&gt;julian-day:
+&gt; 
+&gt; (define (date-&gt;julian-day date)
+&gt;    (let ( (nanosecond (date-nanosecond date))
+&gt; 	 (second (date-second date))
+&gt; 	 (minute (date-minute date))
+&gt; 	 (hour (date-hour date))
+&gt; 	 (day (date-day date))
+&gt; 	 (month (date-month date))
+&gt; 	 (year (date-year date))
+&gt; 	 (offset (date-zone-offset date)) )
+&gt;      (+ (tm:encode-julian-day-number day month year)
+&gt;         (- 1/2)
+&gt;         (+ (/ (/ (+ (* hour 60 60)
+&gt; 		   (* minute 60) second (/ nanosecond tm:nano))
+&gt; tm:sid)
+&gt; 	     (- offset))))))
+&gt; 
+&gt; 
+&gt; Note that there's a division by (- offset), which
+&gt; means that any call 
+&gt; to date-&gt;julian-day with a zero time-zone offset
+&gt; causes an error.  It 
+&gt; seems clear that the (- offset) should appear inside
+&gt; the 
+&gt; summation-of-seconds addition.
+&gt; 
+&gt; It also means that the result of date-&gt;julian day is
+&gt; _always_ going to 
+&gt; be wrong, which suggests that there's no test case
+&gt; for this function at 
+&gt; all.  Sure enough, a grep through the test suite for
+&gt; 'date-&gt;julian-day' 
+&gt; comes up empty.  Was this function added late?  Any
+&gt; thought of updating 
+&gt; the test suite?
+&gt; 
+&gt; john clements
+&gt; 
+&gt; 
+&gt; 
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00016" href="msg00016.html">Apparent divide-by-zero bug in date-&gt;julian-day</a></strong>
+<ul><li><em>From:</em> John Clements</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00016.html">Apparent divide-by-zero bug in date-&gt;julian-day</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00018.html">Bugs in string-&gt;date</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00016.html">Apparent divide-by-zero bug in date-&gt;julian-day</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00018.html">Bugs in string-&gt;date</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00017"><strong>Date</strong></a></li>
+<li><a href="threads.html#00017"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

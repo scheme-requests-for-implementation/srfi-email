@@ -1,0 +1,215 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Another vote for more parens (re: let&#45;values) -->
+<!--X-From-R13: revx uvyfqnyr <ruvyfqnyNpf.vaqvnan.rqh> -->
+<!--X-Date: Sat, 13 Nov 1999 20:58:43 &#45;0600 (CST) -->
+<!--X-Message-Id: 199911140258.VAA01498@vidtest.chem.indiana.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Another vote for more parens (re: let-values)</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00007.html">Date Prev</a>][<a href="msg00009.html">Date Next</a>][<a href="msg00007.html">Thread Prev</a>][<a href="msg00009.html">Thread Next</a>][<a href="maillist.html#00008">Date Index</a>][<a href="threads.html#00008">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Another vote for more parens (re: let-values)</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-11@DOMAIN.HIDDEN">srfi-11@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Another vote for more parens (re: let-values)</li>
+<li><em>From</em>: erik hilsdale &lt;<a href="mailto:ehilsdal@DOMAIN.HIDDEN">ehilsdal@xxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 13 Nov 1999 21:58:43 -0500</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Whenever I use let-values, I always write it as
+
+  (let-values ((Formals Exp) ...) Exp ... Exp)
+
+rather than this SRFI's
+
+  (let-values (Formals Exp) Exp ... Exp)
+
+I do understand that the extra parens are annoying when there's only
+one binding, which is why I frequently use one of two other forms when
+I only care to use one binding.  When I'm thinking about monads I tend
+to use 
+
+  (bind (Formals Exp) Exp ... Exp)
+
+which works just as this SRFI's version.  In most of my usual coding I
+use
+
+  (with-values Exp Consumer) ; Consumer should evaluate to a procedure
+
+because (a) I'm pretty used to cps, (b) it's an extremely short macro,
+and (c) it only uses a trifle (two spaces) more horizontal space than
+bind. 
+
+So I suppose you should count me in as another vote for making
+let-values look more like let, and perhaps supplying let*-values and
+letrec-values as well (though letrec-values is hard to write portably
+-- see below for my all-too-cryptic version).
+
+However, I'm _definitely_ against the special one-return-value case
+that Michael Sperber suggests, for all the reasons already stated.
+
+And while I agree that the one-decl let-values and the multi-decl
+let-values are syntactically distinguishable, I don't like that as an
+argument for choosing one over the other.  Whatever this SRFI decides
+will have a certain weight.  I view the fact that an implementation
+can provide an extended syntax as a bug, not a feature: I don't want
+to explain to students or co-workers that 'it works both ways' in
+implementation X.
+
+-erik
+
+(define-syntax bind
+  (syntax-rules ()
+    ((bind (Formals Exp) Body0 Body ...)
+     (call-with-values (lambda () Exp)
+       (lambda Formals Body0 Body ...)))))
+
+(define-syntax with-values
+  (syntax-rules ()
+    ((with-values Exp Consumer)
+     (call-with-values (lambda () Exp)
+       Consumer))))
+
+(define-syntax let-values
+  (syntax-rules ()
+    ((let-values ()                       Body0 Body ...)
+     (let () Body0 Body ...))
+    ((let-values ((Formals Exp) Decl ...) Body0 Body ...)
+     (let ((temp (lambda () Exp)))
+       (let-values (Decl ...)
+         (call-with-values temp
+           (lambda Formals Body0 Body ...)))))))
+
+(define-syntax let*-values
+  (syntax-rules ()
+    ((let*-values ()                       Body0 Body ...)
+     (let () Body0 Body ...))
+    ((let*-values ((Formals Exp) Decl ...) Body0 Body ...)
+     (call-with-values (lambda () Exp)
+       (lambda Formals
+         (let*-values (Decl ...)
+           Body0 Body ...))))))
+
+;;; This one's pretty convoluted.  Don't try this at home, kids.
+
+;;; The general idea for this macro is to spend some cycles
+;;; accumulating all of the variables in the formals, and associating
+;;; with each one a temporary variable (generated magically through
+;;; hygiene).  This trick is also used in the letrec macro in R5RS.
+;;; Here, as there, we use string cookies to simulate helper macros.  
+
+;;; letrec-values is more complicated because we need an inner and an
+;;; outer accumulator.  The outer accumulator iterates over the decls,
+;;; each time gathering a new list of pairs of FormalVariable x Temp.
+;;; That list is consed onto the list of all such pairs, and saved
+;;; with the Formals and Exp of the decl.  The inner accumulator
+;;; iterates over the formal parameter lists/symbols/improper-lists
+;;; themselves.
+
+(define-syntax letrec-values
+  (syntax-rules ()
+    ((letrec-values ((Formals Exp) ...) Body0 Body ...)
+     (letrec-values &quot;OUTER&quot; ((Formals Exp) ...)
+       () () (begin Body0 Body ...)))
+
+    ((letrec-values &quot;OUTER&quot; ((Formals Exp) Decl ...)
+       TempsOut DeclsOut Body)
+     ;; we need to process a new formals list.
+     (letrec-values &quot;INNER&quot; Formals () 
+       Formals Exp (Decl ...) TempsOut DeclsOut Body))
+
+    ((letrec-values &quot;OUTER&quot; ()
+       ((Var Temp) ...)
+       ((Formals Exp ((DeclVar DeclTemp) ...)) ...)
+       Body)
+     ;; we're done processing all the decls.  Time to expand. 
+     (let ((Temp #f) ...)
+       (call-with-values (lambda () Exp)
+         (lambda Formals
+           (set! DeclTemp DeclVar) ... #f))
+       ...
+       (let ((Var Temp) ...)
+         Body)))
+    
+    ((letrec-values &quot;INNER&quot; (Var . Rest) InnerTempsOut
+       Formals Exp Decls TempsOut DeclsOut Body)
+     ;; we found a new variable, so generate a temp and go on.
+     (letrec-values &quot;INNER&quot; Rest ((Var temp) . InnerTempsOut)
+       Formals Exp Decls ((Var temp) . TempsOut) DeclsOut Body))
+
+    ((letrec-values &quot;INNER&quot; () InnerTempsOut
+       Formals Exp Decls TempsOut DeclsOut Body)
+     ;; we're done with these formals.  Go back to the outer loop.
+     (letrec-values &quot;OUTER&quot; Decls
+       TempsOut 
+       ((Formals Exp InnerTempsOut) . DeclsOut)
+       Body))
+    
+    ((letrec-values &quot;INNER&quot; Var InnerTempsOut
+       Formals Exp Decls TempsOut DeclsOut Body)
+     ;; we've found a rest variable.  Go back to the outer loop.
+     (letrec-values &quot;OUTER&quot; Decls
+       ((Var temp) . TempsOut) 
+       ((Formals Exp ((Var temp) . InnerTempsOut)) . DeclsOut)
+       Body))))
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00009" href="msg00009.html">[srfi-11] LET-VALUES wrapup (was: Re: Another vote for more parens)</a></strong>
+<ul><li><em>From:</em> Lars Thomas Hansen</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00007.html">SRFI 11 split into three</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00009.html">[srfi-11] LET-VALUES wrapup (was: Re: Another vote for more parens)</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00007.html">SRFI 11 split into three</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00009.html">[srfi-11] LET-VALUES wrapup (was: Re: Another vote for more parens)</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00008"><strong>Date</strong></a></li>
+<li><a href="threads.html#00008"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

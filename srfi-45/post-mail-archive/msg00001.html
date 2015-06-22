@@ -1,0 +1,157 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Problem with (force (lazy (delay expr))) -->
+<!--X-From-R13: Oyrwnaqeb Tbereb Qhreib <onpuhrNonpuhr.pbz> -->
+<!--X-Date: Fri, 11 Jun 2004 09:08:30 +0200 (DFT) -->
+<!--X-Message-Id: 20040611070831.GA29954@bachue.com -->
+<!--X-Content-Type: multipart/signed -->
+<!--X-Derived: pgpuvUE8R2fgK.pgp -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Problem with (force (lazy (delay expr)))</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00000.html">Date Prev</a>][<a href="msg00002.html">Date Next</a>][<a href="msg00000.html">Thread Prev</a>][<a href="msg00002.html">Thread Next</a>][<a href="maillist.html#00001">Date Index</a>][<a href="threads.html#00001">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Problem with (force (lazy (delay expr)))</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-45@DOMAIN.HIDDEN">srfi-45@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Problem with (force (lazy (delay expr)))</li>
+<li><em>From</em>: Alejandro Forero Cuervo &lt;<a href="mailto:bachue@DOMAIN.HIDDEN">bachue@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 11 Jun 2004 02:08:31 -0500</li>
+<li><em>Cc</em>: <a href="mailto:srfi-40@DOMAIN.HIDDEN">srfi-40@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-45@DOMAIN.HIDDEN">srfi-45@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Mutt/1.5.5.1+cvs20040105i</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+Hello, Andre.
+
+There is  a problem  with your  proposal as  it is:  doing (force
+(lazy  (delay expr)))  does not  update the  promise returned  by
+(delay  expr)  to  cache  the  results  of  evaluating  expr,  so
+subsequent forces will need to reevaluate it.
+
+The following example ilustrates this problem:
+
+(let ((s (delay (begin (format #t &quot;Eval~%&quot;) '()))))
+  (force (lazy s))
+  (force s))
+
+This  will print  &quot;Eval&quot; twice,  showing that  the expresion  was
+evaluated two times.
+
+This is a problem because, according to your transformation rules
+(section  &quot;Correct Usage&quot;),  the bodies  of procedures  returning
+promises  should  be wrapped  with  lazy  (instead of  delay  and
+force).
+
+To write a function that removes the first N elements of a stream
+one would thus do:
+
+(define (stream-drop str n)
+  (lazy
+    (if (zero? n)
+        str
+        (stream-drop (cdr (force str)) (- n 1)))))
+
+The  result is  a (lazy  (delay expr))  that, when  forced, won't
+cause the original  stream to cache the result.   You can rewrite
+my  first example  replacing  the call  to lazy  with  a call  to
+(lambda (str) (stream-drop str 0)) to see the same bug.
+
+The problem is easy to find.  (lazy (delay expr)) expands to:
+  
+  (cons 'lazy
+        (lambda () (cons 'lazy
+                         (lambda () (cons 'eager expr)))))
+
+Unfortunately, forcing  this expresion only updates  the external
+pair,,  so  future forces  of  the  internal  pair will  need  to
+evaluate expr again.
+
+This bug  obviously affects its current  reference implementation
+for streams, making it problematic  to work with streams that are
+built  reading from  ports,  for example.   SRFI-40 makes  things
+worse by specifying no function for forcing the streams directly.
+In consequence,  I'm posting this  message to both lists,  I hope
+that's ok.
+
+Any thoughts on how to solve this problem?
+
+I  *think* you  could specify  that  lazy should  only be  passed
+forced  promises (created  by means  of (eager  expr) or,  if you
+don't want eager to be  part of your specification, (force (delay
+expr))) or promises created by  lazy itself and you wouldn't lose
+your safe-for-space properties.
+
+Thank you!
+
+Alejo.
+<a  rel="nofollow" href="http://bachue.com/alejo">http://bachue.com/alejo</a>
+
+Ps: Please  CC to  me  in your  reply, as  I  haven't managed  to
+subscribe  to the  lists (waiting  for  a reply  to my  subscribe
+message for hours...).
+
+---=(  Comunidad de Usuarios de Software Libre en Colombia  )=---                                                              
+---=(  <a  rel="nofollow" href="http://bachue.com/colibri">http://bachue.com/colibri</a> )=--=( colibri@xxxxxxxxxx  )=---                                                              
+</pre><p><strong>Attachment:
+<a href="pgpuvUE8R2fgK.pgp" ><tt>signature.asc</tt></a></strong><br>
+<em>Description:</em> Digital signature</p>
+
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00002" href="msg00002.html">Re: Problem with (force (lazy (delay expr)))</a></strong>
+<ul><li><em>From:</em> John Shutt</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00000.html">Final SRFI 45:     Primitives for Expressing Iterative Lazy Algorithms</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00002.html">Re: Problem with (force (lazy (delay expr)))</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00000.html">Final SRFI 45:     Primitives for Expressing Iterative Lazy Algorithms</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00002.html">Re: Problem with (force (lazy (delay expr)))</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00001"><strong>Date</strong></a></li>
+<li><a href="threads.html#00001"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

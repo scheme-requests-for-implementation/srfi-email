@@ -1,0 +1,151 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Update, near finalization -->
+<!--X-From-R13: Ohoerl Xnssre <ntwNnyhz.zvg.rqh> -->
+<!--X-Date: Thu, 14 Apr 2005 01:02:30 +0200 (DFT) -->
+<!--X-Message-Id: 20050413230249.0BCA21B77A8@voluntocracy.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 4256AF0C.60703@cs.uvm.edu -->
+<!--X-Reference: 4256C0BE.8030904@bothner.com -->
+<!--X-Reference: 20050408201628.D40251B77A8@voluntocracy.org -->
+<!--X-Reference: 4256F5DB.9000701@bothner.com -->
+<!--X-Reference: 20050410210908.B247E1B77A8@voluntocracy.org -->
+<!--X-Reference: 425A17C9.6080808@bothner.com -->
+<!--X-Reference: 20050411163810.C2EF71B77A8@voluntocracy.org -->
+<!--X-Reference: Pine.LNX.4.58.0504131103250.23150@bolt.sonic.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Update, near finalization</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00010.html">Date Prev</a>][Date Next][<a href="msg00010.html">Thread Prev</a>][Thread Next][<a href="maillist.html#00011">Date Index</a>][<a href="threads.html#00011">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Update, near finalization</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:bear@DOMAIN.HIDDEN">bear@xxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Update, near finalization</li>
+<li><em>From</em>: Aubrey Jaffer &lt;<a href="mailto:agj@DOMAIN.HIDDEN">agj@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 13 Apr 2005 19:02:49 -0400 (EDT)</li>
+<li><em>Cc</em>: <a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a>, <a href="mailto:srfi-63@DOMAIN.HIDDEN">srfi-63@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-63@DOMAIN.HIDDEN">srfi-63@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:Pine.LNX.4.58.0504131103250.23150@DOMAIN.HIDDEN">Pine.LNX.4.58.0504131103250.23150@xxxxxxxxxxxxxx</a>&gt; (message from	bear on Wed, 13 Apr 2005 11:44:07 -0700 (PDT))</li>
+<li><em>References</em>: &lt;<a href="mailto:4256AF0C.60703@DOMAIN.HIDDEN">4256AF0C.60703@xxxxxxxxxx</a>&gt; &lt;<a href="mailto:4256C0BE.8030904@DOMAIN.HIDDEN">4256C0BE.8030904@xxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20050408201628.D40251B77A8@DOMAIN.HIDDEN">20050408201628.D40251B77A8@xxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:4256F5DB.9000701@DOMAIN.HIDDEN">4256F5DB.9000701@xxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20050410210908.B247E1B77A8@DOMAIN.HIDDEN">20050410210908.B247E1B77A8@xxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:425A17C9.6080808@DOMAIN.HIDDEN">425A17C9.6080808@xxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20050411163810.C2EF71B77A8@DOMAIN.HIDDEN">20050411163810.C2EF71B77A8@xxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:Pine.LNX.4.58.0504131103250.23150@DOMAIN.HIDDEN">Pine.LNX.4.58.0504131103250.23150@xxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre> | Date: Wed, 13 Apr 2005 11:44:07 -0700 (PDT)
+ | From: bear &lt;bear@xxxxxxxxx&gt;
+ | 
+ | On Mon, 11 Apr 2005, Aubrey Jaffer wrote:
+ | 
+ | &gt;But this pissing contest should be largely irrelevant to R6RS --
+ | &gt;SRFI-63 is more capable (uniform arrays), better integrated with
+ | &gt;R5RS (specifying vector, string, and EQUAL? behavior), compatible
+ | &gt;with SRFI-58 array syntax, and better designed than SRFI-25.
+ | 
+ | Actually, I think that specifying string behavior in a document
+ | about arrays is a mistake.
+ | 
+ | The operations we want to do on strings are in many cases
+ | fundamentally different from the operations that are efficient to
+ | do on arrays.  For example, inserting or deleting text at an
+ | arbitrary point in the string are two of the most fundamental
+ | operations in text editing, and if strings are represented as
+ | arrays, they require the program to touch all subsequent characters
+ | in the string every time one character is inserted or deleted.
+
+I had similar thoughts writing the initial version (Nov 2004) of
+SRFI-63; and put in its issues section:
+
+  I removed character arrays (from SRFI-47) because, as I read R5RS,
+  the number of distinct characters an implementation supports need
+  not be finite; thus character elements might require an unbounded
+  size of representation.
+
+  Character arrays are can be supported based on strings; but they do
+  not necessarily have access times comparable to other types of
+  arrays.
+
+But then I realized that access of shared arrays of vectors mandates
+separation of the rank-n to rank-1 index calculation from the vector
+access.  Since array-ref and array-set! must be able to separate index
+calculation from vector access, this same principle can be used to
+separate index calculation from string access.
+
+The bounds which SRFI-63 gives for access time are the bounds for this
+separated access:
+
+  Except for character arrays, array access time is O(R)+V, where R is
+  the rank of the array and V is the vector access time.
+
+  Character array access time is O(R)+S, where R is the rank of the
+  array and S is the string access time.
+
+Thus SRFI-63 does not constrain the representation of strings.  An
+implementation is welcome to employ representations with faster
+ARRAY-REF and ARRAY-SET! than STRING-REF and STRING-SET!, but must not
+have slower ones.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00001" href="msg00001.html">Update, near finalization</a></strong>
+<ul><li><em>From:</em> David Van Horn</li></ul></li>
+<li><strong><a name="00002" href="msg00002.html">Re: Update, near finalization</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+<li><strong><a name="00003" href="msg00003.html">Re: Update, near finalization</a></strong>
+<ul><li><em>From:</em> Aubrey Jaffer</li></ul></li>
+<li><strong><a name="00004" href="msg00004.html">Re: Update, near finalization</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+<li><strong><a name="00005" href="msg00005.html">Re: Update, near finalization</a></strong>
+<ul><li><em>From:</em> Aubrey Jaffer</li></ul></li>
+<li><strong><a name="00006" href="msg00006.html">Re: Update, near finalization</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+<li><strong><a name="00007" href="msg00007.html">Re: Update, near finalization</a></strong>
+<ul><li><em>From:</em> Aubrey Jaffer</li></ul></li>
+<li><strong><a name="00009" href="msg00009.html">Re: Update, near finalization</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00010.html">Re: Update, near finalization</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00010.html">Re: Update, near finalization</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00011"><strong>Date</strong></a></li>
+<li><a href="threads.html#00011"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

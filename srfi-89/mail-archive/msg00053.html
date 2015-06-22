@@ -1,0 +1,165 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Superfluous actual arguments -->
+<!--X-From-R13: [nep Trryrl <srryrlNveb.hzbagerny.pn> -->
+<!--X-Date: Fri, 14 Apr 2006 15:05:44 +0200 (MST) -->
+<!--X-Message-Id: 1005A2D7&#45;4305&#45;46F5&#45;919D&#45;DB6736E2878E@iro.umontreal.ca -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: uek00uy5h.fsf@iniTerm.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Superfluous actual arguments</title>
+<link rev="made" href="mailto:feeley@iro.umontreal.ca">
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00052.html">Date Prev</a>][<a href="msg00054.html">Date Next</a>][<a href="msg00052.html">Thread Prev</a>][<a href="msg00054.html">Thread Next</a>][<a href="maillist.html#00053">Date Index</a>][<a href="threads.html#00053">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Superfluous actual arguments</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Joo ChurlSoo &lt;<a href="mailto:init%40iniTerm.com">init@iniTerm.com</a>&gt;</li>
+<li><em>Subject</em>: Re: Superfluous actual arguments</li>
+<li><em>From</em>: Marc Feeley &lt;<a href="mailto:feeley%40iro.umontreal.ca">feeley@iro.umontreal.ca</a>&gt;</li>
+<li><em>Date</em>: Fri, 14 Apr 2006 09:05:27 -0400</li>
+<li><em>Cc</em>: <a href="mailto:srfi-89%40srfi.schemers.org">srfi-89@srfi.schemers.org</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-89%40srfi.schemers.org">srfi-89@srfi.schemers.org</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:uek00uy5h.fsf%40iniTerm.com"><a href="msg00052.html">uek00uy5h.fsf@iniTerm.com</a></a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:uek00uy5h.fsf%40iniTerm.com"><a href="msg00052.html">uek00uy5h.fsf@iniTerm.com</a></a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+On 14-Apr-06, at 8:42 AM, Joo ChurlSoo wrote:
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+In SRFI-89:
+
+(define (g a #!optional (b a) #!key (k (* a b))) (list a b k))
+(g 3 4 k: 5 k: 6)                   ==&gt;  (3 4 5)
+
+In this case, there is no rest parameter.  Why is this not an error?
+Are another k: and 6 not arguments?
+</pre></blockquote><pre style="margin: 0em;">
+
+</pre><tt>Sorry, I didn't get what you were after in the previous message.   
+</tt><tt>Just to make sure, you are referring to point 5 of the spec, that is:
+</tt><pre style="margin: 0em;">
+
+</pre><tt>   If `#!key' appears in the &lt;extended formals&gt; and there is no  
+</tt><tt>&lt;rest formal&gt; then there must be
+</tt><tt>   an even number of remaining actual parameters. These are  
+</tt><tt>interpreted as a series of pairs,
+</tt><tt>   where the first member of each pair is a keyword object  
+</tt><tt>specifying the parameter name, and
+</tt><tt>   the second is the corresponding value. It is an error if the  
+</tt><tt>first member of a pair is not a
+</tt><tt>   keyword object. It is an error if the parameter name is not the  
+</tt><tt>same as a variable in a
+</tt><tt>   &lt;keyword formal&gt;. If the same parameter name occurs more than  
+</tt><tt>once in the list of actual
+</tt><tt>   parameters, then the first value is used. If there is no actual  
+</tt><tt>parameter for a particular
+</tt><tt>   &lt;keyword formal&gt;, then the variable is bound to the result of  
+</tt><tt>evaluating &lt;initializer&gt; if
+</tt><tt>   one was specified, and otherwise to `#f'. The &lt;initializer&gt; is  
+</tt><tt>evaluated in an environment
+</tt><pre style="margin: 0em;">
+   in which all previous formal parameters have been bound.
+
+</pre><tt>This is the behaviour specified by DSSSL and the example is correct  
+</tt><tt>(the first value given for parameter &quot;k&quot; has precedence over the  
+</tt><tt>second value given).  The ability to provide the value of a named  
+</tt><tt>parameter more than once is useful for implementing wrapper functions  
+</tt><tt>that override the default value of a named parameter.  Here's a  
+</tt><tt>simple example:
+</tt><pre style="margin: 0em;">
+
+(define (debug f)
+  (lambda args
+    (apply f (append args (list debug: #t)))))
+
+(define (foo x y #!key (debug #f) (port (current-output-port)))
+  (if debug
+      (display &quot;foo\n&quot; port))
+  (display (string-append &quot;x+y=&quot; (number-&gt;string (+ x y)) &quot;\n&quot;) port))
+
+(define (bar x #!key (debug #f) (port (current-output-port)))
+  (if debug
+      (display &quot;bar\n&quot; port))
+</pre><tt>  (display (string-append &quot;log(x)=&quot; (number-&gt;string (log x)) &quot;\n&quot;)  
+</tt><tt>port))
+</tt><pre style="margin: 0em;">
+
+(define dfoo (debug foo))
+(define dbar (debug bar))
+
+&gt; (foo 1 2)
+x+y=3
+&gt; (foo 1 2 debug: #t)
+foo
+x+y=3
+&gt; (dfoo 1 2)
+foo
+x+y=3
+&gt; (dfoo 1 2 debug: #f)
+x+y=3
+&gt; (dfoo 1 2 unknown-param: #f)
+*** ERROR -- Unknown keyword argument passed to procedure
+(foo 1 2 unknown-param: #f debug: #t)
+
+Marc
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00052" href="msg00052.html">Re: Superfluous actual arguments</a></strong>
+<ul><li><em>From:</em> Joo ChurlSoo &lt;init@iniTerm.com&gt;</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00052.html">Re: Superfluous actual arguments</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00054.html">Re: Superfluous actual arguments</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00052.html">Re: Superfluous actual arguments</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00054.html">Re: Superfluous actual arguments</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00053"><strong>Date</strong></a></li>
+<li><a href="threads.html#00053"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

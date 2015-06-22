@@ -1,0 +1,177 @@
+<!-- MHonArc v2.6.16 -->
+<!--X-Subject: Re: how useful are collecting lists? -->
+<!--X-From-R13: "Rnivq O. Iurryre" <qjurryreNqjurryre.pbz> -->
+<!--X-Date: Thu, 14 Mar 2013 02:22:46 +0000 (UTC) -->
+<!--X-Message-Id: E1UFxob&#45;0005DJ&#45;3A@rmm6prod02.runbox.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 513EAE55.80204@gmail.com -->
+<!--X-Reference: E1UFYz2&#45;0001Am&#45;U6@taishi.runbox.com -->
+<!--X-Reference: 513FD6A2.50307@gmail.com -->
+<!--X-Reference: E1UFbme&#45;0002nk&#45;2g@taishi.runbox.com -->
+<!--X-Reference: CAF+kUQXGcbBydOv&#45;0xriFb2om96c2jmw8qdmv50XKD0GseLhhw@mail.gmail.com -->
+<!--X-Reference: E1UFvDh&#45;0001ID&#45;06@rmm6prod02.runbox.com -->
+<!--X-Reference: 514125BC.1080106@gmail.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: how useful are collecting lists?</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00019.html">Date Prev</a>][<a href="msg00021.html">Date Next</a>][<a href="msg00019.html">Thread Prev</a>][<a href="msg00021.html">Thread Next</a>][<a href="maillist.html#00020">Date Index</a>][<a href="threads.html#00020">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: how useful are collecting lists?</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &quot;srfi-110&quot; &lt;<a href="mailto:srfi-110@DOMAIN.HIDDEN">srfi-110@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: how useful are collecting lists?</li>
+<li><em>From</em>: &quot;David A. Wheeler&quot; &lt;<a href="mailto:dwheeler@DOMAIN.HIDDEN">dwheeler@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 13 Mar 2013 22:22:45 -0400 (EDT)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-110@DOMAIN.HIDDEN">srfi-110@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:514125BC.1080106@DOMAIN.HIDDEN">514125BC.1080106@xxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:513EAE55.80204@DOMAIN.HIDDEN">513EAE55.80204@xxxxxxxxx</a>&gt; &lt;<a href="mailto:E1UFYz2-0001Am-U6@DOMAIN.HIDDEN">E1UFYz2-0001Am-U6@xxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:513FD6A2.50307@DOMAIN.HIDDEN">513FD6A2.50307@xxxxxxxxx</a>&gt; &lt;<a href="mailto:E1UFbme-0002nk-2g@DOMAIN.HIDDEN">E1UFbme-0002nk-2g@xxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:CAF%2BkUQXGcbBydOv-0xriFb2om96c2jmw8qdmv50XKD0GseLhhw@DOMAIN.HIDDEN">CAF+kUQXGcbBydOv-0xriFb2om96c2jmw8qdmv50XKD0GseLhhw@xxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:E1UFvDh-0001ID-06@DOMAIN.HIDDEN">E1UFvDh-0001ID-06@xxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:514125BC.1080106@DOMAIN.HIDDEN">514125BC.1080106@xxxxxxxxx</a>&gt;</li>
+<li><em>Reply-to</em>: <a href="mailto:dwheeler@DOMAIN.HIDDEN">dwheeler@xxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>David Vanderson:
+&gt; My plan was to replace &quot;&lt;* begin&quot; with &quot;. &lt;*&quot; in the example, so this:
+&gt; 
+&gt; define-library
+&gt;    example grid
+&gt;    export make rows cols ref each rename(put! set!)
+&gt;    import scheme(base)
+&gt;    &lt;* begin
+&gt; ;stuff
+&gt; *&gt;
+&gt; 
+&gt; becomes (in a scheme with implicit begin):
+&gt; define-library
+&gt;    example grid
+&gt;    export make rows cols ref each rename(put! set!)
+&gt;    import scheme(base)
+&gt;    . &lt;*
+&gt; ;stuff
+&gt; *&gt;
+&gt; 
+&gt; Does this run against your current &quot;head&quot; rule?
+
+It does, but even if I modified head I would not expect it
+to do what you want. A &quot;. x&quot; by itself returns just &quot;x&quot; in other cases,
+so for consistency, adding a rule about &quot;.&quot; in head would
+still create an additional (...).
+
+But that's okay, because I think what you want is:
+define-library
+!  example grid
+!  export make rows cols ref each rename(put! set!)
+!  import scheme(base)
+!  .
+! &lt;*
+! ;stuff
+*&gt;
+
+Or, just:
+define-library . &lt;*
+example grid
+export make rows cols ref each rename(put! set!)
+import scheme(base)
+;stuff
+*&gt;
+
+
+
+If constructs like this are common:
+!  .
+! &lt;*
+...
+*&gt;
+
+Then we could argue that &quot;\\&quot; after &quot;.&quot; is reasonable, e.g.:
+!  . \\ &lt;*
+...
+*&gt;
+
+However, I do worry that the sequence &quot;. \\ &lt;*&quot; completely fails
+the &quot;it's obvious what it means&quot; test.
+
+&gt; Definitely working out well for me so far.  I'm only sorry that I didn't 
+&gt; hear about it earlier - my first notice came from your post to the 
+&gt; Racket dev list a week or so ago.
+
+No problem!  I'm really glad you've joined us!
+
+--- David A. Wheeler
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00021" href="msg00021.html">Re: how useful are collecting lists?</a></strong>
+<ul><li><em>From:</em> David Vanderson</li></ul></li>
+<li><strong><a name="00025" href="msg00025.html">Re: how useful are collecting lists?</a></strong>
+<ul><li><em>From:</em> Alan Manuel Gloria</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00008" href="msg00008.html">how useful are collecting lists?</a></strong>
+<ul><li><em>From:</em> David Vanderson</li></ul></li>
+<li><strong><a name="00010" href="msg00010.html">Re: how useful are collecting lists?</a></strong>
+<ul><li><em>From:</em> David A. Wheeler</li></ul></li>
+<li><strong><a name="00011" href="msg00011.html">Re: how useful are collecting lists?</a></strong>
+<ul><li><em>From:</em> David Vanderson</li></ul></li>
+<li><strong><a name="00012" href="msg00012.html">Re: how useful are collecting lists?</a></strong>
+<ul><li><em>From:</em> David A. Wheeler</li></ul></li>
+<li><strong><a name="00013" href="msg00013.html">Re: how useful are collecting lists?</a></strong>
+<ul><li><em>From:</em> Alan Manuel Gloria</li></ul></li>
+<li><strong><a name="00014" href="msg00014.html">Re: how useful are collecting lists?</a></strong>
+<ul><li><em>From:</em> David A. Wheeler</li></ul></li>
+<li><strong><a name="00019" href="msg00019.html">Re: how useful are collecting lists?</a></strong>
+<ul><li><em>From:</em> David Vanderson</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00019.html">Re: how useful are collecting lists?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00021.html">Re: how useful are collecting lists?</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00019.html">Re: how useful are collecting lists?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00021.html">Re: how useful are collecting lists?</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00020"><strong>Date</strong></a></li>
+<li><a href="threads.html#00020"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

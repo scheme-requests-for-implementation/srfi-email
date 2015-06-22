@@ -1,0 +1,197 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: a bug -->
+<!--X-From-R13: "fbb" <vavgNvavFrez.pbz> -->
+<!--X-Date: Thu, 21 Jul 2005 05:56:00 +0200 (DFT) -->
+<!--X-Message-Id: 000201c58da8$17553750$3b514cdc@INITERM -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: a bug</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00035.html">Date Prev</a>][<a href="msg00037.html">Date Next</a>][<a href="msg00035.html">Thread Prev</a>][<a href="msg00037.html">Thread Next</a>][<a href="maillist.html#00036">Date Index</a>][<a href="threads.html#00036">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: a bug</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &lt;<a href="mailto:srfi-71@DOMAIN.HIDDEN">srfi-71@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: a bug</li>
+<li><em>From</em>: &quot;soo&quot; &lt;<a href="mailto:init@DOMAIN.HIDDEN">init@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 21 Jul 2005 12:55:52 +0900</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-71@DOMAIN.HIDDEN">srfi-71@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Importance</em>: Normal</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Here is another stupid but easy example.
+
+&gt; (define x 10)
+&gt;
+(srfi-let ((a (begin (display &quot;first&quot;) (newline) (set! x (+ x 1)) x))
+	   (b c (values (begin (display &quot;second&quot;) (newline) (set! x 1)
+x)
+			(begin (display &quot;third&quot;) (newline) (set! x 1000)
+x)))
+	   (d (begin (display &quot;end&quot;) (newline) (set! x (+ x 11)) x)))
+	  (set! x 10)
+	  (list a b c d))
+second
+third
+first
+end
+(1001 1 1000 1012) ---------------&gt; different result
+
+&gt;
+(let ((a (begin (display &quot;first&quot;) (newline) (set! x (+ x 1)) x))
+      (b (begin (display &quot;second&quot;) (newline) (set! x 1) x))
+      (c (begin (display &quot;third&quot;) (newline) (set! x 1000) x))
+      (d (begin (display &quot;end&quot;) (newline) (set! x (+ x 11)) x)))
+  (set! x 10)
+  (list a b c d))
+first
+second
+third
+end
+(11 1 1000 1011) ---------------&gt; different result
+
+
+
+The SRFI-71 implementaion is too difficult for me to understand.
+So I will show the followings.
+
+(define-syntax alet
+  (syntax-rules ()
+    ((alet (clause ...) body1 body2 ...)
+     (conversion () (clause ...) body1 body2 ...))
+    ((alet name ((a b) ...) body1 body2 ...)
+     ((letrec ((name (lambda (a ...) body1 body2 ...)))
+	name)
+      b ...))))
+
+(define-syntax conversion
+  (syntax-rules ()
+    ((conversion ((n v) ...) (((a) c) clause ...) body ...)
+     ;; This is a bug site. --- ((values a) c) in srfi-71
+     ;; (conversion ((n v) ... (a c)) (clause ...) body ...)
+     ((lambda (a)
+	(conversion ((n v) ... (a a)) (clause ...) body ...)) c))
+    ((conversion ((n v) ...) (((a . b) c) clause ...) body ...)
+     (dot-values ((n v) ...) ((((a) b) c) clause ...) body ...))
+    ((conversion ((n v) ...) (((a . b) c d ...) clause ...) body ...)
+     (dot-simple ((n v) ...) ((((a) b) c d ...) clause ...) body ...))
+    ((conversion ((n v) ...) ((a b) clause ...) body ...)
+     ;; This is a bug site.
+     ;; (conversion ((n v) ... (a b)) (clause ...) body ...)
+     ((lambda (a)
+	(conversion ((n v) ... (a a)) (clause ...) body ...)) b))
+    ((conversion ((n v) ...) ((a b c ...) clause ...) body ...)
+     (new-values ((n v) ...) (((a) (b c ...)) clause ...) body ...))
+    ((conversion ((n v) ...) (a b clause ...) body ...)
+     (call-with-values (lambda () b)
+       (lambda a
+	 (conversion ((n v) ... (a a)) (clause ...) body ...))))
+    ((conversion ((n v) ...) () body ...)
+     ((lambda (n ...) body ...) v ...))))
+
+(define-syntax new-values
+  (syntax-rules ()
+    ((new-values ((n v) ...) (((a ...) (a1 a2 a3 ...)) clause ...) body
+...)
+     (new-values ((n v) ...) (((a ... a1) (a2 a3 ...)) clause ...) body
+...))
+    ((new-values ((n v) ...) (((a a1 ...) (b)) clause ...) body ...)
+     (call-with-values (lambda () b)
+       (lambda (a a1 ...)
+	 (conversion ((n v) ... (a a) (a1 a1) ...) (clause ...) body
+...))))))
+
+(define-syntax dot-values
+  (syntax-rules ()
+    ((dot-values ((n v) ...) ((((a1 ...) (a . b)) c) clause ...) body
+...)
+     (dot-values ((n v) ...) ((((a1 ... a) b) c) clause ...) body ...))
+    ((dot-values ((n v) ...) ((((a1 ...) ()) c) clause ...) body ...)
+     (call-with-values (lambda () c)
+       (lambda (a1 ...)
+	 (conversion ((n v) ... (a1 a1) ...) (clause ...) body ...))))
+    ((dot-values ((n v) ...) ((((a1 ...) b) c) clause ...) body ...)
+     (call-with-values (lambda () c)
+       (lambda (a1 ... . b)
+	 (conversion ((n v) ... (a1 a1) ... (b b)) (clause ...) body
+...))))))
+
+(define-syntax dot-simple
+  (syntax-rules ()
+    ((dot-simple ((n v) ...) ((((a1 ...) (a . b)) c d ...) clause ...)
+		 body ...)
+     (dot-simple ((n v) ...) ((((a1 ... a) b) c d ...) clause ...) body
+...))
+    ((dot-simple ((n v) ...) ((((a1 ...) ()) c d ...) clause ...) body
+...)
+     ((lambda (a1 ...)
+	(conversion ((n v) ... (a1 a1) ...) (clause ...) body ...))
+      c d ...))
+    ((dot-simple ((n v) ...) ((((a1 ...) b) c d ...) clause ...) body
+...)
+     ((lambda (a1 ... . b)
+	(conversion ((n v) ... (a1 a1) ... (b b)) (clause ...) body
+...))
+      c d ...))))
+
+--
+Joo ChurlSoo
+
+
+
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00035.html">Re: a bug</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00037.html">Re: a bug</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00035.html">Re: a bug</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00037.html">Re: a bug</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00036"><strong>Date</strong></a></li>
+<li><a href="threads.html#00036"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

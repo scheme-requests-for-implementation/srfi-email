@@ -1,0 +1,149 @@
+<!-- MHonArc v2.6.16 -->
+<!--X-Subject: proposing a simpler mechanism -->
+<!--X-From-R13: "D. Yrag Rloivt" <qloNpf.vaqvnan.rqh> -->
+<!--X-Date: Fri, 13 Nov 2009 03:00:24 +0000 (UTC) -->
+<!--X-Message-Id: 200911130158.nAD1ww8C007840@moose.cs.indiana.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>proposing a simpler mechanism</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00010.html">Date Prev</a>][<a href="msg00012.html">Date Next</a>][<a href="msg00009.html">Thread Prev</a>][<a href="msg00012.html">Thread Next</a>][<a href="maillist.html#00011">Date Index</a>][<a href="threads.html#00011">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>proposing a simpler mechanism</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-102@DOMAIN.HIDDEN">srfi-102@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: proposing a simpler mechanism</li>
+<li><em>From</em>: &quot;R. Kent Dybvig&quot; &lt;<a href="mailto:dyb@DOMAIN.HIDDEN">dyb@xxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 12 Nov 2009 20:58:58 -0500</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-102@DOMAIN.HIDDEN">srfi-102@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Heirloom mailx 12.3 7/15/07</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>As David knows, I'm not a big fan of mechanisms to retrieve a procedure's
+arity.  If such a mechanism is going to be standardized, however, as a
+SRFI or in some future report, I'd prefer it be as small, simple, and
+efficient as possible.  I therefore propose the following simpler
+alternative to the mechanism described in the SRFI.  It consists of a
+single procedure, procedure-arity:
+
+--------
+(procedure-arity proc) -&gt; bitmask | #f
+
+Bitmask is an exact integer.  Bit i is set in the two's complement
+representation of bitmask if proc accepts i arguments.  Conversely, bit i
+is reset if proc is certain to reject i arguments.  #f implies no arity
+information is available.
+--------
+
+This simpler proposal satisfies the requirements set forth in the first
+paragraph of the rationale.  It is also straightforwardly implemented
+using any of the mechanisms referenced in paragraph 2 of the rationale. 
+It leverages the existing bit testing procedures in R6RS and many non-R6RS
+Scheme implementations, e.g., R6RS bitwise-bit-set?; it works for all
+procedures created by case-lambda; and it is uniquely specified, so there
+is no normalization issue.  For most procedures, the bitmask will be a
+fixnum.  In most implementations, this means computing it requires no
+allocation, and working with arities will be efficient.  Perhaps most
+importantly, the mechanism requires the addition of only one procedure to
+the language, and no data types, is simple to describe, and simple to use.
+
+Discussion:
+
+This simpler proposal does not allow an implementation to expose as much
+of the structure of a procedure's implementation as does the existing
+proposal.  For example:
+
+(procedure-arity (case-lambda [(x y) ---] [x ---]))
+
+might return (2 #(0)) with the existing proposal, where #(0) is an
+arity-at-least object representing zero or more arguments, hinting at the
+structure of the procedure argument.  Meanwhile, the same call returns -1
+with the simpler proposal.
+
+On the other hand, nothing in the existing proposal _requires_ an
+implementation of procedure-arity to expose the structure of the procedure
+argument, so the above call to procedure-arity might simply return #(0),
+or, due to some quirk of its optimized representation of the procedure,
+return, say, (0 1 2 3 4 5 #(4)), where #(4) is an arity-at-least object
+representing four or more arguments.
+
+Thus, I see this neither as a benefit of the existing proposal nor as a
+drawback of the simpler proposal.  It might even be considered a feature
+of the simpler proposal that no more of the internal structure of a
+procedure can be leaked than necessary.
+
+Issues:
+
+It might be better for procedure-arity to return -1 if no arity
+information is available, meaning the procedure might accept any number of
+arguments, just to keep it simple and given that the existence of arity
+information is no guarantee of its accuracy, as discussed in the Caveat
+Emptor section.
+
+A different name can be used to avoid conflict with existing mechanisms. 
+
+Kent
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00012" href="msg00012.html">Re: proposing a simpler mechanism</a></strong>
+<ul><li><em>From:</em> Thomas Bushnell BSG</li></ul></li>
+<li><strong><a name="00014" href="msg00014.html">Re: proposing a simpler mechanism</a></strong>
+<ul><li><em>From:</em> Thomas Bushnell BSG</li></ul></li>
+<li><strong><a name="00035" href="msg00035.html">Re: proposing a simpler mechanism</a></strong>
+<ul><li><em>From:</em> David Van Horn</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00010.html">Re: Example?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00012.html">Re: proposing a simpler mechanism</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00009.html">Re: SRFI 102</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00012.html">Re: proposing a simpler mechanism</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00011"><strong>Date</strong></a></li>
+<li><a href="threads.html#00011"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

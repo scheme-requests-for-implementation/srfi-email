@@ -1,0 +1,219 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Opaque syntax objects -->
+<!--X-From-R13: =?WEA&#45;8859&#45;1?C?Xraf_Okry_E=T8tnneq?= <wrafnkryNfbrtnneq.arg> -->
+<!--X-Date: Sat, 13 Aug 2005 01:20:09 +0200 (DFT) -->
+<!--X-Message-Id: 42FD2E8D.3070809@soegaard.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: y9lr7cz9obf.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: bd22bd7a050812132158738e2f@mail.gmail.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Opaque syntax objects</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00029.html">Date Prev</a>][<a href="msg00031.html">Date Next</a>][<a href="msg00027.html">Thread Prev</a>][<a href="msg00032.html">Thread Next</a>][<a href="maillist.html#00030">Date Index</a>][<a href="threads.html#00030">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Opaque syntax objects</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>Subject</em>: Re: Opaque syntax objects</li>
+<li><em>From</em>: Jens Axel S&#xF8;gaard &lt;<a href="mailto:jensaxel@DOMAIN.HIDDEN">jensaxel@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 13 Aug 2005 01:19:41 +0200</li>
+<li><em>Cc</em>: <a href="mailto:srfi-72@DOMAIN.HIDDEN">srfi-72@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-72@DOMAIN.HIDDEN">srfi-72@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:bd22bd7a050812132158738e2f@DOMAIN.HIDDEN">bd22bd7a050812132158738e2f@xxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:y9lr7cz9obf.fsf@DOMAIN.HIDDEN">y9lr7cz9obf.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:bd22bd7a050812132158738e2f@DOMAIN.HIDDEN">bd22bd7a050812132158738e2f@xxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mozilla Thunderbird 1.0.2 (Windows/20050317)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+felix winkelmann wrote:
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+On 8/12/05, Michael Sperber &lt;sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx&gt; wrote:
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+The issue has come up in the discussion, but hasn't really been in the
+focus yet:
+
+I'd like to suggest that compound expressions be represented by an
+opaque type rather than by pairs.  This would ensure a modicum of
+abstraction, and would *really* make comprehensive the ability of all
+syntax objects to carry location information.  I've come to appreciate
+this added layer of abstraction in PLT Scheme.
+</pre></blockquote></blockquote><pre style="margin: 0em;">
+
+Representing syntax-objects using normal lists does breaks the
+abstraction, and I too prefer the extra layer of abstraction.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+But wouldn't this completely break the (IMHO) rather practical ability
+to destructure arguments passed to macros via normal Scheme operators?
+</pre></blockquote><pre style="margin: 0em;">
+
+Keeping this abstraction doesn't make destructuring significantly more
+impractical. Destructuring arguments using the pattern matching
+capabilities of syntax-case is unchanged with both representations, and
+in the case were it is neccessary to use normal Scheme operators, most
+often a call to syntax-&gt;list, which turns a syntax-object representing a
+list into a list of syntax-objects, is enough to solve the problem.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+What I like about srfi-72 is that I can write hygienic macros with (nearly)
+</pre><tt>the same ease as in conventional Lisp-/quasiquote-style. In fact this is 
+</tt><tt>what I consider the most innovative feature for SRFI-72.
+</tt></blockquote><pre style="margin: 0em;">
+
+</pre><tt>Since quote, quasiquote, unquote and unquote-splicing is used to 
+</tt><tt>construct lists, one can introduce syntax, quasisyntax, unsyntax and
+</tt><pre style="margin: 0em;">
+unsyntax-splicing to construct syntax-objects. The abbreviation #'
+is a common abbreviation for syntax, and in analogy with this among
+others PLT uses #&#xB4; #, #,@ for the rest.
+
+As an example of a macro written using normal Scheme operators and
+these syntactical abbreviations, I have taken the macro do-primes
+from &quot;Practical Common Lisp&quot; p. 94.
+
+The macro-call (do-primes var start end body ...) evaluates for
+each prime between start and end the body expressions in an
+environment, where the variable var is bound to the prime current
+prime.
+
+(define-syntax (do-primes2 stx)
+  (let* ((form  (syntax-&gt;list stx))
+         (var   (cadr form))
+         (start (caddr form))
+         (end   (cadddr form))
+         (body  (cddddr form)))
+    #`(do ((#,var (next-prime #,start) (next-prime (+ #,var 1))))
+        ((&gt; #,var #,end) 'done)
+        #,@body)))
+
+; prints: 2 5 7 done
+(do-primes2 p 1 10
+            (display p)
+            (newline))
+
+A macro whose expansion uses quasiquote to construct a list can
+be hard to read (and write), if ordinary lists are used to represent
+syntax. It is not immediately obvious whether a given quasiquote
+is used to construct the expansion or is a part of the expansion
+of a call to the macro.
+
+For comparison I have included a version of the above macro,
+where the destructuring is done by normal syntax-case pattern
+matching.
+
+
+/Jens Axel
+
+; do-primes.scm
+
+(define (prime? n)
+  (cond
+    ((even? n) (= n 2))
+    (else      (let loop ((trial-divisor 3))
+                 (cond
+                   ((&lt; n (* trial-divisor trial-divisor)) #t)
+                   ((zero? (remainder n trial-divisor))   #f)
+                   (else
+                     (loop (+ trial-divisor 2))))))))
+
+(define (next-prime n)
+  (if (prime? (+ n 1))
+      (+ n 1)
+      (next-prime (+ n 1))))
+
+(define-syntax (do-primes stx)
+  (syntax-case stx ()
+    ((do-primes var start end body ...)
+     #'(do ((var (next-prime start) (next-prime (+ var 1))))
+         ((&gt; var end) 'done)
+         body ...))))
+
+(do-primes p 1 10
+           (display p)
+           (newline))
+
+(define-syntax (do-primes2 stx)
+  (let* ((form  (syntax-&gt;list stx))
+         (var        (cadr form))
+         (start      (caddr form))
+         (end        (cadddr form))
+         (body       (cddddr form)))
+    #`(do ((#,var (next-prime #,start) (next-prime (+ #,var 1))))
+        ((&gt; #,var #,end) 'done)
+        #,@body)))
+
+(do-primes2 p 1 10
+            (display p)
+            (newline))
+
+--
+Jens Axel S&#xF8;gaard
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00032" href="msg00032.html">Re: Opaque syntax objects</a></strong>
+<ul><li><em>From:</em> Andre van Tonder</li></ul></li>
+<li><strong><a name="00048" href="msg00048.html">Re: Opaque syntax objects</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00026" href="msg00026.html">Opaque syntax objects</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+<li><strong><a name="00027" href="msg00027.html">Re: Opaque syntax objects</a></strong>
+<ul><li><em>From:</em> felix winkelmann</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00029.html">Re: Opaque syntax objects</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00031.html">Re: Opaque syntax objects</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00027.html">Re: Opaque syntax objects</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00032.html">Re: Opaque syntax objects</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00030"><strong>Date</strong></a></li>
+<li><a href="threads.html#00030"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

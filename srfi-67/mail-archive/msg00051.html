@@ -1,0 +1,257 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: On optional arguments -->
+<!--X-From-R13: =?WEA&#45;8859&#45;1?C?Xraf_Okry_E=T8tnneq?= <wrafnkryNfbrtnneq.arg> -->
+<!--X-Date: Thu, 21 Jul 2005 18:33:28 +0200 (DFT) -->
+<!--X-Message-Id: 42DFCE35.4070606@soegaard.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>On optional arguments</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00050.html">Date Prev</a>][<a href="msg00052.html">Date Next</a>][<a href="msg00050.html">Thread Prev</a>][<a href="msg00052.html">Thread Next</a>][<a href="maillist.html#00051">Date Index</a>][<a href="threads.html#00051">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>On optional arguments</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-67@DOMAIN.HIDDEN">srfi-67@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: On optional arguments</li>
+<li><em>From</em>: Jens Axel S&#xF8;gaard &lt;<a href="mailto:jensaxel@DOMAIN.HIDDEN">jensaxel@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 21 Jul 2005 18:32:53 +0200</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-67@DOMAIN.HIDDEN">srfi-67@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Mozilla Thunderbird 1.0.2 (Windows/20050317)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+The discussion on optional arguments at the beginning
+stopped before a consensus was reached. Since the last
+letter in the thread was posted a while ago, I have
+made an attempt to recap the discussion.
+
+
+</pre><tt>The discussion started in 
+</tt><tt>&lt;<a  rel="nofollow" href="http://srfi.schemers.org/srfi-67/mail-archive/msg00036.html">http://srfi.schemers.org/srfi-67/mail-archive/msg00036.html</a>&gt;
+</tt><pre style="margin: 0em;">
+in which Mike Sperber writes:
+
+    procedure:  (=? [ compare ] [ x y ])
+    procedure:  (&lt;? [ compare ] [ x y ])
+    procedure:  (&gt;? [ compare ] [ x y ])
+    procedure:  (&lt;=? [ compare ] [ x y ])
+    procedure:  (&gt;=? [ compare ] [ x y ])
+    procedure:  (not=? [ compare ] [ x y ])
+
+    I dislike having the compare optional argument at
+    the beginning: There seems to be almost no precedent for
+    it in Scheme libraries, and it means that the parameter
+    positions change their meaning depending on the total
+    number of arguments, which I find confusing.
+
+In &lt;<a  rel="nofollow" href="http://srfi.schemers.org/srfi-67/mail-archive/msg00039.html">http://srfi.schemers.org/srfi-67/mail-archive/msg00039.html</a>&gt;
+Sebastian Egner writes:
+
+   b) If there is an optional compare proc. why is it in front?
+
+   So that (foo compare x y) is always understood as
+   (foo (compare x  y)). This is consistent throughout the SRFI with
+   all operations accepting a compare procedure as parameter---no matter
+   the arity.
+
+   Personally, I would find it confusing if the compare procedure
+   argument is in front for some operations and at the tail for others.
+   Consider:
+
+        (if&lt;? (compare x y) A B)
+        (if (&lt;? compare x y) A B)
+        (if ((&lt;? compare) x y) A B)
+
+   The confusion of compare changing places might be more than the
+   confusion of having an optional leading argument.
+
+In &lt;<a  rel="nofollow" href="http://srfi.schemers.org/srfi-67/mail-archive/msg00046.html">http://srfi.schemers.org/srfi-67/mail-archive/msg00046.html</a>&gt;
+Mike writes
+
+   - You use overloading to implement the curried version.
+
+     I think that's a bad idea, partly for the reason described above,
+     and partly for the existence of SRFI 26, which makes it clear that
+     there's currying going on with little notational overhead.  (But
+     who am I talking to? :-) )
+
+   - You ditch the overloading, your rationale goes out the door.
+
+and elsewhere suggests
+
+    Solution #1:
+    Ditch the curry overload; make the comparison an optional last
+    argument.
+
+    Solution #2:
+    Make the comparison a mandatory first argument.
+
+
+I'll for a moment assume that we ditch the curry overload
+and let the compare argument be the first of any optional
+arguments. Do we then get consistency? Well, almost, but there
+is still an (unrepairable) conflict with these functions
+
+    (chain=? compare x1 ...)
+    (chain&lt;? compare x1 ...)
+    (chain&gt;? compare x1 ...)
+    (chain&lt;=? compare x1 ...)
+    (chain&gt;=? compare x1 ...)
+    (pairwise-not=? compare x1 ...)
+    (min-compare compare x1 x2 ...)
+    (max-compare compare x1 x2 ...)
+    (kth-largest compare k x0 x1 ...).
+
+[the conflict being  (=? x y compare) versus (chain=? compare x y) ].
+
+[Note: The if-family of macros also take compare as first parameter]
+
+</pre><tt>The main objection against solution #1 is thus that it will become 
+</tt><tt>harder to remember where the compare functions are to be placed.
+</tt><pre style="margin: 0em;">
+
+But why did Mike objecti to putting the optional argument in front?
+
+On the technical side in
+  &lt;<a  rel="nofollow" href="http://srfi.schemers.org/srfi-67/mail-archive/msg00045.html">http://srfi.schemers.org/srfi-67/mail-archive/msg00045.html</a>&gt;
+he writes:
+
+  The problems come later, when you pass these things around as
+  higher-order procedures, and it's not immediately apparent that the
+  procedure you've been passed uses an unorthodox argument processing
+  convention.  (This is generally a case against overloading in
+  higher-order languages, I think---it doesn't scale well.)  This is why
+  you haven't encountered the problem yet, but may in the future.
+
+I am not sure I understand what he is getting at. If an unknown
+function is passed, then you obviously don't know how to call it
+correctly - and if you do know it, then you are aware of the
+functions calling conventions.
+
+On the cognitive front in
+  &lt;<a  rel="nofollow" href="http://srfi.schemers.org/srfi-67/mail-archive/msg00049.html">http://srfi.schemers.org/srfi-67/mail-archive/msg00049.html</a>&gt;
+he argues (prompted by the curry overloading I think) that
+having different names for different operations is preferrable
+(I tend to agree with that).
+
+Also on the cognitive front it should be mentioned that the
+traditional way of passing optional arguments is to use
+the variable number of arguments-mechanism. One might even
+say that our problem is that Scheme doesn't have a way
+to specify optional arguments. If it were possible to
+specify optional arguments with keywords this whole thread
+wouldn't exists. I.e. both (&lt;? :compare default x y) and
+(&lt;? x y :compare default) would work.
+
+
+
+The argument for the compare argument in front is also
+cognitive. The most important one is consistency as
+mentioned previously.
+
+Another parameter to consider is code readability.
+In some situations it is important to have read a
+certain argument before reading the others. Erm - more
+concretely consider
+
+  (&lt;? compare x y).
+
+Here &lt;? signals we need to compare something. compare
+describes how the things are compared, and x and y
+is what to compare. In
+
+  (&lt;? &lt;large-expression1&gt; &lt;large-expression2&gt; compare)
+
+one reads what is to be compared before one finds
+out how they are to be compared. In that situation
+I prefer
+
+  (&lt;? compare &lt;large-expression1&gt; &lt;large-expression2&gt;)
+
+</pre><tt>Botner has a similar point in 
+</tt><tt>&lt;<a  rel="nofollow" href="http://srfi.schemers.org/srfi-67/mail-archive/msg00050.html">http://srfi.schemers.org/srfi-67/mail-archive/msg00050.html</a>&gt;
+</tt><pre style="margin: 0em;">
+
+  SRFI 64 also has non-final optional arguments.  E,g.:
+  (test-eqv [test-name] expected test-expr)
+
+  I think this is preferable to having two functions, and
+  in this case having the test-name first is desirable for
+  documentation reasons:
+
+  (test-eqv &quot;test-string-apppend-1&quot; (....) (....))
+
+
+To sum up - I think the choice is between tradition and
+consistency. In the end it is a matter of taste, which
+is why it is hard to choose.
+
+
+My personal preference is to keep the optional compare
+argument in front. Having it appear first in some functions
+(chain=?, ...) and last in others will confuse me.
+
+--
+Jens Axel S&#xF8;gaard
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00052" href="msg00052.html">Re: On optional arguments</a></strong>
+<ul><li><em>From:</em> David Van Horn</li></ul></li>
+<li><strong><a name="00053" href="msg00053.html">Re: On optional arguments</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00050.html">Re: Optional arguments at the beginning</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00052.html">Re: On optional arguments</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00050.html">Re: Optional arguments at the beginning</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00052.html">Re: On optional arguments</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00051"><strong>Date</strong></a></li>
+<li><a href="threads.html#00051"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

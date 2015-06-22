@@ -1,0 +1,145 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Problems with "curry"'s formal specification -->
+<!--X-From-R13: Oy Brgebsfxl <nyNcrgebsfxl.bet> -->
+<!--X-Date: Thu, 28 Feb 2002 19:01:08 +0100 (NFT) -->
+<!--X-Message-Id: 200202281801.KAA15063@radish.petrofsky.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: OF997C2FF3.BB439C43&#45;ONC1256B6C.004C425E@diamond.philips.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Problems with &quot;curry&quot;'s formal specification</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00060.html">Date Prev</a>][<a href="msg00062.html">Date Next</a>][<a href="msg00055.html">Thread Prev</a>][<a href="msg00060.html">Thread Next</a>][<a href="maillist.html#00061">Date Index</a>][<a href="threads.html#00061">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Problems with &quot;curry&quot;'s formal specification</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:sebastian.egner@DOMAIN.HIDDEN">sebastian.egner@xxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Problems with &quot;curry&quot;'s formal specification</li>
+<li><em>From</em>: Al Petrofsky &lt;<a href="mailto:al@DOMAIN.HIDDEN">al@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 28 Feb 2002 10:01:00 -0800</li>
+<li><em>Cc</em>: <a href="mailto:srfi-26@DOMAIN.HIDDEN">srfi-26@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-26@DOMAIN.HIDDEN">srfi-26@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:OF997C2FF3.BB439C43-ONC1256B6C.004C425E@DOMAIN.HIDDEN">OF997C2FF3.BB439C43-ONC1256B6C.004C425E@xxxxxxxxxxxxxxxxxxx</a>&gt;	(<a href="mailto:sebastian.egner@DOMAIN.HIDDEN">sebastian.egner@xxxxxxxxxxx</a>)</li>
+<li><em>References</em>: &lt;<a href="mailto:OF997C2FF3.BB439C43-ONC1256B6C.004C425E@DOMAIN.HIDDEN">OF997C2FF3.BB439C43-ONC1256B6C.004C425E@xxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; From: sebastian.egner@xxxxxxxxxxx
+
+&gt; 1. Why are &quot;const&quot;s called &quot;constant&quot;?
+&gt; 
+&gt; The name was chosen because the values put into the
+&gt; filled slots do not depend directly on the arguments
+&gt; of the resulting procedure. As this is only true if
+&gt; there are no common side effects, the name is not as 
+&gt; accurate as it appears at first sight. Unfortunately,
+&gt; argument, parameter, and value are all very ambiguous 
+&gt; in this context. Do you have a suggestion?
+
+I think &quot;argument&quot; can work.  If the semantics are changed so that
+these values are indeed constant in the resulting procedure, then the
+name &quot;const&quot; would be more reasonable.
+
+&gt; 3a. When is the procedure expression evaluated?
+&gt; 3b. When are the &quot;constants&quot; evaluated?
+&gt; 3c. [...], and what do they [the examples above, SE] return? 
+&gt; 
+&gt; (These questions are also the issue raised by the
+&gt; 'cons-stream' example in your other posting with subject 
+&gt; line &gt; Re: l, the ultimate curry that is not curry &lt;)
+
+That's a slightly different issue.  If cons-stream is not a procedure,
+then it is clearly illegal as the first argument to curry.  No matter
+which way you decide to fix the spec, I suggest leaving this
+restriction in place.  It happens to make sense for cons-stream, but
+it will raise issues with other non-procedures, e.g. what does (curry
+quote &lt;&gt;) do?
+
+&gt; OPT3 Yet another option is to define the procedural semantics
+&gt; as the only SRFI-compliant semantics. It is easy to modify
+&gt; the macro implementation to evaluate the &quot;constants&quot; before
+&gt; the specialized procedure is constructed. In this case, it
+&gt; might be better to think about the mechanism as some form
+&gt; of partial evaluation, without the tricky bit of really 
+&gt; doing it.
+&gt; 
+&gt; Whatever happens to the SRFI, this is certainly an issue
+&gt; that has to be addressed. What is your advice?
+
+First, I'm not entirely convinced that this SRFI should proceed at
+all, and I agree with those who think that &quot;curry&quot;'s name must be
+changed to better reflect its not-curry nature.
+
+That being said, option 3 appeals the most to me.
+
+By the way, even if you decide not to support argument reordering and
+duplication (i.e. numbered slots), I see no reason to forbid non-slot
+arguments after a rest-slot:
+
+  (curry &lt; 0 &lt;...&gt; 100)  &lt;==&gt;  (lambda args (apply &lt; `(0 ,@args 100)))
+
+This would only require adding one rule to your macro:
+
+    ((curry &quot;loop&quot; (params ...) proc (args ...) &lt;...&gt; . more)
+     (lambda (params ... . rest-slot)
+       (apply proc args ... (append rest-slot (list . more)))))
+
+-al
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00055" href="msg00055.html">Re: Problems with &quot;curry&quot;'s formal specification</a></strong>
+<ul><li><em>From:</em> sebastian . egner</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00060.html">changes in the design of SRFI-26</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00062.html">Revision of SRFI 26 available</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00055.html">Re: Problems with &quot;curry&quot;'s formal specification</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00060.html">changes in the design of SRFI-26</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00061"><strong>Date</strong></a></li>
+<li><a href="threads.html#00061"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

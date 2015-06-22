@@ -1,0 +1,181 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: The Scheduler -->
+<!--X-From-R13: [nep Trryrl <srryrlNWDA.G[bagerny.QO> -->
+<!--X-Date: Thu, 13 Apr 2000 11:56:49 &#45;0500 (CDT) -->
+<!--X-Message-Id: 200004131656.MAA15090@trex.IRO.UMontreal.CA -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 003c01bfa55c$c0f9bdb0$11969fd0@fitzgerald_nt -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: The Scheduler</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00042.html">Date Prev</a>][<a href="msg00044.html">Date Next</a>][<a href="msg00042.html">Thread Prev</a>][<a href="msg00044.html">Thread Next</a>][<a href="maillist.html#00043">Date Index</a>][<a href="threads.html#00043">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: The Scheduler</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:fitzgerald@DOMAIN.HIDDEN">fitzgerald@xxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: The Scheduler</li>
+<li><em>From</em>: Marc Feeley &lt;<a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 13 Apr 2000 12:56:48 -0400</li>
+<li><em>Cc</em>: <a href="mailto:srfi-18@DOMAIN.HIDDEN">srfi-18@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:003c01bfa55c%24c0f9bdb0%2411969fd0@DOMAIN.HIDDEN"><a href="msg00042.html">003c01bfa55c$c0f9bdb0$11969fd0@fitzgerald_nt</a></a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:003c01bfa55c%24c0f9bdb0%2411969fd0@DOMAIN.HIDDEN"><a href="msg00042.html">003c01bfa55c$c0f9bdb0$11969fd0@fitzgerald_nt</a></a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; If the THREAD-PRIORITY&gt;? approach were adopted, then the 'fairness
+&gt; constraints' section remains the same, the 'priority aging' issue goes
+&gt; away (user x, want to implement priority aging? Just change
+&gt; THREAD-PRIORITY&gt;? to reflect this), I could implement deadlines, etc.
+&gt; 
+&gt; What do you think? Does this mess up the semantics too much? Make things
+&gt; too inefficient?
+
+This has some coupling problems that are difficult to resolve.
+
+For efficiency the scheduler maintains sets of threads (such as the
+set of runnable threads, and the set of threads blocked on a given
+mutex, and the set of threads blocked with a timeout) in a
+data-structure ordered by priority (and insertion time and timeout)
+where the highest priority thread can be accessed quickly.  My
+implementation uses red-black trees, but leftist trees, plain binary
+trees or a &quot;heap&quot; could be used.
+
+When some scheduling information (such as the priority field of a
+thread, or it's &quot;deadline&quot;) is changed, it is important that the
+red-black tree(s) containing the thread be reordered.  So at a minimum
+you need another primitive such as (thread-reorder!  &lt;thread&gt;) to
+notify the scheduler of a change of priority so it can reorder the
+appropriate red-black trees, because it has no knowledge of the user's
+implementation of priorities.  The user would use this primitive like
+this, where t is a thread:
+
+     (thread-deadline-set! t (foo x)) ; user defined deadline procedure
+     (thread-reorder! t)
+
+and define
+
+     (define (thread-priority&gt;? t1 t2)
+       (&lt; (thread-deadline t1)   ; note: bogus code... I don't fully
+          (thread-deadline t2))) ;       understand what &quot;deadline&quot; means
+
+Note that the scheduler has to be blocked out when the scheduler calls
+thread-priority&gt;? during a thread reordering (for example, no
+preemption timer interrupts are allowed because it would require
+modifying the red-black tree of runnable threads which might be in an
+inconsistent state).  Let's assume the preemption timer interrupt is
+not a problem because the scheduler disables these interrupts on entry
+to the scheduler.  Nevertheless the procedure thread-priority&gt;? has to
+be written very specially.  It can't use scheduler related operations,
+such as on mutexes.  It probably can't use I/O because mutexes are
+used to protect the I/O buffers.  It probably can't allocate memory
+(often multiprocessor memory allocators need to protect the memory
+pool with a mutex) or do anything that might raise an exception.
+Remember also that calling a procedure needs to allocate memory (for
+the continuation frame and/or the rest parameter list).  Finally,
+what is the value of (current-thread) when thread-priority&gt;? is
+called (note that thread reordering occurs at other points than
+when the user calls thread-reorder!, for example when a timeout
+occurs).  The value of (current-thread) is important to give
+meaning to (current-exception-handler), (current-output-port), etc
+
+Moreover, thread reordering has to be done promptly because the
+red-black tree search/insertion/deletion operations assume that the
+tree is in an ordered state.  But note that the preemption timer may
+interrupt the computation just between the calls to
+thread-deadline-set! and thread-reorder!.  So these operations must be
+performed in a critical section that blocks out the scheduler, along
+these lines:
+
+     (thread-disable-scheduler!)
+     (thread-deadline-set! t (foo x))
+     (thread-reorder-and-enable-scheduler! t)
+
+This bottleneck is going to be a problem in a multiprocessor because
+all scheduler related operations, including on mutexes, are going
+to have to busy wait for the duration of this critical section before
+they can proceed.
+
+Moreover, to be complete the code needs to prevent exceptions (raised
+in (foo x)) from exiting the critical-section prematurely.  So you
+really have to do something like this:
+
+     (let ((eh (current-exception-handler)))
+       (with-exception-handler
+         (lambda (exc)
+           (thread-reorder-and-enable-scheduler! t)
+           (eh exc))
+         (lambda ()
+           (thread-disable-scheduler!)
+           (thread-deadline-set! t (foo x))
+           (thread-reorder-and-enable-scheduler! t))))
+
+If this is not done then a missed thread-reorder-and-enable-scheduler!
+will completely hang the system.
+
+As you see I'm not very warm to your proposal!
+
+Marc
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00044" href="msg00044.html">RE: The Scheduler</a></strong>
+<ul><li><em>From:</em> Will Fitzgerald</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00042" href="msg00042.html">RE: The Scheduler</a></strong>
+<ul><li><em>From:</em> Will Fitzgerald</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00042.html">RE: The Scheduler</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00044.html">RE: The Scheduler</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00042.html">RE: The Scheduler</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00044.html">RE: The Scheduler</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00043"><strong>Date</strong></a></li>
+<li><a href="threads.html#00043"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

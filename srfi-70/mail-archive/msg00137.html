@@ -1,0 +1,334 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: inexactness vs. exactness -->
+<!--X-From-R13: Ohoerl Xnssre <ntwNnyhz.zvg.rqh> -->
+<!--X-Date: Tue, 19 Jul 2005 01:57:50 +0200 (DFT) -->
+<!--X-Message-Id: 20050718235825.0D1381B77B4@voluntocracy.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: y9lvf38ba3a.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: Pine.LNX.4.58.0507180818240.7111@bolt.sonic.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>inexactness vs. exactness</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00136.html">Date Prev</a>][<a href="msg00138.html">Date Next</a>][<a href="msg00130.html">Thread Prev</a>][<a href="msg00139.html">Thread Next</a>][<a href="maillist.html#00137">Date Index</a>][<a href="threads.html#00137">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>inexactness vs. exactness</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:bear@DOMAIN.HIDDEN">bear@xxxxxxxxx</a></li>
+<li><em>Subject</em>: inexactness vs. exactness</li>
+<li><em>From</em>: Aubrey Jaffer &lt;<a href="mailto:agj@DOMAIN.HIDDEN">agj@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 18 Jul 2005 19:58:25 -0400 (EDT)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-70@DOMAIN.HIDDEN">srfi-70@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-70@DOMAIN.HIDDEN">srfi-70@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:Pine.LNX.4.58.0507180818240.7111@DOMAIN.HIDDEN">Pine.LNX.4.58.0507180818240.7111@xxxxxxxxxxxxxx</a>&gt; (message from	bear on Mon, 18 Jul 2005 08:50:50 -0700 (PDT))</li>
+<li><em>References</em>: &lt;<a href="mailto:y9lvf38ba3a.fsf@DOMAIN.HIDDEN">y9lvf38ba3a.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:Pine.LNX.4.58.0507180818240.7111@DOMAIN.HIDDEN">Pine.LNX.4.58.0507180818240.7111@xxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre> | Date: Mon, 18 Jul 2005 08:50:50 -0700 (PDT)
+ | From: bear &lt;bear@xxxxxxxxx&gt;
+ | 
+ | This draft effectively eliminates certain properties of
+ | inexactness vs. exactness,
+
+SRFI-70 sharpens the distinction between inexacts and exacts.  From
+the R5RS notation of inexacts it deduces their nature as real
+neighborhoods.  Because exact numbers in Scheme designate single
+mathematical numbers, the idea of exactness as a superficial attribute
+of numbers must be jettisoned.
+
+SRFI-70 promotes the exactness property of functions over the
+exactness property of numbers:
+
+  Rationale
+
+  Inexactness
+
+  Inexactness is as much a property of calculation as it is of data
+  sources.  A language having latent types does not obviate the
+  programmer's expectation that a calculation involving transcendental
+  functions should return an inexact result.  To this end, two
+  sentences are struck from the 6.2.2 &quot;Exactness&quot; section:
+
+      An operation may, however, return an exact result if it can
+      prove that the value of the result is unaffected by the
+      inexactness of its arguments.  For example, multiplication of
+      any number by an exact zero may produce an exact zero result,
+      even if the other argument is inexact.
+
+  By those sentences, inexactness is a contagious property of all
+  numbers; except 0, the only number whose exactness is contagious!
+  This conflicts with the statement earlier in 6.2.2:
+
+      ... Thus inexactness is a contagious property of a number. 
+
+ | and in doing so it creates a type distinction where none was
+ | before.
+
+Is exactness this &quot;type distinction&quot;?
+
+ | In the dialect spec'd by R5RS, there was never any situation
+ | where an inexact number was required and an exact one would
+ | not do; thus it was entirely correct for implementations to
+ | return exact numbers whenever the opportunity presented
+ | itself.
+
+Implementations like Elk, Gambit, and Mzscheme signal errors for
+division by exact zero, but return infinities for division by inexact
+zero.  This is a &quot;situation where an inexact number was required and
+an exact one would not do&quot;.
+
+ | An implementation with exact roots in its numeric
+ | system, for example, could return an exact square root of
+ | two, or multiply two such numbers to get an exact two, or
+ | multiply an inexact whatever by an exact zero to get an exact
+ | zero, or subtract a boxed inexact number from itself to get
+ | an exact zero, or whatever.  Exactness, where available, was
+ | an unequivocal good.
+
+This created the contradiction noted above.  With exact 0 being
+stronger than inexact 0.0, it also leads to the opaque practice of
+controlling the behavior of EXPT and `/' at 0 by coercing the
+exactness of its arguments.
+
+SQRT is not transcendental; but dividing by SQRT of something has the
+same potential for lossage as discussed near the end of this message.
+One of the SRFI-70 &quot;Issues&quot; is whether there should be exact-only
+versions of SQRT and EXPT.
+
+ | Compliance with this SRFI requires that implementations
+ | do *NOT* extend exact numerics in any way;
+
+How is that?  I deliberately left unspecified cases where exact
+infinities could be returned.  Notice, for instance, that (/ k 0) does
+not appear in any of the SRFI-70 examples; yet all combinations with
+an inexact divisor are examples.
+
+ | rather than pretending to revise the standard itself,
+
+SRFI-70 is clearly a proposal to replace section 6.2 of R6RS.  Its
+abstract reads:
+
+  This SRFI reworks section 6.2 &quot;Numbers&quot; of R5RS to:
+
+      * include inexact real positive and negative infinities,
+      * define complete semantics for `expt',
+      * extend `gcd' and `lcm' to exact rational numbers,
+      * extend `quotient', `modulo', and `remainder' to finite real numbers,
+      * remove a contradiction related to exactness,
+      * add examples, and
+      * make small improvements to the text. 
+
+ | it should simply point out that the standard permits such extension
+ | but also allows compliance with the present SRFI, which forbids it.
+
+SRFI-70 proposes changes to the Scheme Report.  For instance, R5RS
+specifies that (expt 0 -1) ==&gt; 0.  That is wrong and SRFI-70 corrects
+it.  Compliance with R5RS would not allow this correction.
+
+ | This is an example of what I meant when I had misgivings
+ | about SRFI-75 (a SRFI about R6RS) being discussed in this
+ | forum (which is NOT about RnRS);
+
+&quot;The Revised R6RS Status Report&quot;
+(<a  rel="nofollow" href="http://www.schemers.org/Documents/Standards/Charter/2004-10-13.pdf">http://www.schemers.org/Documents/Standards/Charter/2004-10-13.pdf</a>)
+states:
+
+  In general, the committee's design procedure consists in tackling
+  each issue separately: gathering proposal(s) for solutions (from
+  existing implementations, SRFI's, old RnRS proposals, new ideas,
+  etc), discussing and modifying the proposals, and then taking a
+  preliminary decision on the course of action ...
+
+So SRFI is an endorsed channel for input to R6RS.
+
+ | it confuses the two
+ | processes to an intolerable degree, and leads the authors
+ | of SRFI's to believe, erroneously, that they have the
+ | authority to revise the standard.
+
+I have authority to propose whatever I want.  And the R6RS editors
+have the authority to accept it, modify it, or ignore it.
+
+ | But, process quibbles aside, this reveals a deeper
+ | issue.
+ | 
+ | This draft intends to constrain implementations from
+ | opportunistically providing exact results or seeking
+ | to provide exact results where other implementations
+ | or representations cannot.  This amounts to treating
+ | inexactness in some circumstances as a *desirable*
+ | property of numbers.
+
+I do a lot of numerical computing (near-field optics lately).
+Division by zero happens.  If SIN of some complicated expression
+returns an exact zero .001% of the time, then .001% of the time I will
+get an exception from the division taking that expression as a divisor
+rather than an infinity which lets the program continue.
+
+That is broken behavior; but that is what R5RS-compliant Mzscheme 205
+does; and probably other implementations also.
+
+So yes, I prefer inexact numbers from transcendental functions!
+
+ | I strongly suspect that if
+ | inexactness has become a desirable property, then it
+ | is most likely because of one or more design mistakes.
+ | 
+ | This is like deriving a known-false result in mathematics;
+ | it indicates that at least one of the steps along the
+ | way was wrong, and subsequent steps, including the
+ | present SRFI in dealing with inexactness, therefore
+ | invalid (in proceeding, perhaps correctly, from
+ | erroneous premises).
+
+Strong suspicions are not the same known-false results.  But it is
+demagoguery for you to deprecate my program sight unseen.
+
+<a  rel="nofollow" href="http://savannah.gnu.org/cgi-bin/viewcvs/freesnell/freesnell/fresneleq.scm?rev=HEAD&amp;content-type=text/vnd.viewcvs-markup">http://savannah.gnu.org/cgi-bin/viewcvs/freesnell/freesnell/fresneleq.scm?rev=HEAD&amp;content-type=text/vnd.viewcvs-markup</a>
+
+;; Optics is all wavelength based; so this is also.  These routines
+;; work out the complex voltages in the forward and reverse directions
+;; to find the transmitted and reflected amplitudes.  This works only
+;; for intensities where the layers act linearly (superposition).
+;; Each layer 0:n has an index of refraction and height.
+
+;; Square the absolute value of numbers returned to get the power
+;; ratios.
+
+;; Because the P and S polarizations are independent, calculate them
+;; separately.
+
+;;; Fresnel's equations from
+;;; <a  rel="nofollow" href="http://www.ifm.liu.se/~boser/elma/Lect13.pdf">http://www.ifm.liu.se/~boser/elma/Lect13.pdf</a>
+
+;;; The transmitted voltage (E-Field)
+(define (E_T n1 n2 cos-i cos-t s-polarization?)
+  (if s-polarization?
+      (/ (* 2 n1 cos-i)
+         (+ (* n1 cos-i) (* n2 cos-t)))
+      (/ (* 2 n1 cos-i)
+         (+ (* n1 cos-t) (* n2 cos-i)))))
+;;; The reflected voltage (E-Field)
+(define (E_R n1 n2 cos-i cos-t s-polarization?)
+  (if s-polarization?
+      (/ (- (* n1 cos-i) (* n2 cos-t))
+         (+ (* n1 cos-i) (* n2 cos-t)))
+      (/ (- (* n2 cos-i) (* n1 cos-t))
+         (+ (* n1 cos-t) (* n2 cos-i)))))
+
+;;; Returns 2x2 matrix:
+;;;
+;;;            (   1      r      )
+;;;    1       (           n-1,n )
+;;; -------- * (                 )
+;;;  t         ( r          1    )
+;;;   n-1,n    (  n-1,n          )
+(define (layer-interface n1 n2 th1 s-polarization?)
+  (define cos-i (cos th1))
+  (define cos-t (cos (Snell-law n1 n2 th1)))
+  (let ((transmit (E_T n1 n2 cos-i cos-t s-polarization?))
+        (reflect (E_R n1 n2 cos-i cos-t s-polarization?)))
+    (let ((r/t (/ reflect transmit))
+          (tinv (/ transmit)))
+      (list (list tinv r/t) (list r/t tinv)))))
+
+;;; Returns 2x2 matrix coding phase difference between reflected and
+;;; transmitted paths.
+;;;
+;;;  (  -i*d_n    0    )
+;;;  ( e               )
+;;;  (           i*d_n )
+;;;  (    0     e      )
+(define (layer-phase h_j n_j th_j w)
+  (define phase (exp (/ (* +2i pi h_j n_j (cos th_j)) w)))
+  (list (list (/ phase) 0) (list 0 phase)))
+
+;; Given the angle of impinging light,
+;; returns the angle of the transmitted light
+(define (Snell-law n1 n2 th-i)
+  (asin (* (/ n1 n2) (sin th-i))))
+
+How is this poorly designed?
+Should it not use division?
+Should it not use transcendental functions?
+
+ | I believe that it indicates that
+ | one or more of the uniform-numeric-vector SRFI's is
+ | in conflict with Scheme's basic design principles
+ | (the preference for exact calculation where possible)
+ | and in need of redesign.
+
+The adoption of SRFI-70 would fix that problem.
+
+There seems to be growing agitation to remove exactness as a concept
+from Scheme.  A proposal along these lines is &quot;Cleaning up the Tower:
+Numbers in Scheme&quot;
+<a  rel="nofollow" href="http://www-pu.informatik.uni-tuebingen.de/users/sperber/papers/numerical-tower.pdf">http://www-pu.informatik.uni-tuebingen.de/users/sperber/papers/numerical-tower.pdf</a>
+
+SRFI-70 may be the best chance for retaining it.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00139" href="msg00139.html">Re: inexactness vs. exactness</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00129" href="msg00129.html">Revision of SRFI 70 available</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+<li><strong><a name="00130" href="msg00130.html">Re: Revision of SRFI 70 available</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00136.html">Re: Nitpick with FLOOR etc.</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00138.html">Re: Nitpick with FLOOR etc.</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00130.html">Re: Revision of SRFI 70 available</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00139.html">Re: inexactness vs. exactness</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00137"><strong>Date</strong></a></li>
+<li><a href="threads.html#00137"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

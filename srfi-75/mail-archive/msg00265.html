@@ -1,0 +1,129 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: freshman&#45;level Boyer&#45;Moore fast string search -->
+<!--X-From-R13: Oyrk Euvaa <nyrkfuvaaNtznvy.pbz> -->
+<!--X-Date: Fri, 29 Jul 2005 00:52:09 +0200 (DFT) -->
+<!--X-Message-Id: 5fb7e087050728155222b72af7@mail.gmail.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 42E92750.8030004@verizon.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: freshman-level Boyer-Moore fast string search</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00264.html">Date Prev</a>][<a href="msg00266.html">Date Next</a>][<a href="msg00263.html">Thread Prev</a>][<a href="msg00266.html">Thread Next</a>][<a href="maillist.html#00265">Date Index</a>][<a href="threads.html#00265">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: freshman-level Boyer-Moore fast string search</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: William D Clinger &lt;<a href="mailto:cesura@DOMAIN.HIDDEN">cesura@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: freshman-level Boyer-Moore fast string search</li>
+<li><em>From</em>: Alex Shinn &lt;<a href="mailto:alexshinn@DOMAIN.HIDDEN">alexshinn@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 29 Jul 2005 07:52:05 +0900</li>
+<li><em>Cc</em>: <a href="mailto:srfi-75@DOMAIN.HIDDEN">srfi-75@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-75@DOMAIN.HIDDEN">srfi-75@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Domainkey-signature</em>: a=rsa-sha1; q=dns; c=nofws;        s=beta; d=gmail.com;        h=received:message-id:date:from:reply-to:to:subject:cc:in-reply-to:mime-version:content-type:content-transfer-encoding:content-disposition:references;        b=AYEnJrbcNoGLiFAsFkVt1/pPEF44QOff72ZwncuZaIGTDaKO1ZopbeewRiV52Wza+N8oxROFlUaDzm9cPNb1tjJmPdfR+3z4bPBRIs9BBwBmZpK35gLtohIHdpBhL3m2yGaHLy7yArTbGPj1qgOeSjSGuSOPiWTbgOdwn70Jc6Y=</li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:42E92750.8030004@DOMAIN.HIDDEN">42E92750.8030004@xxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:42E92750.8030004@DOMAIN.HIDDEN">42E92750.8030004@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Reply-to</em>: Alex Shinn &lt;<a href="mailto:alexshinn@DOMAIN.HIDDEN">alexshinn@xxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>On 7/29/05, William D Clinger &lt;cesura@xxxxxxxxxxx&gt; wrote:
+&gt; The purpose of this note is to show how random access
+&gt; to the characters of a string improves the efficiency
+&gt; of string searching beyond what is possible with random
+&gt; access to the bytes of a UTF-8 string.
+&gt;
+&gt; This can be demonstrated using the Boyer-Moore algorithm
+&gt; for fast string searching
+
+What you describe is not the Boyer-Moore algorithm.  It is a
+(freshman level variant of) a variant of the Boyer-Moore algorithm
+which trades a time and space cost of Sigma in the preprocessing
+step for a constant factor of lg(m) in both steps.  This is probably
+a worthwhile trade-off when Sigma is the full size of Unicode, but
+there are other optimizations worth considering.
+
+You say above you'll give us random access to the bytes of the UTF-8
+string, and I want to use that.  I want to use something like strstr(3),
+which works on bytes and returns a pointer.  This could use the real
+BM, without the lg(m) factor.  Thus our costs become:
+
+UTF-32 BM:
+    preprocess: O(m + Sigma) time and space, Sigma huge
+    worst case:  O(mn) time
+    best case:    O(m/n) time
+
+UTF-32 BM with binary tree offset lookup:
+    preprocess: O(m lg(m)) time + O(m) space
+    worst case:  O(mn lg(m)) time
+    best case:    O(m/n lg(m)) time
+
+UTF-8 with byte-oriented BM:
+    preprocess: O(m + Sigma) time and space, Sigma small
+    worst case:  O(mn) time
+    best case:    O(m/n) time
+
+Now, if you really wanted to convert the UTF-8 pointer to a codepoint
+index, that could be done with a post-processing step of O(n).  This of
+course only needs to be done when the string is found, so it will factor
+into the average case, but not the best case.
+
+However, the point of the discussion is that people are objecting to
+explicitly forcing strings to be character arrays.  If we have string-pointers
+in Scheme then the above conversion to index need not even be
+performed.  Why penalize the fastest implementation?
+
+-- 
+Alex
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00264.html">Re: Surrogates and character representation</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00266.html">Re: freshman-level Boyer-Moore fast string search</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00263.html">Re: Allowing ASCII only, string escapes, and normalization</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00266.html">Re: freshman-level Boyer-Moore fast string search</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00265"><strong>Date</strong></a></li>
+<li><a href="threads.html#00265"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

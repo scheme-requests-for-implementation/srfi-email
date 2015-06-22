@@ -1,0 +1,162 @@
+<!-- MHonArc v2.6.16 -->
+<!--X-Subject: Re: More comments, and the ANTLR code is too complex -->
+<!--X-From-R13: Oyna [nahry Uybevn <nyzxtybeNtznvy.pbz> -->
+<!--X-Date: Mon, 10 Jun 2013 04:01:38 +0200 (MST) -->
+<!--X-Message-Id: CAF+kUQW=9c0s2139ap3BK34DW1hZ4g9DhU8w&#45;&#45;LMPA3Z2&#45;ErFw@mail.gmail.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 87sj1647r6.fsf@tines.lan -->
+<!--X-Reference: E1Ulprk&#45;0007Qy&#45;AB@rmm6prod02.runbox.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: More comments, and the ANTLR code is too complex</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00183.html">Date Prev</a>][<a href="msg00185.html">Date Next</a>][<a href="msg00183.html">Thread Prev</a>][<a href="msg00185.html">Thread Next</a>][<a href="maillist.html#00184">Date Index</a>][<a href="threads.html#00184">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: More comments, and the ANTLR code is too complex</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:dwheeler@DOMAIN.HIDDEN">dwheeler@xxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: More comments, and the ANTLR code is too complex</li>
+<li><em>From</em>: Alan Manuel Gloria &lt;<a href="mailto:almkglor@DOMAIN.HIDDEN">almkglor@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 10 Jun 2013 09:56:13 +0800</li>
+<li><em>Cc</em>: mhw &lt;<a href="mailto:mhw@DOMAIN.HIDDEN">mhw@xxxxxxxxxx</a>&gt;, srfi-110 &lt;<a href="mailto:srfi-110@DOMAIN.HIDDEN">srfi-110@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-110@DOMAIN.HIDDEN">srfi-110@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Dkim-signature</em>: v=1; a=rsa-sha256; c=relaxed/relaxed;        d=gmail.com; s=20120113;        h=mime-version:in-reply-to:references:date:message-id:subject:from:to         :cc:content-type;        bh=MCFlypamUz8/YgOuLOamSVQXm2yMPJsBGC50wmTNifQ=;        b=lsN9KOKq2n4IN9ZvZJr0SrFTBBpFIG0C/IO9Bb1+SQxMT1HhPxdbEKndlphuZvKe+4         EALpYGeqxSjvHrX3cc4qdi4Dm/8qHXNx9J/5mLMgXZ9O8RCB2i9PSVhij9yFeA2YbdV6         4T4h5pwSntQ0nzZrM3pwPhzmZpxIb2H68y1sOOLZHEXxKZbXTKVCzBNbrcT1pqIMGxRj         jVgV1Fn44bLYIRiu2VeNPRZhEvfAUrJiLuUzLRf+7Hg10B+NaGJhV8BjHlvXp64gpODJ         qdg8NkwM1fA3yEPgcVJqV9UUP86YxfitEjbSi9gLyjPIHCk/FeSuoZenlLEXMjqT6Dv1         ZC6g==</li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:E1Ulprk-0007Qy-AB@DOMAIN.HIDDEN">E1Ulprk-0007Qy-AB@xxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:87sj1647r6.fsf@DOMAIN.HIDDEN">87sj1647r6.fsf@xxxxxxxxx</a>&gt;	&lt;<a href="mailto:E1Ulprk-0007Qy-AB@DOMAIN.HIDDEN">E1Ulprk-0007Qy-AB@xxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>On 6/10/13, David A. Wheeler &lt;dwheeler@xxxxxxxxxxxx&gt; wrote:
+&gt; There are many ways to try to make the ANTLR code simpler.
+&gt;
+&gt; One approach is to break up rules into smaller rules.  It's easier to
+&gt; *implement*
+&gt; some of these rules as a long sequence of conditions, but if that
+&gt; presentation
+&gt; makes it too hard to explain, then we can of course change it.
+&gt; Also, we could remove some of the &quot;greedy=true&quot; statements (which are used
+&gt; to eliminate some warning messages).
+&gt;
+&gt; Below is a first shot at breaking up it_expr, currently 1 long rule, into 2
+&gt; rules.
+&gt; This could obviously be repeated to make more rules, each one simpler.
+&gt; Not saying it's done, but would it help to break the current longer rules
+&gt; into more but smaller rules?
+&gt;
+&gt; --- David A. Wheeler
+&gt;
+&gt;
+&gt; it_expr_normal returns [Object v]
+&gt;   : head
+&gt;      GROUP_SPLIT hspace*
+&gt;       (comment_eol error
+&gt;        | /*empty*/ {(monify $head)} )
+&gt;      | SUBLIST hspace*
+&gt;        (sub_i=it_expr {(append $head (list $sub_i))}
+&gt;         | comment_eol error )
+&gt;      | comment_eol // Normal case, handle child lines if any:
+&gt;        (INDENT children=body {(append $head $children)}
+&gt;         | /*empty*/          {(monify $head)} /* No child lines */ )
+&gt;     ;
+&gt;
+&gt; it_expr_prefixed returns [Object v]
+&gt;   : (GROUP_SPLIT | scomment) hspace* /* Initial; Interpet as group */
+&gt;       (group_i=it_expr {$group_i} /* Ignore initial GROUP/scomment */
+&gt;        | comment_eol
+&gt;          (INDENT g_body=body {$g_body} /* Normal GROUP use */
+&gt;           | same ( g_i=it_expr {$g_i} /* Plausible separator */
+&gt;                    /* Handle #!sweet EOL EOL t_expr */
+&gt;                    | comment_eol restart=t_expr {$restart} )
+&gt;           | DEDENT error ))
+&gt;   | SUBLIST hspace* /* &quot;$&quot; first on line */
+&gt;     (is_i=it_expr {(list $is_i)}
+&gt;      | comment_eol error )
+&gt;   | abbrevw hspace*
+&gt;       (comment_eol INDENT ab=body
+&gt;          {(append (list $abbrevw) $ab)}
+&gt;        | ai=it_expr
+&gt;          {(list $abbrevw $ai)} ) ;
+&gt;
+&gt; it_expr returns [Object v]
+&gt;   : it_expr_normal   {$it_expr_normal}
+&gt;   | it_expr_prefixed {$it_expr_prefixed} ;
+&gt;
+&gt;
+
+It *might*.  I suggest we need better names.  We don't really need to
+prefix with &quot;it_expr&quot;, for example.  So maybe &quot;normal_it_expr&quot; and
+&quot;special_it_expr&quot; instead.
+
+Having more rules helps in discussing rules, and may help suggest how
+to organize a top-down recursive descent parser.
+
+However, we might want to ask Mark H. Weaver directly if this helps
+clarify the BNF.
+
+Sincerely,
+AmkG
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00185" href="msg00185.html">Re: More comments, and the ANTLR code is too complex</a></strong>
+<ul><li><em>From:</em> David A. Wheeler</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00179" href="msg00179.html">More comments, and the ANTLR code is too complex</a></strong>
+<ul><li><em>From:</em> Mark H Weaver</li></ul></li>
+<li><strong><a name="00183" href="msg00183.html">Re: More comments, and the ANTLR code is too complex</a></strong>
+<ul><li><em>From:</em> David A. Wheeler</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00183.html">Re: More comments, and the ANTLR code is too complex</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00185.html">Re: More comments, and the ANTLR code is too complex</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00183.html">Re: More comments, and the ANTLR code is too complex</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00185.html">Re: More comments, and the ANTLR code is too complex</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00184"><strong>Date</strong></a></li>
+<li><a href="threads.html#00184"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

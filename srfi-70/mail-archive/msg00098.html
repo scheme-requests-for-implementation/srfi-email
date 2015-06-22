@@ -1,0 +1,198 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: comparison operators and *typos -->
+<!--X-From-R13: Ohoerl Xnssre <ntwNnyhz.zvg.rqh> -->
+<!--X-Date: Sun,  3 Jul 2005 20:42:46 +0200 (DFT) -->
+<!--X-Message-Id: 20050703184239.18E2F1B77B4@voluntocracy.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: BEEBA6D8.AB3B%schlie@comcast.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: comparison operators and *typos</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00097.html">Date Prev</a>][<a href="msg00099.html">Date Next</a>][<a href="msg00097.html">Thread Prev</a>][<a href="msg00100.html">Thread Next</a>][<a href="maillist.html#00098">Date Index</a>][<a href="threads.html#00098">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: comparison operators and *typos</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:schlie@DOMAIN.HIDDEN">schlie@xxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: comparison operators and *typos</li>
+<li><em>From</em>: Aubrey Jaffer &lt;<a href="mailto:agj@DOMAIN.HIDDEN">agj@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun,  3 Jul 2005 14:42:39 -0400 (EDT)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-70@DOMAIN.HIDDEN">srfi-70@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-70@DOMAIN.HIDDEN">srfi-70@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:BEEBA6D8.AB3B%25schlie@DOMAIN.HIDDEN">BEEBA6D8.AB3B%schlie@xxxxxxxxxxx</a>&gt; (message from Paul Schlie on	Sat, 02 Jul 2005 02:05:12 -0400)</li>
+<li><em>References</em>: &lt;<a href="mailto:BEEBA6D8.AB3B%25schlie@DOMAIN.HIDDEN">BEEBA6D8.AB3B%schlie@xxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre> | Date: Sat, 02 Jul 2005 02:05:12 -0400
+ | From: Paul Schlie &lt;schlie@xxxxxxxxxxx&gt;
+ | 
+ | ... it seems both reasonable and useful to define:
+ | 
+ |   (= -0.0 0 0.0) =&gt; #t
+ |   
+ |   thereby zero's are considered to compare equal, enabling (= 0 any-zero)
+ | 
+ |   (&lt; -0.0 0.0) =&gt; #t
+ |   (&gt; 0.0 -0.0) =&gt; #t
+
+Mathematically, `=', `&lt;', and `&gt;' are mutually exclusive.  So -0.0
+cannot simultaneously be `=' and `&lt;' 0.0.
+
+ |   thereby only regions which do not overlap compare &lt; or &gt;
+
+So what is returned by comparisons of overlapped regions?
+
+ |   (&lt;= -0.0 0 0.0) =&gt; #t
+ |   (&gt;= 0.0 0 -0.0) =&gt; #t
+ | 
+ |   thereby only 0 is (and (&lt;= x 0.0) (&gt;= x -0.0))
+
+That could only be true if 0 is not within any inexact neighborhood.
+It would then be the only real number for which EXACT-&gt;INEXACT fails
+to return a value.
+
+Because (= -0.0 0.0), x can also be 0.0; and (&lt;= 0.0 -0.0) should also
+return true.  We have thus reached a situation where -0.0 and 0.0 are
+indistinguishable.
+
+ | &gt; | &gt;   (tan 1.5707963267948965) ==&gt; 16.331778728383844e15
+ | &gt; | &gt;   (tan 1.5707963267948967) ==&gt; -6.218352966023783e15
+ | &gt; TAN not reaching #i+/0 is a simple matter of the mantissa not having
+ | &gt; enough resolution around 1.5708.  With an 11.bit exponent, over
+ | &gt; 1024.bit precision would be needed for a floating point number to have
+ | &gt; an infinite TANgent.
+ | 
+ | - are you saying that since pi/2 can't be represented with sufficient
+ |   precision to yield:
+ | 
+ |   (tan (+ pi/2 0.0)) -&gt; inf.0, or (tan (- pi/2 0.0)) =&gt; -inf.0
+ | 
+ |   that they shouldn't be formally defined to be so?
+
+No amount of precision will make (+ pi/2 0.0) return a different
+number from (- pi/2 0.0).
+
+ |   which I'd disagree with, as although I accept that a particular
+ |   implementation may not have sufficient precision to exceed the
+ |   dynamic range of the representation, therefore may only yield
+ |   smaller values; I don't believe it's correct to define (tan pi/2)
+ |   as being anything other than &lt;+|-&gt;inf.0 (aka ~inf.0, or e~/0).
+
+Mathematically, tan(pi/2) is undefined.
+
+ | &gt;  | &gt; Note that the one-sided LIMIT gets it right without needing
+ | &gt;  | &gt; any new numbers:
+ | &gt;  | &gt; 
+ | &gt;  | &gt;   (limit tan 1.5707963267948965 -1.0e-15)       ==&gt; +1/0
+ | &gt;  | &gt;   (limit tan 1.5707963267948965 1.0e-15)        ==&gt; -1/0
+ | &gt;  | 
+ | &gt;  | - yes, which is why the simultaneous two sided limit == +-1/0 == ~1/0
+ | &gt; 
+ | &gt; By the definition, the two-sided limit of tan at pi/2 does not exist
+ | &gt; because the one-sided limits are not equal.
+ | 
+ | - really, I was under the impression that they were?
+
+Look it up: &lt;<a  rel="nofollow" href="http://en.wikipedia.org/wiki/Limit_of_a_function">http://en.wikipedia.org/wiki/Limit_of_a_function</a>&gt;
+
+ |   for example if I defined an inexact number system based on binary
+ |   fractions of pi, then it would only require a few bits of
+ |   precision to represent pi/2 exactly, and produce fully symmetric
+ |   results for (tan x) which would be equal to &lt;+|-&gt;inf.0 at pi/2.
+
+Mathematically, tan(pi/2) is undefined; but the one-sided limits tend
+to positive infinity and negative infinity.  Going to great lengths to
+have pi/2 in your number system so that tan(pi/2) can return an
+infinity with indeterminate sign is computationally useless.
+SRFI-70's #i0/0 is sufficient to represent any indeterminate quantity.
+That there are finer shades of distinction for indeterminates is
+perhaps interesting, but certainly not a necessity for R6RS.
+
+ | &gt;  |   and (/ 1 #e0) == (/ 1 (+ #e0 ~0.0)) == #i~1/0 == ~inf.0
+ | &gt; 
+ | &gt; Knowing that the value of an expression could be positive infinity or
+ | &gt; negative infinity is much less useful than knowing which infinity it
+ | &gt; is.
+ | 
+ | - agreed, but without being able to determine the sign of a zero,
+ | which I agree is often not important, you can't determine the sign
+ | of it's reciprocal which is an infinity, (so the problem is fully
+ | symmetric, if signs of infinities are likely important, then so are
+ | the signs of zeros it would seem.)
+
+Inexact numbers are approximate.  Most calculations returning inexact
+numbers lose information.  Which side the zero, pi, or other number
+was approached from is one of the casualties of approximate computing.
+
+One must be careful with numerical properties.  If I understand your
+system, adding -0.0 to 0.0 returns -0.0.  But that -0.0 may have been
+generated by (* -5 0.0) while the 0.0 was the result of (/ #i+1/0).
+Taking the reciprocal of the resulting -0.0 will be the wrong
+infinity.  Just because an attribute is there, doesn't mean it is
+reliable.
+
+(/ (+ (* -5 0.0) (/ #i+1/0)))
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00100" href="msg00100.html">Re: comparison operators and *typos</a></strong>
+<ul><li><em>From:</em> Paul Schlie</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00097" href="msg00097.html">Re: comparison operators and *typos</a></strong>
+<ul><li><em>From:</em> Paul Schlie</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00097.html">Re: comparison operators and *typos</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00099.html">infinity notations</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00097.html">Re: comparison operators and *typos</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00100.html">Re: comparison operators and *typos</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00098"><strong>Date</strong></a></li>
+<li><a href="threads.html#00098"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

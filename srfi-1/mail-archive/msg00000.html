@@ -1,0 +1,229 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: SRFI1: 90 days to discuss 89 procedures? -->
+<!--X-From-R13: "Eretrv Stbebi" <rfyNvasbeznkvap.pbz> -->
+<!--X-Date: Thu, 24 Dec 1998 23:24:59 &#45;0600 (CST) -->
+<!--X-Message-Id: 003601be2fc7$0437dd80$538baccf@meurglys&#45;iv -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>SRFI1: 90 days to discuss 89 procedures?</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[Date Prev][<a href="msg00001.html">Date Next</a>][Thread Prev][<a href="msg00001.html">Thread Next</a>][<a href="maillist.html#00000">Date Index</a>][<a href="threads.html#00000">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>SRFI1: 90 days to discuss 89 procedures?</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &lt;<a href="mailto:srfi-1@DOMAIN.HIDDEN">srfi-1@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: SRFI1: 90 days to discuss 89 procedures?</li>
+<li><em>From</em>: &quot;Sergei Egorov&quot; &lt;<a href="mailto:esl@DOMAIN.HIDDEN">esl@xxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 25 Dec 1998 00:25:40 -0500</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>This is a revised version of comments I posted on comp.lang.scheme:
+
+
+General comment:
+
+
+0) I believe this proposal is too large (89 procedures!) to be adopted
+in a short time frame dictated by SRFI rules with the amount of
+discussion it deserves; it can be split onto several separate SRFIs
+based on usage patterns (destructive versions vs. non-destructive
+vesions, list functions vs. a-list functions etc.)
+
+
+
+Procedures:
+
+
+1) I think that MAKE-LIST should not allow the 'fill'
+argument to be left out; at least, the default value
+should be unspecified as in MAKE-VECTOR and MAKE-STRING
+(choice of #f seems a little random to me).
+
+
+
+2) .IOTA is not a legal identifier according to R5RS (even if it were legal,
+both names look very strange for average Schemer). Definitions of both .IOTA
+and IOTA. demonstrate a new and strange approach to &quot;optional&quot; arguments:
+one-argument version is an abbreviation for two-argument version without
+first argument! If generality is the goal, we can have three-argument
+(IOTA from to step); if we need shortcuts, we can have both
+(IOTA0 n) ==  (IOTA 0 n 1) and (IOTA1 n) == (IOTA 1 (+ n 1) 1)
+If you cannot remember the arguments to a function, there's sometning
+wrong with its design...
+
+
+
+3) Since the RFI already contains synonyms
+(ALIST-DELETE == DEL-ASS), I believe that both
+CONS* and LIST* should be included as synonyms. Both
+names are equally popular in existing implementations;
+we can have them both with a rationale that LIST*
+may suggest to the reader that the result is a proper list,
+while CONS* may suggest that the result could be an
+improper list.
+
+
+
+4) I don't think that FIRST ... TENTH deserve library status: they
+suggest one-based indexing (everything else uses 0-based indexing);
+most useful half of them are just synonyms to standard CxxRs; we
+already have standard LIST-REF for list indexing; even simplest
+list-destructuring facility is much more convenient as a means of
+getting access to list elements.
+
+
+
+5) TAKE and DROP demonstrate a new and very unusual approach to
+indexing; I couldn't find any Lisp/functional/other language that
+uses negative indices to mean 'count from tail' (Icon?)
+
+This approach can be potentially dangerous because
+it hides popular &quot;off by 1&quot; errors around 0 instead of
+signalling them at run-time; I also think it adds confusion
+(this is demonstrated, for example, by the fact that the
+original description contains typos: instead of
+'If I &lt;= 0, TAKE returns the last  I elements of LIST'
+it should say
+'If I &lt;= 0, TAKE returns the last -I elements of LIST'
+etc.)
+
+I would prefer to see (SUBLIST list start end) which
+is both generic and quite natural, and (LIST-HEAD list k)
+to complement existing (LIST-TAIL list k).
+
+
+
+6) UNZIP1 is missing although it no less useful than other
+procedures of the UNZIP family:
+
+(unzip1 '((1) (2) (3))) =&gt; (1 2 3)
+
+
+
+7) I would like to have APPEND-REVERSE{!} instead of
+REVERSE-APPEND{!} for two reasons: 1) I think that
+APPEND-REVERSE is easier to remember visually
+(APPEND-REVERSE x y) == (APPEND (REVERSE x) y)
+(APPEND-MAP{!} has the same property)
+and 2) APPEND-REVERSE is the name used in at
+least one implementation (T)
+
+
+
+8) I prefer having TAIL- prefix for procedures working with
+consecutive cdrs of a list; PAIR- prefix does not have this &quot;CDR&quot;
+sound (PAIR-FOR-EACH may be a better name for tree browsing
+procedure)
+
+
+
+9) A far as I know, MzScheme, Bigloo, CL and possibly Chez
+Scheme use REMOVE to name a procedure that returns
+a list with all elements equal? to its first argument
+removed. SLIB also follows this usage; it is also
+described in the first edition of &quot;The Scheme
+Programming Language&quot;.
+
+I suggest the following naming scheme:
+
+(remove object list [=?]) ;=? defaults to equal?
+(remq object list)
+(remv object list)
+(remove-if predicate list)
+
+This scheme can be used for membership predicates as well:
+
+(member object list [=?]) ;=? defaults to equal?, 2-arg version is standard
+(memq object list) ;standard
+(memv object list) ;standard
+(member-if predicate list)
+
+.. and for other procedures:
+
+(find object list [=?]) ;returns #f or object from the list; =? defaults to
+equal?
+
+(assoc key alist [=?]) ;= defaults to equal?, 2-arg version is standard
+(assq key alist) ;standard
+(assv key alist) ;standard
+
+(I would prefer to keep the name 'ASS' reserved for future use :)
+
+If lists are used as sequences, it is important to be able to calculate
+element positions:
+
+(position object list [=]) ;returns 0-based index or #f; = defaults to
+equal?,
+(posq object list) ;same as (position object list eq?)
+(posv object list) ;same as (position object list eqv?)
+
+etc.
+
+I would also left unspecified the behavior of procedures accepting
+equivalence
+predicates [=] when given non-commutative procedures; when in doubt, one can
+always use -IF variants.
+
+
+
+10) I would like to have ORMAP as synonym (or the only name) to ANY and
+ANDMAP
+as synonym to EVERY; for me it was easier to use single &quot;formal&quot; ORMAP than
+to remember
+which one of several equally &quot;natural&quot; ANY, SOME, THERE-EXISTS etc. is
+implemented.
+
+
+Sergei Egorov,
+esl@xxxxxxxxxxxxxxx
+
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Next by Date:
+<strong><a href="msg00001.html">Comments on SRFI-1.</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00001.html">Comments on SRFI-1.</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00000"><strong>Date</strong></a></li>
+<li><a href="threads.html#00000"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,143 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: EX_USAGE? -->
+<!--X-From-R13: [nep Trryrl <srryrlNWDA.G[bagerny.QO> -->
+<!--X-Date: Fri, 15 Jun 2001 08:57:10 &#45;0500 (CDT) -->
+<!--X-Message-Id: 200106151357.f5FDv6k20603@dino00.IRO.UMontreal.CA -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 008401c0f43f$2f8d99e0$0100a8c0@here -->
+<!--X-Reference: y9lk82e9jvj.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: 200106151201.f5FC1LE20488@dino00.IRO.UMontreal.CA -->
+<!--X-Reference: y9lr8wm2bj5.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: 200106151258.f5FCw9c20557@dino00.IRO.UMontreal.CA -->
+<!--X-Reference: y9lhexh3nit.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: EX_USAGE?</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00103.html">Date Prev</a>][<a href="msg00105.html">Date Next</a>][<a href="msg00103.html">Thread Prev</a>][<a href="msg00105.html">Thread Next</a>][<a href="maillist.html#00104">Date Index</a>][<a href="threads.html#00104">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: EX_USAGE?</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: EX_USAGE?</li>
+<li><em>From</em>: Marc Feeley &lt;<a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 15 Jun 2001 09:57:06 -0400</li>
+<li><em>Cc</em>: <a href="mailto:felixundduni@DOMAIN.HIDDEN">felixundduni@xxxxxxxxxx</a>, <a href="mailto:srfi-22@DOMAIN.HIDDEN">srfi-22@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:y9lhexh3nit.fsf@DOMAIN.HIDDEN">y9lhexh3nit.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	(<a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>)</li>
+<li><em>References</em>: &lt;<a href="mailto:008401c0f43f%242f8d99e0%240100a8c0@DOMAIN.HIDDEN"><a href="msg00098.html">008401c0f43f$2f8d99e0$0100a8c0@here</a></a>&gt;	&lt;<a href="mailto:y9lk82e9jvj.fsf@DOMAIN.HIDDEN">y9lk82e9jvj.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:200106151201.f5FC1LE20488@DOMAIN.HIDDEN">200106151201.f5FC1LE20488@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:y9lr8wm2bj5.fsf@DOMAIN.HIDDEN">y9lr8wm2bj5.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:200106151258.f5FCw9c20557@DOMAIN.HIDDEN">200106151258.f5FCw9c20557@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:y9lhexh3nit.fsf@DOMAIN.HIDDEN">y9lhexh3nit.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt;Marc&gt; No, this is a secondary motivation.  The prime motivation is that
+&gt;Marc&gt; you get to name parameters explicitly rather than using &quot;list-ref&quot;, etc.
+&gt;
+&gt;Ah, but then it does seem as though putting in that additional APPLY
+&gt;would not be so bad, or would it?
+
+I see it the other way.  If the script author wants greater control
+she can use a rest parameter (and also possibly an APPLY) and return
+EX_SOFTWARE when appropriate.  If she doesn't mind that a wrong number
+of arguments to the script is handled with an EX_SOFTWARE, which I
+think is the more common case, then she specifies in main's parameter
+list exactly the parameters expected, and APPLY is not needed.
+
+While I'm on the subject, I can't say I'm very fond of having main
+return a status code.  I don't like it for C and I don't like it for
+Scheme.  Main should be a procedure.  If main returns normally, then
+the result is ignored and the EX_OK status code is returned from the
+script.  You can always call &quot;error&quot; to return an EX_SOFTWARE (this
+will work even if &quot;error&quot; is not defined!...).  The ability to return
+some other status code should be left to an &quot;exit&quot; procedure (defined
+in this SRFI or some other one), because it is common to want to bail
+out of a program/script from a deeply nested computation.  In the
+absence of &quot;exit&quot; you have to use call/cc as in:
+
+(define exit #f)
+
+(define (main a1 a2)
+  (call-with-current-continuation
+   (lambda (cont)
+     (set! exit cont)
+     ...body...
+     0)))
+
+but this is needlessly ugly, and it still contains a reference to 0
+for EX_OK, which will throw off beginners for sure.  In fact, what
+happens in your proposal if main does not return an exact integer, or
+returns an integer outside the acceptable range?
+
+Marc
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00105" href="msg00105.html">Re: EX_USAGE?</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr. Preprocessor]</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00098" href="msg00098.html">EX_USAGE?</a></strong>
+<ul><li><em>From:</em> felix</li></ul></li>
+<li><strong><a name="00099" href="msg00099.html">Re: EX_USAGE?</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr. Preprocessor]</li></ul></li>
+<li><strong><a name="00100" href="msg00100.html">Re: EX_USAGE?</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+<li><strong><a name="00101" href="msg00101.html">Re: EX_USAGE?</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr. Preprocessor]</li></ul></li>
+<li><strong><a name="00102" href="msg00102.html">Re: EX_USAGE?</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+<li><strong><a name="00103" href="msg00103.html">Re: EX_USAGE?</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr. Preprocessor]</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00103.html">Re: EX_USAGE?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00105.html">Re: EX_USAGE?</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00103.html">Re: EX_USAGE?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00105.html">Re: EX_USAGE?</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00104"><strong>Date</strong></a></li>
+<li><a href="threads.html#00104"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

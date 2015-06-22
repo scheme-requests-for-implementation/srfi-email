@@ -1,0 +1,175 @@
+<!-- MHonArc v2.6.18 -->
+<!--X-Subject: Re: handling duplicate elements -->
+<!--X-From-R13: Xbua Qbjna <pbjnaNzrephel.ppvy.bet> -->
+<!--X-Date: Mon,  7 Jul 2014 04:01:00 +0000 (UTC) -->
+<!--X-Message-Id: 20140707040059.GB19735@mercury.ccil.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: CAD2CXevyaBF2kj&#45;KhTMn=_3VY=kL1OkUXSiCjn_=QDZ&#45;_12XgA@mail.gmail.com -->
+<!--X-Reference: 20140702175522.GE21298@mercury.ccil.org -->
+<!--X-Reference: CAD2CXettxqQpNMR6Pdhja0XxSGCDFijjt7ASW&#45;U7++Redg7WVQ@mail.gmail.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: handling duplicate elements</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00062.html">Date Prev</a>][<a href="msg00064.html">Date Next</a>][<a href="msg00062.html">Thread Prev</a>][<a href="msg00064.html">Thread Next</a>][<a href="maillist.html#00063">Date Index</a>][<a href="threads.html#00063">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: handling duplicate elements</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Kevin Wortman &lt;<a href="mailto:kwortman@DOMAIN.HIDDEN">kwortman@xxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: handling duplicate elements</li>
+<li><em>From</em>: John Cowan &lt;<a href="mailto:cowan@DOMAIN.HIDDEN">cowan@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 7 Jul 2014 00:00:59 -0400</li>
+<li><em>Cc</em>: <a href="mailto:srfi-113@DOMAIN.HIDDEN">srfi-113@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-113@DOMAIN.HIDDEN">srfi-113@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="msg00062.html">CAD2CXettxqQpNMR6Pdhja0XxSGCDFijjt7ASW-U7++Redg7WVQ@mail.gmail.com</a>&gt;</li>
+<li><em>References</em>: &lt;CAD2CXevyaBF2kj-KhTMn=_3VY=kL1OkUXSiCjn_=QDZ-_12XgA@mail.gmail.com&gt; &lt;<a href="msg00061.html">20140702175522.GE21298@mercury.ccil.org</a>&gt; &lt;<a href="msg00062.html">CAD2CXettxqQpNMR6Pdhja0XxSGCDFijjt7ASW-U7++Redg7WVQ@mail.gmail.com</a>&gt;</li>
+<li><em>Sender</em>: John Cowan &lt;<a href="mailto:cowan@DOMAIN.HIDDEN">cowan@xxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mutt/1.5.20 (2009-06-14)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Kevin Wortman scripsit:
+
+&gt; Great! I've been rewriting my immutable data structures, but have been
+&gt; holding off on proposing a SRFI until this one is finalized. I'd like
+&gt; the interface to the immutable structures to be as close to identical
+&gt; to SRFI 113 as practicable.
+
+Excellent.  Since SRFI 113 is now defined to provide linear update in
+the sense of SRFI 1, it's sufficient to have the same interface with
+the exception of the linear-update procedures, all of which end in !.
+In addition, however, there should be order-specific procedures like
+getting the next and previous elements in a set, and something to
+convert a persistent set to a transient one.  IIRC your proposal has
+these already.  You should check the Haskell libraries to see if anything
+else is missing.
+
+&gt; I have to admit that I've always had a hard time grokking the intended
+&gt; distinction between eq? and eqv?.
+
+`eqv?` is the identity predicate of Scheme; when you put an object into a
+container and then take it out again, you'll get an object which is eqv?
+to the original object.  By the same token, given two objects which are
+not `eqv?`, mutating one will not affect the other.
+
+`eq?` is an optimized identity predicate which can be portably used
+instead of `eqv?` when you are sure that the arguments are not
+numbers, characters, or procedures.  In practice, `eq?` handles
+characters and procedures fine, as well as small exact integers --
+but the definition of &quot;small&quot; varies from Scheme to Scheme; see
+&lt;<a  rel="nofollow" href="http://trac.sacrideo.us/wg/wiki/FixnumInfo">http://trac.sacrideo.us/wg/wiki/FixnumInfo</a>&gt;.  It cannot be trusted 
+to give correct results on other numbers.
+
+&gt; Duplicates may arise in the constructor, e.g. [...].
+&gt; The list passed to list-&gt;set and list-&gt;set! may have duplicates, so they
+&gt; are implicated in this too. [...]
+&gt; And, set-map may create duplicates if the mapping procedure is not
+&gt; injective. I think this is the subtlest of these cases and the most likely
+&gt; to catch programmers by surprise. 
+
+Okay, I'll have to think about these, especially the last.
+
+&gt; This is one of the reasons I had an imap/monotone procedure in my draft
+&gt; immutable library; monotone procedures are a common special case of
+&gt; injective function. In hindsight, though, I think it should be
+&gt; imap/nondecreasing instead of imap/monotone. 
+
+What distinction are you making between monotone and non-decreasing?
+&lt;<a  rel="nofollow" href="https://en.wikipedia.org/wiki/Monotonic_function">https://en.wikipedia.org/wiki/Monotonic_function</a>&gt; says they are synonyms.
+Perhaps the latter name is clearer, though.
+
+&gt; &gt; So I am suggesting that set-adjoin(!) never replaces existing elements,
+&gt; &gt; and adding a new operation set-replace(!) with three arguments: the set,
+&gt; &gt; the element, and a default.  If the set contains the element, it is
+&gt; &gt; deleted and the element is adjoined (this is a no-op if they are eqv?);
+&gt; &gt; if not, the default is inserted.
+&gt; 
+&gt; So this suggestion is that set-adjoin and set-replace use &quot;second argument
+&gt; beats first&quot; and all other procedures use &quot;first argument beats second.&quot;
+
+No, only set-replace is special.  All others use &quot;first argument beats
+second&quot;, where an element already in the set is understood to be first.
+
+&gt; This behavior would accommodate my intended use case, of implementing an
+&gt; association-map on top of a set. So I could live with it.
+&gt; 
+&gt; But I'm not 100% happy with it, because it conflates two orthogonal issues:
+&gt; the differences between set-union and set-adjoin are that, in set-adjoin
+&gt; the right argument(s) are elements instead of sets, _and_ that set-adjoin
+&gt; uses &quot;second argument beats first&quot; while set-union uses &quot;first argument
+&gt; beats first.&quot;
+
+No, only the first difference is correct in my proposal.  Unioning two sets
+is exactly adjoining the members of the second to the first.
+
+-- 
+John Cowan          <a  rel="nofollow" href="http://www.ccil.org/~cowan">http://www.ccil.org/~cowan</a>        cowan@xxxxxxxx
+If I read &quot;upcoming&quot; in [the newspaper] once more, I will be downcoming
+and somebody will be outgoing.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00064" href="msg00064.html">Re: handling duplicate elements</a></strong>
+<ul><li><em>From:</em> Kevin Wortman</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00060" href="msg00060.html">handling duplicate elements</a></strong>
+<ul><li><em>From:</em> Kevin Wortman</li></ul></li>
+<li><strong><a name="00061" href="msg00061.html">Re: handling duplicate elements</a></strong>
+<ul><li><em>From:</em> John Cowan</li></ul></li>
+<li><strong><a name="00062" href="msg00062.html">Re: handling duplicate elements</a></strong>
+<ul><li><em>From:</em> Kevin Wortman</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00062.html">Re: handling duplicate elements</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00064.html">Re: handling duplicate elements</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00062.html">Re: handling duplicate elements</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00064.html">Re: handling duplicate elements</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00063"><strong>Date</strong></a></li>
+<li><a href="threads.html#00063"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

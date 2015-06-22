@@ -1,0 +1,189 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Updated reference implementation -->
+<!--X-From-R13: Rnivq Hna Vbea <qinaubeaNpf.oenaqrvf.rqh> -->
+<!--X-Date: Tue,  2 Aug 2005 04:13:46 +0200 (DFT) -->
+<!--X-Message-Id: 42EEDCF2.4090105@cs.brandeis.edu -->
+<!--X-Content-Type: multipart/mixed -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Updated reference implementation</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00008.html">Date Prev</a>][<a href="msg00010.html">Date Next</a>][<a href="msg00008.html">Thread Prev</a>][<a href="msg00010.html">Thread Next</a>][<a href="maillist.html#00009">Date Index</a>][<a href="threads.html#00009">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Updated reference implementation</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-43@DOMAIN.HIDDEN">srfi-43@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Updated reference implementation</li>
+<li><em>From</em>: David Van Horn &lt;<a href="mailto:dvanhorn@DOMAIN.HIDDEN">dvanhorn@xxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 01 Aug 2005 22:39:46 -0400</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-43@DOMAIN.HIDDEN">srfi-43@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.7.8) Gecko/20050513 Debian/1.7.8-1</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>The reference implementation for SRFI 43 Vector Library has been changed
+to incorporate the bug fixes submitted by Taylor Campbell on 4 Feb 2005.
+ The new version also fixes bugs found by Zhu Chongkai on 24 Feb 2005,
+and William Farr on 12 Apr 2005.
+
+   <a  rel="nofollow" href="http://srfi.schemers.org/srfi-43/vector-lib.scm">http://srfi.schemers.org/srfi-43/vector-lib.scm</a>
+
+Thanks for the reports.  The precise diff of the changes to the file are
+attached.
+
+David
+</pre><pre>Index: vector-lib.scm
+===================================================================
+RCS file: /afs/informatik.uni-tuebingen.de/home/srfi/srfi-cvs/srfi/srfi-43/vector-lib.scm,v
+retrieving revision 1.4
+diff -r1.4 vector-lib.scm
+374,383c374,382
+&lt;   (letrec ((loop (lambda (target source sstart i j)
+&lt;                    (cond ((&gt;= i sstart)
+&lt;                           (vector-set! target j (vector-ref source i))
+&lt;                           (loop target source sstart
+&lt;                                 (- i 1)
+&lt;                                 (+ j 1)))))))
+&lt;     (lambda (target tstart source sstart send)
+&lt;       (loop target source sstart
+&lt;             (- send 1)
+&lt;             tstart))))
+---
+&gt;   (letrec ((loop (lambda (kons knil len vectors i)
+&gt;                    (if (= i len)
+&gt;                        knil
+&gt;                        (loop kons
+&gt;                              (apply kons i knil
+&gt;                                     (vectors-ref vectors i))
+&gt;                              len vectors (+ i 1))))))
+&gt;     (lambda (kons knil len vectors)
+&gt;       (loop kons knil len vectors 0))))
+432c431
+&lt;       (loop f target vec (- len 1)))))
+---
+&gt;       (loop f target vec len))))
+443c442
+&lt;       (loop f target vectors (- len 1)))))
+---
+&gt;       (loop f target vectors len))))
+740c739
+&lt;                  (test (lambda (elt-a)
+---
+&gt;                  (test (lambda (elt-a elt-b i)
+844c843
+&lt;           (%vector-map2+! f (make-vector len) vectors len)))))
+---
+&gt;           (%vector-map2+! f (make-vector len) (cons vec vectors) len)))))
+1143,1154c1142,1153
+&lt;       (let ((source-length (vector-length source))
+&lt;             (lose (lambda (argument)
+&lt;                     (error &quot;Vector range out of bounds&quot;
+&lt;                            argument
+&lt;                            `(while calling ,vector-copy!)
+&lt;                            `(target was ,target)
+&lt;                            `(target-length was ,(vector-length target))
+&lt;                            `(tstart was ,tstart)
+&lt;                            `(source was ,source)
+&lt;                            `(source-length was ,source-length)
+&lt;                            `(sstart was ,sstart)
+&lt;                            `(send   was ,send)))))
+---
+&gt;       (let* ((source-length (vector-length source))
+&gt;              (lose (lambda (argument)
+&gt;                      (error &quot;vector range out of bounds&quot;
+&gt;                             argument
+&gt;                             `(while calling ,vector-copy!)
+&gt;                             `(target was ,target)
+&gt;                             `(target-length was ,(vector-length target))
+&gt;                             `(tstart was ,tstart)
+&gt;                             `(source was ,source)
+&gt;                             `(source-length was ,source-length)
+&gt;                             `(sstart was ,sstart)
+&gt;                             `(send   was ,send)))))
+1175,1186c1174,1185
+&lt;       (let ((source-length (vector-length source))
+&lt;             (lose (lambda (argument)
+&lt;                     (error &quot;Vector range out of bounds&quot;
+&lt;                            thing
+&lt;                            `(while calling ,vector-reverse-copy!)
+&lt;                            `(target was ,target)
+&lt;                            `(target-length was ,(vector-length target))
+&lt;                            `(tstart was ,tstart)
+&lt;                            `(source was ,source)
+&lt;                            `(source-length was ,source-length)
+&lt;                            `(sstart was ,sstart)
+&lt;                            `(send   was ,send)))))
+---
+&gt;       (let* ((source-length (vector-length source))
+&gt;              (lose (lambda (argument)
+&gt;                      (error &quot;vector range out of bounds&quot;
+&gt;                             argument
+&gt;                             `(while calling ,vector-reverse-copy!)
+&gt;                             `(target was ,target)
+&gt;                             `(target-length was ,(vector-length target))
+&gt;                             `(tstart was ,tstart)
+&gt;                             `(source was ,source)
+&gt;                             `(source-length was ,source-length)
+&gt;                             `(sstart was ,sstart)
+&gt;                             `(send   was ,send)))))
+1202,1203c1201
+&lt;                         (between? sstart (+ tstart (- send sstart))
+&lt;                                   send)))
+---
+&gt;                         (between? tstart sstart (+ tstart (- send sstart)))))
+1207c1205
+&lt;                       `(tstart was ,tstart)
+---
+&gt;                       `(tstart wa ,tstart)
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00008.html">Srfi-43 bug</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00010.html">Srfi-43 typo, patch &amp; tests</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00008.html">Srfi-43 bug</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00010.html">Srfi-43 typo, patch &amp; tests</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00009"><strong>Date</strong></a></li>
+<li><a href="threads.html#00009"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

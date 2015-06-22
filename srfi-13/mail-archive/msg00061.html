@@ -1,0 +1,155 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: shared&#45;text substrings -->
+<!--X-From-R13: fuvirefNnv.zvg.rqh -->
+<!--X-Date: Tue, 25 Jan 2000 13:18:24 &#45;0600 (CST) -->
+<!--X-Message-Id: 200001251918.OAA11199@mongkok.smartleaf.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200001250101.UAA10381@mongkok.smartleaf.com -->
+<!--X-Reference: y9l901ea8yl.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: 200001251606.LAA10900@mongkok.smartleaf.com -->
+<!--X-Reference: y9lzotu5bya.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: 200001251715.MAA11011@mongkok.smartleaf.com -->
+<!--X-Reference: y9laelu595s.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: shared-text substrings</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00060.html">Date Prev</a>][<a href="msg00062.html">Date Next</a>][<a href="msg00058.html">Thread Prev</a>][<a href="msg00063.html">Thread Next</a>][<a href="maillist.html#00061">Date Index</a>][<a href="threads.html#00061">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: shared-text substrings</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-13@DOMAIN.HIDDEN">srfi-13@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: shared-text substrings</li>
+<li><em>From</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxx</a></li>
+<li><em>Date</em>: Tue, 25 Jan 2000 14:18:20 -0500</li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:y9laelu595s.fsf@DOMAIN.HIDDEN">y9laelu595s.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	(<a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>)</li>
+<li><em>References</em>: &lt;<a href="mailto:200001250101.UAA10381@DOMAIN.HIDDEN">200001250101.UAA10381@xxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:y9l901ea8yl.fsf@DOMAIN.HIDDEN">y9l901ea8yl.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:200001251606.LAA10900@DOMAIN.HIDDEN">200001251606.LAA10900@xxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:y9lzotu5bya.fsf@DOMAIN.HIDDEN">y9lzotu5bya.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:200001251715.MAA11011@DOMAIN.HIDDEN">200001251715.MAA11011@xxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:y9laelu595s.fsf@DOMAIN.HIDDEN">y9laelu595s.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Reply-to</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>   I just doubt it's worth the tradeoff.  Is there hard data that the
+   optimizations you envision actually give significant performance
+   gains?  I've always found non-shared strings plenty fast.
+
+Let us suppose we read in a line of text, allocating a fresh string for it.
+We are working in a Scheme w/o shared-text substrings. We wish to trim
+whitespace from both ends of the string. Then we will throw away the original
+string, and further process the trimmed string.
+
+Let us further suppose that most of the time, strings do not have extra
+whitespace on the ends; we are trimming to ensure an invariant which is
+rarely broken by the input data.
+
+The string-trimming procedures are allowed simply to return the input
+string if they do no trimming. Requiring them to redundantly copy the
+data is bogus. It wastes space and it wastes time. It can waste a *lot*
+of space, if I'm processing a long, long file of data. You get into doing
+that, and suddenly you care that this extra copy happens. I've blown out
+my heap in S48 because of the *one* extra copy of a really big mother
+string (in cases where I read an entire file into a string, processed it
+with regexp stuff, and blatted output into a string port... which keeps
+lists of strings around, under the hood. Just one copy too many.)
+
+Copying data from one buffer to another is something that happens a lot in
+data processing. If you need a fresh copy, great. But if you are processing
+the data in a linear fashion, then you'd like to allow the underlying system
+to reuse storage. Which, you'll note from the above example, does *NOT*
+require shared-text substrings! In some cases, you can simply return the
+original string. This is not as generally applicable a win, but one that can
+be provided even in Schemes w/o shared-text substring support. My portable
+reference implementation of SRFI-13 has these optmisations built-in. Another
+example of this is STRING-APPEND/SHARED applied to some strings, all but one
+of which are empty. Or STRING-CONCATENATE/SHARED applied to a singleton
+list. When singleton lists are the common or important case, it's nice to be
+able to pick up the win, without having to lard your code up with explicit
+checks.
+
+I have code in scsh that does *exactly* this kind of thing. I have to
+throw in a lot of obfuscatory code, which special-cases the basic op.
+I'd love to be able to simplify that stuff, and be able to rely on the
+string system. I can't rely on having shared-text substrings -- S48
+doesn't have them, and it would destroy any possibility of porting to
+other Schemes that lack them, in any event.
+
+You don't *have* to use these procedures. You can always, in a GC'd,
+functional language, play it safe and use pure functions. These procedures
+simply give you a portable way to write efficient code. I like to write
+efficient code. I have been burned using inefficient code.
+
+I didn't throw these procedures into the library from scratch, hoping they'd
+turn out useful. They arose from programming.
+    -Olin
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00063" href="msg00063.html">Re: shared-text substrings</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr. Preprocessor]</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00051" href="msg00051.html">shared-text substrings, start/end indices, xs&gt;&lt;, etc.</a></strong>
+<ul><li><em>From:</em> shivers</li></ul></li>
+<li><strong><a name="00054" href="msg00054.html">Re: shared-text substrings, start/end indices, xs&gt;&lt;, etc.</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr. Preprocessor]</li></ul></li>
+<li><strong><a name="00055" href="msg00055.html">shared-text substrings</a></strong>
+<ul><li><em>From:</em> shivers</li></ul></li>
+<li><strong><a name="00056" href="msg00056.html">Re: shared-text substrings</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr. Preprocessor]</li></ul></li>
+<li><strong><a name="00057" href="msg00057.html">Re: shared-text substrings</a></strong>
+<ul><li><em>From:</em> shivers</li></ul></li>
+<li><strong><a name="00058" href="msg00058.html">Re: shared-text substrings</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr. Preprocessor]</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00060.html">CHAR-{UP,DOWN}CASE &amp; super-ASCII encodings</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00062.html">RE: CHAR-{UP,DOWN}CASE &amp; super-ASCII encodings</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00058.html">Re: shared-text substrings</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00063.html">Re: shared-text substrings</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00061"><strong>Date</strong></a></li>
+<li><a href="threads.html#00061"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

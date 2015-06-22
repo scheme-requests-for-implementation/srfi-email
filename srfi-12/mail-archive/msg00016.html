@@ -1,0 +1,133 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: more srfi&#45;12 rationale? -->
+<!--X-From-R13: Dvpuneq Yryfrl <xryfrlNerfrnepu.aw.arp.pbz> -->
+<!--X-Date: Mon, 18 Oct 1999 09:38:33 &#45;0500 (CDT) -->
+<!--X-Message-Id: 199910181437.KAA22838@kima.nj.nec.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 199910171354.JAA22926@sarg.Ryerson.CA -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: more srfi-12 rationale?</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00015.html">Date Prev</a>][<a href="msg00017.html">Date Next</a>][<a href="msg00013.html">Thread Prev</a>][<a href="msg00008.html">Thread Next</a>][<a href="maillist.html#00016">Date Index</a>][<a href="threads.html#00016">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: more srfi-12 rationale?</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:dmason@DOMAIN.HIDDEN">dmason@xxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: more srfi-12 rationale?</li>
+<li><em>From</em>: Richard Kelsey &lt;<a href="mailto:kelsey@DOMAIN.HIDDEN">kelsey@xxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 18 Oct 1999 10:37:19 -0400</li>
+<li><em>Cc</em>: <a href="mailto:srfi-12@DOMAIN.HIDDEN">srfi-12@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:199910171354.JAA22926@DOMAIN.HIDDEN">199910171354.JAA22926@xxxxxxxxxxxxxxx</a>&gt; (message from Dave Mason	on Sun, 17 Oct 1999 09:54:20 -0400)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>   Date: Sun, 17 Oct 1999 09:54:20 -0400
+   From: Dave Mason &lt;dmason@xxxxxxxxxxxxxxx&gt;
+
+   I'm not worried about explicit aborts in my program - I can do as you
+   say.  My concern is built-in low-level aborts.  Like (/ x 0).  If
+   these dynamically create ``condition'' values, it will be expensive.
+
+What need is there for (/ x 0) to be cheap?  And consing up a
+simple exception object shouldn't take a much time or a lot of
+memory.
+
+There are two different usages envisaged for exceptions, based on
+two different models:
+
+ Machine-style exceptions:
+   - used to extend the underlying Scheme implementation
+   - handlers are installed rarely and have global extent
+   - exceptions are frequent
+   - restarts are common
+
+ Programming-language-style exceptions:
+   - used to return abnormal results across module boundaries
+   - handlers are installed frequently and have dynamic extent
+   - exceptions are rare
+   - restarts are uncommon
+
+SRFI-12, with easy restarts and dynamic extent, is a little of
+each.  It would be great if we could use the same mechanism for
+both, but the different requirements make it hard to satisfy
+everyone.
+
+   Without restarts, WITH-EXCEPTION-HANDLER doesn't have to be exposed in
+   the programming interface, and I see implementation approaches that
+   could make HANDLE-EXCEPTIONS much lower cost.  With restarts, you
+   essentially need the dynamic-wind, call/cc pair to do
+   HANDLE-EXCEPTIONS.
+
+HANDLE-EXCEPTIONS needs the call/cc because the handler
+it creates is called with HANDLE-EXCEPTIONS's continuation.
+That continuation needs to be saved somehow.  Both
+HANDLE-EXCEPTIONS and WITH-EXCEPTION-HANDLER need DYNAMIC-WIND
+because that is the only portable way to give handlers dynamic
+extent.
+
+Both HANDLE-EXCEPTIONS and WITH-EXCEPTION-HANDLER can be done
+cheaply if you are allowed to fiddle with the underlying
+implementation.  For that matter, if continuations are already
+in the heap, as in SMLNJ, and you have a reasonable implementation
+of DYNAMIC-WIND, the implementation given in SRFI-12 will be fairly
+zippy.
+                                -Richard Kelsey
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00013" href="msg00013.html">Re: more srfi-12 rationale?</a></strong>
+<ul><li><em>From:</em> Dave Mason</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00015.html">Re: conditions</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00017.html">Hello?  Anyone home?</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00013.html">Re: more srfi-12 rationale?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00008.html">Re: more srfi-12 rationale?</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00016"><strong>Date</strong></a></li>
+<li><a href="threads.html#00016"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

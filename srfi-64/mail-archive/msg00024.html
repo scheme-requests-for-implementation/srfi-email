@@ -1,0 +1,186 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Meta&#45;test suite -->
+<!--X-From-R13: Rbabina Ybyoyl <qbabinaNefpurzr.bet> -->
+<!--X-Date: Wed,  9 Mar 2005 22:21:56 +0100 (NFT) -->
+<!--X-Message-Id: Pine.LNX.4.44.0503091457310.19219&#45;100000@localhost.localdomain -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 422F5F17.8030406@bothner.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Meta-test suite</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00023.html">Date Prev</a>][<a href="msg00025.html">Date Next</a>][<a href="msg00021.html">Thread Prev</a>][<a href="msg00025.html">Thread Next</a>][<a href="maillist.html#00024">Date Index</a>][<a href="threads.html#00024">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Meta-test suite</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Per Bothner &lt;<a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Meta-test suite</li>
+<li><em>From</em>: Donovan Kolbly &lt;<a href="mailto:donovan@DOMAIN.HIDDEN">donovan@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 9 Mar 2005 15:21:55 -0600 (CST)</li>
+<li><em>Cc</em>: SRFI 64 &lt;<a href="mailto:srfi-64@DOMAIN.HIDDEN">srfi-64@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-64@DOMAIN.HIDDEN">srfi-64@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:422F5F17.8030406@DOMAIN.HIDDEN">422F5F17.8030406@xxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>On Wed, 9 Mar 2005, Per Bothner wrote:
+
+&gt; Donovan Kolbly wrote:
+&gt; 
+&gt; &gt; More crucially, there does not seem to be any way for a portable runner to
+&gt; &gt; keep track of the nesting of test suites.
+&gt; 
+&gt; The API should probably have a way to get the value of (test-runner-group-path).
+&gt; One detail: the latter has the suite-names in reverse order, since the
+&gt; implementation uses a stack; a public function should probably return the
+&gt; names in top-to-botton order.  That's a minor tweak.
+
+So that, suppose:
+
+   (test-begin &quot;a&quot;)
+   (test-begin &quot;b&quot;)
+   (test-assert &quot;x&quot; #t)
+
+then in an on-test hook executing for the test-assert, we have:
+
+   (test-runner-test-name runner) ==&gt; &quot;x&quot;
+   (test-runner-group-path runner) ==&gt; (&quot;a&quot; &quot;b&quot;)
+
+That seems reasonable.
+
+Although, then a custom runner would have no way to know about an empty 
+group.
+
+Would you intend that, for a custom runner, the following are 
+indistinguishable:
+
+   (test-begin &quot;a&quot;)
+   (test-assert &quot;x&quot; #t)
+   (test-end)
+   (test-begin &quot;a&quot;)
+   (test-assert &quot;y&quot; #t)
+   (test-end)
+
+vs:
+
+   (test-begin &quot;a&quot;)
+   (test-assert &quot;x&quot; #t)
+   (test-assert &quot;y&quot; #t)
+   (test-end)
+
+My tendency goes more to object identity, but I doubt it matters much 
+here.
+
+&gt; 
+&gt; &gt; I'm not sure yet what to
+&gt; &gt; suggest for SRFI-64 to track suite nesting, but something along the lines
+&gt; &gt; of a `test-runner-on-suite-begin!' and `test-runner-on-suite-end!' would
+&gt; &gt; probably do it (*).
+&gt; 
+&gt; That might be useful for some things, though I don't think it should be needed
+&gt; to keep track of the &quot;group-path&quot;, which the framework should do.
+&gt; 
+&gt; &gt; [*] do you want to call these things &quot;suites&quot; or &quot;groups&quot;?  The
+&gt; &gt;     terminology seems to vary from place to place, or am I still missing
+&gt; &gt;     something....
+&gt; 
+&gt; Hm.  I think a &quot;test suite&quot; is a collection of tests, which consists of
+&gt; individualt &quot;test cases&quot;, which are usually grouped into &quot;test groups&quot;.
+&gt; A test-begin/test-end-pair together with whatever's between them is an
+&gt; implicit/informal test group, while a test-group is an explicit test group.
+&gt; 
+&gt; A test suite is whatever gets run user a test runner.
+&gt; 
+&gt; Does that sound reasonable?  If so, &quot;suite-name&quot; should be &quot;group-name&quot;.
+
+Sounds good.
+
+To say it another way:
+
+A &quot;test suite&quot; is a collection of &quot;test cases&quot; optionally organized into a
+hierarchy of &quot;test groups&quot;.  A &quot;test group&quot; may be either implict, as
+introduced by test-begin and terminated by test-end, or explicit, as
+introduced by test-group.  Furthermore, note that the tests within an
+explicit test group may be skipped using test-skip, but this is not true
+for tests within an implicit test group.
+
+[I think it's wierd that you can't skip an implicit test group, just for 
+symmetry.  Although I can't see implementing it so that all the forms are 
+skipped, it might make sense to actually skip *tests* inside a skippable
+implicit group.]
+
+For the purposes of test counting as checked by test-end, a test group (of
+either variety) counts as a single test.  Note that the registered on-test
+procedure is not involved in test group boundaries, which means that the
+sum of (test-runner-*-count) may be larger than the number of calls to the
+on-test procedure.  Furthermore, if an explicit test group is skipped, the
+group as a whole is skipped, not each test within it, which means that
+(test-runner-skip-count) may be *smaller* than if the tests were
+individually skipped.
+
+-- 
+-- Donovan Kolbly                    (  d.kolbly@xxxxxxxxxxx
+				     (  <a  rel="nofollow" href="http://www.rscheme.org/~donovan/">http://www.rscheme.org/~donovan/</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00025" href="msg00025.html">Re: Meta-test suite</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00021" href="msg00021.html">Re: Meta-test suite</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00023.html">Re: Meta-test suite</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00025.html">Re: Meta-test suite</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00021.html">Re: Meta-test suite</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00025.html">Re: Meta-test suite</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00024"><strong>Date</strong></a></li>
+<li><a href="threads.html#00024"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,261 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: [oleg@pobox.com: Static, dynamic dispatch and OO system] -->
+<!--X-From-R13: fptzvyyrNserrargcebwrpg.bet -->
+<!--X-Date: Thu, 30 Oct 2003 22:33:10 +0100 (NFT) -->
+<!--X-Message-Id: 20031030213302.GB4301@freenetproject.org -->
+<!--X-Content-Type: multipart/signed -->
+<!--X-Derived: pgpSttiPqsn49.pgp -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>[oleg@xxxxxxxxx: Static, dynamic dispatch and OO system]</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00368.html">Date Prev</a>][<a href="msg00370.html">Date Next</a>][<a href="msg00357.html">Thread Prev</a>][<a href="msg00385.html">Thread Next</a>][<a href="maillist.html#00369">Date Index</a>][<a href="threads.html#00369">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>[oleg@xxxxxxxxx: Static, dynamic dispatch and OO system]</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: <a href="mailto:%5Boleg@DOMAIN.HIDDEN">[oleg@xxxxxxxxx</a>: Static, dynamic dispatch and OO system]</li>
+<li><em>From</em>: <a href="mailto:scgmille@DOMAIN.HIDDEN">scgmille@xxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Date</em>: Thu, 30 Oct 2003 15:33:02 -0600</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Mail-followup-to</em>: <a href="mailto:scgmille@DOMAIN.HIDDEN">scgmille@xxxxxxxxxxxxxxxxx</a>,	<a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Mutt/1.5.4i</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>----- Forwarded message from oleg@xxxxxxxxx -----
+
+Envelope-to: scgmille@localhost
+Delivery-date: Thu, 30 Oct 2003 15:25:12 -0600
+To: scgmille@xxxxxxxxxxxxxxxxxx
+Subject: Static, dynamic dispatch and OO system
+Reply-To: oleg@xxxxxxxxx
+From: oleg@xxxxxxxxx
+
+
+Hello!
+
+[ The discussion seems to have turned constructive, and many
+interesting suggestions have been proposed. OOP and dispatch is
+frequently mentioned. Could you please forward this message to the
+list? Thank you.]
+
+The topic of object or type hierarchies, generic functions, and
+dynamic or static dispatch to appropriate specializing functions has
+come several times in recent discussions. I wonder if I may make a
+suggestion that hopefully can uncouple some of the issues, so we can
+deal with them separately.
+
+I'd like to remark first that many of the discussed issues fall under
+the scope of a module system. It seems Ray Dillinger's recent proposal
+is precisely that of a light-weight module system. At Scheme 2000
+workshop Olin Shivers repeatedly said that Scheme urgently needs a
+module system. He arranged for a special meeting of the implementors
+on this topic. The issue of a module system came up again at Scheme
+2002 workshop. It was agreed that the best hope for a new Scheme is a
+layered design (the core plus educational/performance,
+etc. additions). A module system is crucial for such a
+modularization. At the end of PLI2002, a prominent Scheme implementor
+told me that they have had meetings and I should be glad to know that
+the implementors of Bigloo, Gambit, PLT Scheme, and Scheme48/SCSH had
+agreed to move their systems towards a common module framework. I was
+indeed very glad to know that. I'm perhaps too impatient for the
+results. For now, I routinely test my libraries under six different
+Scheme systems, and solve the problem of module system by some
+higher-order Makefile functions (and by well-placed cond-expands in
+some cases).
+
+
+Regarding SRFI-44 and collection hierarchies, I'd like to make a
+proposal by the way of an extended example. Let us consider a TIFF
+image directory as a SRFI-44 collection. The implementation in a file
+tiff.scm has the following structure:
+
+; tiff-directory collection
+(define (tiff-directory? coll) &lt;code&gt;)
+
+(define (collection-name coll)
+   (and (tiff-directory? coll) 'tiff-directory))
+(define collection? tiff-directory?)
+(define (mutable-collection? coll) #f)
+(define (dictionary? coll) (tiff-directory? coll))
+
+
+(define (tiff-directory-size coll) &lt;code&gt;)
+
+(define (tiff-directory-fold-left coll fn . seeds) &lt;code&gt;)
+(define collection-fold-left tiff-directory-fold-left)
+
+(define (tiff-directory-get coll key . default-val) &lt;code&gt;)
+(define (tiff-directory-get-as-symbol coll key . default-val) &lt;code&gt;)
+
+
+Incidentally, this example is not hypothetical. It is snipped from the
+TIFF library announced on comp.lang.scheme the other week.
+
+An application code that uses only the TIFF library, for example,
+tiff-prober.scm, should include (or just load) the tiff.scm file --
+and that's it.
+
+We should point out several things. First of all, tiff.scm defines a
+function tiff-directory-get-as-symbol, which is not in SRFI-44. That
+should be OK -- as long as tiff.scm defines enough functions for a
+collection or a dictionary signatures (speaking in ML terms), the
+structure tiff.scm can claim to be an implementation of these
+signatures. A structure can implement several signatures. Extra
+functions such as tiff-directory-get-as-symbol, which really make
+sense only for a TIFF directory, can be accessed through a specific
+TIFF directory signature.
+
+We should also note that tiff.scm defines functions like
+collection-name, collection? and dictionary? -- as if TIFF directory
+were the only one collection and the dictionary in the universe. And
+as far as that file is concerned, that is indeed the case.
+
+The application code tiff-probe.scm that uses only the TIFF directory
+guarantees that the TIFF directory is the only one collection, in that
+application's universe. Therefore, absolutely no dispatch and no OO
+system is needed. tiff-prober.scm merely includes tiff.scm, and
+everything works.
+
+Now, suppose we define an implementation of a set that can contain at
+most 24 objects. The objects are integers 0 through 23. We will use
+integers as the backing data structure for our set. We will write a
+file limited-set.scm with the following code:
+
+(define (limited-set? coll) (and (integer? coll) (exact? coll)))
+
+(define (collection-name coll)
+   (and (limited-set? coll) 'limited-set))
+(define collection? limited-set?)
+
+(define (set? coll) (limited-set? coll))
+
+
+(define (set-size coll) &lt;code&gt;)
+
+(define (limited-set-fold-left coll fn . seeds) &lt;code&gt;)
+(define collection-fold-left limited-set-fold-left)
+
+Again, we write the code as if our limited set is the only collection
+in existence.
+
+Now, suppose we are writing code that uses both tiff.scm and
+limited-set.scm. If we load both these files, we've got a problem. The
+assumption that the tiff-directory _or_ the set are the only
+collections no longer holds. Now we really need some dispatch. How
+precisely we do that greatly depends on the available OO system --
+Meroon, TinyCLOS, etc. In some cases (and given a powerful module
+system) we can probably get by with a static dispatch. 
+We write the following code:
+
+(load &quot;tiff.scm&quot;)
+; this brings tiff-directory?, tiff-directory-fold-left etc. functions
+; into scope. 
+; Also, it brings collection-fold-left bound to
+; tiff-directory-fold-left,
+; and collection? bound to tiff-directory?
+
+; Save the values of the generic procedures of interest
+(define tiffs-fold collection-fold-left)
+(define tiffs-pred collection?)
+
+(load &quot;limited-set.scm&quot;)
+; this brings limited-set?, etc. functions into scope. 
+; Also, collection-fold-left will be re-bound to
+; limited-set-fold-left,
+; and collection? will be rebound to limited-set?
+
+; Save the values of the generic procedures of interest
+(define lset-fold collection-fold-left)
+(define lset-pred collection?)
+
+; Now, re-define collection? and collection-fold-left to be generic
+; The following implementation is really simple-minded. It is intended
+; as an illustration. A better OO system or Ray Dillinger's approach 
+; should be used. See also Dan Friedman's OO Style
+; <a  rel="nofollow" href="http://www.cs.indiana.edu/hyplan/dfried/ooo.pdf">http://www.cs.indiana.edu/hyplan/dfried/ooo.pdf</a>
+
+(define (collection? coll) (or (tiffs-pred coll) (lset-pred coll)))
+(define (collection-fold-left coll . args)
+   (cond ((tiffs-pred coll) (apply tiffs-fold coll args))
+	 ((lset-pred coll) (apply lset-fold coll args))))
+
+Now we have a universe with two collections and can use both the TIFF
+directory and the limited set in the same code. I should point out
+that the files limited-set.scm and tiff.scm do NOT depend on a
+particular OO system. Whether we would use generic functions, CLOS,
+multiple inheritance, multiple dispatch or anything else is irrelevant
+as far as the interface and the implementation of dictionaries and
+sets are concerned. Of course it would be nice if we had one
+uniform module and OO systems. But we don't. Therefore, each particular
+user of dictionaries and collections has to inject SRFI-44 collections
+into his preferred OO/module system. It's not that complicated, as we
+saw. Moreover, particular Scheme implementations may already do the
+needed work. 
+
+The advantage of that approach is the uncoupling of SRFI-44 from the
+OO system or a module system. The consistent naming of collections
+becomes really important -- which is what SRFI-44 set out to do.
+
+
+
+
+----- End forwarded message -----
+
+-- 
+</pre><p><strong>Attachment:
+<a href="pgpSttiPqsn49.pgp" ><tt>pgpSttiPqsn49.pgp</tt></a></strong><br>
+<em>Description:</em> PGP signature</p>
+
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00368.html">Re: Fundamental design flaws</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00370.html">Re: Fundamental design flaws</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00357.html">Running draft</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00385.html">Dispatch section + scheme collections</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00369"><strong>Date</strong></a></li>
+<li><a href="threads.html#00369"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

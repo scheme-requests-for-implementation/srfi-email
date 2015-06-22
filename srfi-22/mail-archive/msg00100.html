@@ -1,0 +1,150 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: EX_USAGE? -->
+<!--X-From-R13: [nep Trryrl <srryrlNWDA.G[bagerny.QO> -->
+<!--X-Date: Fri, 15 Jun 2001 07:01:24 &#45;0500 (CDT) -->
+<!--X-Message-Id: 200106151201.f5FC1LE20488@dino00.IRO.UMontreal.CA -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 008401c0f43f$2f8d99e0$0100a8c0@here -->
+<!--X-Reference: y9lk82e9jvj.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: EX_USAGE?</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00099.html">Date Prev</a>][<a href="msg00101.html">Date Next</a>][<a href="msg00099.html">Thread Prev</a>][<a href="msg00101.html">Thread Next</a>][<a href="maillist.html#00100">Date Index</a>][<a href="threads.html#00100">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: EX_USAGE?</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: EX_USAGE?</li>
+<li><em>From</em>: Marc Feeley &lt;<a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 15 Jun 2001 08:01:21 -0400</li>
+<li><em>Cc</em>: <a href="mailto:felixundduni@DOMAIN.HIDDEN">felixundduni@xxxxxxxxxx</a>, <a href="mailto:srfi-22@DOMAIN.HIDDEN">srfi-22@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:y9lk82e9jvj.fsf@DOMAIN.HIDDEN">y9lk82e9jvj.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	(<a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>)</li>
+<li><em>References</em>: &lt;<a href="mailto:008401c0f43f%242f8d99e0%240100a8c0@DOMAIN.HIDDEN"><a href="msg00098.html">008401c0f43f$2f8d99e0$0100a8c0@here</a></a>&gt; &lt;<a href="mailto:y9lk82e9jvj.fsf@DOMAIN.HIDDEN">y9lk82e9jvj.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt;&gt;&gt;&gt;&gt;&gt; &quot;felix&quot; == felix  &lt;felixundduni@xxxxxxxxxx&gt; writes:
+&gt;
+&gt;felix&gt; I have some trouble with the fact that an error in the invocation of
+&gt;felix&gt; &quot;main&quot; is supposed to return EX_USAGE. Specifically
+&gt;felix&gt; I have trouble thinking about a way to implement it in
+&gt;felix&gt; a not too arcane way. 
+&gt;
+&gt;You're summing up my original reservations about this issue.  I do
+&gt;believe yielding the correct exit code is important, but I also would
+&gt;slightly prefer to leave that responsibility to the programmer of the
+&gt;script.
+&gt;
+&gt;Marc, how about you step in here?
+
+Well, I do find it odd that there is a different error code for the
+case of a wrong number of arguments.  But if it is the &quot;Unix way&quot; then
+I can understand wanting to support it properly.
+
+In terms of implementation, I don't see how to do it (at least in
+Gambit) because the &quot;main&quot; procedure might tail call another procedure
+(or even itself) with a wrong number of arguments, as in:
+
+(define (main a1 a2)
+  (main a1))
+
+and I can't see how to distinguish the first call (in the runtime)
+from the second, and the SRFI requires each call to return a different
+error code.
+
+I thought it would be possible to use Gambit's continuation
+introspection mechanism to extract the continuation's parent (the
+procedure that created the continuation) or the error mechanism which
+puts a reference to the procedure and list of arguments into the
+exception object, but that is not sufficient for the simple example I
+give above.  Note that the &quot;wrong number of arguments&quot; error is
+detected by Gambit on **entry** to the procedure (i.e. the procedure
+call has already occured).  In a system that detects this error in the
+caller I guess it would be easier to satisfy the SRFI specs.
+
+Note however that the error reporting process can't be completely
+automatic (in an R5RS script).  If a script accepts from 3 to 5
+parameters then it is up to the main procedure to return EX_USAGE when
+too many arguments are given as in:
+
+(define (main a1 a2 a3 . others)
+  (if (&gt; (length others) 2)
+      ...EX_USAGE...
+      ...keep going...))
+
+If the script author does not put this test in (which is probably very
+likely in quickly written scripts) then in practice the distinction
+between EX_USAGE and EX_SOFTWARE will be lost anyway, so why bother.
+
+So my position is that only EX_SOFTWARE should be required by the
+SRFI.  If the script author wants to support EX_USAGE, then she can
+program it into the script explicitly (using a &quot;main&quot; with a rest
+argument and appropriate logic).
+
+Marc
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00101" href="msg00101.html">Re: EX_USAGE?</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr. Preprocessor]</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00098" href="msg00098.html">EX_USAGE?</a></strong>
+<ul><li><em>From:</em> felix</li></ul></li>
+<li><strong><a name="00099" href="msg00099.html">Re: EX_USAGE?</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr. Preprocessor]</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00099.html">Re: EX_USAGE?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00101.html">Re: EX_USAGE?</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00099.html">Re: EX_USAGE?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00101.html">Re: EX_USAGE?</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00100"><strong>Date</strong></a></li>
+<li><a href="threads.html#00100"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

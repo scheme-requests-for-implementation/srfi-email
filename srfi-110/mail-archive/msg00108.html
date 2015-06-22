@@ -1,0 +1,208 @@
+<!-- MHonArc v2.6.16 -->
+<!--X-Subject: Re: Should we MAY a "curly&#45;write" and "neoteric&#45;write"?  Or even "sweet&#45;write"? -->
+<!--X-From-R13: "Rnivq O. Iurryre" <qjurryreNqjurryre.pbz> -->
+<!--X-Date: Fri, 12 Apr 2013 00:37:53 +0200 (MST) -->
+<!--X-Message-Id: E1UQQ7s&#45;0008DA&#45;5O@rmm6prod02.runbox.com -->
+<!--X-Content-Type: multipart/mixed -->
+<!--X-Reference: 20130410015624.GM18454@mercury.ccil.org -->
+<!--X-Derived: binnLJj5enmQq.bin -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Should we MAY a &quot;curly-write&quot; and &quot;neoteric-write&quot;?  Or even &quot;sweet-write&quot;?</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00107.html">Date Prev</a>][<a href="msg00109.html">Date Next</a>][<a href="msg00107.html">Thread Prev</a>][<a href="msg00109.html">Thread Next</a>][<a href="maillist.html#00108">Date Index</a>][<a href="threads.html#00108">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Should we MAY a &quot;curly-write&quot; and &quot;neoteric-write&quot;?  Or even &quot;sweet-write&quot;?</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &quot;srfi-110&quot; &lt;<a href="mailto:srfi-110@DOMAIN.HIDDEN">srfi-110@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Should we MAY a &quot;curly-write&quot; and &quot;neoteric-write&quot;?  Or even &quot;sweet-write&quot;?</li>
+<li><em>From</em>: &quot;David A. Wheeler&quot; &lt;<a href="mailto:dwheeler@DOMAIN.HIDDEN">dwheeler@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 11 Apr 2013 18:37:52 -0400 (EDT)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-110@DOMAIN.HIDDEN">srfi-110@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20130410015624.GM18454@DOMAIN.HIDDEN">20130410015624.GM18454@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Reply-to</em>: <a href="mailto:dwheeler@DOMAIN.HIDDEN">dwheeler@xxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>I've refined version curly-write and neoteric-write (which are really &quot;simple&quot; versions right now).
+
+Key question: Does this output (below) look *reasonable*?  I think it does.  Below (in-line) I've shown my sample input tests, curly-infix, and neoteric results.  In both cases, it guesses that lists whose first element is a punctuation-only symbol (or &quot;and or &quot;or&quot; or &quot;xor), and have 3..6 arguments, are infix, e.g., {a + b ...}.  For neoteric-expressions, most lists that begin with a symbol but won't be curly-infix are put in the form f(...).
+
+The key refinement is that they don't get stuck trying to figure out &quot;what to do&quot; in the presence of cycles.  They'll still loop when they try to actually *write* a cycle, of course, but at least if it's getting displayed it's obvious what the problem is :-).  Before, it could get stuck without displaying anything.  This refinement is also necessary to create shared and cycle-detecting versions.  Actual code attached.
+
+--- David A. Wheeler
+
+=== TEST CASES ===
+
+(define basic-tests
+  '(
+    (quote x)
+    (a b c d e f g h i j k l m n o p q r s t u v w x y z)
+    (a b c d e f g h i j k l m n o p q r s t u v w x y z . 2)
+    (a 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16)
+    (a 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17)
+    (+ a b)
+    (+ a b c)
+    (+ a b c . improper)
+    (+ 1 2 3 4 5)
+    (+ 1 2 3 4 5 6)
+    (+ 1 2 3 4 5 6 7)
+    (sin (- theta))
+    (fact (- n 1))
+    (calculate (pi))
+    (between current min max)
+    (my-write . rest)
+    (sin x)
+    (- x)
+    (-)
+    (function +)
+    (map + '(2 4 6))
+    (current-time)
+    (1 2 3)
+    (4 5 . 6)
+    5
+    boring-symbol
+    (+ (sqrt x) (sqrt y))
+    `(1 2 ,@(+ a b))
+    (syntax (a b c))
+    #(v1 v2 (+ 2 3) (sin x))
+    (define (is-infix-operator? x)
+      (cond ((not (symbol? x)) #f)
+            ((memq x special-infix-operators) #t)
+            (#t
+             (contains-only-punctuation?
+               (string-&gt;list (symbol-&gt;string x))))))
+    fin))
+
+
+=== CURLY-INFIX (from curly-write) ===
+
+'x
+(a b c d e f g h i j k l m n o p q r s t u v w x y z)
+(a b c d e f g h i j k l m n o p q r s t u v w x y z . 2)
+(a 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16)
+(a 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17)
+{a + b}
+{a + b + c}
+(+ a b c . improper)
+{1 + 2 + 3 + 4 + 5}
+{1 + 2 + 3 + 4 + 5 + 6}
+(+ 1 2 3 4 5 6 7)
+(sin (- theta))
+(fact {n - 1})
+(calculate (pi))
+(between current min max)
+(my-write . rest)
+(sin x)
+(- x)
+(-)
+(function +)
+(map + '(2 4 6))
+(current-time)
+(1 2 3)
+(4 5 . 6)
+5
+boring-symbol
+{sqrt(x) + sqrt(y)}
+`(1 2 ,@{a + b})
+#'(a b c)
+#( v1 v2 {2 + 3} (sin x) )
+(define (is-infix-operator? x) (cond ((not (symbol? x)) #f) ((memq x special-infix-operators) #t) (#t (contains-only-punctuation? (string-&gt;list (symbol-&gt;string x))))))
+fin
+
+
+=== NEOTERIC-EXPRESSIONS (from neoteric-write) ===
+
+'x
+(a b c d e f g h i j k l m n o p q r s t u v w x y z)
+(a b c d e f g h i j k l m n o p q r s t u v w x y z . 2)
+a(2 3 4 5 6 7 8 9 10 11 12 13 14 15 16)
+(a 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17)
+{a + b}
+{a + b + c}
++(a b c . improper)
+{1 + 2 + 3 + 4 + 5}
+{1 + 2 + 3 + 4 + 5 + 6}
++(1 2 3 4 5 6 7)
+sin{- theta}
+fact{n - 1}
+calculate(pi())
+between(current min max)
+my-write(. rest)
+sin(x)
+-(x)
+-()
+function(+)
+map(+ '(2 4 6))
+current-time()
+(1 2 3)
+(4 5 . 6)
+5
+boring-symbol
+{sqrt(x) + sqrt(y)}
+`(1 2 ,@{a + b})
+#'a(b c)
+#( v1 v2 {2 + 3} sin(x) )
+define(is-infix-operator?(x) cond((not(symbol?(x)) #f) (memq(x special-infix-operators) #t) (#t contains-only-punctuation?(string-&gt;list(symbol-&gt;string(x))))))
+fin
+
+</pre><p><strong>Attachment:
+<a href="binnLJj5enmQq.bin" ><tt>write.scm</tt></a></strong><br>
+<em>Description:</em> Binary data</p>
+
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00103" href="msg00103.html">Re: Should we MAY a &quot;curly-write&quot; and &quot;neoteric-write&quot;?  Or even &quot;sweet-write&quot;?</a></strong>
+<ul><li><em>From:</em> John Cowan</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00107.html">Re: Should we MAY a &quot;curly-write&quot; and &quot;neoteric-write&quot;?  Or even &quot;sweet-write&quot;?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00109.html">First cut at &quot;curly-write&quot; and &quot;neoteric-write&quot; with -shared and -cyclic versions</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00107.html">Re: Should we MAY a &quot;curly-write&quot; and &quot;neoteric-write&quot;?  Or even &quot;sweet-write&quot;?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00109.html">First cut at &quot;curly-write&quot; and &quot;neoteric-write&quot; with -shared and -cyclic versions</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00108"><strong>Date</strong></a></li>
+<li><a href="threads.html#00108"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

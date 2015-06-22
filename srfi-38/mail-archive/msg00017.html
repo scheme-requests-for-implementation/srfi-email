@@ -1,0 +1,156 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: new function or modify read -->
+<!--X-From-R13: [nep Trryrl <srryrlNWDA.G[bagerny.QO> -->
+<!--X-Date: Tue, 17 Dec 2002 22:58:29 +0100 (NFT) -->
+<!--X-Message-Id: 200212172158.gBHLw4a02482@dino00.iro.umontreal.ca -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: Pine.LNX.4.40.0212171202400.9925&#45;100000@bolt.sonic.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: new function or modify read</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00016.html">Date Prev</a>][<a href="msg00018.html">Date Next</a>][<a href="msg00016.html">Thread Prev</a>][<a href="msg00018.html">Thread Next</a>][<a href="maillist.html#00017">Date Index</a>][<a href="threads.html#00017">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: new function or modify read</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:bear@DOMAIN.HIDDEN">bear@xxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: new function or modify read</li>
+<li><em>From</em>: Marc Feeley &lt;<a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 17 Dec 2002 16:58:04 -0500</li>
+<li><em>Cc</em>: <a href="mailto:kumo@DOMAIN.HIDDEN">kumo@xxxxxxxxxxxxx</a>, <a href="mailto:srfi-38@DOMAIN.HIDDEN">srfi-38@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-38@DOMAIN.HIDDEN">srfi-38@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:Pine.LNX.4.40.0212171202400.9925-100000@DOMAIN.HIDDEN">Pine.LNX.4.40.0212171202400.9925-100000@xxxxxxxxxxxxxx</a>&gt; (message	from bear on Tue, 17 Dec 2002 12:23:56 -0800 (PST))</li>
+<li><em>References</em>: &lt;<a href="mailto:Pine.LNX.4.40.0212171202400.9925-100000@DOMAIN.HIDDEN">Pine.LNX.4.40.0212171202400.9925-100000@xxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; Look at this, please, from the perspective of having a well-behaved
+&gt; function that can write an external representation of data so that it
+&gt; can be read back in recovering the same structure, and you will see
+&gt; that it's a completely different issue from presenting the data in a
+&gt; particular style, format, or radix.  Such details are irrelevant here.
+
+This is not at all my perspective.  I manipulate large cyclic data
+structures all the time (doubly-linked lists, trees with
+back-pointers, object system class descriptors, etc), my programs
+(sometimes!) have bugs and I want to dump these cyclic data-structures
+nicely so that I can figure out what the problem is.  I do this all
+the time!  It would be a shame if I could not combine the
+pretty-printing feature with the shared data printing feature.  My
+point is that these features are not mutually exclusive, so the API
+should be designed to let the user pick the features needed.
+
+Moreover, if you are truly trying to design a procedure that will
+allow data to be read back and recover the same structure, then there
+are still plenty of on/off switches that you can give to the user (and
+that you eventually will have to as the needs of users evolve):
+
+  - Should hidden fields of an object be written or not?  This is
+    useful for debugging but also for saving an object to a file and
+    reading it back in later.
+
+  - Should numbers that are eq? be marked as shared or not?  For
+    example in (123 . 123) both numbers are probably eq?, and perhaps
+    also in (0.0 . 0.0).
+
+  - Should the low-level code of procedures (bytecode, or whatever) be
+    dumped?  Same issue for continuations.
+
+  - Should the object be written as text or in binary?  After all if a
+    human is not going to read the data using text is just wasteful.
+    A binary representation, or even a special purpose textual
+    representation would be more compact.
+
+So in the end the &quot;write-showing-shared&quot; procedure still needs
+parameters.  We don't yet know how many we need (and probably never
+will as the need for new features never ceases to grow).  This is why
+an API based on dynamically bound parameter objects is needed.
+Alternatively, explicit keyword parameters could also be used:
+
+   (write obj port shared: #t pretty: #t)
+
+I have also found readtables to be a good way to package up the
+parameters that are used by &quot;write&quot; and &quot;read&quot;.  The readtable
+specifies the external representation and &quot;write&quot; and &quot;read&quot; use
+the readtable when generating the external representation or
+when parsing an object.  With readtables you would have:
+
+   (let ((rt (readtable-copy (current-readtable))))
+     (readtable-allow-sharing-set! rt #t)
+     (readtable-pretty-print-set! rt #t)
+     (parameterize ((current-readtable rt))
+       (write obj port)))
+
+or
+
+   (let ((rt (readtable-copy (current-readtable))))
+     (readtable-allow-sharing-set! rt #t)
+     (readtable-pretty-print-set! rt #t)
+     (write obj port readtable: rt))
+
+Marc
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00018" href="msg00018.html">Re: new function or modify read</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+<li><strong><a name="00021" href="msg00021.html">Re: new function or modify read</a></strong>
+<ul><li><em>From:</em> David Rush</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00016" href="msg00016.html">Re: new function or modify read</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00016.html">Re: new function or modify read</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00018.html">Re: new function or modify read</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00016.html">Re: new function or modify read</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00018.html">Re: new function or modify read</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00017"><strong>Date</strong></a></li>
+<li><a href="threads.html#00017"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

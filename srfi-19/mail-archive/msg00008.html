@@ -1,0 +1,215 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: more revisions -->
+<!--X-From-R13: "Ivyy Tvgmtrenyq" <svgmtrenyqNarbqrfvp.pbz> -->
+<!--X-Date: Fri, 7 Apr 2000 15:44:23 &#45;0500 (CDT) -->
+<!--X-Message-Id: 004201bfa0d2$18772120$11969fd0@fitzgerald_nt -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200003141532.KAA06567@trex.IRO.UMontreal.CA -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>more revisions</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00007.html">Date Prev</a>][<a href="msg00009.html">Date Next</a>][<a href="msg00007.html">Thread Prev</a>][<a href="msg00003.html">Thread Next</a>][<a href="maillist.html#00008">Date Index</a>][<a href="threads.html#00008">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>more revisions</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &lt;<a href="mailto:srfi-19@DOMAIN.HIDDEN">srfi-19@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: more revisions</li>
+<li><em>From</em>: &quot;Will Fitzgerald&quot; &lt;<a href="mailto:fitzgerald@DOMAIN.HIDDEN">fitzgerald@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 7 Apr 2000 16:44:40 -0400</li>
+<li><em>Importance</em>: Normal</li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:200003141532.KAA06567@DOMAIN.HIDDEN">200003141532.KAA06567@xxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Reply-to</em>: &lt;<a href="mailto:fitzgerald@DOMAIN.HIDDEN">fitzgerald@xxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>I started coding up the proposed revisions to my draft. 
+This resulted in more revisions.
+
+Now, there are only two time-related data types: a 'time' object, and
+seconds (as in SRFI 18).
+
+The time object has the following components:
+
+(time-second time) =&gt; real (0 to 61.0)
+                      potentially includes leap seconds
+(time-minute time) =&gt; integer (0 to 59)
+(time-hour time)   =&gt; integer (0 to 23)
+(time-day time)    =&gt; integer (1 to 31)
+(time-month time)  =&gt; integer (1 to 12) (January=1, etc.)
+(time-year time)   =&gt; integer
+(time-zone-offset time) =&gt; integer 
+ (the number of seconds east of GMT for this timezone)
+
+Implementations can vary as to whether leap seconds are included. 
+Range is implementation specific.
+
+The 'second' object is a real, potentially inexact, 
+corresponding to the number of seconds
+from 0 to implementation specific upper range, with
+the meaning of 0 implementation specific.
+
+;; get the current values
+
+(current-time)
+(current-seconds)  
+
+;; creator
+
+(make-time second minute hour date month year zone-offset)
+
+;; other readers
+
+(time-year-day time) =&gt; integer. Day of year (0=1/1 , etc.)
+(time-week-day time) =&gt; integer. Day of week (0=Sunday, etc.)
+
+(julian-day time) =&gt; real returns the Julian day, where JD 0
+JD 0 designates the 24 hours from noon UTC on 1 January 4713 BC
+ to noon UTC on 2 January 4713 BC. 
+
+(modified-julian-day time) =&gt; real. Returns the modified Julian
+day; number of days since 17 Nov 1858 at 00:00:00 UTC.
+
+;; writers
+
+(set-time-second! time real)
+(set-time-minute! time integer)
+(set-time-hour! time integer)
+(set-time-day! time integer)
+(set-time-month! time integer)
+(set-time-year! time integer)
+(set-time-zone-offset! time integer)
+
+;; converters. all strings are ISO formats.
+
+(copy-time time) =&gt; time
+(time-&gt;seconds time) =&gt; real
+(seconds-&gt;time real) =&gt; time
+(julian-day-&gt;time real) =&gt; time
+(modified-julian-day-&gt;time real) =&gt; time
+(time-&gt;universal-time! time) =&gt; time (side-effects); converts to GMT
+(time-&gt;universal-time time) =&gt; time (copies)
+
+(time-&gt;string time  . include-time-zone-offset?)  =&gt; string
+(time-&gt;date-string time) =&gt; string e.g., 2000-01-31
+(time-&gt;hour-string time) =&gt; string e.g. 12:34:56.789
+
+(string-&gt;time string) =&gt; time
+
+
+;; comparing procedures
+
+The comparison procedures must take the time-zone-offset into
+consideration. 
+
+(time=? time1 time2) =&gt; boolean
+(time&gt;? time1 time2) =&gt; boolean
+(time&lt;? time1 time2) =&gt; boolean
+(time&gt;=? time1 time2) =&gt; boolean
+(time&lt;=? time1 time2) =&gt; boolean
+
+;; data type probes
+
+(time? time) =&gt; boolean
+
+;; time arithmetic
+
+(add-seconds! time real) =&gt; time adds number of seconds to date,
+ side-effecting it
+(add-seconds time real) =&gt; time adds number of seconds to date,
+creating new date.
+
+
+Here's a summary of the changes:
+
+
+I dropped the 'machine time' procedures. They didn't fit very well 
+in the overall scheme.
+
+I dropped the daylights savings time flag. I had thought this 
+typically changed the semantics of a time object for time arithmetic,
+but this doesn't seem to be the case (at least for MzScheme). Besides,
+it's not always very usefully defined. If (current-time) needs to 
+adjust for daylights savings time, this should be reflected in the 
+time-zone-offset.
+
+I dropped the special 'Julian day' time object, and just made them
+readers on the time object. I added the 'modified Julian day'
+reader, which provides lower numbers (and starts at midnight).
+
+I added the time-&gt;universal-time! and time-&gt;universal-time, which
+takes a time object, and converts it to a 0 time-zone-offset.
+
+I added the add-seconds! and add-seconds procedures. These are
+procedures that allow you to add an arbitrary number of seconds
+to a time object. (Marc, this means your threads could run until you
+ran out of integers -- they might even stop using Cobol by then!). In
+the code I've written so far, I think all the right things happen at
+the time boundaries. Leap seconds are still a pain, though.
+
+I added a couple of additional string output procedures, to get just
+the date or the hour.
+
+I'll post the code soon. Currently, the only system dependencies
+are on CURRENT-SECONDS, knowing the time object corresponding to
+(seconds-&gt;date 0) at GMT, and probing the local time-zone-offset. 
+
+I'll also begin revising the proposal in earnest.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00002" href="msg00002.html">Re: leap seconds</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00007.html">new time and date procedures</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00009.html">Re: more revisions</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00007.html">new time and date procedures</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00003.html">Re: leap seconds</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00008"><strong>Date</strong></a></li>
+<li><a href="threads.html#00008"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

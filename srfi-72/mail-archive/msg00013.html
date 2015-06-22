@@ -1,0 +1,197 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: How many arguments to a macro transformer? -->
+<!--X-From-R13: Yrvgu Ievtug <xjevtugNserr&#45;pbzc&#45;fubc.pbz> -->
+<!--X-Date: Thu,  4 Aug 2005 16:29:25 +0200 (DFT) -->
+<!--X-Message-Id: 200508040726.j747Qtar004589@fcs12.free&#45;comp&#45;shop.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200507261618.j6QGILec009672@later.het.brown.edu -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: How many arguments to a macro transformer?</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00012.html">Date Prev</a>][<a href="msg00014.html">Date Next</a>][<a href="msg00010.html">Thread Prev</a>][<a href="msg00011.html">Thread Next</a>][<a href="maillist.html#00013">Date Index</a>][<a href="threads.html#00013">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: How many arguments to a macro transformer?</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: How many arguments to a macro transformer?</li>
+<li><em>From</em>: Keith Wright &lt;<a href="mailto:kwright@DOMAIN.HIDDEN">kwright@xxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 4 Aug 2005 03:26:55 -0400</li>
+<li><em>Cc</em>: <a href="mailto:srfi-72@DOMAIN.HIDDEN">srfi-72@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-72@DOMAIN.HIDDEN">srfi-72@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:200507261618.j6QGILec009672@DOMAIN.HIDDEN">200507261618.j6QGILec009672@xxxxxxxxxxxxxxxxxxx</a>&gt; (message from	Andre van Tonder on Tue, 26 Jul 2005 12:18:21 -0400 (EDT))</li>
+<li><em>References</em>: &lt;<a href="mailto:200507261618.j6QGILec009672@DOMAIN.HIDDEN">200507261618.j6QGILec009672@xxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>I got the new version 1.9, merged it with the changes I had
+made, and tried the result on the old test cases.  I noticed
+that the old test sequence started with the definition of
+|swap!| and then went on to
+
+  ;; This macro may also be expressed as:
+  
+  (define-syntax swap!
+    (lambda (form)
+      (let ((a (cadr  form))
+            (b (caddr form)))
+        `(,(syntax let) ((,(syntax temp) ,a))
+          (,(syntax set!) ,a ,b)
+          (,(syntax set!) ,b ,(syntax temp))))))
+
+This second form has been removed from the new test sequence.
+Indeed, it does not seem to work anymore.  Is it broken on
+purpose, or have I got something screwed up again?
+
+The main thing that attracted me to this SRFI in the first
+place is that it seemed to make identifiers into just another
+data type that can be put into an S-expression and manipulated
+like any other.  So something very like this _should_ work.
+
+&gt; From: Andre van Tonder &lt;andre@xxxxxxxxxxxxxxxxxxx&gt;
+&gt; 
+&gt; Keith Wright wrote:
+&gt; 
+KW &gt; The short form is wonderful; we should keep it just as it is.
+KW &gt; 
+KW &gt; (2) It is a long tradition that a macro has one argument which is
+KW &gt; bound to the entire form of the macro call.  I think that both
+KW &gt; LISP 1.5 and Common Lisp do it that way.
+&gt;  
+&gt;  Thank you - more good reasons supporting the current choice.  
+
+I looked it up in the Common Lisp manual before I made that
+claim, so that part is right.  For Lisp 1.5 I relied on memory
+and the more I thought about it the foggier the memory became.
+
+Lisp 1.5 did not really have macros, and I am not really sure
+any more how the FEXPRs worked.  But the tradition of one
+argument macros goes back at least to Maclisp, I am pretty sure.
+
+KW &gt; The appendix of R4RS says that it has been suggested (it doesn't
+KW &gt; say by whom) that #'&lt;datum&gt; and #`&lt;datum&gt; would be felicitous
+KW &gt; abbreviations for (syntax &lt;datum&gt;) and (quasisyntax &lt;datum&gt;).
+KW &gt; Could this be added to the SRFI?
+&gt;  
+&gt;  I will add that as a recommendation in the next revision.
+
+Did that happen?  I don't see it.
+
+KW &gt; As a stylistic matter, I think it would be better to remove uses
+KW &gt; of |syntax-case| and |with-syntax| from the examples, except
+KW &gt; where comparison with |syntax-case| is the point of the example.
+&gt;
+&gt;  Since |syntax-case| is included in the new revision, it is probably
+&gt;  okay to use it in examples where the pattern matching makes things
+&gt;  clearer.  Where it doesn't, as in the |syntax-quote| example you
+&gt;  raise, I'll work on rewriting them.
+&gt;  
+&gt;  By the way, my justification for including the |syntax-case| form, even 
+&gt;  though it is not a primitive, has not been well documented yet.  
+&gt;  So here goes:  
+&gt;  
+&gt;    * I am specifying an improvement in the semantics of syntax-case
+&gt;      for better hygiene.
+
+That's good (I think).  So when you are discussing that improvement
+you certainly need to put what you are discussing into the examples.
+
+&gt;    * A proposal that does not come with some form of pattern matching 
+&gt;      won't be regarded as usable by many Schemers.  
+
+They will certainly demand that you _can_ implement pattern matching
+in your system, but if your system does no more than provide an
+implementation of syntax-case then they are likely to stay with
+their own implementation.  In order to understand and love
+the proposal it would be good to have as many examples as
+possible of the new stuff.
+
+&gt;    * For R5RS compatibility, we need to provide syntax-rules.  
+
+Again, we need to be able to implement it, but we don't need
+to explain it, so it's better if the examples stand on their own.
+Show that you can implement syntax-case and syntax-rules, but
+then show off what you can do without them.
+
+By the way, the changes I have made to your code are to
+make a version of simple-macros.scm with the modules
+ripped out.  This is not because I think modules are a bad
+idea, I am just trying to understand macros by boiling
+the implementation down to its bare core.  So I need test
+cases that use only the core constructs.
+
+KW &gt; The link to Andrew Wright's pattern matcher
+KW &gt;  <a  rel="nofollow" href="http://download.plt-scheme.org/.../match.ss">http://download.plt-scheme.org/.../match.ss</a>
+KW &gt; at the end of kffd-match-tut.htm seems to be broken.
+&gt;  
+&gt;  Thank you - I removed it.  
+
+Is it still available anywhere else?  I would like to know
+what you had to change to adapt the run-time pattern matcher to
+work with macros.  Is there any reason that there could not
+be one matcher for both purposes?  That should be another
+SRFI maybe.
+
+-- 
+     -- Keith Wright
+
+Programmer in Chief, Free Computer Shop
+ ---  Food, Shelter, Source code.  ---
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00010" href="msg00010.html">Re: How many arguments to a macro transformer?</a></strong>
+<ul><li><em>From:</em> Andre van Tonder</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00012.html">Re: How many arguments to a macro transformer?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00014.html">hygiene when using multiple instances of a macro..?</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00010.html">Re: How many arguments to a macro transformer?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00011.html">Re: How many arguments to a macro transformer?</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00013"><strong>Date</strong></a></li>
+<li><a href="threads.html#00013"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

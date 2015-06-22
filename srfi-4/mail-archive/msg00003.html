@@ -1,0 +1,144 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: External syntax of homogeneous vectors -->
+<!--X-From-R13: [nep Trryrl <srryrlNveb.hzbagerny.pn> -->
+<!--X-Date: Wed, 10 Feb 1999 10:43:21 &#45;0600 (CST) -->
+<!--X-Message-Id: 199902101643.LAA04735@raptor.IRO.UMontreal.CA -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>External syntax of homogeneous vectors</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00002.html">Date Prev</a>][<a href="msg00004.html">Date Next</a>][<a href="msg00002.html">Thread Prev</a>][<a href="msg00004.html">Thread Next</a>][<a href="maillist.html#00003">Date Index</a>][<a href="threads.html#00003">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>External syntax of homogeneous vectors</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-4@DOMAIN.HIDDEN">srfi-4@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: External syntax of homogeneous vectors</li>
+<li><em>From</em>: Marc Feeley &lt;<a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 10 Feb 1999 11:43:11 -0500 (EST)</li>
+<li><em>Cc</em>: <a href="mailto:jstone@DOMAIN.HIDDEN">jstone@xxxxxxxxxxx</a>, <a href="mailto:will@DOMAIN.HIDDEN">will@xxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>In this message I will make a case for the external syntax proposed in
+SRFI-4, in particular the apparent nonconformance with Scheme implied
+by #f32(...) which most implementations of Scheme parse as the 3
+objects #f, 32 and (...).
+
+John Stone &lt;jstone@xxxxxxxxxxx&gt; proposed to replace this with the
+syntax #r32(...), with &quot;r&quot; standing for real.  To me this would be
+inconsistent with the number classification in Scheme because exact
+integers are classified as &quot;reals&quot;, so a u8vector is just as much a
+&quot;real&quot; vector as a f32vector.  The distinction between them is that
+one contains exact real integers and the other inexact reals.
+The name &quot;float&quot; is much more appropriate.
+
+William D Clinger &lt;will@xxxxxxxxxxx&gt; proposed to add a &quot;v&quot; in the prefix
+as in #vf32(...), with &quot;v&quot; standing for vector.  This could be extended
+to #vvf32((...) (...)...) for 2 dimensional arrays, etc.  I don't think
+this is very elegant because it is implicit that this is a vector, so
+why add a redundant marker for this.  For multidimensional homogeneous
+vector, nested lists could be used as in this 3 by 4 float vector:
+
+  #f32((1.0 2.0 3.0 4.0)
+       (1.0 2.0 3.0 4.0)
+       (1.0 2.0 3.0 4.0))
+
+The only problem with such a representation is that it is not possible
+to distinguish a 0 by 4 float vector from an empty one dimensional
+float vector, but a special notation could be used for this very
+unusual case, such as allowing a special suffix after an element to
+indicate a repetition factor (which is convenient for other reasons).
+For example:
+
+  #f32(1.0 2.0 ^ 98 3.0)  ; a 100 element one dimensional float vector
+                          ; containing one followed by 98 twos and then a three
+
+  #f32((1.0 2.0 3.0 4.0) ^ 3) ; the 3 by 4 float vector shown above
+
+  #f32((0.0 0.0 0.0 0.0) ^ 0) ; a 0 by 4 float vector
+  #f32((0.0 ^ 4) ^ 0)         ; the same 0 by 4 float vector
+  #f32(() ^ 0)                ; a 0 by 0 float vector
+
+  #f32() ; this would be a 0 element one dimensional float vector
+
+To me the real problem with #f32(...) rests in the lexical syntax in
+the Scheme standard and in the interpretation of that specification by
+most implementors.  Why should #x32 and #d32 be parsed as one token
+but #f32 as 2 tokens?  The Scheme standard is not clear about this
+(but all of the implementations of Scheme I tried do parse this as 2
+tokens, except for Gambit).  If you think the lexical syntax
+specification clearly states that #f32 should parse as 2 tokens then
+you must also agree that #\space32 should parse as 2 tokens (but all
+of the implementations of Scheme I tried give a syntax error because
+they try to parse this as a single token, and the name &quot;space32&quot; is
+not a valid character name).
+
+So I maintain that #f32(...) is a perfectly reasonable syntax.  I also
+think that the Scheme standard should be clarified to allow this (by
+requiring #f and #t as well as #\space and #\newline to be followed by
+a delimiter character such as a space or parenthesis).  I believe this
+is consistent with Kent Dybvig's proposal at the Baltimore workshop
+which would require a delimiter after a character (so that #\123
+would be an &quot;error&quot;, allowing implementations of Scheme to give this
+a meaning, such as the character equal to (integer-&gt;char 123)).
+
+Marc
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00004" href="msg00004.html">External syntax of homogeneous vectors</a></strong>
+<ul><li><em>From:</em> John Stone</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00002.html">Re: Glitch in literal syntax</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00004.html">External syntax of homogeneous vectors</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00002.html">Re: Glitch in literal syntax</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00004.html">External syntax of homogeneous vectors</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00003"><strong>Date</strong></a></li>
+<li><a href="threads.html#00003"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

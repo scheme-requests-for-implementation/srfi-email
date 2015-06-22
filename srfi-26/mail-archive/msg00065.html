@@ -1,0 +1,122 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Shouldn't cut allow a slot as its first argument? -->
+<!--X-From-R13: Oy Brgebsfxl <nyNcrgebsfxl.bet> -->
+<!--X-Date: Mon,  4 Mar 2002 03:02:40 +0100 (NFT) -->
+<!--X-Message-Id: 200203040202.SAA30270@radish.petrofsky.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Shouldn't cut allow a slot as its first argument?</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00064.html">Date Prev</a>][<a href="msg00066.html">Date Next</a>][<a href="msg00064.html">Thread Prev</a>][<a href="msg00066.html">Thread Next</a>][<a href="maillist.html#00065">Date Index</a>][<a href="threads.html#00065">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Shouldn't cut allow a slot as its first argument?</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-26@DOMAIN.HIDDEN">srfi-26@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Shouldn't cut allow a slot as its first argument?</li>
+<li><em>From</em>: Al Petrofsky &lt;<a href="mailto:al@DOMAIN.HIDDEN">al@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 3 Mar 2002 18:02:37 -0800</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-26@DOMAIN.HIDDEN">srfi-26@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>It seems to me that the symmetric lisp1 nature of scheme, in which the
+evaluation of the operator and operand positions of a procedure call
+are identical, calls for cut to allow any of its arguments to be
+slots:
+
+  (map (cut &lt;&gt; 7) (list + - (cut - &lt;&gt; 2)))  =&gt;  (7 -7 5)
+
+  (define (run-thunks)
+    (for-each (cut &lt;&gt;) the-thunks))
+
+  (define (run-hooks hooks arg)
+    (for-each (cut &lt;&gt; arg) hooks))
+
+To effect this change in the BNF spec, change &lt;proc&gt; &lt;const-or-slot&gt;*
+to &lt;const-or-slot&gt;+.
+       
+Here's a macro that implements this change, plus one-time argument
+evaluation, and allows consts after the rest-slot:
+
+
+(define-syntax cut
+  (syntax-rules ()
+    ((_ . cut-args)
+     (letrec-syntax
+         ((find-end
+           ;; Reverse the expressions/slots until we find the end or
+           ;; the rest-slot.
+           (syntax-rules (&lt;...&gt;)
+             ((_ rev)               (p #f () ()   () ()             . rev))
+             ((_ rev &lt;...&gt;)         (p #t () ()   x  (x)            . rev))
+             ((_ rev &lt;...&gt; . exps)  (p #t y  exps x  ((append x y)) . rev))
+             ((_ rev exp   . exps)  (find-end (exp . rev) . exps))))
+          (p 
+           ;; p: process the expressions/slots after they have been reversed.
+           ;; When finished, form an outer lambda that saves the
+           ;; expression results, and an inner lambda that invokes a
+           ;; combination, using apply if necessary.
+           ;; Called as:  (p need-apply? temps orig-exps slot-names combination
+           ;;                expression-or-slot ...)
+           (syntax-rules (&lt;&gt;)
+             ((_ a  t o s c &lt;&gt; . es) (p a      t       o (x . s) (x . c) . es))
+             ((_ a  t o s c e  . es) (p a (y . t) (e . o)     s  (y . c) . es))
+             ((_ #t t o s c)         ((lambda t (lambda s (apply . c))) . o))
+             ((_ #f t o s c)         ((lambda t (lambda s c)) . o)))))
+       (find-end () . cut-args)))))
+
+-al
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00064.html">cut should evaluate its arguments</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00066.html">changes to the design of SRFI-26 &quot;Notation for specializing parameters without currying&quot;</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00064.html">cut should evaluate its arguments</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00066.html">changes to the design of SRFI-26 &quot;Notation for specializing parameters without currying&quot;</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00065"><strong>Date</strong></a></li>
+<li><a href="threads.html#00065"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,171 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: compare function return values -->
+<!--X-From-R13: Bnah Ynyyvbxbfxv <ngrujnNfnatr.sv> -->
+<!--X-Date: Mon,  6 Jun 2005 11:22:47 +0200 (DFT) -->
+<!--X-Message-Id: 20050606092122.GC9625@xandru.it.helsinki.fi -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20050510164111.GA11297@ling.helsinki.fi -->
+<!--X-Reference: Pine.LNX.4.58.0506041038160.19280@bolt.sonic.net -->
+<!--X-Reference: 20050606082249.GB9625@xandru.it.helsinki.fi -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: compare function return values</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00029.html">Date Prev</a>][<a href="msg00031.html">Date Next</a>][<a href="msg00029.html">Thread Prev</a>][<a href="msg00032.html">Thread Next</a>][<a href="maillist.html#00030">Date Index</a>][<a href="threads.html#00030">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: compare function return values</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-67@DOMAIN.HIDDEN">srfi-67@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: compare function return values</li>
+<li><em>From</em>: Panu Kalliokoski &lt;<a href="mailto:atehwa@DOMAIN.HIDDEN">atehwa@xxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 6 Jun 2005 12:21:27 +0300</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-67@DOMAIN.HIDDEN">srfi-67@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20050606082249.GB9625@DOMAIN.HIDDEN">20050606082249.GB9625@xxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:20050510164111.GA11297@DOMAIN.HIDDEN">20050510164111.GA11297@xxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:Pine.LNX.4.58.0506041038160.19280@DOMAIN.HIDDEN">Pine.LNX.4.58.0506041038160.19280@xxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20050606082249.GB9625@DOMAIN.HIDDEN">20050606082249.GB9625@xxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mutt/1.5.9i</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Sorry to elaborate on this already-long-discussed and not-so-important
+subject, and thank you for the interesting elaboration of the comparison
+value rationale in the revised version of the SRFI.
+
+There is an interesting new argument there against the usage of symbols,
+which relates to the mutual compares of the compare values themselves.
+I'd like to think about the possible uses of such operations.
+
+For the most general case, (compare (compare a b) (compare c d)), I find
+it hard to come up with any use with.  There is the simple case where
+the result is 0, where we can use eq(v)? and it means that a and b are
+equally related as c and d.  Perhaps somebody can make some use for
+that.  But the case that the value is 1 is true in these cases:
+{ a = b and c &lt; d; a &gt; b and c &lt; d; a &gt; b and c = d }.  I'd like to see
+the wizard that comes up with some use for this.  Equal considerations
+apply for -1:
+
+	a &lt; b	a = b	a &gt; b
+c &lt; d	 0	 1	 1
+c = d	-1	 0	 1
+c &gt; d	-1	-1	 0
+
+So, how about the not-so-general case where some of the four possible
+arguments are the same?  For two distinct values, any sensible result
+can be more elegantly expressed as a simple comparison; so how about the
+cases of three distinct values?
+
+Expressions like (compare (compare a a) (compare b c)) don't make sense,
+as (compare a a) is a constant.  OTOH, changing the order of compare's
+arguments just changes the sign.  So the only expression we have to look
+at is:
+
+(compare (compare a b) (compare b c))
+
+ordering	value	ordering	value	ordering	value
+
+a = b = c	0	a &lt; b = c	-1	a &lt; b &lt; c	0
+                        b = c &lt; a	1       b &lt; a &lt; c	1
+                        c &lt; a = b	-1      a &lt; c &lt; b	-1
+                        a = b &lt; c	1       b &lt; c &lt; a	1
+                        a = c &lt; b	-1      c &lt; a &lt; b	-1
+                        b &lt; a = c	1       c &lt; b &lt; a	0
+
+The useful cases seem to be those where value is 0, and the operation is
+implementable by eq(v)?.  The cases where value is 1 are those where b =
+(min a b c), and the cases where value is -1 are those where b = (max a
+b c).  Again, this check can be made more elegantly by explicitly
+testing b against a and c, and usage of (compare (compare a b) (compare
+b c)) should IMO be discouraged (by declaring its return value to be a
+symbol, for instance.)
+
+It seems more and more to me that these handy ways of using the return
+value of a comparison as a number, not a tag, leads to messy and
+difficult-to-understand code.  For example, the &quot;good&quot; side of integers,
+ability to reflect the comparison algorithmically by (* sign (compare a
+b)), would probably be better (and more Scheme-like) handled by
+something user-defined like (comparison-transform transformation
+(compare a b)).  The construct (* sign (compare a b)) makes it look like
+comparison transformations (sign e {-1, 1}) and comparison values
+((compare a b) e {-1, 0, 1}) were closely related, which they are not.
+If they were, (* (compare a b) (compare c d)) would make something
+sensible, but instead it raises an asymmetry, for -1 acts as a reversion
+value, whereas 1 acts as identity (as comparison values, they should act
+&quot;symmetrically&quot;).
+
+So, _please_ still consider using symbols.  If the need to quote symbols
+is too cumbersome (??!), please consider the special data type with #&lt;,
+#&gt;, #= as the values.
+
+As a last remark (which will probably earn me some yelling): while the
+comparison values {-1, 0, 1} are not semantically sensible to use as
+numbers, the comparison values {&lt;, =, &gt;} are semantically sensible to
+use for building programs dynamically.  :)
+
+Panu
+
+-- 
+personal contact: atehwa@xxxxxx, +35841 5323835, +3589 85619369
+work contact: pkalliok@xxxxxxxxxxxxxxxx, +35850 3678003
+kotisivu (henkkoht):	<a  rel="nofollow" href="http://www.iki.fi/atehwa/">http://www.iki.fi/atehwa/</a>
+homepage (technical):	<a  rel="nofollow" href="http://sange.fi/~atehwa/">http://sange.fi/~atehwa/</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00025" href="msg00025.html">Re: compare function return values</a></strong>
+<ul><li><em>From:</em> Panu A Kalliokoski</li></ul></li>
+<li><strong><a name="00028" href="msg00028.html">Re: compare function return values</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+<li><strong><a name="00029" href="msg00029.html">Re: compare function return values</a></strong>
+<ul><li><em>From:</em> Panu Kalliokoski</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00029.html">Re: compare function return values</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00031.html">vector compare</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00029.html">Re: compare function return values</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00032.html">Re: compare function return values</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00030"><strong>Date</strong></a></li>
+<li><a href="threads.html#00030"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

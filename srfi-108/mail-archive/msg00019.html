@@ -1,0 +1,161 @@
+<!-- MHonArc v2.6.16 -->
+<!--X-Subject: Re: Monkey&#45;patching $quasi&#45;value$ -->
+<!--X-From-R13: Xbua Qbjna <pbjnaNzrephel.ppvy.bet> -->
+<!--X-Date: Sun, 25 Nov 2012 03:07:17 +0000 (UTC) -->
+<!--X-Message-Id: 20121125030714.GL1610@mercury.ccil.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20121124070834.GK1610@mercury.ccil.org -->
+<!--X-Reference: 50B087DD.4000002@bothner.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Monkey-patching $quasi-value$</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00018.html">Date Prev</a>][<a href="msg00020.html">Date Next</a>][<a href="msg00010.html">Thread Prev</a>][<a href="msg00021.html">Thread Next</a>][<a href="maillist.html#00019">Date Index</a>][<a href="threads.html#00019">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Monkey-patching $quasi-value$</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Per Bothner &lt;<a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Monkey-patching $quasi-value$</li>
+<li><em>From</em>: John Cowan &lt;<a href="mailto:cowan@DOMAIN.HIDDEN">cowan@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 24 Nov 2012 22:07:14 -0500</li>
+<li><em>Cc</em>: <a href="mailto:srfi-108@DOMAIN.HIDDEN">srfi-108@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-108@DOMAIN.HIDDEN">srfi-108@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:50B087DD.4000002@DOMAIN.HIDDEN">50B087DD.4000002@xxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:20121124070834.GK1610@DOMAIN.HIDDEN">20121124070834.GK1610@xxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:50B087DD.4000002@DOMAIN.HIDDEN">50B087DD.4000002@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Sender</em>: John Cowan &lt;<a href="mailto:cowan@DOMAIN.HIDDEN">cowan@xxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mutt/1.5.20 (2009-06-14)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Per Bothner scripsit:
+
+&gt; The question is: Do we want there to be a default implementation of
+&gt; ($quasi-value-transformer$:foo ...) as (foo ...)?  
+
+And what is the default implementation of (foo ...)?  We seem
+to be on an infinite regress, and I'd rather just stop at
+$quasi-value-transformer$:foo.  And start there too.
+
+&gt; (1) The reader returns ($quasi-value-transformer$:foo ...).  If there
+&gt; is no binding for $quasi-value-transformer$:foo, the implementation
+&gt; looks for ($quasi-value$ foo ...) which has a predefined binding
+&gt; equivalent to (foo ...).
+&gt; 
+&gt; (2) The reader returns ($quasi-value$ foo ...).  The prefined binding
+&gt; for $quasi-value$ is to see if $quasi-value-transformer$:foo has a
+&gt; binding, and otherwise evaluate (foo ...).
+
+I propose this:
+
+(1') The reader returns ($quasi-value-transformer$:foo ...).  If it
+was called from `read`, that's what the program gets.  If it was called
+from a compiler or interpreter, it applies its normal rules to determine
+if $quasi-value-transformer$:foo is bound, and if not, takes its normal
+error recovery action, whatever that is.
+
+&gt; Variant (1) has the advantage in that it can be useful even in a
+&gt; &quot;partial&quot; implementation that doesn't support the more &quot;magic&quot;
+&gt; concepts for looking for bindings and transforming symbols.
+&gt; I.e. one can easily and portably define a macro or function for
+&gt; $quasi-value-transformer$:foo, and that's the more important use case.
+
+It is indeed, and (1') has the same advantage.
+
+&gt; An implementation can then *optionally* provide a default
+&gt; implementation and/or a mechanism to override the default.
+
+By the same token, a compiler or interpreter can have some default
+mechanism that recognizes symbols of this type and provides them with
+some default value or behavior.  I once wrote a Lisp interpreter that, if
+it found an undefined symbol in function position, checked it to see if
+it matched the regex /^c[ad]+r/, and if so, it performed the appropriate
+operation on the spot.  You could not, however, funcall or apply such
+a function.
+
+&gt; There is some question as to what &quot;a binding exists&quot; means: Clearly one
+&gt; has to check for a macro at macro-expansion time.  If a binding isn't
+&gt; found at compile-time, do we check check for a run-time (function)
+&gt; binding?  That matches normal behavior for (foo ...). but it makes it
+&gt; difficult to also support a default macro binding, though a default
+&gt; function binding is easy enough.
+
+An advantage of (1') is that it doesn't require us to work out the Right
+Way of doing these things.  Scheme's normal mechanisms do the job for us,
+and if we use a lexical syntax in our code without bothering to define a
+corresponding macro or procedure, we get exactly what we deserve to get.
+I do not think this is user-hostile, any more than it's user-hostile
+not to provide the /^c[ad]+r$/ hack I mentioned above.
+
+&gt; I prefer the colon form as it keeps &quot;foo&quot; more distinct.  
+
+Very well.
+
+-- 
+A: &quot;Spiro conjectures Ex-Lax.&quot;                  John Cowan
+Q: &quot;What does Pat Nixon frost her cakes with?&quot;  cowan@xxxxxxxx
+  --&quot;Jeopardy&quot; for generative semanticists      <a  rel="nofollow" href="http://www.ccil.org/~cowan">http://www.ccil.org/~cowan</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00021" href="msg00021.html">Re: Monkey-patching $quasi-value$</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00008" href="msg00008.html">Monkey-patching $quasi-value$</a></strong>
+<ul><li><em>From:</em> John Cowan</li></ul></li>
+<li><strong><a name="00010" href="msg00010.html">Re: Monkey-patching $quasi-value$</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00018.html">Re: SRFI 10</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00020.html">Re: SRFI-108/SRFI-109 special characters</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00010.html">Re: Monkey-patching $quasi-value$</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00021.html">Re: Monkey-patching $quasi-value$</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00019"><strong>Date</strong></a></li>
+<li><a href="threads.html#00019"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

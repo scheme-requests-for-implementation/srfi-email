@@ -1,0 +1,150 @@
+<!-- MHonArc v2.6.18 -->
+<!--X-Subject: Last call: Simple adjustable&#45;size strings -->
+<!--X-From-R13: Bre Pbguare <creNobguare.pbz> -->
+<!--X-Date: Sun, 26 Apr 2015 15:16:17 +0000 (UTC) -->
+<!--X-Message-Id: 553CFC66.2010209@bothner.com -->
+<!--X-Content-Type: multipart/mixed -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Last call: Simple adjustable-size strings</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00012.html">Date Prev</a>][<a href="msg00014.html">Date Next</a>][<a href="msg00012.html">Thread Prev</a>][<a href="msg00014.html">Thread Next</a>][<a href="maillist.html#00013">Date Index</a>][<a href="threads.html#00013">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Last call: Simple adjustable-size strings</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-118@DOMAIN.HIDDEN">srfi-118@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Last call: Simple adjustable-size strings</li>
+<li><em>From</em>: Per Bothner &lt;<a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 26 Apr 2015 07:55:34 -0700</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-118@DOMAIN.HIDDEN">srfi-118@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Mozilla/5.0 (X11; Linux x86_64; rv:31.0) Gecko/20100101 Thunderbird/31.6.0</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+I think we're ready to finalize:
+<a  rel="nofollow" href="http://srfi.schemers.org/srfi-118/srfi-118.html">http://srfi.schemers.org/srfi-118/srfi-118.html</a>
+
+I fixed some typos, and added some notes on execution speed.
+I've attached a diff relative to the previous version.
+--
+	--Per Bothner
+per@xxxxxxxxxxx   <a  rel="nofollow" href="http://per.bothner.com/">http://per.bothner.com/</a>
+</pre><pre>--- srfi-118-2015-02-15.html	2015-02-15 07:56:46.131606612 -0800
++++ srfi-118.html	2015-04-19 21:42:31.457553138 -0700
+@@ -20,7 +20,7 @@
+ 
+ &lt;body&gt;
+ &lt;div class=&quot;title&quot;&gt;
+-&lt;H1&gt;Title&lt;/H1&gt;
++&lt;h1&gt;Title&lt;/h1&gt;
+ Simple adjustable-size strings
+ &lt;/div&gt;
+ 
+@@ -52,8 +52,8 @@
+ Scheme specifies mutable fixed-length strings.
+ We add two procedures &lt;code&gt;string-append!&lt;/code&gt; and
+ &lt;code&gt;string-replace!&lt;/code&gt; which allow the size of the string to change.
+-We also require that standard Scheme procedures that return mutable strings
+-(such as &lt;code&gt;make-string&lt;/code&gt;) return variable-size strings.
++We also require that the standard Scheme procedures &lt;code&gt;make-string&lt;/code&gt;
++and &lt;code&gt;string-copy&lt;/code&gt; return variable-size strings.
+  
+ &lt;/p&gt;&lt;h1&gt;Rationale&lt;/h1&gt;
+ &lt;p&gt;
+@@ -131,7 +131,7 @@
+ appending each &lt;var&gt;value&lt;/var&gt; (in order) to the end of &lt;var&gt;string&lt;/var&gt;.
+ A &lt;var&gt;value&lt;/var&gt; can be a character or a string.
+ &lt;/p&gt;&lt;p&gt;
+-The following example show to to process a string using
++The following example shows how to process a string using
+ &lt;code&gt;string-for-each&lt;/code&gt; and incrementally &lt;q&gt;building&lt;/q&gt; a result string
+ using &lt;code&gt;string-append!&lt;/code&gt;:&lt;/p&gt;
+ &lt;pre&gt;(define (translate-space-to-newline str)
+@@ -146,6 +146,8 @@
+      str)
+     result))
+ &lt;/pre&gt;
++&lt;p&gt;There is no requirement that this procedure execute in constant time,
++even amortised (i.e. average) constant time.
+ &lt;p&gt;&lt;em&gt;Usage note:&lt;/em&gt; Compare with using string ports:&lt;/p&gt;
+ &lt;pre&gt;(define (translate-space-to-newline str)
+   (let ((out (open-output-string)))
+@@ -166,7 +168,7 @@
+ but that depends on the strategy used by &lt;code&gt;string-append!&lt;/code&gt;
+ when the allocated buffer is too small.
+ The &lt;code&gt;string-append!&lt;/code&gt; function is most useful when
+-using (reading) a string a interleaved with growing it,
++using (reading) a string is interleaved with growing it,
+ or when also using &lt;code&gt;string-replace!&lt;/code&gt;.
+ &lt;/blockquote&gt;
+ 
+@@ -196,6 +198,11 @@
+ &lt;p&gt;
+ The implementation is trivial, assuming there is some indirection
+ between the string object header and the actual stored characters.
++Whenever the character buffer is full, it needs to be replaced with
++a bigger buffer.  If the size of the new buffer is a
++fixed multiple of the size of the old buffer then
++ &lt;code&gt;string-append!&lt;/code&gt; has amortized constant execution time.
++(The multiple 1.5 &lt;a href=&quot;<a  rel="nofollow" href="http://stackoverflow.com/questions/1100311/what-is-the-ideal-growth-rate-for-a-dynamically-allocated-array&quot">http://stackoverflow.com/questions/1100311/what-is-the-ideal-growth-rate-for-a-dynamically-allocated-array&quot</a>;&gt;seems a good choice&lt;/a&gt;.)
+ &lt;/p&gt;&lt;p&gt;
+ If you have cheap Smalltalk-style &lt;code&gt;becomes:&lt;/code&gt; (which is admittedly
+ unlikely these days) then you can use that when you need to grow a string
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00014" href="msg00014.html">Re: Last call: Simple adjustable-size strings</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00012.html">Re: new srfi-118 draft</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00014.html">Re: Last call: Simple adjustable-size strings</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00012.html">Re: new srfi-118 draft</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00014.html">Re: Last call: Simple adjustable-size strings</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00013"><strong>Date</strong></a></li>
+<li><a href="threads.html#00013"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

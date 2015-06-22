@@ -1,0 +1,316 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Defining quasisyntax in terms of syntax&#45;case -->
+<!--X-From-R13: Oaqer ina Fbaqre <naqerNabj.urg.oebja.rqh> -->
+<!--X-Date: Fri, 30 Jun 2006 13:25:08 +0200 (MST) -->
+<!--X-Message-Id: Pine.GSO.4.60.0606300632230.4351@now.het.brown.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: Pine.GSO.4.60.0606292209090.3850@now.het.brown.edu -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Defining quasisyntax in terms of syntax-case</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00059.html">Date Prev</a>][<a href="msg00061.html">Date Next</a>][<a href="msg00059.html">Thread Prev</a>][<a href="msg00061.html">Thread Next</a>][<a href="maillist.html#00060">Date Index</a>][<a href="threads.html#00060">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Defining quasisyntax in terms of syntax-case</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-93@DOMAIN.HIDDEN">srfi-93@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Defining quasisyntax in terms of syntax-case</li>
+<li><em>From</em>: Andre van Tonder &lt;<a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 30 Jun 2006 07:25:01 -0400 (EDT)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-93@DOMAIN.HIDDEN">srfi-93@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:Pine.GSO.4.60.0606292209090.3850@DOMAIN.HIDDEN">Pine.GSO.4.60.0606292209090.3850@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:Pine.GSO.4.60.0606292209090.3850@DOMAIN.HIDDEN">Pine.GSO.4.60.0606292209090.3850@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+Here is more correct and much more concise definition.
+A quasisyntax expression is simply converted to a
+with-syntax expression that performs the appropriate
+substitutions.  It runs on Petite.
+
+I've been careful to port Bawden's extension of the
+R5RS quasiquote semantics, which I suspect agrees with the
+definition used for quasiquote in Chez, to quasisyntax.
+
+Andre
+
+
+;;;=========================================================
+;;;
+;;; Quasisyntax in terms of SRFI-93 syntax-case.
+;;; Andre van Tonder
+;;;
+;;;=========================================================
+;;;
+;;; To make nested unquote-splicing behave in a useful way,
+;;; the R5RS-compatible extension to quasiquote in appendix B
+;;; of the following paper is used:
+;;;
+;;; Alan Bawden - Quasiquotation in Lisp
+;;; <a  rel="nofollow" href="http://citeseer.ist.psu.edu/bawden99quasiquotation.html">http://citeseer.ist.psu.edu/bawden99quasiquotation.html</a>
+;;;
+;;; The algorithm converts a quasisyntax expression to an
+;;; equivalent with-syntax expression.
+;;; For example:
+;;;
+;;; (quasisyntax (set! ,a ,b))
+;;;   ==&gt; (with-syntax ((t0 a)
+;;;                     (t1 b))
+;;;         (syntax (set! t0 t1)))
+;;;
+;;; (quasisyntax (list ,@args))
+;;;   ==&gt; (with-syntax (((t ...) args))
+;;;         (syntax (list t ...)))
+;;;
+;;; Note that quasisyntax is expanded first, before any
+;;; ellipses act.  For example:
+;;;
+;;; (quasisyntax (f ((b ,a) ...))
+;;;   ==&gt; (with-syntax ((t a))
+;;;         (syntax (f ((b t) ...))))
+;;;
+;;; so that
+;;;
+;;; (let-syntax ((test-ellipses-over-unsyntax
+;;;               (lambda (e)
+;;;                 (let ((a (syntax a)))
+;;;                   (with-syntax (((b ...) (syntax (1 2 3))))
+;;;                     (quasisyntax
+;;;                      (quote ((b ,a) ...))))))))
+;;;   (test-ellipses-over-unsyntax))
+;;;
+;;;     ==&gt; ((1 a) (2 a) (3 a))
+
+(define-syntax quasisyntax
+  (lambda (e)
+
+    (define (expand-quasisyntax x)
+
+      ;; Expand returns a syntax object of the form
+      ;;    (template[t/e, ...] (replacement ...))
+      ;; Here template[t/e ...] denotes the original template
+      ;; with unquoted expressions e replaced by fresh
+      ;; variables t, followed by the appropriate ellipses
+      ;; if e is also spliced.
+      ;; The second part of the return value is the list of
+      ;; replacements, each of the form (t e) if e is just
+      ;; unquoted, or ((t ...) e) if e is also spliced.
+      ;; This will be the list of bindings of the resulting
+      ;; with-syntax expression.
+
+      (define (expand x level)
+        (syntax-case x (quasisyntax unquote unquote-splicing)
+          ((quasisyntax e)
+           (with-syntax (((k _) x)  ; Original must be copied
+                         ((rest bs) (expand (syntax e) (+ level 1))))
+             (syntax
+              ((k . rest) bs))))
+          ((unquote e)
+           (= level 0)
+           (with-syntax (((t) (generate-temporaries '(t))))
+             (syntax (t (t e)))))
+          (((unquote e ...) . r)
+           (= level 0)
+           (with-syntax (((rest (b ...)) (expand (syntax r) 0))
+</pre><tt>                         ((t ...)        (generate-temporaries (syntax (e 
+</tt><tt>...)))))
+</tt><pre style="margin: 0em;">
+             (syntax
+              ((t ... . rest)
+               ((t e) ... b ...)))))
+          (((unquote-splicing e ...) . r)
+           (= level 0)
+           (with-syntax (((rest (b ...)) (expand (syntax r) 0))
+</pre><tt>                         ((t ...)        (generate-temporaries (syntax (e 
+</tt><tt>...)))))
+</tt><pre style="margin: 0em;">
+             (with-syntax ((((t ...) ...) (syntax ((t (... ...)) ...))))
+               (syntax
+                ((t ... ... . rest)
+                 (((t ...) e) ...))))))
+          ((k . r)
+           (and (&gt; level 0)
+                (or (free-identifier=? (syntax k) (syntax unquote))
+                    (free-identifier=? (syntax k) (syntax unquote-splicing))))
+           (with-syntax (((rest bs) (expand (syntax r) (- level 1))))
+             (syntax
+              ((k . rest) bs))))
+          ((h . t)
+           (with-syntax (((head (b1 ...)) (expand (syntax h) level))
+                         ((tail (b2 ...)) (expand (syntax t) level)))
+             (syntax
+              ((head . tail)
+               (b1 ... b2 ...)))))
+          (()
+           (syntax (() ())))
+          (id
+           (identifier? (syntax id))
+           (syntax (id ())))
+          (#(e ...)
+           (with-syntax ((((e* ...) bs)
+                          (expand (vector-&gt;list (syntax #(e ...)) level))))
+             (syntax
+              (#(e* ...) bs))))
+          (other
+           (syntax (other ())))))
+
+      (with-syntax (((template bindings) (expand x 0)))
+        (syntax
+         (with-syntax bindings (syntax template)))))
+
+    (syntax-case e ()
+      ((k template)
+       (expand-quasisyntax (syntax template))))))
+
+
+;;;=============================================================
+;;;
+;;; Tests
+;;;
+;;;==============================================================
+
+(define-syntax swap!
+  (lambda (e)
+    (syntax-case e ()
+      ((_ a b)
+       (let ((a (syntax a))
+             (b (syntax b)))
+         (quasisyntax
+          (let ((temp ,a))
+            (set! ,a ,b)
+            (set! ,b temp))))))))
+
+(let ((temp 1)
+      (set! 2))
+  (swap! set! temp)
+  (values temp set!))   ;==&gt; 2 1
+
+
+
+
+(define-syntax case
+  (lambda (x)
+    (syntax-case x ()
+      ((_ e c1 c2 ...)
+       (quasisyntax
+        (let ((t e))
+          ,(let f ((c1 (syntax c1)) (cmore (syntax (c2 ...))))
+             (if (null? cmore)
+                 (syntax-case c1 (else)
+                   ((else e1 e2 ...)    (syntax (begin e1 e2 ...)))
+                   (((k ...) e1 e2 ...) (syntax (if (memv t '(k ...))
+                                                    (begin e1 e2 ...)))))
+                 (syntax-case c1 ()
+                   (((k ...) e1 e2 ...)
+                    (quasisyntax
+                     (if (memv t '(k ...))
+                         (begin e1 e2 ...)
+                         ,(f (car cmore) (cdr cmore))))))))))))))
+
+(case 'a
+  ((b c) 'no)
+  ((d a) 'yes))
+
+
+
+(define-syntax let-in-order
+  (lambda (form)
+    (syntax-case form ()
+      ((_ ((i e) ...) e0 e1 ...)
+       (let f ((ies (syntax ((i e) ...)))
+               (its (syntax ())))
+         (syntax-case ies ()
+           (()            (quasisyntax (let ,its e0 e1 ...)))
+           (((i e) . ies) (with-syntax (((t) (generate-temporaries '(t))))
+                            (quasisyntax
+                             (let ((t e))
+                               ,(f (syntax ies)
+                                   (quasisyntax
+                                    ((i t) ,@its)))))))))))))
+
+(let-in-order ((x 1)
+               (y 2))
+   (+ x y))                ;==&gt; 3
+
+
+
+(let-syntax ((test-ellipses-over-unsyntax
+              (lambda (e)
+                (let ((a (syntax a)))
+                  (with-syntax (((b ...) (syntax (1 2 3))))
+                    (quasisyntax
+                     (quote ((b ,a) ...))))))))
+  (test-ellipses-over-unsyntax))
+
+      ;==&gt; ((1 a) (2 a) (3 a))
+
+
+
+
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00061" href="msg00061.html">Re: Defining quasisyntax in terms of syntax-case</a></strong>
+<ul><li><em>From:</em> David Feuer</li></ul></li>
+<li><strong><a name="00063" href="msg00063.html">Re: Defining quasisyntax in terms of syntax-case</a></strong>
+<ul><li><em>From:</em> Andre van Tonder</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00059" href="msg00059.html">Defining quasisyntax in terms of syntax-case</a></strong>
+<ul><li><em>From:</em> Andre van Tonder</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00059.html">Defining quasisyntax in terms of syntax-case</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00061.html">Re: Defining quasisyntax in terms of syntax-case</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00059.html">Defining quasisyntax in terms of syntax-case</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00061.html">Re: Defining quasisyntax in terms of syntax-case</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00060"><strong>Date</strong></a></li>
+<li><a href="threads.html#00060"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

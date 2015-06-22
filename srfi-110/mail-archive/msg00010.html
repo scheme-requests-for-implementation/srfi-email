@@ -1,0 +1,147 @@
+<!-- MHonArc v2.6.16 -->
+<!--X-Subject: Re: how useful are collecting lists? -->
+<!--X-From-R13: "Rnivq O. Iurryre" <qjurryreNqjurryre.pbz> -->
+<!--X-Date: Tue, 12 Mar 2013 23:51:54 +0000 (UTC) -->
+<!--X-Message-Id: E1UFYz2&#45;0001Am&#45;U6@taishi.runbox.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 513EAE55.80204@gmail.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: how useful are collecting lists?</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00009.html">Date Prev</a>][<a href="msg00011.html">Date Next</a>][<a href="msg00009.html">Thread Prev</a>][<a href="msg00011.html">Thread Next</a>][<a href="maillist.html#00010">Date Index</a>][<a href="threads.html#00010">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: how useful are collecting lists?</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &quot;srfi-110&quot; &lt;<a href="mailto:srfi-110@DOMAIN.HIDDEN">srfi-110@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: how useful are collecting lists?</li>
+<li><em>From</em>: &quot;David A. Wheeler&quot; &lt;<a href="mailto:dwheeler@DOMAIN.HIDDEN">dwheeler@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 12 Mar 2013 18:51:52 -0500 (EST)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-110@DOMAIN.HIDDEN">srfi-110@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:513EAE55.80204@DOMAIN.HIDDEN">513EAE55.80204@xxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:513EAE55.80204@DOMAIN.HIDDEN">513EAE55.80204@xxxxxxxxx</a>&gt;</li>
+<li><em>Reply-to</em>: <a href="mailto:dwheeler@DOMAIN.HIDDEN">dwheeler@xxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>David Vanderson:
+&gt; I'm very interested in sweet-expressions - thank you!  I'm already sold 
+&gt; on curly-infix, neoteric, indentation, and SUBLIST.
+
+Awesome!  That's a big step!
+
+&gt;  I'd like to ask  about collecting lists.
+&gt; 
+&gt; Collecting lists seem to have small importance in the SRFI, and it's not 
+&gt; obvious that they are warranted given the rational in the SRFI. Also 
+&gt; they are unused in both example programs (sweeten and letterfall).
+
+Collecting lists are the most recent addition to the notation,
+and were added after sweeten and letterfall were written.
+So they're unused for simple reason that, at the time, they didn't exist.
+
+That said, I could go back to &quot;sweeten&quot; and add a few uses of
+collecting lists, to show their use in practice.  Sounds reasonable enough,
+at least to demonstrate utility.
+
+&gt; Given this, I don't understand their inclusion in the SRFI.  What am I 
+&gt; missing?
+
+The rationale for collecting lists is here:
+<a  rel="nofollow" href="http://srfi.schemers.org/srfi-110/srfi-110.html#collecting-lists">http://srfi.schemers.org/srfi-110/srfi-110.html#collecting-lists</a>
+
+The rationale notes two use cases:
+1. A long sequence of definitions contained within an initial statement. This situation occurs in many library definition structures such as Scheme R7RS define-library and in some larger data structures.
+2. A let-style statement with one or two variables with short initial values.
+
+Use case #1 only becomes obvious when you try to create long definition sequences, e.g., library modules.  (An aside: This is why I think it's important to write &quot;real programs&quot; in proposed notations; some problems only become visible when you try to &quot;scale up&quot;).
+
+Alan Manuel K. Gloria first noticed that when you created a long sequence of definitions-in-definitions of data, sweet-expressions would still *work* but would be less than optimal.  I then noticed that the same problem in library definitions.    This had been obscured in part by our desire to try to stick with portable Scheme constructs; nearly every Scheme has a library module construct, but none are universal (some use R6RS, many don't).  I really hope that R7RS fixes this (by making a library module construct available widely).  In any case, there's clearly a need for a way to easily handle library modules with many embedded definitions, or any other data structure with long structures-in-structures.
+
+Without collecting lists, if you have a long multi-page library module definition, you'll typically have multiple indents before you can even start actually defining things.  That loses some horizontal space.  Also, there's the risk of accidentally inserting a blank line, which would end the entire library module definition (not just that definition).  We could change the meaning of blank line, but that then interferes with interactive use.
+
+Use case #2 happens quite a bit in Lisp-based languages.  It's often the case that you want to use &quot;let&quot; to define/compute just 1-2 variables, followed quickly by the body.  You can do this with traditional s-expressions, but when the value itself uses parens, this isn't so clear.
+E.G., in sweeten, we currently have:
+    let* (asunit-car(exposed-unit(car(m))))
+I think this is more clearly expressed as:
+    let* &lt;* asunit-car exposed-unit(car(m)) *&gt;
+or:
+    let* &lt;* asunit-car $ exposed-unit car(m) *&gt;
+Parenthesis do not kill anyone, and are obviously very useful... but a whole batch of closing parens (4 in this case) can easily hide problems (should it be 3? 5?).
+
+The same is true for this line in sweeten.sscm:
+    ! ! let* (asline-cuddled(line(list(car(m) cadr(m)))))
+Again, quite a march of closing parens at the end.  We can instead write:
+    ! ! let* &lt;* asline-cuddled $ line list(car(m) cadr(m)) *&gt;
+
+Another line:
+    let* (asline(line(m)) length-asline(length(asline)))
+can be:
+    let* &lt;* asline$ line m \\ length-asline $ length asline  *&gt;
+Note that in this case, it's way more obvious that we have a 2-variable case, not a 1-variable case.
+
+--- David A. Wheeler
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00011" href="msg00011.html">Re: how useful are collecting lists?</a></strong>
+<ul><li><em>From:</em> David Vanderson</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00008" href="msg00008.html">how useful are collecting lists?</a></strong>
+<ul><li><em>From:</em> David Vanderson</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00009.html">Re: how useful are collecting lists?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00011.html">Re: how useful are collecting lists?</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00009.html">Re: how useful are collecting lists?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00011.html">Re: how useful are collecting lists?</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00010"><strong>Date</strong></a></li>
+<li><a href="threads.html#00010"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

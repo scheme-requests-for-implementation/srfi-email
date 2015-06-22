@@ -1,0 +1,166 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: alternative SRFIs for string ports -->
+<!--X-From-R13: Ivyyvnz R Qyvatre <jvyyNppf.arh.rqh> -->
+<!--X-Date: Mon, 26 Apr 1999 14:59:03 &#45;0500 (CDT) -->
+<!--X-Message-Id: 3724C5B0.8A0B5CAF@ccs.neu.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>alternative SRFIs for string ports</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00001.html">Date Prev</a>][<a href="msg00003.html">Date Next</a>][<a href="msg00001.html">Thread Prev</a>][<a href="msg00005.html">Thread Next</a>][<a href="maillist.html#00002">Date Index</a>][<a href="threads.html#00002">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>alternative SRFIs for string ports</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-6@DOMAIN.HIDDEN">srfi-6@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: alternative SRFIs for string ports</li>
+<li><em>From</em>: William D Clinger &lt;<a href="mailto:will@DOMAIN.HIDDEN">will@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 26 Apr 1999 15:59:58 -0400</li>
+<li><em>Cc</em>: <a href="mailto:will@DOMAIN.HIDDEN">will@xxxxxxxxxxx</a>, <a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>, <a href="mailto:bothner@DOMAIN.HIDDEN">bothner@xxxxxxxxxx</a></li>
+<li><em>Organization</em>: Northeastern University</li>
+<li><em>Reply-to</em>: <a href="mailto:will@DOMAIN.HIDDEN">will@xxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Thanks to Marc Feeley and Per Bothner for responding so quickly.
+I think that all three interfaces to string ports (SLIB/Kawa/Guile,
+MacScheme/Chez/MzScheme/Larceny/..., and Gambit) should be SRFIs,
+but should be separate SRFIs.  I thought about submitting the Gambit
+interface as an SRFI at the same time I submitted SRFI-6, but decided
+to get some feedback on this one before submitting the other, and I was
+afraid the SRFI editors might hold both of them up while questioning
+the rationale for multiple SRFIs on this topic.
+
+In fact, the main reason I chose to submit SRFI-6 at this time (when
+I have a list of about a dozen other SRFIs that I would like to submit)
+was that I wanted to point out that it is better to have lots of
+little SRFIs, even if some of them are basically variations of one
+another, than to merge alternative interfaces into a single large SRFI.
+
+I was aware that SLIB provides CALL-WITH-INPUT-STRING and
+CALL-WITH-OUTPUT-STRING, but I have not used Guile or Kawa and did
+not realize that they had adopted this interface.  The SLIB interface
+is strictly less powerful than the SRFI-6 and Gambit interfaces, so
+it is the most portable of the three.  In particular, it is easily
+implemented using either the SRFI-6 or the Gambit interface.  As a
+simple, useful, and highly portable interface, I think the SLIB
+interface is especially deserving of an SRFI.
+
+Although the SRFI-6 and Gambit interfaces are compatible, in the
+sense that an implementation can easily support both at the same
+time, they are not interchangeable:  Neither interface suffices
+to implement the other in a straightforward way.  The SRFI-6
+interface does not provide any way to distinguish string ports
+from other ports, so a programmer cannot easily redefine
+CLOSE-INPUT-PORT to return a string of the unread characters when a
+string port is closed.  Similarly the Gambit interface cannot easily
+emulate code that calls GET-OUTPUT-STRING more than once on the same
+string port without closing the port.  So both SRFI-6 and the Gambit
+interface provide a feature that the other interface alone cannot
+easily provide.
+
+Most programs do not need either of these features, however.  Most
+programs that use string ports can get along just fine with either
+the SLIB or the SRFI-6 or the Gambit interface, using SRFI-0 to
+determine which one is available.  That is why I want to propose
+the SLIB and Gambit interfaces to string ports as separate SRFIs.
+
+I do not want to revise SRFI-6 to add the SLIB and Gambit interfaces
+because, in the short term, I would prefer to have three different
+SRFIs for string ports, knowing that most major implementations
+support one of them, than to have a single SRFI that no system
+supports.
+
+In the long run, I would hope that implementations would support
+the union of these interfaces.  I would also encourage implementors
+to support GET-OUTPUT-STRING-AND-RESET, which returns the string of
+characters that have been sent to an output string port since it
+was opened or last reset, and also resets the output string port
+so it no longer remembers the characters that have been sent to it
+so far.  For example, GET-OUTPUT-STRING-AND-RESET makes it easy to
+use an output string port as a buffer to connect concurrent threads.
+Input-output ports, as Marc described, would make this even easier.
+
+For optimal benefit in both the short and long term, it seems to me
+that we should have at least four separate SRFIs for string ports:
+
+    CALL-WITH-INPUT-STRING and CALL-WITH-OUTPUT-STRING
+    SRFI-6
+    the Gambit interface
+    CALL-WITH-INPUT-STRING and CALL-WITH-OUTPUT-STRING plus
+        SRFI-6 plus GET-OUTPUT-STRING-AND-RESET plus the behavior
+        of CLOSE-INPUT-PORT and CLOSE-OUTPUT-PORT in Gambit plus
+        input-output strings as described at the end of Marc
+        Feeley's message
+
+I would like to submit the first, third, and fourth of these SRFIs
+in a few days, after giving people a little more time to comment on
+SRFI-6 so the new SRFIs will benefit from those comments.  (Having
+one person submit all four SRFIs might help to establish that these
+are alternative interfaces, not competing interfaces.  On the other
+hand, I would be grateful if someone else would save me some of the
+trouble by submitting one or more of those SRFIs themselves.  If you
+plan to do this, please let me know so we won't be duplicating each
+other's work.)
+
+Will
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00005" href="msg00005.html">Re: alternative SRFIs for string ports</a></strong>
+<ul><li><em>From:</em> forcer</li></ul></li>
+<li><strong><a name="00007" href="msg00007.html">Re: alternative SRFIs for string ports</a></strong>
+<ul><li><em>From:</em> Lars Thomas Hansen</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00001.html">Alternative prior art</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00003.html">typo?</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00001.html">Alternative prior art</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00005.html">Re: alternative SRFIs for string ports</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00002"><strong>Date</strong></a></li>
+<li><a href="threads.html#00002"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

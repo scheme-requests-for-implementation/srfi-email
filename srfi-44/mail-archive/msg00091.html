@@ -1,0 +1,155 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Bidirectionality and other comments -->
+<!--X-From-R13: "Penqq I. Embalr" <oenqq+fesvNfmbalr.pbz> -->
+<!--X-Date: Thu, 16 Oct 2003 21:48:46 +0200 (DFT) -->
+<!--X-Message-Id: 20031016194840.GD2858@ogre.szonye.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20031016170717.GA9033@freenetproject.org -->
+<!--X-Reference: 5F50B934&#45;000D&#45;11D8&#45;96A9&#45;000A95CCCEE4@evdev.ath.cx -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Bidirectionality and other comments</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00090.html">Date Prev</a>][<a href="msg00092.html">Date Next</a>][<a href="msg00089.html">Thread Prev</a>][<a href="msg00090.html">Thread Next</a>][<a href="maillist.html#00091">Date Index</a>][<a href="threads.html#00091">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Bidirectionality and other comments</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Bidirectionality and other comments</li>
+<li><em>From</em>: &quot;Bradd W. Szonye&quot; &lt;<a href="mailto:bradd%2Bsrfi@DOMAIN.HIDDEN">bradd+srfi@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 16 Oct 2003 12:48:40 -0700</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:5F50B934-000D-11D8-96A9-000A95CCCEE4@DOMAIN.HIDDEN">5F50B934-000D-11D8-96A9-000A95CCCEE4@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Mail-followup-to</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>References</em>: &lt;<a href="mailto:20031016170717.GA9033@DOMAIN.HIDDEN">20031016170717.GA9033@xxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:5F50B934-000D-11D8-96A9-000A95CCCEE4@DOMAIN.HIDDEN">5F50B934-000D-11D8-96A9-000A95CCCEE4@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mutt/1.4i</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Taylor Campbell wrote:
+&gt; And we were just about to finalize it...damn...
+
+Sorry about that! I would've commented earlier, but (1) I've been away
+from Scheme for a few months, and (2) this is a subject very dear to me,
+so of course I want the best possible implementation!
+
+&gt; Perhaps I'm misunderstanding what 'bidirectional' means here, but
+&gt; FOLD-RIGHT is definitely well-defined on lists; or this is just a bad
+&gt; example.
+
+It was a bad example and an oversimplification.
+
+Better example: The &quot;fibonacci&quot; sequence, which is ordered but infinite,
+so there is no right end to work from.
+
+Also, I too was conflating two different concepts. &quot;Bidirectional&quot; means
+that it's (roughly) just as efficient to fold in either direction.
+Vectors are bidirectional, but Scheme lists are not. It's a hint for
+generic algorithms. I recommend implementing it, but you could leave it
+for a later GP SRFI if it's too much hassle.
+
+I was mixing that up with &quot;reversible,&quot; which *is* necessary. It's how
+you know that you can't use a reverse-fold on an unordered bag or a
+fibonacci sequence.
+
+Regarding my suggestion to change the &quot;fold&quot; names:
+
+&gt; For the sake of consistency, I'm _vehemently_ against this:
+&gt; _everywhere_ that I've seen some form of folding or reducing, there is
+&gt; either a FOLD or a FOLD-LEFT and a FOLD-RIGHT; _never_ have I seen a
+&gt; situation in which FOLD-RIGHT means 'go _to_ the right.'
+
+OK, you've got me there; LEFT and RIGHT are traditional. However, I
+can't say that I like the tradition, especially in this case. Could you
+at least change FOLD-LEFT to FOLD?
+
+1. There's precedent for it in SRFI-1.
+2. &quot;LEFT&quot; doesn't make sense for non-directional collections.
+3. It's less to type.
+
+I don't care for FOLD-RIGHT either, but I could live with it, and it
+*is* traditional.
+
+&gt; I agree that COLLECTION-FOLD-RIGHT (-REVERSE-FOLD?) should be, rather
+&gt; than equivalent to COLLECTION-FOLD-LEFT, undefined on bidirectional
+&gt; collections.
+
+Likewise. Consider me convinced.
+
+Regarding the note about &quot;empty&quot; alists:
+
+&gt; Yes.  I don't like the wording of that.  I'd prefer that you just left
+&gt; it that NULL? might not return #T for what (alist) returns and that
+&gt; ALIST-EMPTY? shall be used instead, because I find the metadata useful
+&gt; and the ability to modify the CDR of an empty alist only marginally
+&gt; convenient in linear update procedures.
+
+Agreed! That's a much better way to explain and justify it.
+
+Suggestion for the reference implementation: If possible, avoid using a
+metadata cell if the equivalence function is eqv? (the default). That
+way, (alist eqv?) will be a normal Scheme alist. Not really necessary,
+but it should be more &quot;intuitive&quot; for a common case.
+-- 
+Bradd W. Szonye
+<a  rel="nofollow" href="http://www.szonye.com/bradd">http://www.szonye.com/bradd</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00086" href="msg00086.html">Re: Bidirectionality and other comments</a></strong>
+<ul><li><em>From:</em> scgmille</li></ul></li>
+<li><strong><a name="00089" href="msg00089.html">Re: Bidirectionality and other comments</a></strong>
+<ul><li><em>From:</em> Taylor Campbell</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00090.html">Traits, dictionaries</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00092.html">s/-LEFT//g?</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00089.html">Re: Bidirectionality and other comments</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00090.html">Traits, dictionaries</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00091"><strong>Date</strong></a></li>
+<li><a href="threads.html#00091"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

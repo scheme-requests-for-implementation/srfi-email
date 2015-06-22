@@ -1,0 +1,207 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: let&#45;fluid problem -->
+<!--X-From-R13: fuvirefNnv.zvg.rqh -->
+<!--X-Date: Fri, 19 Nov 1999 16:31:04 &#45;0600 (CST) -->
+<!--X-Message-Id: 199911192230.RAA00927@mongkok.ai.mit.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 199911140404.XAA09971@mongkok.ai.mit.edu -->
+<!--X-Reference: m2puxavrhq.fsf@magnus.bothner.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: let-fluid problem</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00006.html">Date Prev</a>][<a href="msg00008.html">Date Next</a>][<a href="msg00003.html">Thread Prev</a>][<a href="msg00008.html">Thread Next</a>][<a href="maillist.html#00007">Date Index</a>][<a href="threads.html#00007">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: let-fluid problem</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-15@DOMAIN.HIDDEN">srfi-15@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: let-fluid problem</li>
+<li><em>From</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxx</a></li>
+<li><em>Date</em>: Fri, 19 Nov 1999 17:30:57 -0500</li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:m2puxavrhq.fsf@DOMAIN.HIDDEN">m2puxavrhq.fsf@xxxxxxxxxxxxxxxxxx</a>&gt; (message from Per Bothner on	15 Nov 1999 23:13:21 -0800)</li>
+<li><em>References</em>: &lt;<a href="mailto:199911140404.XAA09971@DOMAIN.HIDDEN">199911140404.XAA09971@xxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:m2puxavrhq.fsf@DOMAIN.HIDDEN">m2puxavrhq.fsf@xxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Reply-to</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>    From: Per Bothner &lt;per@xxxxxxxxxxx&gt;
+    Date: 15 Nov 1999 23:13:21 -0800
+
+    &gt; I would like to argue against any DYNAMIC-WIND + SET! sort of
+    &gt; &quot;fluid variable&quot; system. The problem is threads. If you have a
+    &gt; thread model, then any thread switch involves unwinding up the
+    &gt; stack to the common ancestor continuation, then winding down into
+    &gt; the activated continuation. This seems unacceptably expensive; thread
+    &gt; switch should be a low-overhead operation.
+
+    (Let us not confuse specification with implementation.  When I
+    was (briefly) involved with C++ standardization, I learned the
+    &quot;as-if rule.&quot;  This refers to the fact that a feature may be
+    defined &quot;as if&quot; it were implemented in a particular way, but
+    an implementation is free to use a different implementation as long
+    as long as no well-defined program can tell the difference.)
+
+It's not a question of *confusing* implementation &amp; spec. It's an issue
+of the *interaction* between implementation &amp; spec -- can the spec be
+provided in important general classes of Scheme implementations?
+
+    A more fundamental problem with the fluid-let specification is that it
+    does not support a thread model that may have true parallel threads.
+    When the topic of &quot;thread local variables&quot; came up in the Guile
+    mailing list (see <a  rel="nofollow" href="http://sourceware.cygnus.com/ml/guile/1999-03/">http://sourceware.cygnus.com/ml/guile/1999-03/</a>)
+    I proposed a &quot;deep binding&quot; model of variable access
+    (see <a  rel="nofollow" href="http://sourceware.cygnus.com/ml/guile/1999-03/msg00023.html">http://sourceware.cygnus.com/ml/guile/1999-03/msg00023.html</a>):
+
+      Each thread has an association list of fluid bindings.
+      When fluid-let is evaluated, it conses up a new association to the
+      front of the list.  That becomes the current fluid binding
+      association list while the body of the fluid-let is evaluated.
+      The old list is restored when the fluid-let finishes.
+      (This can be implemented with the appropriate dynamic-wind.)
+      When a new thread is created, it initializes its fluid
+      binding list with the *current* list from the parent thread.
+      Thus all bindings are initially shared.  When a non-local
+      variable is evaluated, the evaluator searches the current thread's
+      fluid binding list, and finds the first binding for the given name.
+      If none, is found, the global binding is returned.
+      When a set! is evaluated, it also searches the fluid bindigs list
+      of the current thread, and modifies the first association whose
+      name matches.  If there is none, the global binding is modified.
+
+    This is of course only the semantic model;  an actual implementation
+    may use caching or other thread-local storage.
+
+Actually, that's a fairly operationally defined &quot;semantics&quot; -- but nonetheless,
+you are proposing what Gambit has, and it's pretty close to what I have
+proposed (what Scheme 48 has). The important point is handling the interaction
+between threads and dynamic binding.
+
+This model that you, Brad, and I are pushing allows threads to share and
+not share dynamic scope, as appropriate, just as you said in your msg:
+
+    This model is actually very general;  it allows rather fine-grained
+    control over which variables are shared between which threads,
+    but using a very simple but general mechanism.  (As such I think
+    it first very much in the spirit of Scheme.)
+
+And it's in Kawa, Scheme 48, and Gambit, at least.
+
+The distinction between what Gambit has and what Scheme 48 has is that S48
+builds the mechanism on top of a new data type, the &quot;fluid cell.&quot;  You have to
+get your hands on one of these values through the general mechanisms in the
+program for passing around data, to reference a dynamically-bound value.  This
+can be viewed as a sort of lexical or data-flow level of control on this
+mechanism. Gambit's dynamic vars allow anyone who can *write down the name* of
+a dynamic var to access its dynamically bound value. I would argue that's too
+uncontrolled. Also, you have to introduce a whole new linguistic mechanism,
+whereas fluid cells just require some new primitive procedures, with no actual
+language-level hacking.  In practice, this is probably a small point. We are
+all reading off the same page.
+
+Lars has made the response that he's not trying to use this SRFI to
+come up with a &quot;standard&quot; for dynamic binding; he's just trying to
+codify existing practice:
+
+    From: Lars Thomas Hansen &lt;lth@xxxxxxxxxxx&gt;
+    All of these objections are reasonable, but they do not speak to the
+    purpose of this particular SRFI.  The purpose of the SRFI is only to
+    codify an already existing practice that has slight variations across
+    implementations (namely, some protect the bindings with DYNAMIC-WIND and
+    some don't).  I submitted it because I find myself using FLUID-LET in
+    some of my programs, because it is a convenient mechanism for
+    temporarily and reliably overriding the values of global variables.
+
+This seems like a waste of a SRFI to me. There's not too much to say
+about dynamic scoping. The only real issue is their interaction with
+threads, and there's basically one answer to how to handle that. The
+distinctions between Gambit's, Kawa's and S48's dynamic-scope stuff
+are minor. Casting a non-thread-safe mechanism into stone with a SRFI 
+when one could have gone that one extra step is stopping short.
+
+    (More generally, I do not think that the SRFI process is useful only for
+    designing new stuff; it is useful also for collecting old stuff that is
+    known to be useful, even in limited contexts.)
+
+In that case, we could take every incompatible R5RS extension of every
+Scheme implementation out there and make it a SRFI? Doesn't seem like
+a good thing to me. I'd rather use the SRFI process to get people to
+come to as wide a consensus as possible on the Right Thing, so that
+the SRFI record becomes a growing spec of agreed-upon design. (I bear
+in mind that complete agreement is never possible -- just about everyone
+(including me) can find something in SRFI-1 they don't like, for example.)
+
+But in the end, it's Lars' SRFI. Perhaps at minimum Lars could add some
+text explaining to readers of the SRFI that this mechanism has problems
+interacting with threads and that if they do not have backwards-compatibility
+issues, they should avoid using it in favor of better dynamic-scope mechanisms
+defined in presumed-later SRFIs?
+    -Olin
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00008" href="msg00008.html">Re: let-fluid problem</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+<li><strong><a name="00009" href="msg00009.html">Re: let-fluid problem</a></strong>
+<ul><li><em>From:</em> Lars Thomas Hansen</li></ul></li>
+<li><strong><a name="00011" href="msg00011.html">Re: let-fluid problem</a></strong>
+<ul><li><em>From:</em> Lars Thomas Hansen</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00001" href="msg00001.html">let-fluid problem</a></strong>
+<ul><li><em>From:</em> shivers</li></ul></li>
+<li><strong><a name="00003" href="msg00003.html">Re: let-fluid problem</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00006.html">Re: let-fluid problem</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00008.html">Re: let-fluid problem</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00003.html">Re: let-fluid problem</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00008.html">Re: let-fluid problem</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00007"><strong>Date</strong></a></li>
+<li><a href="threads.html#00007"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

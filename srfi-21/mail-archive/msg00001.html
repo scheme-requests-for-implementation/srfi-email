@@ -1,0 +1,151 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: real&#45;time extensions -->
+<!--X-From-R13: [nep Trryrl <srryrlNWDA.G[bagerny.QO> -->
+<!--X-Date: Fri, 12 May 2000 07:48:00 &#45;0500 (CDT) -->
+<!--X-Message-Id: 200005121247.IAA19436@trex.IRO.UMontreal.CA -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>real-time extensions</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00000.html">Date Prev</a>][<a href="msg00002.html">Date Next</a>][<a href="msg00000.html">Thread Prev</a>][<a href="msg00002.html">Thread Next</a>][<a href="maillist.html#00001">Date Index</a>][<a href="threads.html#00001">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>real-time extensions</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-21@DOMAIN.HIDDEN">srfi-21@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: real-time extensions</li>
+<li><em>From</em>: Marc Feeley &lt;<a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 12 May 2000 08:47:59 -0400</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Here is a summary of the real-time extensions that were added to
+SRFI 18.
+
+1) The concept of &quot;base priority&quot;, &quot;boosted priority&quot;, and &quot;effective
+   priority&quot;.  All of these priorities are represented with real
+   numbers (the maximum and minimum are plus and minus infinity).
+   This allows deadlines to be expressed by setting the base priority
+   to the negation of the deadline time, i.e.
+
+    (thread-base-priority-set!
+      thread
+      (- (+ (time-&gt;seconds (current-time)) 10)))
+
+   The &quot;priority boost&quot; (which should be 0 when deadlines are used) is
+   added to the base priority to get the boosted priority, when the
+   thread blocks.  By carefully choosing the base priority and
+   priority boost it is possible to set up an interactive thread so
+   that it has good I/O response time without being a CPU hog when it
+   performs long computations.
+
+   The effective priority of a thread T is equal to the maximum of T's
+   boosted priority and the effective priority of all the threads that
+   are blocked on a mutex owned by T. This &quot;priority inheritance&quot;
+   avoids priority inversion problems that would prevent a high
+   priority thread blocked at the entry of a critical section to
+   progress because a low priority thread inside the critical section
+   is preempted for an arbitrary long time by a medium priority
+   thread.
+
+2) A precise definition of scheduling constraints based on priorities
+   and blocking time, and a notion of time ordering of events based on
+   a clock with a finite resolution.
+
+The following are other changes which I also intend to add to SRFI 18:
+
+3) Threads have a &quot;specific&quot; field which can be used to store thread
+   specific data (i.e. the &quot;thread local storage&quot; of other thread
+   systems).
+
+4) Mutexes now have 4 states: locked (either owned or not owned) and
+   unlocked (either abandoned or not abandoned).  A locked/not-owned
+   mutex is not linked to a particular thread, which means no priority
+   inheritance will occur if a thread blocks on that mutex.
+
+5) &quot;mutex-owner&quot; has been renamed &quot;mutex-state&quot;.
+
+6) &quot;mutex-lock!&quot; can be passed a third argument to specify how the
+   ownership of the mutex is changed.  If the argument is #f the mutex
+   will become locked/not-owned, if the argument is a thread the mutex
+   will become locked/owned and owned by that thread, and if the
+   argument is not supplied the mutex will become locked/owned by the
+   current thread.
+
+7) &quot;make-mutex&quot; can no longer create a mutex that is initially owned
+   by a thread.  This is so the only places a mutex is locked and
+   unlocked is when &quot;mutex-lock!&quot; and &quot;mutex-unlock!&quot; are called,
+   making it easier to reason about locks.
+
+8) The functionality of &quot;condition-variable-wait!&quot; has been folded
+   into &quot;mutex-unlock!&quot;, for the reason given in 7) and also because
+   there are two ways to lock a mutex and extra parameters would have
+   to be passed to condition-variable-wait! to specify the type of
+   locking to use once the wait is over.  Note that this means an
+   explicit call to mutex-lock! is needed, for example:
+
+        (define (semaphore-wait! sema)
+          (mutex-lock! (vector-ref sema 1))
+          (let ((n (vector-ref sema 0)))
+            (if (&gt; n 0)
+                (begin
+                  (vector-set! sema 0 (- n 1))
+                  (mutex-unlock! (vector-ref sema 1)))
+                (begin
+                  (mutex-unlock! (vector-ref sema 1) (vector-ref sema 2))
+                  (semaphore-wait! sema))))
+
+Marc
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00000.html">SRFI 21 must be a pure extension of SRFI 18</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00002.html">boost, exceptions, names</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00000.html">SRFI 21 must be a pure extension of SRFI 18</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00002.html">boost, exceptions, names</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00001"><strong>Date</strong></a></li>
+<li><a href="threads.html#00001"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,165 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Miscellaneous loose ends -->
+<!--X-From-R13: Oaqer ina Fbaqre <naqerNyngre.urg.oebja.rqh> -->
+<!--X-Date: Thu, 22 Sep 2005 17:20:38 +0200 (MST) -->
+<!--X-Message-Id: 200509221520.j8MFKUjA009045@later.het.brown.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Miscellaneous loose ends</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00055.html">Date Prev</a>][<a href="msg00057.html">Date Next</a>][<a href="msg00053.html">Thread Prev</a>][<a href="msg00058.html">Thread Next</a>][<a href="maillist.html#00056">Date Index</a>][<a href="threads.html#00056">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Miscellaneous loose ends</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-76@DOMAIN.HIDDEN">srfi-76@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Miscellaneous loose ends</li>
+<li><em>From</em>: Andre van Tonder &lt;<a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 22 Sep 2005 11:20:30 -0400 (EDT)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-76@DOMAIN.HIDDEN">srfi-76@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Reply-to</em>: Andre van Tonder &lt;<a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>I list a few things that are unclear to me from the spec.
+Some may be omissions or rationale omissions, and some may be just my own
+blindness :-)
+
+- Why do the field /name/s in the procedural layer /not/ need to be distinct?
+  I could see this feature causing lots of pain.  A rationale may help.
+
+- Are the syntactic layer &lt;field name&gt;s identifier literals (like ELSE) 
+  or implicitly quoted symbols?  There is a big difference within the 
+  context of macro behaviour, or even simply in the context of deciding the 
+  meaning of things like
+  
+    (let ((x 1))
+      (define-type foo (fields (x immutable))))   
+      
+  especially in the context of extensions that might use field names 
+  for purposes such as pattern matching.         
+
+- Are the syntactic layer &lt;field name&gt;s the same as the /name/s 
+  in the procedural layer?  A priori they do not have to be.  If they
+  are, it would imply that they are implicitly quoted symbols.  
+  If they are not, they could still be symbols, or they could be identifiers.  
+  In either case, do they have to be distinct, and if identifiers, under 
+  what predicate (e.g. free-identifier=?, literal-identifier=?)?
+
+- Can &lt;field-name&gt; be reused for &lt;accessor-name&gt; or &lt;mutator-name&gt; as in
+
+   (fields (x-coord (x-coord x-coord-set!))
+
+  or, for that matter, can &lt;field-name&gt; be bound somewhere else in the 
+  program without breaking the record type?
+  
+- How does define-type bind &lt;record-name&gt; exactly?  For example, in
+
+   (define-type foo ....)
+   (let () 
+     (define-type foo ....))
+     
+   (type-descriptor foo)  
+   
+  which type descriptor will be returned?  For uniformity with internal
+  defines, I would assume that internal define-types remain local and the
+  toplevel FOO would be returned.  Is this correct? 
+  
+- Is the procedural layer type descriptor /name/ the same as the 
+  syntactic layer &lt;record name&gt;.  This would imply that &lt;record name&gt; is
+  a symbol, which makes it unclear how DEFINE-TYPE binds it exactly
+  (since it is not symbols, but indentifiers, that are bound by binding forms).
+  The big problem I could see is that this would be incompatible with 
+  locality of internal define-type's. 
+
+- Why do (sealed) and (opaque) have unnecessary parentheses?
+
+- Why is INIT! a binding form?  It forces one to eta-convert 
+  reusable procedures, e.g. (init! (x) (display x)) instead of 
+  just (init! display).  It also builds a performance inefficiency 
+  into the syntax.  
+  
+- In the (nongenerative &lt;uid&gt;) clause, why not have a &lt;uid-expression&gt;
+  that can be evaluated.  I can think of cases where you might, e.g., read
+  a previously stored uid from a database and wish to insert it in the 
+  type declaration.  The current syntax does not allow that. 
+  (By the way, I think an evaluable &lt;uid-expression&gt; would actually
+  alow one to go the other way and make generative from nongenerative.)   
+  
+- I do not understand the comment about the UUID namespace.  The record 
+  type is nongenerative after all, whereas UUID is concerned with generativity
+  (generating a never before seen ID).
+  Specifically, what problems may I run into if I do not use a UUID, e.g.
+  what is wrong with:
+  
+    (define-type point ...
+       (nongenerative point))
+       
+- Why is generativity the default?  I should think that normally, every
+  time I run a program, I would like my types to be the same, especially
+  if I read or write record values.   
+       
+- Can I forward an unknown number of arguments to the parent?
+
+- Will there be an external representation for records?
+
+Cheers
+Andre
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00058" href="msg00058.html">Re: Miscellaneous loose ends</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00055.html">Re: Optional features</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00057.html">Re: Miscellaneous loose ends</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00053.html">Re: Constructor rationale questions</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00058.html">Re: Miscellaneous loose ends</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00056"><strong>Date</strong></a></li>
+<li><a href="threads.html#00056"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

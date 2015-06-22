@@ -1,0 +1,102 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Patch for Bug in SRFI&#45;19 reference implementation: date&#45;>julian&#45;day -->
+<!--X-From-R13: Xba Ivyfba <wfjNsany.tbi> -->
+<!--X-Date: Fri, 29 Jun 2007 10:25:45 +0200 (MST) -->
+<!--X-Message-Id: y9lir97p3p4.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Patch for Bug in SRFI-19 reference implementation: date-&gt;julian-day</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00026.html">Date Prev</a>][<a href="msg00028.html">Date Next</a>][<a href="msg00026.html">Thread Prev</a>][<a href="msg00028.html">Thread Next</a>][<a href="maillist.html#00027">Date Index</a>][<a href="threads.html#00027">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Patch for Bug in SRFI-19 reference implementation: date-&gt;julian-day</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-19@DOMAIN.HIDDEN">srfi-19@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Patch for Bug in SRFI-19 reference implementation: date-&gt;julian-day</li>
+<li><em>From</em>: Jon Wilson &lt;<a href="mailto:jsw@DOMAIN.HIDDEN">jsw@xxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 28 Jun 2007 16:58:41 +0200 (MST)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-19@DOMAIN.HIDDEN">srfi-19@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Gnus/5.110006 (No Gnus v0.6) XEmacs/21.5-b28 (darwin)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Hi,
+I discovered a bug in the SRFI-19 reference implementation.  The
+procedure date-&gt;julian-day uses the timezone offset, but incorrectly.
+The existing code winds up looking like (LaTeX math):
+
+jdn - 1/2 + \frac{ \frac{H*60*60 + M*60 + s + ns/nano}{sid} }{-
+offset}
+
+Where as you can see, we are dividing the number of seconds from the
+beginning of the day by the offset.  Since the offset can be zero,
+it is obvious that this is no good!  Instead we should have:
+
+jdn - 1/2 + \frac{ -offset + H*60*60 + M*60 + s + ns/nano}{sid}
+
+Since the offset is in seconds, we do want to divide it by the number
+of seconds in a day (sid).  My patch is below.
+Regards,
+Jon Wilson
+
+821,823c821,822
+&lt;        (+ (/ (/ (+ (* hour 60 60)
+&lt;                  (* minute 60) second (/ nanosecond tm:nano)) tm:sid)
+&lt;            (- offset))))))
+---
+ &gt;        (+ (/ (+ (- offset) (* hour 60 60)
+ &gt;               (* minute 60) second (/ nanosecond tm:nano)) tm:sid)))))
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00026.html">Re: reference implementation bug</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00028.html">Fixes to reference implementation</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00026.html">Re: reference implementation bug</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00028.html">Fixes to reference implementation</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00027"><strong>Date</strong></a></li>
+<li><a href="threads.html#00027"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

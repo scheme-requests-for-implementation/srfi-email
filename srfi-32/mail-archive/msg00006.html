@@ -1,0 +1,196 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: cell recycling; reference implementation; param ordering; fresh lists -->
+<!--X-From-R13: fuvirefNpp.tngrpu.rqh -->
+<!--X-Date: Sun, 21 Jul 2002 19:17:01 +0200 (DFT) -->
+<!--X-Message-Id: 200207211716.g6LHGZO01109@mongkok.dyndns.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200207210343.g6L3hbd27195@mongkok.dyndns.org -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>cell recycling; reference implementation; param ordering; fresh lists</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00005.html">Date Prev</a>][<a href="msg00007.html">Date Next</a>][<a href="msg00005.html">Thread Prev</a>][<a href="msg00008.html">Thread Next</a>][<a href="maillist.html#00006">Date Index</a>][<a href="threads.html#00006">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>cell recycling; reference implementation; param ordering; fresh lists</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-32@DOMAIN.HIDDEN">srfi-32@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: cell recycling; reference implementation; param ordering; fresh lists</li>
+<li><em>From</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxxxxx</a></li>
+<li><em>Date</em>: Sun, 21 Jul 2002 13:16:35 -0400</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-32@DOMAIN.HIDDEN">srfi-32@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:200207210343.g6L3hbd27195@DOMAIN.HIDDEN">200207210343.g6L3hbd27195@xxxxxxxxxxxxxxxxxx</a>&gt; </li>
+<li><em>Reply-to</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>I have altered the description of LIST-DELETE-NEIGHBOR-DUPS! and LIST-MERGE!
+to include this text, which I think will clear up the cons-cell allocation
+issue:
+
+    On the other hand, the procedures
+      LIST-DELETE-NEIGHBOR-DUPS!
+      LIST-MERGE!
+    make only a single, iterative, linear-time pass over their argument lists,
+    using SET-CDR!s to rearrange the cells of the lists into the final result
+    -- they work &quot;in place.&quot; Hence, any cons cell appearing in the result must
+    have originally appeared in an input. The intent of this
+    iterative-algorithm commitment is to allow the programmer to be sure that
+    if, for example, LIST-MERGE! is asked to merge two ten-million-element
+    lists, the operation will complete without performing some extremely
+    (possibly twenty-million) deep recursion.
+
+I have changed the SRFI accordingly. The new draft is at
+    <a  rel="nofollow" href="http://www.cc.gatech.edu/~shivers/srfi/srfi-32.txt">http://www.cc.gatech.edu/~shivers/srfi/srfi-32.txt</a>
+and will propagate out to the standard url
+    <a  rel="nofollow" href="http://srfi.schemers.org/srfi-32/srfi-32.html">http://srfi.schemers.org/srfi-32/srfi-32.html</a>
+in the hands of esteemed editor Solsona in the near future.
+
+    From: David Feuer &lt;dfeuer@xxxxxxxxxxxxx&gt;
+    I'm still wondering where the reference implementation is.
+
+It is on my disk, not released. I need to clean up one of the routines before
+I release it, and it's just not as important to me right now as the design
+discussion, so that is what is getting my attention.
+
+    [On the subject of parameter order between the &lt; arg &amp; the data arg:]
+    Do you provide functions with the same _names_ as existing
+    implementations, or just the same interfaces?
+
+Hmm, there is a small amount of clash, but less than I would have supposed.
+Check the other-implementations summary. But even if the *names* don't clash,
+the *convention* is completely inverted from current practice, which is asking
+for confusion. 
+
+Let's hear from some other voices.
+
+    Another little thought:  You could provide _both_, with the different
+    versions marked by asterisks or something.  That could be a bit confusing
+    though, and even lead to a bit of bloat.
+
+Ech. No, let's *settle* on a *standard* *convention*, and let implementations
+deal with backwards compatibility for existing code if we depart from their
+specific API.
+
+    What I was thinking was that in functional-style code, if you sort an
+    array, and if the array was in fact already sorted, you get a little win
+    by using the old array rather than the new one (and letting the new one
+    get trashed almost immediately in the first generation) rather than having
+    2 identical arrays sitting around wasting memory, and missing the
+    opportunity for a first-generation collection.  But I'm no expert at GC,
+    so this may not actually be significant.  Of course you can always check
+    if the array is sorted first, but that would take more time.
+
+We're trying too hard here, being too clever.
+
+    I was thinking of this in the &quot;side-effecting world&quot;.  I was guessing
+    (without any serious thought on the topic) that it could be faster (at
+    least on some implementations) to do a total-copy sort than a
+    copy-then-sort.  Don't have a clue if this is really the case.
+
+OK, here's the skinny. If you want to sort a list and guaranteed produce a
+fresh copy, here is how I would choose an underlying algorithm:
+    - Best option, I think: Convert the list into a vector, sort that with an 
+      in-place vector-sorting algorithm, then convert it back into a fresh
+      list. This wins for reasons of memory locality -- chasing pointers
+      through memory is slower than doing address arithmetic. The conversion
+      costs you linear time, so it doesn't affect your O(n lg n) run time, and
+      you need a linear amount of temp storage, but you're committed to
+      allocating a linear amount of memory, anyway. Need to be stable? OK,
+      allocate *two* vectors and use my opportunistic vector merge sort:
+      linear-time best case, O(n lg n) worst case, stable, good memory
+      locality, and you only changed the constant factor on your temp memory
+      requirements from a 1 to a 2.
+
+    - Don't want to use vectors / don't have vectors? You can roll a
+      version of my opportunistic destructive list merge sort algorithm
+      so that it copies the input list on the fly, as it goes, and then
+      uses destructive merge ops on the intermediate sorted lists. This
+      would give you linear-time best case, O(n lg n) worst case, stable,
+      and (here's the part you want) every cons cell allocated appears
+      in the result -- no &quot;wasted&quot; consing of temporary lists.
+
+    - Really want to be functional, no side effects? OK, use my opportunistic
+      list merge sort. As above, but no SET-CDR!s at all... hence you end
+      up allocating some intermediate lists that get thrown away.
+
+Now, wanting to sort a list and produce a guaranteed fresh copy is probably
+not the common case. You can do a fine job of this in three lines of code
+using the tools provided by this lib, if you choose plans A or C above. I don't
+think it is really probably worth tying up &quot;API space&quot; supporting it any more
+than that.
+
+OK, thank you for making me walk through that design analysis.
+
+By the way, I keep referring to &quot;my opportunistic merge-sort algorithm.&quot; Vas
+ist das? It's an algorithm I invented about three years ago (which is what
+led to the production of this SRFI). It is a surpisingly simple algorithm with
+the properties I described above. It's been circulated privately, and I've
+submitted a manuscript describing the algorithm with proofs establishing the
+run-time bounds for publication, but it has not yet been published... so
+that's why you have almost certainly not heard of it. 
+
+It is part of the reference implementation library, though.
+    -Olin
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00008" href="msg00008.html">Re: cell recycling; reference implementation; param ordering; fresh lists</a></strong>
+<ul><li><em>From:</em> Francisco Solsona</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00004" href="msg00004.html">neighbor deletion; param ordering; &lt; &amp; &lt;=; fresh lists; cell recycling</a></strong>
+<ul><li><em>From:</em> shivers</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00005.html">Re: neighbor deletion; param ordering; &lt; &amp; &lt;=; fresh lists; cell recycling</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00007.html">Param ordering; &lt; and &lt;=</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00005.html">Re: neighbor deletion; param ordering; &lt; &amp; &lt;=; fresh lists; cell recycling</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00008.html">Re: cell recycling; reference implementation; param ordering; fresh lists</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00006"><strong>Date</strong></a></li>
+<li><a href="threads.html#00006"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,214 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: no constants please -->
+<!--X-From-R13: Fbz Zbeq <ybeqNrzs.arg> -->
+<!--X-Date: Mon,  5 Jan 2004 18:40:08 +0100 (NFT) -->
+<!--X-Message-Id: 200401051805.KAA24118@morrowfield.regexps.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: E1AdTeh&#45;0000Lm&#45;00@mail.mumble.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: no constants please</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00159.html">Date Prev</a>][<a href="msg00161.html">Date Next</a>][<a href="msg00155.html">Thread Prev</a>][<a href="msg00166.html">Thread Next</a>][<a href="maillist.html#00160">Date Index</a>][<a href="threads.html#00160">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: no constants please</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:kelsey@DOMAIN.HIDDEN">kelsey@xxxxxxx</a></li>
+<li><em>Subject</em>: Re: no constants please</li>
+<li><em>From</em>: Tom Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 5 Jan 2004 10:05:56 -0800 (PST)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:E1AdTeh-0000Lm-00@DOMAIN.HIDDEN">E1AdTeh-0000Lm-00@xxxxxxxxxxxxxxx</a>&gt; (message from Richard Kelsey	on Mon, 05 Jan 2004 07:16:23 -0500)</li>
+<li><em>References</em>: &lt;<a href="mailto:E1AdTeh-0000Lm-00@DOMAIN.HIDDEN">E1AdTeh-0000Lm-00@xxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+
+    &gt; From: Richard Kelsey &lt;kelsey@xxxxxxx&gt;
+
+    &gt;    Date: Sun, 4 Jan 2004 17:31:31 -0800 (PST)
+    &gt;    From: Tom Lord &lt;lord@xxxxxxx&gt;
+
+    &gt;    To reiterate -- I'm not convinced, now that I've noted you require
+    &gt;    GCPROtection of parameters in functions that may cause GC -- that
+    &gt;    Pika-conventions actually have more overhead.    
+
+    &gt; Right.  Efficient C code is the reason I prefer the proposed
+    &gt; SRFI's mechanisms to a JNI-style indirection.  Clarity of code
+    &gt; is why I prefer it to a Pika-style syntax.  Neither of these
+    &gt; decisions is defensible from first principles; it's a judgement
+    &gt; call.  As I said earlier, in some instances I would prefer to
+    &gt; use a JNI-style mechanism.
+
+
+Ok then.  Neither of us like JNI-style conventions for this FFI and we
+have similar reasons for reaching that conclusion.   So let's talk
+about Pika.
+
+It's one thing to brush aside some issue as an &quot;author's judgment
+call&quot; if that issue has no semantic consequences.  I might argue that
+&quot;SCHEME_&quot; is an unfortunate choice of prefix for the FFI but surely
+that is a _purely_ syntactic issue and, basically, a petty complaint.
+
+It's another thing to brush aside an issue as an &quot;author's judgement
+call&quot; when the issue is how to make a trade-off between semantic
+generality and syntactic realization.  You've put a pretty hefty list
+of semantic issues on one side of the scale and your concerns about a
+pretty short list of syntactic differences on the other.   I'm
+genuinely surprised at the way your particular scale is tipping.
+
+You say you don't like Pika because you think that the syntax required
+by the Pika conventions damages code clarity.
+
+As far as I can tell, the relevant syntactic differences between Pika
+and the draft FFI are:
+
+~ Pika doesn't use the C assignment operator.
+
+  Instead of &quot;x = y&quot;, one must write something like SCHEME_LSET (&amp;x,
+  &amp;y).
+
+  Instead of &quot;x = foo ()&quot;, one must write &quot;foo (&amp;x)&quot;.
+
+
+~ Pika requires address taking for parameters.
+
+  Instead of &quot;foo(x)&quot;, one must write &quot;foo (&amp;x)&quot;.
+
+
+That's about it.  The differences in our GCPRO macros are, I hope you
+agree, inconsequential (for example, while I prefer Pika's use of
+structures for locals, I wouldn't consider an FFI using the draft's
+style of GCPRO macros fatally flawed).  The issue of whether or not to
+use an `instance' parameter is a semantic one, not a syntactic
+difference.
+
+I think the &quot;problems&quot; with Pika's C syntax can be summarized as:
+
+	~ less visual distinctiveness to assignment
+	~ more noise due to &amp; characters
+
+Anecdotally, I have found that two conventions help to moderate
+the first of those problems:
+
+	~ use upper-case for the variable-to-variable assignment
+          operator, lower-case elsewhere.   This restores visual
+          distinctiveness to one subset of assignment operations.
+
+	~ given that Pika calls take an `instance' parameter, 
+          output parameters go to the left of that, input parameters
+          to the right.   This restores visual distinctiveness
+          to the other subset of assignment operations.
+
+And, of course, the &quot;noise&quot; of &amp; characters actually provides useful
+information to the C type checker -- their necessity forces the C
+programmer to not make a certain class of usage errors.
+
+You're right -- there's no accounting for taste, although I think we
+can find some principled ways to look at the question:
+
+One issue of principle is semantics.  The syntactic choice between
+Pika and the draft has semantic consequences.  Pika is flat out less
+restrictive of implementations regarding threads, async execution,
+incremental collection, and the need for &quot;(may GC)&quot; declarations.
+While the aesthetic questions may may be subjective, at least we
+should agree that they better be darn strong aesthetic feelings to
+justify the objective semantic compromises.
+
+Another issue of principle is type checking.   The draft FFI gives
+rise to many type-correct C expressions which are incorrect code:
+
+     SCHEME_CONS (SCHEME_CONS (a, b), SCHEME_CONS (c, d))
+
+whereas the type structure imposed by Pika conventions precludes such
+errors.  It is partly a subjective call whether such errors are worth
+trying to get the compiler to help prevent -- but it is also partly an
+empirical call and a theoretical call from human factors
+considerations.  Having had to fix buggy code like the above, written
+by people who knew better, my subjective impression of the objective
+(but unmeasured) empirical facts are that it is indeed worth getting
+the compiler to help prevent such mistakes.  (The Pika conventions
+permit the mistake of writing x = y where SCHEME_LSET (&amp;x, &amp;y) is
+wanted -- but there too I think we can get a vanilla C compiler to
+check for such errors should it become an issue.)
+
+Another issue of principle is: you know where C++ is when you want it.
+In other words: why not separate the problem of forming syntactic
+abstractions for C-compatible code from the problem of getting the FFI
+right in the first place?
+
+Another issue of principle is that syntax clarity of a proposed
+standard interface is not a subjective question: it's an empirical
+one.  Experience with Pika-syntax is very limited at this point: three
+people are writing code using it.  Still, two of those people did not
+help to design it and picked it up just from the documentation and by
+looking at existing code.  So far they seem to have picked it up
+quickly and easily and have no problems using it.
+
+Pika vs. the draft is, perhaps, a judgement call -- but I hope that
+you either change how you are making it or can give better
+justifications than &quot;Well, I make that decision differently.  That's
+my story and I'm sticking to it.&quot;
+
+-t
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00155" href="msg00155.html">Re: no constants please</a></strong>
+<ul><li><em>From:</em> Richard Kelsey</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00159.html">Re: I don't believe in &quot;(may GC)&quot;</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00161.html">Re: no constants please</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00155.html">Re: no constants please</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00166.html">Re: no constants please</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00160"><strong>Date</strong></a></li>
+<li><a href="threads.html#00160"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

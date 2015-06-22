@@ -1,0 +1,149 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: miscellaneous request (last one) -->
+<!--X-From-R13: Bnhy Epuyvr <fpuyvrNpbzpnfg.arg> -->
+<!--X-Date: Sun, 12 Mar 2006 18:27:31 +0100 (CET) -->
+<!--X-Message-Id: C039C42D.D234%schlie@comcast.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: C039ACAA.D22F%schlie@comcast.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>miscellaneous request (last one)</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00431.html">Date Prev</a>][<a href="msg00433.html">Date Next</a>][<a href="msg00431.html">Thread Prev</a>][<a href="msg00425.html">Thread Next</a>][<a href="maillist.html#00432">Date Index</a>][<a href="threads.html#00432">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>miscellaneous request (last one)</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &lt;<a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: miscellaneous request (last one)</li>
+<li><em>From</em>: Paul Schlie &lt;<a href="mailto:schlie@DOMAIN.HIDDEN">schlie@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 12 Mar 2006 12:27:25 -0500</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:C039ACAA.D22F%25schlie@DOMAIN.HIDDEN">C039ACAA.D22F%schlie@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Thread-index</em>: AcZAhd9uHgIAUKx5EdqeDwADk1ictAFY+V49AACcd2YAA4DmDw==</li>
+<li><em>Thread-topic</em>: miscellaneous request (last one)</li>
+<li><em>User-agent</em>: Microsoft-Entourage/11.2.1.051004</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>and finally (I promise), as it's occasionally convenient
+to arithmetically propagate the sign of a value, how about:
+
+(define (-/+ n) (/ n (+ n))) ; 1 * sign of n, where 0 -&gt; 0
+
+assuming (/ 0 0) =&gt; 0, and (+ n) :: (abs n), and although defined
+using /, may likely be implemented as a primitive more efficiently.
+
+then merged with earlier 2-cent thoughts:
+
+; where div and quo naming may be swapped if preferred:
+; n/d :: (+ (div n d) (r/d n d)) ; symmetric about 0
+; n/d :: (+ (quo n d) (m/d n d)) ; asymmetric about 0
+;  n  :: (+ (mod n d) (* (quo n d) d))
+
+; where if (* 0 NaN) =&gt; 0 and (/ 0) =&gt; NaN
+; then (/ 0 0) must =&gt; 0, to be consistent.
+
+(define (/: n d) ; for NaN vs. div/0 error.
+  (cond ((= n 0) 0) ((= d 0) +nan.0) (else (/ n d))))
+
+(define (+: n) (abs n)) ; for (+ n) :: (abs n).
+
+(define (-/+ n) (/: n (+: n))) ; 1 * sign of n, where 0 -&gt; 0
+
+; thereby:
+; (div 0 x) =&gt;  0  (quo 0 x) =&gt;  0
+; (rem 0 x) =&gt;  0  (mod 0 x) =&gt;  0
+; (r/d 0 x) =&gt;  0  (m/d 0 x) =&gt;  0
+
+; otherwise:
+; (div x 0) =&gt; NaN (quo x 0) =&gt; NaN
+; (rem x 0) =&gt;  0  (mod x 0) =&gt;  x
+; (r/d x 0) =&gt;  0  (m/d x 0) =&gt; NaN
+
+;---
+
+(define (div n d) ; symmetric about 0
+  (truncate (/: n d)))
+
+(define (rem n d) ; same sign as (div n d)
+ (* (-/+ d) (- n (* (div n d) d))))
+
+(define (r/d n d) ; remainder fraction
+  (/: (rem n d) (+: d)))
+
+; n/d :: (+ (div n d) (r/d n d))
+
+;---
+
+(define (quo n d) ; asymmetric about 0
+  (floor (/: n d)))
+
+(define (mod n d) ; same sign as d
+  (- n (* (quo n d) d)))
+
+(define (m/d n d) ; modular fraction
+  (/: (mod n d) d))
+
+; n/d :: (+ (quo n d) (m/d n d))
+;  n  :: (+ (mod n d) (* (quo n d) d))
+
+;---
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00431" href="msg00431.html">miscellaneous request</a></strong>
+<ul><li><em>From:</em> Paul Schlie</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00431.html">miscellaneous request</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00433.html">Re: div and mod.</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00431.html">miscellaneous request</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00425.html">Multiple precisions of floating-point arithmetic</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00432"><strong>Date</strong></a></li>
+<li><a href="threads.html#00432"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

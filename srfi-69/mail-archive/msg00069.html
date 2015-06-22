@@ -1,0 +1,179 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Mutating keys -->
+<!--X-From-R13: Bnah Ynyyvbxbfxv <ngrujnNfnatr.sv> -->
+<!--X-Date: Thu, 18 Aug 2005 10:07:26 +0200 (DFT) -->
+<!--X-Message-Id: 20050818080711.GB4686@xandru.it.helsinki.fi -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 4303585C.60208@cs.brandeis.edu -->
+<!--X-Reference: 20050814191154.GA2256@humma -->
+<!--X-Reference: 430342F8.6080706@cs.brandeis.edu -->
+<!--X-Reference: 43033E8E.2040908@cs.brandeis.edu -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Mutating keys</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00068.html">Date Prev</a>][<a href="msg00070.html">Date Next</a>][<a href="msg00066.html">Thread Prev</a>][<a href="msg00070.html">Thread Next</a>][<a href="maillist.html#00069">Date Index</a>][<a href="threads.html#00069">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Mutating keys</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: David Van Horn &lt;<a href="mailto:dvanhorn@DOMAIN.HIDDEN">dvanhorn@xxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Mutating keys</li>
+<li><em>From</em>: Panu Kalliokoski &lt;<a href="mailto:atehwa@DOMAIN.HIDDEN">atehwa@xxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 18 Aug 2005 11:07:11 +0300</li>
+<li><em>Cc</em>: <a href="mailto:srfi-69@DOMAIN.HIDDEN">srfi-69@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-69@DOMAIN.HIDDEN">srfi-69@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:4303585C.60208@DOMAIN.HIDDEN">4303585C.60208@xxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:430342F8.6080706@DOMAIN.HIDDEN">430342F8.6080706@xxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:43033E8E.2040908@DOMAIN.HIDDEN">43033E8E.2040908@xxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:4303585C.60208@DOMAIN.HIDDEN">4303585C.60208@xxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20050814191154.GA2256@DOMAIN.HIDDEN"><a href="msg00062.html">20050814191154.GA2256@humma</a></a>&gt; &lt;<a href="mailto:430342F8.6080706@DOMAIN.HIDDEN">430342F8.6080706@xxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:43033E8E.2040908@DOMAIN.HIDDEN">43033E8E.2040908@xxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mutt/1.5.9i</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Thank you for these constructive comments.
+
+I'll summarise my views by kind of change:
+
+... wording changes:
+
+Most of these I find very good and I thank you for writing them.  I will
+seek more conciseness at some points, but overall, I'm going to include
+the changes in abstract and rationale.
+
+... dropping this and that:
+
+I would like to include routines that are likely to be rewritten every
+now and then by programmers using hash tables.  In principle, we could
+split the &quot;core routines&quot; and the &quot;library routines&quot; in different
+SRFI's is we want to be puristic, but I think it's not worth the added
+trouble.  So I'm not going to drop any function just because it does not
+make programs more portable -- it should also be too marginal for common
+use to be dropped.
+
+That said, I could drop the constructor shorthands in favor of
+documenting the correct arguments to make a numeric hash table and so
+on.  Maybe I should include an examples section.
+
+&gt; Drop size-hint.  Size-hint may be ignored as currently specified, thus its 
+&gt; status as an optional argument to hash table constructors does nothing to 
+&gt; make efficient use of hash tables portable.  Allow implementations to 
+&gt; extend the parameters arbitrarily to make implementation specific 
+&gt; improvements.
+
+Maybe this is a good approach.  There will obviously be demand for
+implementation-specific extensions in the constructor.
+
+&gt; From the document:
+&gt;    If some key occurs multiple times in alist, it is unspecified which
+&gt;    of the corresponding values will end up in hash-table.
+&gt; Why not specify that they are added in the order they appear in the alist, 
+&gt; such as MzScheme does.  If this is not the case, portable programs can't 
+&gt; rely on this function unless it is never the case that a key appears twice 
+&gt; in the alist.  Is there something gained from this being unspecified that 
+&gt; outweighs the loss in portability?  There is no external syntax for hash 
+&gt; tables so it seems to read and write hash tables portably one needs a well 
+&gt; specified alist-&gt;hash-table and hash-table-&gt;alist.
+
+This is a complicated issue.  My implementation currently adds the value
+from the _last_ association in the list, which is probably what you mean
+ty &quot;added in the order they appear&quot;.  But because assoc&amp;friends returns
+the first occurrence, picking the first value would make the API more
+consistent with alists.  OTOH, most times I've seen alists with
+duplicate keys, it has been as a result of a programming error.  And I
+can't think of a situation where the user would _want_ the
+implementation to pick the value from the last association of the list
+into the hash table.  So, does anybody have experience about what kind
+of stuff are duplicate-key alists used for?
+
+... technical issues:
+
+Caveats similar to MzScheme's apply to these hash tables, too.  I could
+also elaborate what kind of &quot;unpredictability&quot; is caused by in-place
+mutation of keys.  This kind of caveat applies to every equality
+predicate, not only equal? -- even eq?, unless somebody can find a place
+in R5RS that explicitly says that an object's eq?-uivalence is preserved
+when it is mutated in-place.
+
+And then this:
+&gt; Also note that the current specification is not correct:
+&gt;    Procedure: hash-table-ref/default hash-table key default -&gt; value
+&gt;    Equivalent to (hash-table-ref hash-table key (lambda () default)).
+
+Depends on what your definition of &quot;equivalent&quot; is.  You took &quot;default&quot;
+to be a syntactic metavariable, while I took it to be a variable.  Maybe
+I should simply say &quot;evaluates to&quot; instead of &quot;equivalent to&quot;.
+
+Panu
+
+-- 
+personal contact: atehwa@xxxxxx, +35841 5323835, +3589 85619369
+work contact: panu.kalliokoski@xxxxxxxxxxx, +35850 3678003
+kotisivu (henkkoht):	<a  rel="nofollow" href="http://www.iki.fi/atehwa/">http://www.iki.fi/atehwa/</a>
+homepage (technical):	<a  rel="nofollow" href="http://sange.fi/~atehwa/">http://sange.fi/~atehwa/</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00070" href="msg00070.html">Re: Mutating keys</a></strong>
+<ul><li><em>From:</em> Alex Shinn</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00068" href="msg00068.html">Drop ref/default, update!/default</a></strong>
+<ul><li><em>From:</em> David Van Horn</li></ul></li>
+<li><strong><a name="00062" href="msg00062.html">Still on David's issues; SRFI 44</a></strong>
+<ul><li><em>From:</em> Panu Kalliokoski</li></ul></li>
+<li><strong><a name="00067" href="msg00067.html">Re: Still on David's issues; SRFI 44</a></strong>
+<ul><li><em>From:</em> David Van Horn</li></ul></li>
+<li><strong><a name="00066" href="msg00066.html">Mutating keys</a></strong>
+<ul><li><em>From:</em> David Van Horn</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00068.html">Drop ref/default, update!/default</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00070.html">Re: Mutating keys</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00066.html">Mutating keys</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00070.html">Re: Mutating keys</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00069"><strong>Date</strong></a></li>
+<li><a href="threads.html#00069"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

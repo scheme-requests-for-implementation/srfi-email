@@ -1,0 +1,150 @@
+<!-- MHonArc v2.6.16 -->
+<!--X-Subject: Re: Compatible support for multiple values in SRFI&#45;45 -->
+<!--X-From-R13: [nex V Irnire <zujNargevf.bet> -->
+<!--X-Date: Sat, 23 Mar 2013 19:53:50 +0100 (MET) -->
+<!--X-Message-Id: 87ehf6c5hy.fsf@tines.lan -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: y9lr4j6sddj.fsf@deinprogramm.de -->
+<!--X-Reference: 20813.33703.678764.940999@winooski.ccs.neu.edu -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Compatible support for multiple values in SRFI-45</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00026.html">Date Prev</a>][<a href="msg00028.html">Date Next</a>][<a href="msg00026.html">Thread Prev</a>][<a href="msg00028.html">Thread Next</a>][<a href="maillist.html#00027">Date Index</a>][<a href="threads.html#00027">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Compatible support for multiple values in SRFI-45</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Eli Barzilay &lt;<a href="mailto:eli@DOMAIN.HIDDEN">eli@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Compatible support for multiple values in SRFI-45</li>
+<li><em>From</em>: Mark H Weaver &lt;<a href="mailto:mhw@DOMAIN.HIDDEN">mhw@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 23 Mar 2013 14:53:29 -0400</li>
+<li><em>Cc</em>: <a href="mailto:srfi-45@DOMAIN.HIDDEN">srfi-45@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-45@DOMAIN.HIDDEN">srfi-45@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20813.33703.678764.940999@DOMAIN.HIDDEN">20813.33703.678764.940999@xxxxxxxxxxxxxxxxxxxx</a>&gt; (Eli Barzilay's	message of &quot;Sat, 23 Mar 2013 06:27:51 -0400&quot;)</li>
+<li><em>References</em>: &lt;<a href="mailto:y9lr4j6sddj.fsf@DOMAIN.HIDDEN">y9lr4j6sddj.fsf@xxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:20813.33703.678764.940999@DOMAIN.HIDDEN">20813.33703.678764.940999@xxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Gnus/5.13 (Gnus v5.13) Emacs/24.3 (gnu/linux)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Hi Eli,
+
+Eli Barzilay &lt;eli@xxxxxxxxxxxx&gt; writes:
+&gt; An hour and a half ago, Mark H Weaver wrote:
+&gt;&gt; Here's another approach to supporting multiple values in SRFI-45, which
+&gt;&gt; will most likely be deployed in Guile 2.0.8.  In this approach, 'eager'
+&gt;&gt; remains a procedure, but one that accepts any number of arguments.  It
+&gt;&gt; is therefore used in the same way as 'values'.
+&gt;
+&gt; Note that in our implementation the body of `delay', etc, can have
+&gt; multiple expressions with an implicit begin.  While this is not in the
+&gt; srfi, you're effectively closing off this as a future extension.
+
+My proposal also supports multiple expressions with an implicit begin in
+'delay'.  It's true that we're closing off that possibility for 'eager',
+but it would be trivial to define a nicer macro in terms of our 'eager',
+e.g.:
+
+  (define-syntax eager*
+    (syntax-rules ()
+      ((_ e0 e ...)
+       (call-with-values
+           (lambda () e0 e ...)
+         eager))))
+
+&gt; More than that, if you go with the above, then you should probably
+&gt; consider also making your `delay' and the rest work in the same way
+&gt; with multiple subforms = multiple values,
+
+In my experience, 'delay' is used *far* more often than 'eager', and I
+consider it more important for 'delay' to accept multi-valued
+expressions.
+
+Since 'delay' is necessarily a macro, if it took multiple values in the
+form of multiple operands, there'd be no way to use 'delay' with an
+expression without knowing how many values it returns.
+
+(call-with-values (lambda () expr) delay) obviously won't work.  You'd
+have to do (lazy (call-with-values (lambda () expr) eager)) instead.
+That's intolerably awkward.
+
+&gt; to maintain a uniform interface where `eager' and `delay' have the
+&gt; same interface.
+
+I agree that it's unfortunate to destroy the symmetry between 'eager'
+and 'delay', but I see no way to support multiple values without either
+destroying that symmetry or breaking compatibility with SRFI-45.
+
+I also agree that 'eager' should have been a macro, and it's too bad
+this wasn't proposed before SRFI-45 was finalized, but it's too late for
+that now.
+
+If you can suggest a better way to add support for multiple values that
+is compatible with SRFI-45, I'd be glad to hear it.
+
+    Regards,
+      Mark
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00028" href="msg00028.html">Re: Compatible support for multiple values in SRFI-45</a></strong>
+<ul><li><em>From:</em> Eli Barzilay</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00025" href="msg00025.html">Compatible support for multiple values in SRFI-45</a></strong>
+<ul><li><em>From:</em> Mark H Weaver</li></ul></li>
+<li><strong><a name="00026" href="msg00026.html">Re: Compatible support for multiple values in SRFI-45</a></strong>
+<ul><li><em>From:</em> Eli Barzilay</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00026.html">Re: Compatible support for multiple values in SRFI-45</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00028.html">Re: Compatible support for multiple values in SRFI-45</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00026.html">Re: Compatible support for multiple values in SRFI-45</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00028.html">Re: Compatible support for multiple values in SRFI-45</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00027"><strong>Date</strong></a></li>
+<li><a href="threads.html#00027"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

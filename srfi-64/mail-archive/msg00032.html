@@ -1,0 +1,168 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Static ambiguities: test&#45;end and test&#45;apply -->
+<!--X-From-R13: Rbabina Ybyoyl <qbabinaNefpurzr.bet> -->
+<!--X-Date: Thu, 24 Mar 2005 17:30:17 +0100 (NFT) -->
+<!--X-Message-Id: Pine.LNX.4.44.0503241019250.19219&#45;100000@localhost.localdomain -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 42422F0A.7030000@bothner.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Static ambiguities: test-end and test-apply</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00031.html">Date Prev</a>][<a href="msg00033.html">Date Next</a>][<a href="msg00031.html">Thread Prev</a>][<a href="msg00033.html">Thread Next</a>][<a href="maillist.html#00032">Date Index</a>][<a href="threads.html#00032">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Static ambiguities: test-end and test-apply</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Per Bothner &lt;<a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Static ambiguities: test-end and test-apply</li>
+<li><em>From</em>: Donovan Kolbly &lt;<a href="mailto:donovan@DOMAIN.HIDDEN">donovan@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 24 Mar 2005 10:30:09 -0600 (CST)</li>
+<li><em>Cc</em>: SRFI 64 &lt;<a href="mailto:srfi-64@DOMAIN.HIDDEN">srfi-64@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-64@DOMAIN.HIDDEN">srfi-64@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:42422F0A.7030000@DOMAIN.HIDDEN">42422F0A.7030000@xxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>On Wed, 23 Mar 2005, Per Bothner wrote:
+
+&gt; Donovan Kolbly wrote:
+&gt; &gt; In general, I don't care as much about the order of arguments, but I do
+&gt; &gt; find it's better to ascertain the meaning of an invocation with no more
+&gt; &gt; work than counting the number of arguments (i.e., not having to examine
+&gt; &gt; the type of the arguments).
+&gt; 
+&gt; I'm used to Java (and C++) overloading so I may have more tolerance for
+&gt; selecting depending on argument types.
+
+Ah, sure.  Doesn't Java have a problem with static ambiguity as well?  
+That is, like C++, it dispatches based on the static type and not the
+dynamic type (except for the receiver &quot;this&quot; argument).
+
+Anyway, it seems like overkill for me to define a generic for these, and
+usually I want to implement them as syntax (so I can capture compile-time
+info like line numbers) which adds another indirection.
+
+Well, it's tractable, just inconvenient.
+
+&gt; 
+&gt; &gt; In the current spec, test-end is ambiguous:
+&gt; &gt; 
+&gt; &gt;   (test-end [name] [count])
+&gt; 
+&gt; I'm thinking about moving the count to the test-begin.  That might be
+&gt; helpful for a test-runner that displays a progress bar, for example:
+
+I like it!
+
+&gt; 
+&gt; (test-begin name [count])
+&gt; (test-end [name])
+&gt; 
+&gt; But in that case should test-group also have a count?
+&gt; 
+&gt; (test-group name [count] form ...)
+
+Probably so, for consistency.  More static ambiguities, though...
+
+&gt; 
+&gt; &gt; as is test-apply:
+&gt; &gt; 
+&gt; &gt;   (test-apply [runner] specifier ... thunk)
+&gt; 
+&gt; &gt; Furthermore, if test-apply were made to require the runner (the user could
+&gt; &gt; supply (test-runner-current) if needed), this would also solve the
+&gt; &gt; &quot;implicit runner&quot; problem (*).
+&gt; 
+&gt; No objection to making the runner non-optional - it's not like
+&gt; people will be writing lots of test-apply calls.
+
+That was my thinking as well.  So let it be said, so let it be done.
+
+&gt; 
+&gt; &gt; (*) The &quot;implicit runner&quot; problem:  there are currently two forms which
+&gt; &gt; can implicitly create a runner: test-begin and test-apply.  It's obvious
+&gt; &gt; how to &quot;finalize&quot; (bring about the invocation of the on-final hook) one
+&gt; &gt; created by test-begin, but it's less clear how that should happen for
+&gt; &gt; test-apply.  In fact, this is a real problem for my current
+&gt; &gt; implementation!
+&gt; 
+&gt; If test-apply creates a new runner, then it should also finalize it.
+&gt; Just like test-group/test-begin+test-end do.  Am I missing something?
+
+That would work great.  It just wasn't clear from the spec what was
+intended.  Consider my implementation and test suite so adjusted.
+
+&gt; 
+&gt; It probably is convenient to have a short-hand to run a specific set of
+&gt; tests with a default runner being created and finalized.  The use case
+&gt; I'm thinking of debugging a test-suite or a specific test.
+
+That makes sense.  So far, I've only been running complete suites, even 
+while debugging specific tests, but you would definitely want that.
+
+-- 
+-- Donovan Kolbly                    (  d.kolbly@xxxxxxxxxxx
+				     (  <a  rel="nofollow" href="http://www.rscheme.org/~donovan/">http://www.rscheme.org/~donovan/</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00033" href="msg00033.html">Re: Static ambiguities: test-end and test-apply</a></strong>
+<ul><li><em>From:</em> Donovan Kolbly</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00031" href="msg00031.html">Re: Static ambiguities: test-end and test-apply</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00031.html">Re: Static ambiguities: test-end and test-apply</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00033.html">Re: Static ambiguities: test-end and test-apply</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00031.html">Re: Static ambiguities: test-end and test-apply</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00033.html">Re: Static ambiguities: test-end and test-apply</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00032"><strong>Date</strong></a></li>
+<li><a href="threads.html#00032"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

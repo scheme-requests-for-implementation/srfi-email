@@ -1,0 +1,218 @@
+<!-- MHonArc v2.6.18 -->
+<!--X-Subject: New draft -->
+<!--X-From-R13: Fnxnfuv Yngb <xgnxnfuvNlznvy.pbz> -->
+<!--X-Date: Fri, 24 Apr 2015 18:49:14 +0000 (UTC) -->
+<!--X-Message-Id: 553A902E.1050105@ymail.com -->
+<!--X-Content-Type: multipart/mixed -->
+<!--X-Derived: gz8FgY1YNa72.gz -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>New draft</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00014.html">Date Prev</a>][<a href="msg00016.html">Date Next</a>][<a href="msg00003.html">Thread Prev</a>][<a href="msg00016.html">Thread Next</a>][<a href="maillist.html#00015">Date Index</a>][<a href="threads.html#00015">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>New draft</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-120@DOMAIN.HIDDEN">srfi-120@xxxxxxxxxxxxxxxxx</a>,  &quot;<a href="mailto:srfi-editors@DOMAIN.HIDDEN">srfi-editors@xxxxxxxxxxxxxxxxx</a>&quot; &lt;<a href="mailto:srfi-editors@DOMAIN.HIDDEN">srfi-editors@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: New draft</li>
+<li><em>From</em>: Takashi Kato &lt;<a href="mailto:ktakashi@DOMAIN.HIDDEN">ktakashi@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 24 Apr 2015 20:49:18 +0200</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-120@DOMAIN.HIDDEN">srfi-120@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Dkim-signature</em>: v=1; a=rsa-sha256; c=relaxed/relaxed; d=ymail.com; s=s2048; t=1429901354; bh=bHM69Pxq9xtTvnkOgcLj73aXJ0JrDtthG382yjOJSHs=; h=Date:From:To:Subject:From:Subject; b=iMue1TFDDWEHHnjRJrSiNIGh2UT4cxujQuwqClbdd+F9gu51qXTYdHEXk3ReWDCyaLnVYVeFRUmVEq79GiYLGHlBzgUvGqDuy5C5h/g8RfXnfMY1WA03lM2LnWyjeo32k31r3eGM2hBfoCkubStMOXP/AFFSIqi8Wfyg0lV3kvGfowSeUczPXhPI6s6rRU/jDNhplwMKy2GyeJgAi0sj/XuHdTDhQy2Pe6qSRc+GvqmK9jLcmo99nf5jhIv7CefvAd2yevjFITxHprMYAG2L+rTFnuxTWQGz4DVqqyO8LaBtDuIqjmKCIngVhs6Rqs05BeRiif6DnCXwXWohL65klw==</li>
+<li><em>User-agent</em>: Mozilla/5.0 (Windows NT 6.1; WOW64; rv:31.0) Gecko/20100101 Thunderbird/31.6.0</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+Hi SRFI editors,
+
+Could you please update the SRFI-120 with attached files?
+
+To keep discussion continue, the changes are the followings:
+
+- Changed timer-remove! and timer-exists? to timer-task-remove! and
+  timer-task-exists?
+- Added which dynamic environment tasks should run.
+- Added timer delta object APIs.
+- Added encouragement that timers don't disturb each others execution.
+- Added description for rescheduling when the task is being executed.
+
+Cheers,
+
+--
+_/_/
+Takashi Kato
+E-mail: ktakashi@xxxxxxxxx
+</pre><address>Title: <strong>Timer APIs</strong></address>
+
+
+  
+  
+    <h1> Title</h1>
+    <p>Timer APIs</p>
+    <h1> Author</h1>
+    <p>Takashi Kato</p>
+    <h1> Abstract</h1>
+    <p>This SRFI defines interfaces to handle timer processes.</p>
+    <h1> Issues</h1>
+    <p>There is no issue.</p>
+    <h1> Rationale</h1>
+    <p>Timer is one of the important features to implement a practical program.
+It is trivial to implement if implementations support thread. However not all
+Scheme implementations support SRFI-18 nor POSIX thread model. Some of the
+implementations even don't expose mutex. So it is nice to have the interface
+to handle timer to hide underlying implementation.</p>
+    <h1> Specification</h1>
+    <h2>(make-timer [error-handler])</h2>
+    <p>Creates and starts a timer object. The optional argument <em>error-handler</em> 
+must be a procedure which accepts one argument. If it is given and when 
+a timer task raises an error, then the handler will be invoked and timer
+will continue if the <em>error-handler</em> wouldn't raise an error. Otherwise
+whenever an error is raised, timer stops and preserves the error.
+The error is raised when <code>timer-cancel!</code> procedure is called.</p>
+    <p>Two timers should run in separate context, means whenever timer A is 
+executing a task, timer B should not be disturbed executing a task by 
+timer A's execution.</p>
+    <h2>(timer? obj)</h2>
+    <p>Returns <code>#t</code> if given <em>obj</em> is a timer object, otherwise <code>#f</code>.</p>
+    <h2>(timer-cancel! timer)</h2>
+    <p>Stops the given <em>timer</em>. The procedure raises the preserved error if there
+is. Once a timer is stopped, it will never be able to start again.</p>
+    <h2>(timer-schedule! timer thunk when [period])</h2>
+    <p>Schedules the given <em>thunk</em> as the given <em>timer</em>'s task. The <em>when</em> argument
+specifies when the task will be started. It can be either timer delta object or
+non negative integer. The task is scheduled on the time when the given <em>when</em>
+passed from the procedure is called. The <em>task</em> is executed on the dynamic 
+environment where the <em>timer</em> is created.</p>
+    <p>If the optional argument <em>period</em> is given, which must be either timer delta
+object or an integer, then the given task is scheduled as periodical task.
+The next task is scheduled by adding <em>when</em> and <em>period</em>. If the <em>period</em> 
+or <em>when</em> is an integer, then it is interpreted as milliseconds.</p>
+    <p>The procedure returns timer id which is a readable datum such as an integer.</p>
+    <p>The executing order of the same timing tasks are not defined.</p>
+    <p>A task should be able to cancel or reschedule other tasks. But it should
+not be able to cancel or reschedule itself.</p>
+    <p>If a task is rescheduled whenever it's executed, the timer doesn't stop its
+execution. It is rescheduled but the current execution will be continued.</p>
+    <h2>(timer-reschedule! timer id when [period])</h2>
+    <p>Reschedules the task associated to the given <em>id</em> on the given <em>timer</em>.
+The <em>when</em> and <em>period</em> arguments are the same as <code>timer-schedule!</code>.</p>
+    <p>Thus to cancel the periodical task, you can specify 0 as <em>period</em> argument.</p>
+    <p>The procedure returns given <em>id</em>.</p>
+    <h2>(timer-task-remove! timer id)</h2>
+    <p>Removes the task associated to the given <em>id</em> on the given <em>timer</em>. It
+returns <code>#t</code> if a task is removed, otherwise <code>#f</code>.</p>
+    <h2>(timer-task-exists? timer id)</h2>
+    <p>Returns <code>#t</code> if a task associated to the given <em>id</em> exists, otherwise <code>#f</code>.</p>
+    <h2>(make-timer-delta n unit)</h2>
+    <p>Creates a timer delta object. <em>n</em> must be an integer and <em>unit</em> must be
+a symbol which represents the time unit. Implementations must support
+the following units:</p>
+    <ul>
+      <li><code>h</code> : hour</li>
+      <li><code>m</code> : minute</li>
+      <li><code>s</code> : second</li>
+      <li><code>ms</code> : millisecond</li>
+      <li><code>us</code> : microsecond</li>
+      <li><code>ns</code> : nanosecond</li>
+    </ul>
+    <p>And may support other unit.</p>
+    <h2>(timer-delta? obj)</h2>
+    <p>Returns <code>#t</code> if given <em>obj</em> is a timer delta object, otherwise <code>#f</code>.</p>
+    <h1> Implementation</h1>
+    <p>The <a rel="nofollow" href="timer.tar.gz">sample implementation</a> of this SRFI depends on the 
+following SRFIs:</p>
+    <ul>
+      <li>
+        <a rel="nofollow" href="http://srfi.schemers.org/srfi-18/srfi-18.html">SRFI 18 - Multithreading support</a>
+      </li>
+      <li>
+        <a rel="nofollow" href="http://srfi.schemers.org/srfi-19/srfi-19.html">SRFI 19 - Time Data Types and Procedures</a>
+      </li>
+      <li>
+        <a rel="nofollow" href="http://srfi.schemers.org/srfi-69/srfi-69.html">SRFI 69 - Basic hash tables</a>
+      </li>
+      <li>
+        <a rel="nofollow" href="http://srfi.schemers.org/srfi-114/srfi-114.html">SRFI 114 - Comparators</a>
+      </li>
+    </ul>
+    <p>It is written in R7RS library system, the name is <code>(timer)</code>.</p>
+    <h1> Copyright</h1>
+    <p>Copyright (C) Takashi Kato (2015). All Rights Reserved.</p>
+    <p>Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in 
+the Software without restriction, including without limitation the rights to 
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies 
+of the Software, and to permit persons to whom the Software is furnished to do 
+so, subject to the following conditions:</p>
+    <p>The above copyright notice and this permission notice shall be included in all 
+copies or substantial portions of the Software.</p>
+    <p>THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, 
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE 
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER 
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, 
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE 
+SOFTWARE.</p>
+  
+
+<p><strong>Attachment:
+<a href="gz8FgY1YNa72.gz" ><tt>timer.tar.gz</tt></a></strong><br>
+<em>Description:</em> GNU Zip compressed data</p>
+
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00016" href="msg00016.html">Re: New draft</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00014.html">Re: Last call</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00016.html">Re: New draft</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00003.html">[cowan@xxxxxxxxxxxxxxxx: Re: Last call]</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00016.html">Re: New draft</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00015"><strong>Date</strong></a></li>
+<li><a href="threads.html#00015"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

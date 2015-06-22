@@ -1,0 +1,178 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: compare function return values -->
+<!--X-From-R13: Bnah Ynyyvbxbfxv <ngrujnNfnatr.sv> -->
+<!--X-Date: Mon,  6 Jun 2005 10:24:10 +0200 (DFT) -->
+<!--X-Message-Id: 20050606082249.GB9625@xandru.it.helsinki.fi -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20050510164111.GA11297@ling.helsinki.fi -->
+<!--X-Reference: Pine.LNX.4.58.0506041038160.19280@bolt.sonic.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: compare function return values</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00028.html">Date Prev</a>][<a href="msg00030.html">Date Next</a>][<a href="msg00028.html">Thread Prev</a>][<a href="msg00030.html">Thread Next</a>][<a href="maillist.html#00029">Date Index</a>][<a href="threads.html#00029">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: compare function return values</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-67@DOMAIN.HIDDEN">srfi-67@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: compare function return values</li>
+<li><em>From</em>: Panu Kalliokoski &lt;<a href="mailto:atehwa@DOMAIN.HIDDEN">atehwa@xxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 6 Jun 2005 11:22:49 +0300</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-67@DOMAIN.HIDDEN">srfi-67@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:Pine.LNX.4.58.0506041038160.19280@DOMAIN.HIDDEN">Pine.LNX.4.58.0506041038160.19280@xxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:20050510164111.GA11297@DOMAIN.HIDDEN">20050510164111.GA11297@xxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:Pine.LNX.4.58.0506041038160.19280@DOMAIN.HIDDEN">Pine.LNX.4.58.0506041038160.19280@xxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mutt/1.5.9i</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>On Sat, Jun 04, 2005 at 11:07:15AM -0700, bear wrote:
+&gt; &gt;&gt; The &quot;numbers can be used in index computations&quot; also refer to the fact
+&gt; &gt;&gt; that one at the assembly level can dispatch to the proper branch by
+&gt; &gt;&gt; doing a simple table lookup based upon the return value of a compare
+&gt; &gt;&gt; function.
+&gt; &gt;This can't possibly lead to any performance gain, because in the general
+&gt; &gt;case, the compiler will have to bound-check the integer returned by the
+&gt; &gt;compare function, which leads to two checks - the same number of
+&gt; &gt;comparisons as caused by checking which symbol it is.
+&gt; This isn't true, I don't think.  Depending on the level at
+&gt; which this function is integrated into the scheme system,
+&gt; the compiler can *know* that it will return one of the
+&gt; three values - and know that therefore it doesn't need to
+&gt; range check the table lookup.
+
+True, but this is also _exactly_ the case where the compiler can skip
+using actual symbols.
+
+&gt; &gt;(1) there are no good reasons for using integers as the return values.
+&gt; &gt;(2) bad code should be discouraged. (eg. using compare values for
+&gt; &gt;indexing, addition etc.)
+&gt; &gt;(3) using symbols would lead to more descriptive user experience.
+&gt; &gt;-&gt; ergo, the return values of compare functions should be symbols.
+&gt; 
+&gt; Hmmm.  I see your point and it is a valid point, but I have a
+&gt; few nits to pick:
+&gt; 
+&gt; First, symbols, from an implementation POV, are a *lot* heavier
+&gt; than small integer numbers.  There are table lookups to do, and
+&gt; guarantees to make about symbols being eq? and hash functions to
+&gt; call and store the result of, etc.  Depending on the implementation,
+
+I'm surprised to see so much misunderstanding about symbols in the
+Scheme community... since symbols are _atomic_, their comparison by eq?
+is a pointer comparison in all implementations I know of.  The only time
+one needs to find a symbol by its string representation is when it is
+being (read).  For builtin functions, all symbols are already in their
+&quot;pointer&quot; form, that is, they're already references to the Unique Symbol
+With That Name.
+
+Symbols that are used by builtins are statically allocated.  In an
+average implementation, this means an overhead of something like 8 bytes
+in addition to the storage usage of the string representation of the
+symbol.
+
+The great thing about symbols is exactly that they show that symbolic
+(descriptive) expressions _are_ as efficient to process as their
+non-expressive counterparts (like numeric tags).
+
+Now, I understand if people think that the long matured custom of
+mathematics to use (-1, 0, 1) is better.  But I think the original
+motivation for this codomain of signum was more likely the reluctance of
+adding new data types to mathematics than any real benefit these numbers
+convey.
+
+&gt; Second, small integers are useful in indexing arrays, and indexing
+&gt; arrays is a natural use of comparison results.  Indexing arrays with
+
+(Just to make sure: did you understand that preventing explicit indexing
+of arrays with comparison results was one of my original intentions in
+the proposal of using symbols?)
+
+&gt; table suggested by comparison results.  It would almost certainly
+&gt; be a better implementation strategy to do three comparisons.
+
+As is the case with numbers, too.
+
+&gt; Third, the limitation of array indexes to exact nonnegative integers
+&gt; only, and the requirement of starting at zero, is a problem that ought
+&gt; to be addressed first.  If arrays could be indexed by an arbitrary
+
+Aiee!  Maybe.  But I never found Scheme the language to do &quot;nifty
+tricks&quot; in, like indexing arrays with comparison results.  I think
+Scheme should remain simple, clean, powerful (in terms of tools it
+provides, not weird expressions it enables the programmer to use), and
+elegant.
+
+Panu
+
+-- 
+personal contact: atehwa@xxxxxx, +35841 5323835, +3589 85619369
+work contact: pkalliok@xxxxxxxxxxxxxxxx, +35850 3678003
+kotisivu (henkkoht):	<a  rel="nofollow" href="http://www.iki.fi/atehwa/">http://www.iki.fi/atehwa/</a>
+homepage (technical):	<a  rel="nofollow" href="http://sange.fi/~atehwa/">http://sange.fi/~atehwa/</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00030" href="msg00030.html">Re: compare function return values</a></strong>
+<ul><li><em>From:</em> Panu Kalliokoski</li></ul></li>
+<li><strong><a name="00032" href="msg00032.html">Re: compare function return values</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00025" href="msg00025.html">Re: compare function return values</a></strong>
+<ul><li><em>From:</em> Panu A Kalliokoski</li></ul></li>
+<li><strong><a name="00028" href="msg00028.html">Re: compare function return values</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00028.html">Re: compare function return values</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00030.html">Re: compare function return values</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00028.html">Re: compare function return values</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00030.html">Re: compare function return values</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00029"><strong>Date</strong></a></li>
+<li><a href="threads.html#00029"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

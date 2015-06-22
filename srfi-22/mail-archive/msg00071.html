@@ -1,0 +1,145 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: /usr/bin/env -->
+<!--X-From-R13: [nep Trryrl <srryrlNWDA.G[bagerny.QO> -->
+<!--X-Date: Fri, 23 Mar 2001 10:18:26 &#45;0600 (CST) -->
+<!--X-Message-Id: 200103231618.f2NGIPa02927@trex.IRO.UMontreal.CA -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200103231523.f2NFNoI02785@trex.IRO.UMontreal.CA -->
+<!--X-Reference: okfg0g4ebvh.fsf@bellsouth.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: /usr/bin/env</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00070.html">Date Prev</a>][<a href="msg00072.html">Date Next</a>][<a href="msg00070.html">Thread Prev</a>][<a href="msg00072.html">Thread Next</a>][<a href="maillist.html#00071">Date Index</a>][<a href="threads.html#00071">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: /usr/bin/env</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:kumo@DOMAIN.HIDDEN">kumo@xxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: /usr/bin/env</li>
+<li><em>From</em>: Marc Feeley &lt;<a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 23 Mar 2001 11:18:25 -0500</li>
+<li><em>Cc</em>: <a href="mailto:srfi-22@DOMAIN.HIDDEN">srfi-22@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:okfg0g4ebvh.fsf@DOMAIN.HIDDEN">okfg0g4ebvh.fsf@xxxxxxxxxxxxx</a>&gt; (message from David Rush on 23	Mar 2001 15:36:02 +0000)</li>
+<li><em>References</em>: &lt;<a href="mailto:200103231523.f2NFNoI02785@DOMAIN.HIDDEN">200103231523.f2NFNoI02785@xxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:okfg0g4ebvh.fsf@DOMAIN.HIDDEN">okfg0g4ebvh.fsf@xxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; Marc Feeley &lt;feeley@xxxxxxxxxxxxxxxx&gt; writes:
+&gt; &gt;    #! /usr/bin/env script-interpreter
+&gt; 
+&gt; &gt; Anybody have experience, or comments about this?  Is /usr/bin/env
+&gt; &gt; &quot;standard&quot; or POSIX?
+&gt; 
+&gt; from the Solaris 2.6 man page:
+&gt; 
+&gt;  /usr/bin/env
+&gt;      If env executes commands with arguments, it uses the default
+&gt;      shell /usr/bin/sh (see sh(1)).
+&gt; 
+&gt; So arguably more graceful looking than the traditional shell
+&gt; trampoline, but effectively the same thing...
+
+I just measured the run time for the following three script
+structures:
+
+script s1:
+            #! /u/feeley/gambc40a5/gsi/gsi
+            (exit)
+
+script s2:
+            #! /bin/sh
+            &quot;exec&quot; &quot;gsi&quot; &quot;$0&quot; &quot;$@&quot;
+            (exit)
+
+script s3:
+            #! /usr/bin/env gsi
+            (exit)
+
+using Gambit on a RH Linux 1 GHz Athlon system (results of &quot;time&quot;
+below).  It seems that the /usr/bin/env approach is just as fast as
+specifying the absolute path of the interpreter (about 0.01 second to
+start and exit the interpreter compared to about 0.05 second when
+using /bin/sh).  So perhaps the use of /bin/sh by /usr/bin/env is
+specific to Solaris (or maybe just non Linux systems).
+
+Marc
+
+
+% time ./s1 # 5 times
+0.000u 0.010s 0:00.01 100.0%    0+0k 0+0io 451pf+0w
+0.000u 0.010s 0:00.01 100.0%    0+0k 0+0io 451pf+0w
+0.010u 0.000s 0:00.01 100.0%    0+0k 0+0io 451pf+0w
+0.000u 0.010s 0:00.01 100.0%    0+0k 0+0io 451pf+0w
+0.010u 0.000s 0:00.01 100.0%    0+0k 0+0io 451pf+0w
+% time ./s2 # 5 times
+0.000u 0.030s 0:00.07 42.8%     0+0k 0+0io 659pf+0w
+0.000u 0.010s 0:00.05 20.0%     0+0k 0+0io 659pf+0w
+0.020u 0.000s 0:00.05 40.0%     0+0k 0+0io 659pf+0w
+0.000u 0.020s 0:00.05 40.0%     0+0k 0+0io 659pf+0w
+0.010u 0.010s 0:00.05 40.0%     0+0k 0+0io 659pf+0w
+% time ./s3 # 5 times
+0.000u 0.020s 0:00.01 200.0%    0+0k 0+0io 556pf+0w
+0.000u 0.010s 0:00.01 100.0%    0+0k 0+0io 556pf+0w
+0.010u 0.000s 0:00.01 100.0%    0+0k 0+0io 556pf+0w
+0.010u 0.000s 0:00.01 100.0%    0+0k 0+0io 556pf+0w
+0.000u 0.010s 0:00.01 100.0%    0+0k 0+0io 556pf+0w
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00069" href="msg00069.html">/usr/bin/env</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+<li><strong><a name="00070" href="msg00070.html">Re: /usr/bin/env</a></strong>
+<ul><li><em>From:</em> David Rush</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00070.html">Re: /usr/bin/env</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00072.html">Re: /usr/bin/env</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00070.html">Re: /usr/bin/env</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00072.html">Re: /usr/bin/env</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00071"><strong>Date</strong></a></li>
+<li><a href="threads.html#00071"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

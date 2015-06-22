@@ -1,0 +1,185 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: strings draft -->
+<!--X-From-R13: "Penqq I. Embalr" <oenqq+fesvNfmbalr.pbz> -->
+<!--X-Date: Fri, 23 Jan 2004 20:31:51 +0100 (MET) -->
+<!--X-Message-Id: 20040123193116.GA5509@ogre.szonye.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200401220511.VAA18432@morrowfield.regexps.com -->
+<!--X-Reference: 87isj3pg98.fsf@becket.becket.net -->
+<!--X-Reference: 878yjztmss.wl@strelka.synthcode.com -->
+<!--X-Reference: 200401230302.TAA23867@morrowfield.regexps.com -->
+<!--X-Reference: 877jzjtlq0.wl@strelka.synthcode.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: strings draft</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00376.html">Date Prev</a>][<a href="msg00378.html">Date Next</a>][<a href="msg00360.html">Thread Prev</a>][<a href="msg00408.html">Thread Next</a>][<a href="maillist.html#00377">Date Index</a>][<a href="threads.html#00377">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: strings draft</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: strings draft</li>
+<li><em>From</em>: &quot;Bradd W. Szonye&quot; &lt;<a href="mailto:bradd%2Bsrfi@DOMAIN.HIDDEN">bradd+srfi@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 23 Jan 2004 11:31:16 -0800</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:877jzjtlq0.wl@DOMAIN.HIDDEN">877jzjtlq0.wl@xxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Mail-followup-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>References</em>: &lt;<a href="mailto:200401220511.VAA18432@DOMAIN.HIDDEN">200401220511.VAA18432@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:87isj3pg98.fsf@DOMAIN.HIDDEN">87isj3pg98.fsf@xxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:878yjztmss.wl@DOMAIN.HIDDEN">878yjztmss.wl@xxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:200401230302.TAA23867@DOMAIN.HIDDEN">200401230302.TAA23867@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:877jzjtlq0.wl@DOMAIN.HIDDEN">877jzjtlq0.wl@xxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mutt/1.4.1i</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; Tom Lord wrote:
+&gt;&gt; You have a choice.
+&gt;&gt; 
+&gt;&gt; 1) Standard Scheme becomes case-sensitive.  May as well drop the case
+&gt;&gt;    mappings from the standard entirely, in this case.
+&gt;&gt; 
+&gt;&gt; 2) Standard Scheme specifies a deterministic case mapping for the
+&gt;&gt;    portable character set in which portable programs may be written.
+&gt;&gt;
+&gt;&gt; 3) Standard Scheme does not provide for portable Scheme source texts.
+&gt;&gt; 
+&gt;&gt; I pick (2) ....
+
+Alex Shinn wrote:
+&gt; As do I, I certainly was not advocating (3) .... I'm not arguing
+&gt; either way as to using a default (current-locale), I'm just pointing
+&gt; it out as a likely possibility ....
+
+I think to really do a good job of text handling, a procedure must know
+the language and encoding for both the source text (parameter values)
+and the context (returned values). For example, the rules for embedding
+Arabic text (right to left) in a Latin document (left to right) are
+slightly different from the converse, IIRC. This suggests an encoding
+and processing scheme where every text has an associated locale and
+every text-processing procedure has a locale context parameter. For
+convenience's sake, that information may be implicit or supplied via
+global parameters (e.g., CURRENT-LOCALE), although there are
+disadvantages to doing it that way (e.g., changing a global locale can
+cause subtle data corruption or information loss problems).
+
+On a slightly different note, there's also issue of program source vs
+program data. Some languages, like C, separate the two. In principle,
+that makes it easier to use different environments for compiler hosting,
+program hosting, and program data. In practice, I think it causes
+confusion more than it helps. Such an approach is even more dubious for
+a language like Scheme, where self-hosting or metacircularity is
+extremely common (i.e., the compiler uses the same reader both for
+interpreting programs and reading program data).
+
+Rather than taking cues from languages like C, it might be better to
+look at the prior art in languages where the boundary between &quot;program&quot;
+and &quot;data&quot; is less sharp. XML might be a good example. An XML reader may
+recognize many languages and encodings, but the reader always begins in
+a default, &quot;standard&quot; state that only recognizes a few. That default
+state includes a way to specify a different locale as a kind of
+&quot;metadata.&quot; With this approach, you can write XML code/data in other
+locales; the file begins in the standard locale, but you can then
+&quot;bootstrap&quot; the reader into a different locale.
+
+A Scheme reader could use the same technique. External representations
+are in the &quot;default Scheme source locale&quot; by default, but they can
+include metadata sexps to boot the reader into a different locale.
+(Implementations may also provide extensions to change the default
+locale.) This gives users a few options for making their source code and
+program data portable between systems (in order of decreasing
+portability):
+
+1. Always use the standard Scheme locale. Any Scheme reader should be
+   able to process your code/data, so long as the system supports a few
+   basic assumptions (i.e., files are readable as octet streams).
+
+2. Use your native language, and include the locale metadata at the
+   start of the file (e.g., wrap the file with something like
+
+       #,(LOCALE UTF-8 EN-US ( ... )))
+
+3. Use your native language, and rely on local system conventions to
+   change the default Scheme locale. For example, a Scheme interpreter
+   on a Linux system might recognize
+
+       LANG=en_US.UTF-8 scheme program ....
+   
+   as a valid way to start the interpreter with its reader in UTF-8
+   encoded US English mode. This method is tricky, because it makes it
+   harder to specify different locales for program and source data.
+
+The XML &quot;locale metadata&quot; approach isn't perfect, but it seems like a
+reasonable approach to provide locale flexibility in program code and
+data. Unfortunately, I haven't had much experience with it; any comments
+from people who have actually used this facility?
+-- 
+Bradd W. Szonye
+<a  rel="nofollow" href="http://www.szonye.com/bradd">http://www.szonye.com/bradd</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00408" href="msg00408.html">Re: strings draft</a></strong>
+<ul><li><em>From:</em> Alex Shinn</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00342" href="msg00342.html">strings draft</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00347" href="msg00347.html">Re: strings draft</a></strong>
+<ul><li><em>From:</em> Thomas Bushnell, BSG</li></ul></li>
+<li><strong><a name="00349" href="msg00349.html">Re: strings draft</a></strong>
+<ul><li><em>From:</em> Alex Shinn</li></ul></li>
+<li><strong><a name="00353" href="msg00353.html">Re: strings draft</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00355" href="msg00355.html">Re: strings draft</a></strong>
+<ul><li><em>From:</em> Alex Shinn</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00376.html">Re: Parsing Scheme [was Re: strings draft]</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00378.html">Re: Parsing Scheme [was Re: strings draft]</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00360.html">Re: strings draft</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00408.html">Re: strings draft</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00377"><strong>Date</strong></a></li>
+<li><a href="threads.html#00377"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

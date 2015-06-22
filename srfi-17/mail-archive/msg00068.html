@@ -1,0 +1,208 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: where is srfi&#45;17 going? -->
+<!--X-From-R13: Rnivq Dhfu <xhzbNoryyfbhgu.arg> -->
+<!--X-Date: Fri, 4 Feb 2000 18:29:16 &#45;0600 (CST) -->
+<!--X-Message-Id: 200002050026.AAA07100@heracles.mcom.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: where is srfi-17 going?</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00067.html">Date Prev</a>][<a href="msg00069.html">Date Next</a>][<a href="msg00064.html">Thread Prev</a>][<a href="msg00069.html">Thread Next</a>][<a href="maillist.html#00068">Date Index</a>][<a href="threads.html#00068">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: where is srfi-17 going?</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-17@DOMAIN.HIDDEN">srfi-17@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: where is srfi-17 going?</li>
+<li><em>From</em>: David Rush &lt;<a href="mailto:kumo@DOMAIN.HIDDEN">kumo@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 5 Feb 2000 00:26:28 GMT</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>First my disclaimer: I am not steeped in Scheme lore, but I have
+been hacking in many different environments and languages for fifteen
+years or so.
+
+I hated this SRFI. But I figured that it could be harmlessly left
+alone and that, if it passed on to final status, actual usage would
+ultimately determine its value a few years down the road. But then:
+
+DB&gt; == Dan Bornstein wrote on 24 Jan 2000:
+
+DB&gt; I am *strongly* in favor of generalized set! and pretty much agree with Per
+DB&gt; as to the reasons why, although I don't quite agree with the proposed
+DB&gt; underlying mechanism. 
+
+I must say that this was one of my major turn-offs for his proposal,
+as well.
+
+DB&gt; I'm much more in favor of reifying locations
+DB&gt; (lvalues, cells, whatever you want to call them) and, for that matter,
+DB&gt; environments (although that's probably better suited to be in a separate
+DB&gt; SRFI), and expecting the usual optimizations to elide their usage as
+DB&gt; appropriate. That seems much more in line with &quot;Scheme thinking&quot; to me than
+DB&gt; rewriting calls with extra arguments.
+
+This is a very interesting idea, and as Per has said that it was his
+original intent, congratulate you on your perceptiveness. I was rather
+too lost in the details of Per's proposal to see it. As such, I would
+*at least* suggest that the SRFI be rewritten to make this clearer.
+
+DB&gt; Just to reiterate what Per has said: There is a nice economy of concepts
+DB&gt; when you get to collapse, on one axis, all of these into one concept of
+DB&gt; &quot;modifying a location&quot;:
+
+DB&gt;     set! set-car! set-cdr! string-set! vector-set!
+
+DB&gt; and on another axis, all of these pairs into a concept each of what
+DB&gt; location they denote:
+
+DB&gt;     car        set-car!
+DB&gt;     cdr        set-cdr!
+DB&gt;     string-ref string-set!
+DB&gt;     vector-ref vector-set!
+
+Yes. And I must admit that in these terms I find this proposal
+somewhat seductive. However, Per's analogy with the C `&amp;' operator
+makes very clear how big this issue is. SRFI-17 is tinkering with
+fundamental language semantics. How does adding *explicit* pointer
+types and the accompanying pointer-aliasing problems interact with the
+compiled Schemes? Or how they interact with the garbage collector?
+
+Now, I am not totally opposed to this idea, but I rather like
+the way that things currently work in Scheme. The proposed model of
+L-values actually seems remarkably close to SML's ref type (which I
+like), but with an important difference: In Scheme (AFAIU) *all* names
+are bound to values of ref type, whereas in SML only those names which
+are explicitly declared to be so are. Scheme includes some magic so
+that all values of ref type are automatically dereferenced, *except*
+in the case of SET!. SET-CAR! &amp; friends don't even enter into the
+picture, they are simply operations on opaque types following the
+usual Scheme rules.
+
+An equivalence:
+Scheme: (let ((foo 4)) (fact foo)) \
+                                    + both of which return 24
+SML: let foo = 4 in fact foo       /
+
+but they do it very differently. To execute the same (machine level)
+actions in SML as in Scheme:
+
+SML: let foo = ref 4 in fact !foo
+
+which also returns 24, but has implications for the store. So in Per's
+proposal (not the SRFI)
+
+Per&gt; (define pa (location a))
+
+has the SML type (scheme-object ref ref) or, in a coarser language, 
+scheme_object**.
+
+I am having a bit of a hard time coming up with a way to express my
+misgivings about this construct. I think it boils down to the fact
+that Scheme *already* has this functionality, *if* you are willing to
+accept opaque types as a fundamental fact of life. In my *engineering*
+experience, I have found opaque types to be a universally good
+idea. This is so much the case that even when I am programming in
+straight C, I still use abstract setters in preference to direct
+mutation of structs; it is *much* easier to ensure data structure
+integrity with opaque types.
+
+Essentially, this proposal is to make Scheme more like C. Whether that
+is a good thing is debatable. I would like to be able to really do
+systems-level programming directly in Scheme. Having reified locations
+(and thus the ability to access hardware-level addresses) would
+be an advance toward that end. OTOH, the compiler, type, and
+engineering safety implications all worry me. Gripping hand is that
+this might really be an r6rs issue. Prototyping it here in the SRFI
+process may be a good thing, but I would certainly like to see some of
+the deeper implementation issues addressed.
+
+In other business:
+DB&gt; Furthermore, there will be an opportunity (which I believe Per pointed out
+DB&gt; in his original SRFI) to right a wrong where there is an asymmetry in R5RS
+DB&gt; where there are a lot of getters without corresponding setters (most
+DB&gt; notably, cxxr..cxxxxr). These can all be added to the language (library,
+DB&gt; whatever) via the set! extension 
+
+Don't be daft. At least in the case of the composed list accessors
+(c[ad]...r) having corresponding setters is just asking for
+trouble. As it is I *rarely* use anything deeper than cadr (and even
+that only when I'm being sloppy) because I can't validate the access
+any deeper without some serious work.
+
+DB&gt; and simultaneously *simplify* the mental
+DB&gt; model of the language that a programmer maintains.
+
+I think I showed previously that this (Well, Per's first-class
+locations) does not simplify the mental model of the language. It in
+fact complicates it, adding pointer aliasing, and ref ref types being
+bound to identifiers. Whether this comlication is useful or desirable
+is another matter.
+
+david rush
+-- 
+I repeat myself when under stress. I repeat myself when under
+stress. I repeat myself when under stress. I repeat myself when
+under stress. I repeat myself when under stress. I repeat myself
+when under stress. I repeat myself when under stress. I repeat
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00069" href="msg00069.html">Re: where is srfi-17 going?</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+<li><strong><a name="00073" href="msg00073.html">Re: where is srfi-17 going?</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr. Preprocessor]</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00067.html">Re: perhaps I've missed something ...</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00069.html">Re: where is srfi-17 going?</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00064.html">Re: where is srfi-17 going?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00069.html">Re: where is srfi-17 going?</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00068"><strong>Date</strong></a></li>
+<li><a href="threads.html#00068"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

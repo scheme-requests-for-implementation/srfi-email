@@ -1,0 +1,168 @@
+<!-- MHonArc v2.6.16 -->
+<!--X-Subject: Re: performance -->
+<!--X-From-R13: Rnivq Hna Vbea <qinaubeaNpf.oenaqrvf.rqh> -->
+<!--X-Date: Fri, 18 Sep 2009 12:22:02 +0000 (UTC) -->
+<!--X-Message-Id: 4AB37B5F.9080205@cs.brandeis.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20090918031501.3471DE403F@pluto.mumble.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: performance</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00011.html">Date Prev</a>][<a href="msg00013.html">Date Next</a>][<a href="msg00009.html">Thread Prev</a>][<a href="msg00015.html">Thread Next</a>][<a href="maillist.html#00012">Date Index</a>][<a href="threads.html#00012">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: performance</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Taylor R Campbell &lt;<a href="mailto:campbell@DOMAIN.HIDDEN">campbell@xxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: performance</li>
+<li><em>From</em>: David Van Horn &lt;<a href="mailto:dvanhorn@DOMAIN.HIDDEN">dvanhorn@xxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 18 Sep 2009 08:21:51 -0400</li>
+<li><em>Cc</em>: <a href="mailto:srfi-101@DOMAIN.HIDDEN">srfi-101@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-101@DOMAIN.HIDDEN">srfi-101@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20090918031501.3471DE403F@DOMAIN.HIDDEN">20090918031501.3471DE403F@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:20090918031501.3471DE403F@DOMAIN.HIDDEN">20090918031501.3471DE403F@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Thunderbird 2.0.0.23 (Macintosh/20090812)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+Taylor R Campbell wrote:
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+   Date: Thu, 17 Sep 2009 20:53:55 -0400
+   From: David Van Horn &lt;dvanhorn@xxxxxxxxxxxxxxx&gt;
+
+   Taylor R Campbell wrote:
+   &gt; What space usage are random-access lists guaranteed to exhibit?
+   &gt; Growth order and constant factors are both interesting -- growth order
+   &gt; to specify in the SRFI, and constant factors to satisfy my curiosity.
+
+</pre><tt>   Representing a random-access list of n elements takes O(n) space, just 
+</tt><tt>   as with sequential lists.
+</tt><pre style="margin: 0em;">
+
+I ought to have been more precise: while of course it takes O(n) space
+to store a sequence of n elements, I was interested more in the amount
+of extra space.  E.g., in most systems, a vector of length n will use
+a constant amount of extra space (a header with its length at the
+beginning), while a list of length n will use O(n) extra space (one
+car for each element, plus one cdr extra space for each element, and
+sometimes another word for a header or similar).
+</pre></blockquote><pre style="margin: 0em;">
+
+</pre><tt>Yes, hence the following paragraph which gives the number of cons cells 
+</tt><tt>need to represent a list of size n.
+</tt><pre style="margin: 0em;">
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><tt>   A random-access list is a forest of complete binary trees.  The forest 
+</tt><tt>   contains at most log n trees, and the space of each tree is proportional 
+</tt><tt>   to the number of elements it contains.  If you represent binary trees 
+</tt><tt>   using pairs [*], then it takes m-1 pairs to represent a complete binary 
+</tt><tt>   tree with m elements.  The forest can be represented as a list, and thus 
+</tt><tt>   takes a pair per tree, which is at most log n.  So the overall space 
+</tt><tt>   consumption need not be more than n + log n.  My implementation stores 
+</tt><tt>   the size of each tree in the forest making it n + 2 * log n.
+</tt><pre style="margin: 0em;">
+
+I'm a little puzzled by the formulae you've computed here.  If my
+cursory examination of the reference implementation is right, the
+trees have data associated with each internal node, not with the
+leaves.  So you need one location for each element, one location for
+each left branch, and one location for each right branch, for a total
+of 2 n extra locations in each tree, plus whatever constant overhead
+each tree has: + 1 for the size, + 1 for the node, + 1 for the link to
+the next tree?  This sounds like a total space usage of 3 n + 3 log n,
+neglecting the overhead of records, which means an extra space usage
+of 2 n + 3 log n = O(n).  I suppose I ought to have expected that,
+though.
+</pre></blockquote><pre style="margin: 0em;">
+
+</pre><tt>The formula is given in terms of the number of pairs needed.  I figured 
+</tt><tt>you could extrapolate from that.  Are you asking for something else?
+</tt><pre style="margin: 0em;">
+
+</pre><tt>You need not use records in an implementation, but there is no portable 
+</tt><tt>way to define a pair type that is distinct from the built-in pair type. 
+</tt><tt> So if there is overhead for records, it can be avoided.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>You are correct that the binary trees have data associated at each node 
+</tt><tt>of the tree not just the leaves.  A tree of height 1 (a leaf) has no 
+</tt><tt>overhead.  A tree of height 2 has 3 elements and requires 2 cons cells. 
+</tt><tt> A tree of height 3 has 7 elements and requires 6 cons cells.  In 
+</tt><tt>general a tree of height h has (- (expt 2 h) 1) elements and requires (- 
+</tt><tt>(expt 2 h) 2) cons cells.  Additionally, you need a list for the forest 
+</tt><tt>and so a cons cell per tree, and my implementation stores the size, so 
+</tt><tt>you need another cons cell per tree.  There are at most log n trees. 
+</tt><tt>You can trade space for time in the case of the latter and compute the 
+</tt><tt>size within the time bounds required in the SRFI.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>In short, the space consumption has at worst a logarithmic overhead 
+</tt><tt>compared to a plain ol' list.  Right?  I'm still not sure I'm answering 
+</tt><tt>the question you're asking.
+</tt><pre style="margin: 0em;">
+
+David
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00015" href="msg00015.html">Re: performance</a></strong>
+<ul><li><em>From:</em> Taylor R Campbell</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00009" href="msg00009.html">Re: performance</a></strong>
+<ul><li><em>From:</em> Taylor R Campbell</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00011.html">Re: performance</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00013.html">Re: performance</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00009.html">Re: performance</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00015.html">Re: performance</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00012"><strong>Date</strong></a></li>
+<li><a href="threads.html#00012"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

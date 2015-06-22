@@ -1,0 +1,185 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Initial comments &#38; questions -->
+<!--X-From-R13: pnzcoryyNnhgbqevc.oybbqnaqpbssrr.arg -->
+<!--X-Date: Fri, 19 Mar 2004 00:07:27 +0100 (NFT) -->
+<!--X-Message-Id: Pine.LNX.4.44.0403171655370.9673&#45;100000@autodrip.bloodandcoffee.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Initial comments &amp; questions</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[Date Prev][<a href="msg00001.html">Date Next</a>][Thread Prev][<a href="msg00001.html">Thread Next</a>][<a href="maillist.html#00000">Date Index</a>][<a href="threads.html#00000">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Initial comments &amp; questions</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-53@DOMAIN.HIDDEN">srfi-53@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Initial comments &amp; questions</li>
+<li><em>From</em>: <a href="mailto:campbell@DOMAIN.HIDDEN">campbell@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Date</em>: Thu, 18 Mar 2004 15:20:57 -0800 (PST)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-53@DOMAIN.HIDDEN">srfi-53@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>First, thanks for designing a comprehensive interface to this -- you
+beat me to it before I completed syntax-lib... --.
+
+Second, I've got a lot of comments and questions.  These are just my
+initial thoughts on the SRFI.  I'll likely have many more later, but I
+thought these were plenty for now...
+
+Some of them are directly related to SRFI 46 -- which, mumble, I ought
+to finish up at some point --, or have come up on the SRFI 46 mailing
+list:
+
+  - Having a new top-level definition form, DEFINE-SYNTAX-COMPUTATION,
+    is cumbersome and shouldn't be necessary; DEFINE-SYNTAX should be
+    universal for introducing syntax transformers, and the same should
+    go for LET-SYNTAX and LETREC-SYNTAX.  Yes, it's true, you can't
+    implement COMPUTATION-RULES to be a valid transformer keyword like
+    SYNTAX-RULES in straight R5RS, but I think that small price to pay
+    is OK, because, after all, this is a request for implementors to
+    implement what you propose here.
+  - You're going to hit the _exact_ same ellipsis problems that are
+    fixed by SRFI 46.  (My plans for SRFI 46 are to use CYOE, by the
+    way.)  Why not specify CYOE from the start?
+  - Does COMPUTATION-RULES support tail patterns?
+
+Issues regarding the document:
+
+  - Could you move the reference implementation into a separate file?
+    It's a bit of a bother to have it within the document text; it's 
+    pretty big.
+  - More examples, please!  For instance, a LETREC implementation that
+    is much cleaner than R5RS's, or Oleg's example of a record definer
+    that 'generates identifiers' (cf. that thread somewhere on c.l.s).
+  - Very little is mentioned about hygiene, which I'm worried about.
+  - Very little is mentioned about shadowing.
+  - I'd like some comments on the topic of efficiency of the system.
+
+Technical issues unrelated to SRFI 46:
+
+  - Is SYNTAX-INVOKE/C really necessary?  Couldn't the continuations be
+    regular syntax computations that just ignore their continuation?
+  - Is pattern matching available in SYNTAX-DO's bindings?
+  - Are there provisions for multiple return values?  (This would be
+    unnecessary with 'yes' to the previous question.)
+  - If the answer to those last two questions is 'no,' then why?
+  - Couldn't SYNTAX-ERROR be a _lot_ simpler? --
+      (define-syntax syntax-error (syntax-rules ()))
+  - I fear that the syntactic list-processing routines may turn into
+    a complete reinvention of SRFI 1.  This is a much bigger issue
+    that I haven't thought much about yet.  More on this later...
+  - Are there any operations on syntactic vectors?
+  - I'm not entirely sure if it's a good idea, but I have a nagging
+    suspicion that macro writers may want a utility for generating
+    debugging messages.  It of course can't be implemented in terms of
+    plain SYNTAX-RULES, but it can trivially be defined with other
+    macro systems, e.g.:
+      (define-syntax syntax-debug-message
+        (lambda (stx)
+          (syntax-case stx ()
+            ((syntax-debug-message ?k ?message ?irritant ...)
+             (display &quot;Syntax debug: &quot;)
+             (display (syntax-object-&gt;datum (syntax ?message)))
+             (newline)
+             (for-each (lambda (irr)
+                         (display &quot;  &quot;)
+                         (write irr)
+                         (newline))
+                       (syntax-object-&gt;datum
+                        (syntax (?irritant ...))))
+             (syntax (syntax-bind ?k ()))))))
+      (define-syntax syntax-debug-message
+        (transformer ; Explicit renaming
+          (lambda (form rename compare)
+            (destructure ; Scheme48 extension -- whatever
+                (((#f stx-k message . irritants)
+                  form))
+              (display &quot;Syntax debug: &quot;)
+              (display message)
+              (for-each (lambda (irr)
+                          (display &quot;  &quot;)
+                          (write irr))
+                        irritants)
+              `(,(rename 'syntax-bind) ,stx-k ())))))
+
+Some naming quibbles:
+
+  - COMPUTATION-RULES -- I'd prefer SYNTAX-COMPUTATIONS or something.
+  - SYNTAX-DO -- I don't like this at all.  It's not very descriptive
+    and it clashes with the DO syntax in regular Scheme.  While it may
+    be a good point that it does nothing more than 'do' a computation,
+    and this is also what Haskell uses, it still isn't descriptive to
+    just say 'do,' and it still has the clash.
+  - I _loathe_ the &lt;- bit of SYNTAX-DO.  It's there seemingly _only_
+    for consistency with Haskell; it serves no useful purpose other
+    than to bother people like me, and that purpose isn't very useful,
+    so it doesn't count.
+  - SYNTAX-EQ? -- why that and not SYNTAX-EQUAL? ?  The name EQ? has
+    connotations of that of the Scheme procedure EQ?, which compares
+    for identity, so I'd avoid it for structural comparison.
+  - SYNTAX-FOLDL &amp; SYNTAX-FOLDR: SRFIs 1, 13, and 43 all use FOLD &amp;
+    FOLD-RIGHT; SRFI 44 uses FOLD-LEFT &amp; FOLD-RIGHT.  Given these
+    traditions, I'd prefer FOLD &amp; FOLD-RIGHT, or at worst FOLD-LEFT &amp;
+    FOLD-RIGHT.
+  - Why abbreviate 'continuation' everywhere?  If you want brevity,
+    how about SYNTAX-CATCH &amp; SYNTAX-THROW instead of the much longer
+    SYNTAX-LET-CURRENT-CONTINUATION and SYNTAX-INVOKE-CONTINUATION?
+    (And SYNTAX-INVOKE/C may not even be necessary, either.)
+  - I don't like the name SYNTAX-LET/CC.  It implies that it's letting
+    the current continuation _be_ something, when in fact it's
+    _capturing_ the current continuation.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00001" href="msg00001.html">Re: Initial comments &amp; questions</a></strong>
+<ul><li><em>From:</em> campbell</li></ul></li>
+<li><strong><a name="00002" href="msg00002.html">Re: Initial comments &amp; questions</a></strong>
+<ul><li><em>From:</em> Andre van Tonder</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Next by Date:
+<strong><a href="msg00001.html">Re: Initial comments &amp; questions</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00001.html">Re: Initial comments &amp; questions</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00000"><strong>Date</strong></a></li>
+<li><a href="threads.html#00000"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

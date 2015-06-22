@@ -1,0 +1,321 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: macro uses, macro blocks, and bare keywords in syntax bindings -->
+<!--X-From-R13: Oyfb Brgebsfxl <nyNcrgebsfxl.bet> -->
+<!--X-Date: Mon, 20 Oct 2003 03:27:00 +0200 (DFT) -->
+<!--X-Message-Id: 200310200125.SAA11043@radish.petrofsky.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 2ED0E6BB&#45;00EB&#45;11D8&#45;96A9&#45;000A95CCCEE4@evdev.ath.cx -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>macro uses, macro blocks, and bare keywords in syntax bindings</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00018.html">Date Prev</a>][<a href="msg00020.html">Date Next</a>][<a href="msg00016.html">Thread Prev</a>][<a href="msg00014.html">Thread Next</a>][<a href="maillist.html#00019">Date Index</a>][<a href="threads.html#00019">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>macro uses, macro blocks, and bare keywords in syntax bindings</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:campbell@DOMAIN.HIDDEN">campbell@xxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: macro uses, macro blocks, and bare keywords in syntax bindings</li>
+<li><em>From</em>: Also Petrofsky &lt;<a href="mailto:al@DOMAIN.HIDDEN">al@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 19 Oct 2003 18:25:59 -0700</li>
+<li><em>Cc</em>: <a href="mailto:srfi-46@DOMAIN.HIDDEN">srfi-46@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-46@DOMAIN.HIDDEN">srfi-46@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:2ED0E6BB-00EB-11D8-96A9-000A95CCCEE4@DOMAIN.HIDDEN">2ED0E6BB-00EB-11D8-96A9-000A95CCCEE4@xxxxxxxxxxxx</a>&gt; (message from	Taylor Campbell on Fri, 17 Oct 2003 17:45:11 -0400)</li>
+<li><em>References</em>: &lt;<a href="mailto:2ED0E6BB-00EB-11D8-96A9-000A95CCCEE4@DOMAIN.HIDDEN">2ED0E6BB-00EB-11D8-96A9-000A95CCCEE4@xxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; ...which would make me have a need to define LET-MSYNTAX-RULES and
+&gt; LETREC-MSYNTAX-RULES as well, and anyone who wanted to use
+&gt; MSYNTAX-RULES anywhere else would need to write their own
+&gt; foo-MSYNTAX-RULES.  This is rather irritating, but I'm almost afraid
+&gt; to consider putting a fix of what I mentioned above in this SRFI -- do
+&gt; something about macro uses being used as transformers --, as it would
+&gt; undoubtedly generate a flame war somehow or other due to potential
+&gt; issues with phase separation and such.
+
+Yes, the high-level macro system would be much improved if macro uses,
+macro blocks, and bare keywords were allowed in syntax bindings.  And
+yes, conflicts with low-level macro systems are the rub.  Last year, I
+thought about doing a SRFI on this (it should be a separate SRFI from
+a syntax-rules SRFI), but I never got around to it.  The answer might
+be some kind of marker that says &quot;this transformer contains high-level
+macros only, so please don't complain about phase problems that
+shouldn't affect me&quot;, and then you could do:
+
+  (let-syntax
+      ((foo (syntax-rules ()
+              ((foo . rules) (syntax-rules () . rules)))))
+    (let-syntax ((bar (high-level-only (foo ((bar x) (- x))))))
+      (bar 1)))
+  =&gt; -1
+
+But maybe foo would need to be marked too, because it is used by bar
+-- and maybe there would be problems referring to, say, quasiquote,
+within a high-level-only section because the system implements
+quasiquote with a low-level macro.  I don't know.  I would need to
+look more closely at PLT's (and others') machinery to see if a &quot;no
+phase constraints for high-level macros&quot; device could be smoothly
+integrated, or if there are good reasons it would never work.
+
+The thing about ellipsis problems is that, in most cases, the real
+problem is not the ellipsis problem.  The real issue is &quot;How do you
+write an auxiliary macro local to a macro?&quot;.  As I've written in the
+past, r5rs gives you three options, all unappealing:
+
+  1. Pollute the top-level namespace with a separate define-syntax.
+     (i.e., give up on making it local).
+
+  2. Use the &quot;secret-string&quot; approach.  This allows undocumented variant
+     forms of the macro.
+
+  3. Expand into a local definition of the auxiliary macro.  This has
+     several drawbacks:
+
+     a. The auxiliary macro can only be used by one of the rules.
+
+     b. The auxiliary macro cannot use ellipsis.
+
+     c. The auxiliary macro must use different pattern variable names
+        from the main macro, because pattern variable bindings do not shadow.
+
+     d. The auxiliary macro is parsed and recompiled each time the
+        main macro is called.
+
+Fixing the ellipsis problem only partially ameliorates option 3,
+whereas allowing macro blocks in syntax bindings fixes the whole
+problem:
+
+;; The r5rs letrec macro.
+;; Note that the auxiliary macro has dots all over the place, and there's no
+;; need to escape them.
+(define-syntax letrec
+  (letrec-syntax
+      ((gentemps
+	(syntax-rules ()
+	  ((gentemps (x y ...)         (temp ...) ((var1 init1) ...) body ...)
+	   (gentemps   (y ...) (newtemp temp ...) ((var1 init1) ...) body ...))
+	  ((gentemps        ()        (temp1 ...) ((var1 init1) ...) body ...)
+	   (let ((var1 'undefined) ...)
+	     (let ((temp1 init1) ...)
+	       (set! var1 temp1)
+	       ...
+	       (let () body ...)))))))
+    (syntax-rules ()
+      ((letrec ((var1 init1) ...) body1 body2 ...)
+       (gentemps (var1 ...) () ((var1 init1) ...) body1 body2 ...)))))
+
+Allowing bare keywords in syntax bindings, as in:
+
+   (let-syntax ((q quote)) (q x)) =&gt; x
+
+enables you to replace a builtin with an extended version of it, as in:
+
+  ;; Extend define to support currying as in r2rs:
+  ;;    (define ((f x) y) . body)
+  ;; == (define (f x) (lambda (y) . body))
+  ;; == (define f (lambda (x) (lambda (y) . body)))
+  (define-syntax define
+    (let-syntax ((plain-define define))
+      (letrec-syntax
+	  ((currying-define
+	    (syntax-rules ()
+	      ((_ (var-or-prototype . args) . body)
+	       (currying-define var-or-prototype (lambda args . body)))
+	      ((_ var expr)
+	       (plain-define var expr)))))
+	currying-define)))
+
+(My expander supports both those extensions.)
+ 
+Something I discovered last year that I never got around to telling
+many people is that once you fix the ellipsis problem, it's possible
+for the user to partially implement macro blocks in syntax bindings on
+his own.
+
+The code below implements define-syntax+, let-syntax+, and
+letrec-syntax+, which work just like their standard counterparts, but
+allow (let-syntax+ &lt;bindings&gt; &lt;transformer&gt;) blocks and letrec-syntax+
+blocks as valid transformers.  Comment out one of the two versions of
+reduce-binding (depending on which ellipsis solution you have).
+
+One problem with this solution is that the macros thus defined can
+only expand into expressions, not definitions (because the expansion
+is wrapped in the let-syntax that we wanted to put the transformer
+in).
+
+You could write a similar trifecta (or extend this one) that would
+support macros that expand into transformers (like your
+msyntax-rules), as long as you are willing to write each such
+transformer-producing macro to take an extra k argument, and to expand
+into (k expanded-transformer).
+
+
+-al
+
+
+;; transformer-macro-blocks.scm: Macro blocks for transformers.
+;; Authored 2002, 2003 by Al Petrofsky and released into the public domain.
+;;
+;; Define-syntax+, let-syntax+, and letrec-syntax+ work like their
+;; standard counterparts, but allow (let-syntax+ &lt;bindings&gt; &lt;transformer&gt;)
+;; blocks and letrec-syntax+ blocks as valid transformers.
+
+(define-syntax let-syntax+
+  (syntax-rules ()
+    ((_ bindings . body)
+     (reduce-bindings (let-syntax . body) () . bindings))))
+
+(define-syntax letrec-syntax+
+  (syntax-rules ()
+    ((_ bindings . body)
+     (reduce-bindings (letrec-syntax . body) () . bindings))))
+
+(define-syntax define-syntax+
+  (syntax-rules ()
+    ((_ . binding)
+     (reduce-bindings (define-syntax-binding) () binding))))
+
+(define-syntax define-syntax-binding
+  (syntax-rules () ((_ (binding)) (define-syntax . binding))))
+
+;; (reduce-bindings (binder . body) () binding ...)
+;; expands to (binder reduced-bindings . body), with any macro-block
+;; transformers in the bindings replaced by ordinary transformers.
+(define-syntax reduce-bindings
+  (syntax-rules (let-syntax+ letrec-syntax+)
+    ((reduce-bindings bb reduced (key (let-syntax+ bs t)) . unreduced)
+     (reduce-binding  bb reduced (key (let-syntax+ bs t)) . unreduced))
+    ((reduce-bindings bb reduced (key (letrec-syntax+ bs t)) . unreduced)
+     (reduce-binding  bb reduced (key (letrec-syntax+ bs t)) . unreduced))
+    ((reduce-bindings bb             reduced  ordinary . unreduced)
+     (reduce-bindings bb (ordinary . reduced)          . unreduced))
+    ((reduce-bindings (binder . body) reduced)
+     (binder reduced . body))))
+
+;; Reduce a macro-block transformer in the first binding.
+;; This version uses (... &lt;subtemplate&gt;) ellipsis escapement, as provided
+;; by Chez scheme.
+(define-syntax reduce-binding
+  (syntax-rules ()
+    ((_ bb reduced (key (let/letrec-syntax+ bindings trans)) . unreduced)
+     (reduce-bindings bb
+		      ((key (syntax-rules ()
+			      ((_ . args)
+			       ((... ...) (let/letrec-syntax+ bindings
+					    (let-syntax+ ((t trans))
+					      (t . args)))))))
+		       . reduced)
+		      . unreduced))))
+
+;; Using new-fangled choose-your-own-ellipsis feature from draft SRFI-46.
+(define-syntax reduce-binding
+  (syntax-rules ()
+    ((_ bb reduced (key (let/letrec-syntax+ bindings trans)) . unreduced)
+     (reduce-bindings bb
+		      ((key (syntax-rules no-ellipsis ()
+			      ((_ . args)
+			       (let/letrec-syntax+ bindings
+				 (let-syntax+ ((t trans))
+				   (t . args))))))
+		       . reduced)
+		      . unreduced))))
+
+;; Examples, adapted from r5rs:
+
+;; Note that I can use the same pattern variable names in do and
+;; do-step without any conflict.  Also note that (syntax-rules ()) is
+;; a legal syntax-rules transformer with zero rules, which means that
+;; any use of it will cause an expansion-time error (a &quot;no pattern
+;; matches&quot; error) that will presumably be reported with a message
+;; that includes the arguments.
+(define-syntax+ do+
+  (letrec-syntax+
+      ((do-step (syntax-rules ()
+		  ((_ var init) var)
+		  ((_ var init step) step)
+		  ((_ . clause) (syntax-error &quot;Bad do clause: &quot; clause))))
+       (syntax-error (syntax-rules ())))
+    (syntax-rules ()
+      ((do ((var init step ...) ...)
+	   (test expr ...)
+	 command ...)
+       (let loop ((var init) ...)
+	 (if test
+	     (begin (if #f #f) expr ...)
+	     (begin command ... (loop (do-step var init step ...) ...))))))))
+
+;; Note that the auxiliary macro has dots all over the place, with no
+;; need to escape them.
+(define-syntax+ letrec+
+  (letrec-syntax+
+      ((gentemps
+	(syntax-rules ()
+	  ((gentemps (x y ...)         (temp ...) ((var1 init1) ...) body ...)
+	   (gentemps   (y ...) (newtemp temp ...) ((var1 init1) ...) body ...))
+	  ((gentemps        ()        (temp1 ...) ((var1 init1) ...) body ...)
+	   (let ((var1 'undefined) ...)
+	     (let ((temp1 init1) ...)
+	       (set! var1 temp1)
+	       ...
+	       (let () body ...)))))))
+    (syntax-rules ()
+      ((letrec ((var1 init1) ...) body1 body2 ...)
+       (gentemps (var1 ...) () ((var1 init1) ...) body1 body2 ...)))))
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00016" href="msg00016.html">Re: Choose-Your-Own-Ellipsis</a></strong>
+<ul><li><em>From:</em> Taylor Campbell</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00018.html">reference implementation; multiple patterns after ellipsis</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00020.html">Deliberate variable capture.</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00016.html">Re: Choose-Your-Own-Ellipsis</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00014.html">Re: Bidirectionality and other comments</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00019"><strong>Date</strong></a></li>
+<li><a href="threads.html#00019"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

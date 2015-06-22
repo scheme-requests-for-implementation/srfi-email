@@ -1,0 +1,314 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: implementation of SRFI 96 for Larceny -->
+<!--X-From-R13: Ohoerl Xnssre <ntwNnyhz.zvg.rqh> -->
+<!--X-Date: Fri, 30 Nov 2007 02:56:56 +0100 (MET) -->
+<!--X-Message-Id: 20071130014927.651C151D7DB@smtp.voluntocracy.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: E1Ix3TC&#45;00046y&#45;31@welsh.ccs.neu.edu -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: implementation of SRFI 96 for Larceny</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00000.html">Date Prev</a>][<a href="msg00002.html">Date Next</a>][<a href="msg00000.html">Thread Prev</a>][<a href="msg00002.html">Thread Next</a>][<a href="maillist.html#00001">Date Index</a>][<a href="threads.html#00001">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: implementation of SRFI 96 for Larceny</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:will@DOMAIN.HIDDEN">will@xxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: implementation of SRFI 96 for Larceny</li>
+<li><em>From</em>: Aubrey Jaffer &lt;<a href="mailto:agj@DOMAIN.HIDDEN">agj@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 29 Nov 2007 20:49:27 -0500 (EST)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-96@DOMAIN.HIDDEN">srfi-96@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-96@DOMAIN.HIDDEN">srfi-96@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:E1Ix3TC-00046y-31@DOMAIN.HIDDEN">E1Ix3TC-00046y-31@xxxxxxxxxxxxxxxxx</a>&gt; (message from William D	Clinger on Tue, 27 Nov 2007 11:39:34 -0500)</li>
+<li><em>References</em>: &lt;<a href="mailto:E1Ix3TC-00046y-31@DOMAIN.HIDDEN">E1Ix3TC-00046y-31@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>I have uploaded the updated srfi-96.html to:
+<a  rel="nofollow" href="http://swiss.csail.mit.edu/~jaffer/srfi/srfi-96.html">http://swiss.csail.mit.edu/~jaffer/srfi/srfi-96.html</a>
+
+ | From: William D Clinger &lt;will@xxxxxxxxxxx&gt;
+ | Date: Tue, 27 Nov 2007 11:39:34 -0500
+ | 
+ | I implemented SRFI 96 for Larceny on a Solaris machine,
+ | thinking this fresh implementation would be a good test
+ | of the SRFI 96 specification.  It was.
+
+Thanks for your responses.
+
+ | I downloaded slib3a5.zip and unzipped it into a
+ | directory named lib/SLIB relative to Larceny's root
+ | directory.  My attempt to install SLIB using gnu make
+ | resulted in these errors:
+ | 
+ | --------
+ | % make infoz
+ | makeinfo slib.texi --no-warn --no-split -o slib.info
+ | slib.texi:14: Unknown command `copying'.
+ | slib.texi:32: Unmatched `@end'.
+ | slib.texi:62: Unknown command `insertcopying'.
+ | makeinfo: Removing output file `slib.info' due to errors; use --force to preserve.
+ | make: *** [slib3a5.info] Error 2
+
+The @copying command has been in Texinfo as least as early as
+Texinfo-4.7 (released in April 2004).  I suspect your system has an
+older version of Texinfo.
+
+ | % make install
+ | test -d /usr/local/man/ || mkdir /usr/local/man/
+ | mkdir: cannot make directory `/usr/local/man/': No such file or directory
+ | make: *** [pinstall] Error 1
+
+Use a &quot;prefix=&quot; argument to &quot;make&quot; in order to override SLIB's default
+of /usr/local:
+
+ make prefix=/home/will/ install
+
+ | --------
+ | 
+ | Giving up on the Makefile, I proceeded as instructed
+ | by the README:
+ | 
+ | % larceny -path lib/SRFI/SLIB
+ | &gt; (require 'srfi-96)
+ | &gt; (require 'new-catalog)
+ | 
+ | That worked well enough to begin testing, which soon
+ | proved that the SRFI 96 specification of some things
+ | is insufficiently detailed.
+ | 
+ | The specification of with-load-pathname refers to &quot;an
+ | internal variable&quot; as though the name of that variable
+ | were insignificant.  In reality, SLIB (as distributed)
+ | won't work unless that internal variable is a global
+ | variable named *load-pathname*.
+
+The only occurence of *load-pathname* in SLIB which is found by:
+
+  grep -n -e '[*]load-pathname[*]' *.scm
+
+is in &quot;Template.scm&quot; -- which is a template for *.init files.
+&quot;Template.scm&quot; is never run.
+
+I changed *load-pathname* to *foo-load-pathname* in &quot;gambit.init&quot;.
+With &quot;gambit.init&quot; so modified, gsi was able to load JACAL (which uses
+SLIB) successfully.  What is your basis for asserting that the
+internal variable must be named *load-pathname*?
+
+ | SRFI 96 refers to macro:load but does not specify it
+ | and does not indicate that an implementation of SRFI 96
+ | must define it.  Apparently SLIB doesn't define it either:
+
+The reference to macro:load was a typo -- it should have been
+defmacro:load.  Corrected in the new srfi-96 upload.
+
+ | --------
+ | % larceny -path lib/SRFI/SLIB
+ | Larceny v0.951 &quot;First Safety&quot; (Nov 11 2007 09:34:53, precise:SunOS5:split)
+ | 
+ | &gt; (require 'srfi-96)
+ | #t
+ | 
+ | &gt; (require 'new-catalog)
+ | 
+ | &gt; (require 'define-record-type)
+ | 
+ | 
+ | Error: Undefined global variable &quot;macro:load&quot;.
+ | Entering debugger; type &quot;?&quot; for help.
+ | debug&gt; a
+ | --------
+ | 
+ | Adding definitions of macro:eval and macro:load to the
+ | implementation of SRFI 96 fixed that problem.
+
+I have added `R5RS Macros' sections detailing the operations
+macro:expand, macro:eval, and macro:load.
+
+[Rationale]
+ R5RS Macros
+
+ If the macro feature is provided, then the procedures macro:expand,
+ macro:eval, and macro:load must be defined.
+
+ Of these, only macro:load is used (for loading packages) by SLIB
+ code.
+
+ macro:eval would typically be used with the repl:top-level procedure
+ in the repl package to create a macro-enabled read-eval-print loop.
+
+ macro:expand is indispensable for debugging R5RS Macros; but
+ implementations are not required to make it functional, in which case
+ macro:expand will always return #f.
+
+[Specification]
+ R5RS Macros
+
+ If the macro feature is provided, then the procedures macro:expand,
+ macro:eval, and macro:load will be defined.
+
+ Function: macro:expand sexpression
+     Takes an expression, macro-expands it, and returns the result of
+     the macro expansion. If an implementation does not support
+     macro:expand, then #f is returned.
+
+ Function: macro:eval sexpression
+     Takes an expression, macro-expands it, evals the result of the
+     macro expansion, and returns the result of the evaluation.
+
+ Procedure: macro:load filename
+     filename should be a string. If filename names an existing file,
+     the macro:load procedure reads Scheme source code expressions and
+     definitions from the file and evaluates them sequentially. These
+     source code expressions and definitions may contain macro
+     definitions. The macro:load procedure does not affect the values
+     returned by current-input-port and current-output-port.
+
+ | The SRFI 96 specification of slib:features does not
+ | adequately describe the semantics of most features.
+ | In particular, it does not specify what each feature
+ | obliges an implementor to provide.  For example, the
+ | specification of program-arguments doesn't say whether
+ | the first element of the list should be the name of
+ | the command, e.g. &quot;larceny&quot;.
+
+Program-arguments was insufficiently specified; I have added text to
+both SLIB (<a  rel="nofollow" href="http://swiss.csail.mit.edu/~jaffer/slib_7.html#SEC267">http://swiss.csail.mit.edu/~jaffer/slib_7.html#SEC267</a>) and
+SRFI-96:
+
+ If (provided? 'program-arguments):
+
+ Function: program-arguments
+     Returns a list of strings, the first of which is the program
+     name followed by the command-line arguments.
+
+ | It would probably be enough for SRFI 96 to provide a pointer to the
+ | relevant SLIB documentation for these features.
+
+I have added the text:
+
+ If a feature is provided whose name is the same as an SLIB module,
+ then it will provide the procedures and syntax as documented for that
+ SLIB module.
+
+ | SRFI 96 does not explain the obligations incurred by an
+ | implementation that provides its own defmacro.
+
+All implementations must implement defmacro.
+
+The obligations are gentemp, defmacro:eval, defmacro:load, defmacro?,
+macroexpand-1, macroexpand, and defmacro, specified in the section
+&quot;Defmacro&quot;.
+
+ | If the defmacro feature is listed in slib:features, then code that
+ | uses defmacro will trigger an infinite loop in defmacro:expand*.
+
+defmacro:expand* is a part of the defmacroexpand package, not part of
+the defmacro feature.  Several implementations have an &quot;autoload&quot;
+which brings in the defmacroexpand package the first time that
+defmacro:eval (calling defmacro:expand*) is called:
+
+(define base:eval slib:eval)
+(define (defmacro:eval x)
+  (base:eval (defmacro:expand* x)))
+(define (defmacro:expand* x)
+  (slib:require 'defmacroexpand)
+  (apply defmacro:expand* x '()))
+
+ | I got rid of this loop by defining defmacro:expand* as follows,
+ | where macro-expand is Larceny's native macro-expander:
+ | 
+ |     (define (defmacro:expand* x)
+ |       (macro-expand x))
+ | 
+ | I doubt whether that definition is fully compatible with SLIB,
+ | however.
+
+If your macro-expand expands all the defmacros in its argument, then
+your definition is fine; just add the symbol defmacroexpand to
+slib:features.
+
+ | My implementation of SRFI 96 now appears to be working,
+ | but it's hard to tell how well it's working because I
+ | don't have a test suite for SLIB.
+
+Running JACAL (<a  rel="nofollow" href="http://swiss.csail.mit.edu/~jaffer/JACAL">http://swiss.csail.mit.edu/~jaffer/JACAL</a>) on
+&quot;test.math&quot; is a good test case, using some DEFMACRO:LOADs and many
+procedure packages.
+
+ | Question:  Should SLIB be distributed with Larceny, or
+ | would it be better to provide SRFI 96 alone and to tell
+ | users of Larceny how to obtain and to install the latest
+ | version of SLIB themselves?
+
+UMB-Scheme included an ancient copy of SLIB, which Guile originally
+used only for its copy of SLIB.  This arrangement violated SLIB's
+license and generated reports over and over for SLIB bugs which had
+been fixed years ago.  I would rather not repeat that experience.
+Please don't incorporate a copy of SLIB in your distribution.
+
+If you send me &quot;larceny.init&quot;, then I will include it in the SLIB
+distribution and a SRFI-96 link along with the other implementations.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00002" href="msg00002.html">Re: implementation of SRFI 96 for Larceny</a></strong>
+<ul><li><em>From:</em> Aubrey Jaffer</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00000" href="msg00000.html">implementation of SRFI 96 for Larceny</a></strong>
+<ul><li><em>From:</em> William D Clinger</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00000.html">implementation of SRFI 96 for Larceny</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00002.html">Re: implementation of SRFI 96 for Larceny</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00000.html">implementation of SRFI 96 for Larceny</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00002.html">Re: implementation of SRFI 96 for Larceny</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00001"><strong>Date</strong></a></li>
+<li><a href="threads.html#00001"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

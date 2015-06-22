@@ -1,0 +1,157 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: why generative? -->
+<!--X-From-R13: jvyyNppf.arh.rqh -->
+<!--X-Date: Fri,  4 Sep 2009 03:32:21 +0000 (UTC) -->
+<!--X-Message-Id: 15852515.487611252035130852.JavaMail.root@zimbra -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 28813552.487591252035123973.JavaMail.root@zimbra -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: why generative?</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00069.html">Date Prev</a>][<a href="msg00071.html">Date Next</a>][<a href="msg00069.html">Thread Prev</a>][<a href="msg00071.html">Thread Next</a>][<a href="maillist.html#00070">Date Index</a>][<a href="threads.html#00070">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: why generative?</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Shiro Kawai &lt;<a href="mailto:shiro@DOMAIN.HIDDEN">shiro@xxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: why generative?</li>
+<li><em>From</em>: <a href="mailto:will@DOMAIN.HIDDEN">will@xxxxxxxxxxx</a></li>
+<li><em>Date</em>: Thu, 3 Sep 2009 23:32:10 -0400 (EDT)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-99@DOMAIN.HIDDEN">srfi-99@xxxxxxxxxxxxxxxxx</a>, <a href="mailto:will@DOMAIN.HIDDEN">will@xxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-99@DOMAIN.HIDDEN">srfi-99@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:28813552.487591252035123973.JavaMail.root@DOMAIN.HIDDEN">28813552.487591252035123973.JavaMail.root@zimbra</a>&gt;</li>
+<li><em>Sender</em>: <a href="mailto:will@DOMAIN.HIDDEN">will@xxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Shiro Kawai wrote:
+&gt; &gt; Isn't that equivalent (modulo the use of 'nongenerative
+&gt; &gt; instead of 'uid) to the recommended semantics for the 'uid
+&gt; &gt; extension that's already described by the draft of SRFI 99?
+&gt; 
+&gt; SRFI-99 says &quot;The semantics of this extension [uid] is the
+&gt; same as described by R6RS&quot;.
+&gt; 
+&gt; R6RS requires the system to check the rtd with the same uid
+&gt; must have the same field specs etc.  This *requires* some form
+&gt; of a global table that maps uid to existing rtds.  This is
+&gt; also the cause that the code must use lengthy and cryptic
+&gt; uids like GUID to avoid accidental conflict of uids.
+
+So the difference is this:  When the uid option is used, and
+the specified uid is the same for two different calls to
+make-rtd but some other argument is different, then your
+proposal would have the two calls return distinct record
+type descriptors, while at least one of the analogous R6RS
+calls to make-record-type-descriptor would raise an exception.
+
+&gt; In my suggestion, two rtds are different even if it has the 
+&gt; same uids but different field specs.  A library can have
+&gt; a record type with nongenerative id 'Point and two fields
+&gt; x and y, and another library can have a record type with
+&gt; id 'Point and three fields x, y and z.  Two record types
+&gt; are distinct.  I don't think this will cause confusion.
+
+I suspect it would, but there is plenty of precedent for
+adding confusing features to a programming language, and
+the current draft of SRFI 99 already follows that tradition
+in some ways.
+
+To make this more concrete, please clarify which of the
+following examples would create equivalent record type
+descriptors, which would be illegal, and so forth.
+
+    (make-rtd 'foo '#(x y z))
+    (make-rtd 'foo '#((immutable x) (immutable y) (immutable z)))
+    (make-rtd 'foo '#(x (immutable y) z))
+    (make-rtd 'foo '#(x (mutable y) z))
+
+    (make-rtd 'foo '#(x y z) #f)
+    (make-rtd 'foo '#((immutable x) (immutable y) (immutable z)) #f)
+    (make-rtd 'foo '#(x (immutable y) z) #f)
+    (make-rtd 'foo '#(x (mutable y) z) #f)
+
+    (make-rtd 'foo '#(x y z) 'uid 'bar)
+    (make-rtd 'foo '#((immutable x) (immutable y) (immutable z)) 'uid 'bar)
+    (make-rtd 'foo '#(x (immutable y) z) 'uid 'bar)
+    (make-rtd 'foo '#(x (mutable y) z) 'uid 'bar)
+
+    (make-rtd 'baz '#(x y z))
+    (make-rtd 'baz '#((immutable x) (immutable y) (immutable z)))
+    (make-rtd 'baz '#(x (immutable y) z))
+    (make-rtd 'baz '#(x (mutable y) z))
+
+    (make-rtd 'baz '#(x y z) 'uid 'bar)
+    (make-rtd 'baz '#((immutable x) (immutable y) (immutable z)) 'uid 'bar)
+    (make-rtd 'baz '#(x (immutable y) z) 'uid 'bar)
+    (make-rtd 'baz '#(x (mutable y) z) 'uid 'bar)
+
+    (make-rtd 'baz '#(x y z) 'uid (list 'bar))
+    (make-rtd 'baz '#((immutable x) (immutable y) (immutable z)) 'uid (list 'bar))
+    (make-rtd 'baz '#(x (immutable y) z) 'uid (list 'bar))
+    (make-rtd 'baz '#(x (mutable y) z) 'uid (list 'bar))
+
+    (make-rtd 'baz '#(x y z) 'uid '(bar))
+    (make-rtd 'baz '#((immutable x) (immutable y) (immutable z)) 'uid '(bar))
+    (make-rtd 'baz '#(x (immutable y) z) 'uid '(bar))
+    (make-rtd 'baz '#(x (mutable y) z) 'uid '(bar))
+
+Will
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00071" href="msg00071.html">Re: why generative?</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00069.html">Re: why generative?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00071.html">Re: why generative?</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00069.html">Re: why generative?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00071.html">Re: why generative?</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00070"><strong>Date</strong></a></li>
+<li><a href="threads.html#00070"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

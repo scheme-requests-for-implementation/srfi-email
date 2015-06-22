@@ -1,0 +1,131 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Storage Efficiency of Vectors -->
+<!--X-From-R13: Oyna Ingfba <n.jngfbaNnfgebfzb.hanz.zk> -->
+<!--X-Date: Wed, 16 Apr 2003 18:56:11 +0200 (DFT) -->
+<!--X-Message-Id: 200304161555.h3GFttcu003879@sapi.astrosmo.unam.mx -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Storage Efficiency of Vectors</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00024.html">Date Prev</a>][<a href="msg00026.html">Date Next</a>][<a href="msg00034.html">Thread Prev</a>][<a href="msg00026.html">Thread Next</a>][<a href="maillist.html#00025">Date Index</a>][<a href="threads.html#00025">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Storage Efficiency of Vectors</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-43@DOMAIN.HIDDEN">srfi-43@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Storage Efficiency of Vectors</li>
+<li><em>From</em>: Alan Watson &lt;<a href="mailto:a.watson@DOMAIN.HIDDEN">a.watson@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 16 Apr 2003 10:55:55 -0500</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-43@DOMAIN.HIDDEN">srfi-43@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Hello,
+
+Points have been made regarding the storage efficiency of vectors. I've
+got a couple of comments.
+
+First, I'm not sure that association vectors will save storage. Unless
+I'm very much mistaken, a typical implementation requires an overhead of
+two words for a pair and N+1 words for a vector of length N (with the
+additional word storing the length). Thus, an association list has four
+words of overhead per key, two in the spine and two in the rib, and an
+association vector also has (asymptotically) four words of overhead per
+key, one in the spine and three in the rib. If you're really bothered
+about the storage overhead, a &quot;property vector&quot;, with alternating keys
+and values, or simply one vector for the keys and another for the values
+are probably better ideas. Both of these have (asymptotically) two words
+of overhead per key.
+
+I'm also not sure that &quot;stretchy&quot; vectors will help much in the common
+case that a vector of an initially unknown size is constructed and then
+its size is not changed. Let's consider constructing a vector of length
+M = 1.5 * 2^N. I've chosen this length as a median case appropriate to
+constructing a vector by creating a fresh vector of twice the previous
+size when the previous vector becomes full. If we construct a list first
+and then create an appropriate vector, we will allocate 3M words, 2M for
+the list and M for the vector. (If we make the mistake of using &quot;(apply
+vector list)&quot;, we require 5M!) If we construct the vector by repeated
+doubling, we will allocate (1+1) + (2+1) + (4+1) + ... + (2^(N+1)+1) =
+2^(N+2) + N + 1 = (8/3) M words (ignoring the logarithmic term). So,
+unless I'm making some mistake here, it would appear that in the median
+case stretchy vectors save us about 10%.
+
+For smaller than median cases, lists are slightly better and for larger
+than median cases, stretchy vectors are slightly better. However, even
+in the best case for stretchy vectors, they will allocate only 1/3 less
+storage than lists (2M versus 3M), and in the worst case they will
+allocate 1/3 more (4M versus 3M). So, to some degree which is better
+comes down to the distribution of vector lengths. However, we're talking
+about factors of less than two.
+
+Of course, stretchy vectors are an enormous convenience and will help if
+the vector is subsequently resized. Furthermore a clever allocator that
+can grow a vector in place will change my analysis. But in this common
+case and for a naive allocator, I would venture to paraphrase David
+Thornley and say that lists don't look any deader than usual to me.
+
+Regards,
+
+Alan Watson
+-- 
+Dr Alan Watson
+Instituto de Astronom&#xED;a UNAM
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00026" href="msg00026.html">Re: Storage Efficiency of Vectors</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00024.html">Re: Too much of a good thing?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00026.html">Re: Storage Efficiency of Vectors</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00034.html">Re: AW: vector-unzip</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00026.html">Re: Storage Efficiency of Vectors</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00025"><strong>Date</strong></a></li>
+<li><a href="threads.html#00025"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

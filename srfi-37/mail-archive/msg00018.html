@@ -1,0 +1,201 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: supporting multi argument commandline arguments -->
+<!--X-From-R13: Fbz Zbeq <ybeqNertrkcf.pbz> -->
+<!--X-Date: Thu, 26 Sep 2002 19:22:42 +0200 (DFT) -->
+<!--X-Message-Id: 200209261726.KAA04848@morrowfield.regexps.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: Pine.LNX.4.44.0209261005160.5789&#45;100000@sub&#45;d.memebeam.org -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: supporting multi argument commandline arguments</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00017.html">Date Prev</a>][<a href="msg00019.html">Date Next</a>][<a href="msg00017.html">Thread Prev</a>][<a href="msg00019.html">Thread Next</a>][<a href="maillist.html#00018">Date Index</a>][<a href="threads.html#00018">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: supporting multi argument commandline arguments</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-37@DOMAIN.HIDDEN">srfi-37@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: supporting multi argument commandline arguments</li>
+<li><em>From</em>: Tom Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 26 Sep 2002 10:26:43 -0700 (PDT)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-37@DOMAIN.HIDDEN">srfi-37@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:Pine.LNX.4.44.0209261005160.5789-100000@DOMAIN.HIDDEN">Pine.LNX.4.44.0209261005160.5789-100000@xxxxxxxxxxxxxxxxxx</a>&gt;	(message from Anthony Carrico on Thu, 26 Sep 2002 10:08:24 -0400	(EDT))</li>
+<li><em>References</em>: &lt;<a href="mailto:Pine.LNX.4.44.0209261005160.5789-100000@DOMAIN.HIDDEN">Pine.LNX.4.44.0209261005160.5789-100000@xxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+   &gt; Right -- I did see that there, and I posted on an internal PLT mailing
+   &gt; list where I met with opposition to requiring the extra quotes:
+   &gt;
+   &gt;   -L&quot;first-arg second-arg&quot;
+   &gt;   --long-name=&quot;first-arg second-arg&quot;
+   &gt;
+   &gt; Oh well.
+
+   I feel for you, I've heard private support for the opposite position off
+   this list too. If anyone is passionate about this issue, speak up on this
+   list please.
+
+
+I'm not up on the contents of the proposed SRFI, or the PLT library.
+
+I have written several argument crackers, in C and Scheme, and have 
+an opinion about this, based on the syntax illustrated above.
+
+Sometimes, but not in general, an option argument is naturally a list
+of items whose syntax permits a delimiter (typically either space,
+comma, or user-chosen (similar to the sed `s' command)).   Typically,
+argument crackers treat these exceptions as single arguments, and let
+the splitting happen in other code.
+
+In general, option _names_ come from a restricted character set, so it
+is ok to have syntaxes which combine them in a single argument with
+the option argument.  (&quot;-Xfoo&quot; or &quot;--long-X=foo&quot;). (Even with such
+syntaxes, to avoid forcing callers to smash strings together, it is a
+good idea to permit two-argument forms for those (&quot;-X foo&quot; and
+&quot;--long-X foo&quot;).
+
+But, in general, the separation of multiple option arguments has no
+fixed syntax.  Indeed, the separation of command line arguments in
+general has no fixed syntax.  Introducing a fixed syntax usually makes
+some option arguments impossible to pass (one couldn't write &quot;first
+arg&quot; in the quoted example).  Rather, separating arguments is an
+external issue, decided by whatever program builds the argv array.
+
+Therefore, in general, an argument cracking library should probably
+not define an internal syntax for combining multiple option arguments
+in a single argument.  If it must define such a syntax, it ought to
+allow quite a bit of flexibility, and that will likely lead to bloat
+and complexity with little payoff.
+
+Conventionally, multiple option arguments are handled one of two
+ways.  Either with multiple options, as in GCC:
+
+	gcc -L &lt;linker-option&gt; -L &lt;linker-option-argument&gt; -L &lt;...&gt;
+
+or with a delimiter argument, similarly to how xinit handles optional
+arguments:
+
+	xinit  [[client] options] [-- [server] [display] options]
+
+Those cases are so rare that most argument crackers do not treat them
+specially and let programs combine the optional arguments and multiple
+option arguments themselves.
+
+There is a need, not _necessarily_ the purview of this SRFI, to more
+carefully design the standard for command line syntax.   POSIX has its
+standard, which, for historic reasons, not all POSIX programs honor
+and which, for historic reasons, doesn't go very far.
+
+(Extended) Scheme has the advantage over many shell languages that it
+has an unambiguous, simple syntax for structured data built over an
+extensible set of primitive types.  That syntax is simple enough to be
+managed by other languages: much as XML is, but with less work, less code,
+greater flexibility, greater generality, and improved readability.
+
+So, it might be worth trying to define a restricted set of command
+line grammars that would support, for example, multiple option
+arguments cleanly.  But watch out for creating a syntax which is too
+restricted (e.g. using space as a delimiter for otherwise arbitrary
+strings), or one which is too complicated.
+
+I am mostly satisfied with the argument crackers in the Hackerlab C
+library and in Systas Scheme -- those might provide some ideas.
+
+As a sort of wildcard, and displaying my ignorance of the details of
+the SRFI, I'll point out that what those two crackers have in common
+is that they both have a low-level procedural interface (to read
+options and arguments one at a time, as if the command line were a
+stream of those) and a higher-level declarative interface (to invoke a
+small amount of automatic parsing of options and arguments).   The
+Emacs &quot;interactive declaration&quot; pattern would seem to be relevent,
+too: that pattern is the one where you have a declaration that
+converts a user-interface-based input-gathering mechanism into a
+regular procedure call, perhaps with some automatic sanity checking of
+the input gathered.
+
+&quot;Option arguments must not be optional&quot;
+-t
+
+
+
+   Old-Return-Path: &lt;acarrico@xxxxxxxxxxxx&gt;
+   Date: Thu, 26 Sep 2002 10:08:24 -0400 (EDT)
+   From: Anthony Carrico &lt;acarrico@xxxxxxxxxxxx&gt;
+   Content-Type: TEXT/PLAIN; charset=US-ASCII
+   Sender: Anthony Carrico &lt;acarrico@xxxxxxxxxxxx&gt;
+   Resent-From: srfi-37@xxxxxxxxxxxxxxxxx
+   X-Mailing-List: &lt;srfi-37@xxxxxxxxxxxxxxxxx&gt; archive/latest/17
+   X-Loop: srfi-37@xxxxxxxxxxxxxxxxx
+   List-Post: &lt;<a  rel="nofollow" href="mailto:srfi-37@xxxxxxxxxxxxxxxxx">mailto:srfi-37@xxxxxxxxxxxxxxxxx</a>&gt;
+   List-Help: &lt;<a  rel="nofollow" href="mailto:srfi-37-request@xxxxxxxxxxxxxxxxx?subject=help">mailto:srfi-37-request@xxxxxxxxxxxxxxxxx?subject=help</a>&gt;
+   List-Subscribe: &lt;<a  rel="nofollow" href="mailto:srfi-37-request@xxxxxxxxxxxxxxxxx?subject=subscribe">mailto:srfi-37-request@xxxxxxxxxxxxxxxxx?subject=subscribe</a>&gt;
+   List-Unsubscribe: &lt;<a  rel="nofollow" href="mailto:srfi-37-request@xxxxxxxxxxxxxxxxx?subject=unsubscribe">mailto:srfi-37-request@xxxxxxxxxxxxxxxxx?subject=unsubscribe</a>&gt;
+   Precedence: list
+   Resent-Sender: srfi-37-request@xxxxxxxxxxxxxxxxx
+   X-UIDL: af0dd686628b39495aa32581c8cfaf5b
+
+   On Thu, 26 Sep 2002, Robert Bruce Findler wrote:
+
+   [....]
+     -Anthony Carrico
+
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00016" href="msg00016.html">Re: supporting multi argument commandline arguments</a></strong>
+<ul><li><em>From:</em> Anthony Carrico</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00017.html">Re: supporting multi argument commandline arguments</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00019.html">PLT conformance, multi-arg flags, and spaces before arguments</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00017.html">Re: supporting multi argument commandline arguments</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00019.html">PLT conformance, multi-arg flags, and spaces before arguments</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00018"><strong>Date</strong></a></li>
+<li><a href="threads.html#00018"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,140 @@
+<!-- MHonArc v2.6.16 -->
+<!--X-Subject: Re: Handling scomments after "." -->
+<!--X-From-R13: "Rnivq O. Iurryre" <qjurryreNqjurryre.pbz> -->
+<!--X-Date: Tue, 19 Mar 2013 04:12:39 +0000 (UTC) -->
+<!--X-Message-Id: E1UHnug&#45;00019R&#45;J6@rmm6prod02.runbox.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: CAF+kUQX5mK=VStZyu6zfGQj9SE+J4D=dHPF6+d&#45;T&#45;5a+tZ7XvA@mail.gmail.com -->
+<!--X-Reference: 20130317.154441.695066990312419885.shiro@lava.net -->
+<!--X-Reference: CAF+kUQX3ghwPo3Jk95Na0zY3kuxtbLQ&#45;RyzZvthYo7Q&#45;soTXyQ@mail.gmail.com -->
+<!--X-Reference: E1UHcsS&#45;0001aL&#45;1g@rmm6prod02.runbox.com -->
+<!--X-Reference: CAF+kUQWcQJOpPdvST04wy8QiiF+w++KhPFS33F4UPCU85_2r=g@mail.gmail.com -->
+<!--X-Reference: E1UHnQa&#45;0005fI&#45;GU@rmm6prod02.runbox.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Handling scomments after &quot;.&quot;</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00047.html">Date Prev</a>][<a href="msg00049.html">Date Next</a>][<a href="msg00047.html">Thread Prev</a>][<a href="msg00041.html">Thread Next</a>][<a href="maillist.html#00048">Date Index</a>][<a href="threads.html#00048">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Handling scomments after &quot;.&quot;</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &quot;srfi-110&quot; &lt;<a href="mailto:srfi-110@DOMAIN.HIDDEN">srfi-110@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Handling scomments after &quot;.&quot;</li>
+<li><em>From</em>: &quot;David A. Wheeler&quot; &lt;<a href="mailto:dwheeler@DOMAIN.HIDDEN">dwheeler@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 19 Mar 2013 00:12:38 -0400 (EDT)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-110@DOMAIN.HIDDEN">srfi-110@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:E1UHnQa-0005fI-GU@DOMAIN.HIDDEN">E1UHnQa-0005fI-GU@xxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:CAF%2BkUQX5mK%3DVStZyu6zfGQj9SE%2BJ4D%3DdHPF6%2Bd-T-5a%2BtZ7XvA@DOMAIN.HIDDEN">CAF+kUQX5mK=VStZyu6zfGQj9SE+J4D=dHPF6+d-T-5a+tZ7XvA@xxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20130317.154441.695066990312419885.shiro@DOMAIN.HIDDEN">20130317.154441.695066990312419885.shiro@xxxxxxxx</a>&gt; &lt;<a href="mailto:CAF%2BkUQX3ghwPo3Jk95Na0zY3kuxtbLQ-RyzZvthYo7Q-soTXyQ@DOMAIN.HIDDEN">CAF+kUQX3ghwPo3Jk95Na0zY3kuxtbLQ-RyzZvthYo7Q-soTXyQ@xxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:E1UHcsS-0001aL-1g@DOMAIN.HIDDEN">E1UHcsS-0001aL-1g@xxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:CAF%2BkUQWcQJOpPdvST04wy8QiiF%2Bw%2B%2BKhPFS33F4UPCU85_2r%3Dg@DOMAIN.HIDDEN">CAF+kUQWcQJOpPdvST04wy8QiiF+w++KhPFS33F4UPCU85_2r=g@xxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:E1UHnQa-0005fI-GU@DOMAIN.HIDDEN">E1UHnQa-0005fI-GU@xxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Reply-to</em>: <a href="mailto:dwheeler@DOMAIN.HIDDEN">dwheeler@xxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Here's an updated BNF to deal with scomments after period.  I've ended up
+adding a whole new production rule to deal with it.  This makes &quot;head&quot; and &quot;rest&quot;
+consistent, it simplifies the other rules, and it'll also make the Scheme implementation easier too.
+
+We need to do this whether or not we allow the &quot;. $&quot; sequence; we can remove &quot;SUBLIST&quot;
+from the post_period production if we want to remove that.
+
+Comments?  Any errors here?  If this seems okay, I'll change the Scheme implementation
+to match, but I'd rather have the BNF right in the first place :-).
+
+(The BNF below is in Java syntax; when it goes into the SRFI it'll get changed to Scheme syntax.)
+
+--- David A. Wheeler
+
+
+==============================================
+
+// Process line after &quot;. hspace+&quot; sequence.  Does not go past current line.
+post_period returns [Object v]
+  : (scomment hspace*)*
+    // NOTE: The SUBLIST and empty branch (alternatives 3 and 4) are
+    // technically ambiguous (SUBLIST is first, so it's resolved first).
+    (pn=n_expr hspace* (scomment hspace*)* (n_expr error)? {$v = $pn.v;}
+     | COLLECTING hspace* pc=collecting_tail hspace*
+       (scomment hspace*)* (n_expr error)? {$v = $pc.v;}
+     | SUBLIST hspace* ps=rest {$v = $ps.v;}
+     | /*empty*/ {$v = list(&quot;.&quot;);} ) ;
+
+
+head returns [Object v]
+  : PERIOD /* Leading &quot;.&quot;: escape following datum like an n-expression. */
+      (hspace+ pp=post_period {$v = list($pp.v);}
+       | /*empty*/    {$v = list(&quot;.&quot;);} )
+...
+
+rest returns [Object v]
+  : PERIOD /* Improper list */
+      (hspace+  pp=post_period {$v = $pp.v;}
+       | /*empty*/   {$v = list(&quot;.&quot;);})
+  | scomment hspace* (sr=rest {$v = $sr.v;} | /*empty*/ {$v = null;} )
+...
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00038" href="msg00038.html">The &quot;. $&quot; notation (was: Re: how useful are collecting lists?)</a></strong>
+<ul><li><em>From:</em> Alan Manuel Gloria</li></ul></li>
+<li><strong><a name="00039" href="msg00039.html">Re: The &quot;. $&quot; notation</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+<li><strong><a name="00040" href="msg00040.html">Re: The &quot;. $&quot; notation</a></strong>
+<ul><li><em>From:</em> Alan Manuel Gloria</li></ul></li>
+<li><strong><a name="00044" href="msg00044.html">Re: The &quot;. $&quot; notation</a></strong>
+<ul><li><em>From:</em> David A. Wheeler</li></ul></li>
+<li><strong><a name="00045" href="msg00045.html">Re: The &quot;. $&quot; notation</a></strong>
+<ul><li><em>From:</em> Alan Manuel Gloria</li></ul></li>
+<li><strong><a name="00047" href="msg00047.html">Handling scomments after &quot;.&quot;</a></strong>
+<ul><li><em>From:</em> David A. Wheeler</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00047.html">Handling scomments after &quot;.&quot;</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00049.html">Re: The &quot;. $&quot; notation</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00047.html">Handling scomments after &quot;.&quot;</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00041.html">Re: The &quot;. $&quot; notation (was: Re: how useful are collecting lists?)</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00048"><strong>Date</strong></a></li>
+<li><a href="threads.html#00048"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

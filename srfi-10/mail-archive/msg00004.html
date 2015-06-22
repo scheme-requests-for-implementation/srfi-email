@@ -1,0 +1,184 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Countering the counter&#45;proposal -->
+<!--X-From-R13: byrtNcbobk.pbz -->
+<!--X-Date: Mon, 4 Oct 1999 15:52:19 &#45;0500 (CDT) -->
+<!--X-Message-Id: 199910042050.UAA19299@fnmoc.navy.mil -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Countering the counter-proposal</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00003.html">Date Prev</a>][<a href="msg00005.html">Date Next</a>][<a href="msg00003.html">Thread Prev</a>][<a href="msg00005.html">Thread Next</a>][<a href="maillist.html#00004">Date Index</a>][<a href="threads.html#00004">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Countering the counter-proposal</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-10@DOMAIN.HIDDEN">srfi-10@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Countering the counter-proposal</li>
+<li><em>From</em>: <a href="mailto:oleg@DOMAIN.HIDDEN">oleg@xxxxxxxxx</a></li>
+<li><em>Date</em>: Mon, 4 Oct 1999 20:50:52 GMT</li>
+<li><em>Reply-to</em>: <a href="mailto:oleg@DOMAIN.HIDDEN">oleg@xxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+&gt; Using `#,' in a program has two effects: it causes side effects to
+&gt; occur at read time and it ensures that a form is evaluated only once.
+&gt; The first has questionable utility and semantics.  The second is
+&gt; already available in R5RS as `delay' and `force'. 
+
+I have come across a counter-example to the last statement.
+
+do ((i 0 (+ 1 i))) ((&gt;= i 5))
+    (let ((b (list (force (delay (begin (display &quot;in form\n&quot;) 1 ))))))
+      (display b) (newline)))
+===&gt;
+in form
+(1)
+in form
+(1)
+in form
+(1)
+in form
+(1)
+in form
+(1)
+
+(include &quot;myenv.scm&quot;)
+(include &quot;read-apply.scm&quot;)
+(define-reader-ctor 'form (lambda () (display &quot;in form\n&quot;) 1)) 
+
+(do ((i 0 (+ 1 i))) ((&gt;= i 5))
+   (let ((b (list #,(form))))
+      (display b) (newline)))
+===&gt;
+in form
+(1)
+(1)
+(1)
+(1)
+(1)
+
+This shows that #,(ctor) has quite a different semantics than (force
+(delay (ctor)). The latter can be evaluated several times if occurs
+within a special form. The #,(ctor) expression is _really_ evaluated
+only once - when it is read. This counter-example appears to
+invalidate the counter-proposal and its discussion.
+
+	It is instructive however to look into differences between
+#,(ctor) and (force (delay (ctor)) further. The former evaluates at
+read-time. By the time compiler/interpreter comes across #,(ctor), the
+latter will be substituted by a _constant_ expression. A special form
+will never see  #,(ctor) as it is -- it will see a constant. In
+contrast, (force (delay (form)) within a special form will appear as
+an expression, which cannot be tested at macro-expansion time, is not
+eligible for const-folding, etc. Sergei Egorov was right that &quot;It's a
+pity that this [counter-proposal] form won't work inside
+quoted constants, though.&quot; I should add that the counter-proposal
+&quot;will not work&quot; within any syntax form (quote being one of them).
+
+
+&gt; I could get the same effect in vanilla R5RS, with much more power
+&gt; and flexibility, by using EVAL and an extensible reader:
+&gt;   (define my-reader (make-reader ...))
+&gt;   (eval (my-reader filename) some-environment)
+
+I would like to dispute this statement as well. The first problem is
+which 'some-environment' do you pass to eval? If it is an
+(scheme-report-environment 5), a form read from the 'filename' may not
+refer to procedures other than those in R5RS. Even if the parent
+program defines a custom constructor for uniform vectors (per SRFI-4),
+the 'filename' may not refer to it as it is not a part of R5RS. If the
+'some-environment' stands for an interaction-environment the parent
+then program tacitly permits the 'filename' to apply any function
+defined in the parent program -- even such dangerous functions as
+OS:system or OS:unlink if the current interaction-environment happens
+to define them. You really don't want to do that. In any case this is
+an &quot;all-or-nothing&quot; proposition. SRFI-10 devotes a special paragraph
+to these issues (see a &quot;Comparisons&quot; subsection). Note R5RS does not
+define any function to manipulate 'eval-environment's.
+
+	Another problem with the eval-solution above is that it
+contains &quot;eval&quot;. SRFI-10 does not require a Scheme reader to perform
+an evaluation of arbitrary expressions. SRFI-10 merely specifies that
+the reader should be able to locate a constructor-procedure and apply
+it to arguments. BTW, nowhere does SRFI-10 tell that the constructor
+is a Scheme function; it can be written in any language as long as the
+reader is able to invoke it passing appropriate parameters. For
+example, one can write a Scheme-&gt;foo _compiler_ in ML and implement
+reader-constructors as ML functions.
+
+	The biggest problem with the above eval-solution  is that it
+assumes that the form read from a file is an expression to be
+evaluated. Suppose the file contains a string
+	&quot;(1 2 #,(f32 1.0 2.0))&quot;
+How can you pass the result of reading of this string to eval? All the
+counter-example discussion tacitly assumes that the form being read is
+a code form. But one can use a 'read' procedure to read arbitrary
+data. For example, one can use read to load &quot;persistent&quot; data; or to
+read information sent over communication channels. It has to be
+stressed that not every Scheme object has a readable representation
+(structures and records spring to mind). Furthermore, not every R5RS
+object can be written (and then reloaded): for example, cyclical lists
+and other data structures with circular dependencies, data structures
+with large caches or memoization tables, etc. SRFI-10 proposes a way
+to define a custom loader -- the only extension to the Scheme reader
+that will be necessary to solve an immense number of problems.
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00005" href="msg00005.html">Re: Countering the counter-proposal</a></strong>
+<ul><li><em>From:</em> Richard Kelsey</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00003.html">Re: a counter proposal</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00005.html">Re: Countering the counter-proposal</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00003.html">Re: a counter proposal</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00005.html">Re: Countering the counter-proposal</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00004"><strong>Date</strong></a></li>
+<li><a href="threads.html#00004"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

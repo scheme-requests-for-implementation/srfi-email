@@ -1,0 +1,273 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: gratuitous optimization and benchmarking -->
+<!--X-From-R13: Xbb QuheyEbb <vavgNvavFrez.pbz> -->
+<!--X-Date: Fri,  7 Apr 2006 12:15:39 +0200 (MST) -->
+<!--X-Message-Id: u4q15hetj.fsf@iniTerm.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: gratuitous optimization and benchmarking</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00020.html">Date Prev</a>][<a href="msg00022.html">Date Next</a>][<a href="msg00016.html">Thread Prev</a>][<a href="msg00022.html">Thread Next</a>][<a href="maillist.html#00021">Date Index</a>][<a href="threads.html#00021">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: gratuitous optimization and benchmarking</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-86@DOMAIN.HIDDEN">srfi-86@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: gratuitous optimization and benchmarking</li>
+<li><em>From</em>: Joo ChurlSoo &lt;<a href="mailto:init@DOMAIN.HIDDEN">init@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: 07 Apr 2006 19:15:20 +0900</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-86@DOMAIN.HIDDEN">srfi-86@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Gnus/5.09 (Gnus v5.9.0) Emacs/21.3</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+ * From: &quot;Taylor R. Campbell&quot; &lt;campbell@xxxxxxxxxx&gt;
+ | Any compiler can optimize a lambda argument to CWV(*), but the key is
+ | that the lambda does not require a run-time, heap-allocated closure.
+ | Joo ChurlSoo's tests here are very skewed in this way, because the
+ | procedure argument to mu procedures must be heap-allocated in the
+ | general case, whereas the arguments to CWV can *always* be optimized
+ | (and stack-allocated, as any other continuations are) even in the
+ | general case.
+
+ | ((*) I find it very bizarre that there is a significant performance
+ | difference between CWV &amp; RECEIVE in Gauche, but that's a topic for a
+ | different conversation.)
+
+ | Soo's benchmarks do not test anything beyond procedure call vs
+ | procedure return, the latter of which often has the overhead for
+ | multiple return values anyway in order to optimize the path for the
+ | single-value case in interpreters.  All of the systems that he tested
+ | except Chez and Scheme48 use completely unoptimized VALUES &amp; CWV
+ | implementations, furthermore.
+
+ | Now let's try a slightly different set of benchmarks.  This new code
+ | elides the superfluous construction of a list, but builds many
+ | closures, which are almost always needed in code that uses multiple
+ | return values, so this benchmark more closely measures the performance
+ | of real code (cough cough cough cough).  I also added another order of
+ | magnitude to the number of iterations in the T tests, because ten
+ | million went by too fast for accurate measurement.  In addition, I ran
+ | the GC before starting the timer in all of the benchmarks.  I'd have
+ | run each test ten or so times and taken the average time, but I got
+ | bored waiting for Scheme48 and Gauche.  I got roughly consistent
+ | answers from T, anyway.
+
+ | All benchmarks were run on a 333 MHz UltraSPARC 5, although the
+ | Scheme systems were all compiled as 32-bit programs.  No other users
+ | on the machine, &amp;c. &amp;c., unless someone snuck on while I wasn't
+ | looking.  I forget how much RAM it has.
+
+        T 3.1 (19)      Scheme48 0.57   Gauche 0.8.6
+ | m        36.91s         184.78s         210.86s
+ | v        10.33s         151.11s          83.33s
+ | mm       51.15s         258.25s         361.96s
+ | vv       12.8s          189.54s         105.47s
+
+ | Each of these tests calls the multiple-value-returning-entity with a
+ | continuation that computes the sum of the iteration number and the
+ | three values returned by the entity.  The procedures m, v, mm, and vv
+ | are identical to the similarly named procedures in Soo's original
+ | code.
+
+ | I'd have tried more Scheme systems, but I don't have access to full
+ | Chez, I can't build RScheme on this machine or figure out how to use
+ | it on another, and unfortunately I can't find any other Scheme that
+ | uses a saner representation of multiple values than a tagged list or
+ | equivalent.  (Eli Barzilay informs me that MzScheme implements
+ | multiple values better than a tagged list, but I wanted to sleep
+ | tonight, so I didn't try to build it and run the tests with it.)
+
+ | I have attached the source code, soo.scm and soo.t, to this message.
+
+ | This goes to show that anyone can make benchmarks that match the
+ | results they want.  I, of course, claim that *my* benchmarks are more
+ | accurate to the truth than the other ones posted here, but YMMV.
+ | Although I, of course, maintain that a proper system for multiple
+ | return values is more efficient than MU &amp; NU, the best conclusion to
+ | draw is probably the absence of one, and I recommend omitting any
+ | mention of performance from the rationale.
+
+On REPL, the same tests are performed after the following are loaded.
+I have neither full Chez nor Gauche. (Intel 586, Debian or Windows)
+
+(define-syntax mu
+  (syntax-rules ()
+    ((mu argument ...) (lambda (f) (f argument ...)))))
+(define-syntax receive
+  (syntax-rules ()
+    ((receive formals expression body ...)
+     (call-with-values (lambda () expression)
+                       (lambda formals body ...)))))
+
+(define m (mu 1 2 3))
+(define v (lambda () (values 1 2 3)))
+(define mm (lambda (x)
+             (if (&lt; x 0)
+                 (mu 1 2 3)
+                 (if (= x 0)
+                     (mu 4 5 6)
+                     (mu 7 8 9)))))
+(define vv (lambda (x)
+             (if (&lt; x 0)
+                 (values 1 2 3)
+                 (if (= x 0)
+                     (values 4 5 6)
+                     (values 7 8 9)))))
+
+(define-syntax dotimes
+  (syntax-rules ()
+    ((dotimes (i count) body0 body1 ...)
+     (let ((%COUNT count))
+       (do ((i 0 (+ i 1)))
+           ((= i %COUNT))
+         body0
+         body1
+         ...)))))
+
+(define (test-m)
+  (dotimes (i 10000000)
+    (m (lambda (x y z)
+         (+ i x y z)))))
+(define (test-v)
+  (dotimes (i 10000000)
+    (receive (x y z) (v)
+      (+ i x y z))))
+(define (test-mm)
+  (dotimes (i 10000000)
+    ((mm i) (lambda (x y z)
+              (+ i x y z)))))
+(define (test-vv)
+  (dotimes (i 10000000)
+    (receive (x y z) (vv i)
+      (+ i x y z))))
+
+
+1.
+Welcome to Scheme 48 1.3 (made by soo on Mon Jul 11 09:51:36     2005)
+Copyright (c) 1993-2005 by Richard Kelsey and Jonathan Rees.
+Please report bugs to scheme-48-bugs@xxxxxxxx
+Get more information at <a  rel="nofollow" href="http://www.s48.org/">http://www.s48.org/</a>.
+Type ,? (comma question-mark) for help.
+&gt; ,time (test-m)
+Run time: 37.96 seconds; Elapsed time: 40.22 seconds
+#t
+&gt; ,time (test-v)
+Run time: 51.44 seconds; Elapsed time: 55.49 seconds
+#t
+&gt; ,time (test-mm)
+Run time: 57.45 seconds; Elapsed time: 59.66 seconds
+#t
+&gt; ,time (test-vv)
+Run time: 66.79 seconds; Elapsed time: 69.29 seconds
+#t
+
+
+2.
+Welcome to MzScheme version 299.100, Copyright (c) 2004-2005 PLT Scheme, Inc.
+&gt; (time (test-m))
+cpu time: 30314 real time: 32607 gc time: 6495
+&gt; (time (test-v))
+cpu time: 53206 real time: 58714 gc time: 20065
+&gt; (time (test-mm))
+cpu time: 41039 real time: 43092 gc time: 6681
+&gt; (time (test-vv))
+cpu time: 62870 real time: 65364 gc time: 20040
+
+
+3.    
+Version 1, Build 66 - linux-unix-gnu-x86
+(c)2000-2004 Felix L. Winkelmann
+Using hygienic macros
+; loading /usr/local/share/chicken/chicken-highlevel-macros.scm ...
+#;13&gt; (time (test-m))
+  127.11 seconds elapsed
+   71.13 seconds in (major) GC
+       1 mutations
+      50 minor GCs
+    4169 major GCs
+#;14&gt; (time (test-v))
+  163.51 seconds elapsed
+    92.9 seconds in (major) GC
+       1 mutations
+      55 minor GCs
+    5306 major GCs
+#;15&gt; (time (test-mm))
+  211.26 seconds elapsed
+  126.54 seconds in (major) GC
+       1 mutations
+      37 minor GCs
+    7387 major GCs
+#;16&gt; (time (test-vv))
+  225.75 seconds elapsed
+  131.63 seconds in (major) GC
+       1 mutations
+      23 minor GCs
+    7687 major GCs
+
+    
+I wonder why my results are different from yours.
+
+
+-- 
+Joo ChurlSoo
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00022" href="msg00022.html">Re: gratuitous optimization and benchmarking</a></strong>
+<ul><li><em>From:</em> Taylor R. Campbell</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00020.html">gratuitous optimization and benchmarking [was Re: Request for Clarification on Rationale]</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00022.html">Re: gratuitous optimization and benchmarking</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00016.html">Re: Cut and the operators mu and nu</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00022.html">Re: gratuitous optimization and benchmarking</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00021"><strong>Date</strong></a></li>
+<li><a href="threads.html#00021"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

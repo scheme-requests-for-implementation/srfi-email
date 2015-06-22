@@ -1,0 +1,181 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: [srfi&#45;70] Limit -->
+<!--X-From-R13: Eronfgvna Stare <fronfgvna.rtareNcuvyvcf.pbz> -->
+<!--X-Date: Tue, 24 May 2005 11:01:50 +0200 (DFT) -->
+<!--X-Message-Id: OFA5592D77.3E0BC9AC&#45;ONC125700B.0027ECBB&#45;C125700B.003198FD@philips.com -->
+<!--X-Content-Type: multipart/alternative -->
+<!--X-Reference: 8iaNb.A.o7E.q0hkCB@rotkohl -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: [srfi-70] Limit</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00028.html">Date Prev</a>][<a href="msg00030.html">Date Next</a>][<a href="msg00030.html">Thread Prev</a>][<a href="msg00031.html">Thread Next</a>][<a href="maillist.html#00029">Date Index</a>][<a href="threads.html#00029">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: [srfi-70] Limit</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-70@DOMAIN.HIDDEN">srfi-70@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: [srfi-70] Limit</li>
+<li><em>From</em>: Sebastian Egner &lt;<a href="mailto:sebastian.egner@DOMAIN.HIDDEN">sebastian.egner@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 24 May 2005 11:00:58 +0200</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-70@DOMAIN.HIDDEN">srfi-70@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:8iaNb.A.o7E.q0hkCB@DOMAIN.HIDDEN">8iaNb.A.o7E.q0hkCB@rotkohl</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+
+<br><font size=2><tt>Jens Axel S&#xF8;gaard wrote:</tt></font>
+<br><font size=2><tt>&gt; The draft says<br>
+&gt; <br>
+&gt; &nbsp; &nbsp;Function: limit proc z1 z2<br>
+&gt; &nbsp; &nbsp;Function: limit proc -1/0<br>
+&gt; &nbsp; &nbsp;Function: limit proc 1/0<br>
+&gt; <br>
+&gt; &nbsp; &nbsp; &nbsp;Proc must be a procedure taking a single inexact
+argument.<br>
+&gt; <br>
+&gt; &nbsp; &nbsp; &nbsp;Limit computes the mathematical limit of proc
+as its argument<br>
+&gt; &nbsp; &nbsp; &nbsp;approaches z1 from z1 + z2. Limit returns a complex
+number or<br>
+&gt; &nbsp; &nbsp; &nbsp;real infinity if the limit exists; and `#f' otherwise.<br>
+&gt;<br>
+&gt; Is this well defined?<br>
+</tt></font>
+<br><font size=2 face="sans-serif">No, of course it is not.</font>
+<br>
+<br><font size=2 face="sans-serif">It is another smoke screen of the &quot;wish
+it were so&quot; type related to floating point</font>
+<br><font size=2 face="sans-serif">representations of rational numbers.</font>
+<br>
+<br><font size=2 face="sans-serif">It might be amusing to see what an implementation
+of LIMIT makes of</font>
+<br><font size=2 face="sans-serif">the usual suspects. I tried some in
+the reference implementation (after</font>
+<br><font size=2 face="sans-serif">killing the infinite loop for almost-zero
+in sequence-&gt;limit and replacing</font>
+<br><font size=2 face="sans-serif">the not-yet-introduced syntax &quot;1/0&quot;
+by +inf.0 using PLT.) Examples:</font>
+<br>
+<br><font size=2 face="sans-serif">1. The &quot;mathematical limit&quot;
+for f(x) = sin(x)/x for x -&gt; 1 exists. It is equal to 1,</font>
+<br><font size=2 face="sans-serif">as can be shown by applying l'Hospital's
+Theorem once.</font>
+<br>
+<br><font size=2 face="sans-serif">In the program:</font>
+<br>
+<br><font size=2 face="sans-serif">&nbsp; &nbsp; &nbsp; &nbsp; (limit
+(lambda (x) (/ (sin x) x)) 0 1) =&gt; &quot;division by zero&quot;</font>
+<br>
+<br><font size=2 face="sans-serif">(As sin(x)/x is the Fourier-transform
+of a rectangle this function does actually</font>
+<br><font size=2 face="sans-serif">crop up in practice; it is usually coded
+to catch the &quot;small |x|&quot; case explicitly.)</font>
+<br>
+<br><font size=2 face="sans-serif">2. The function f(x) = sin(c/x) for
+some constant c &gt; 0 has no limit for x -&gt; 0.</font>
+<br><font size=2 face="sans-serif">It comes arbitrarily close to each point
+in {(0, y) : -1 &lt;= y &lt;= 1}. </font>
+<br>
+<br><font size=2 face="sans-serif">With the program you can select your
+favorite limiting value by varying c:</font>
+<br>
+<br><font size=2 face="sans-serif">&nbsp; &nbsp; &nbsp; &nbsp; (limit
+(lambda (x) (sin (/ 1.0 x))) 0 1) =&gt; #f &nbsp; &nbsp; &nbsp; &nbsp;
+&nbsp; &nbsp; &nbsp; &nbsp;; according to spec</font>
+<br><font size=2 face="sans-serif">&nbsp; &nbsp; &nbsp; &nbsp; (limit
+(lambda (x) (sin (/ 0.2 x))) 0 1) =&gt; 1/0</font>
+<br><font size=2 face="sans-serif">&nbsp; &nbsp; &nbsp; &nbsp; (limit
+(lambda (x) (sin (/ 0.3 x))) 0 1) =&gt; -1/0</font>
+<br>
+<br>
+<br><font size=2 face="sans-serif">But seriously... The problem with LIMIT
+is that it tries to solve an unsolvable</font>
+<br><font size=2 face="sans-serif">problem. There is no &quot;finite-precision
+version&quot; of taking general limits. For</font>
+<br><font size=2 face="sans-serif">certain types of limits, e.g. integrals,
+there is a theory what you get and how</font>
+<br><font size=2 face="sans-serif">useful that might be. These computations
+are usually not limits of simple </font>
+<br><font size=2 face="sans-serif">sequences but some sort of infinite
+summation with known convergence</font>
+<br><font size=2 face="sans-serif">properties (e.g. all the standard transcendental
+functions, exp/log/sin/cos etc.)</font>
+<br>
+<br><font size=2 face="sans-serif">A general LIMIT procedure on the other
+hand can only be specified as &quot;returns</font>
+<br><font size=2 face="sans-serif">what the reference implementation computes.&quot;
+Unless you want to redefine the</font>
+<br><font size=2 face="sans-serif">meaning of &quot;mathematical limit&quot;,
+which might be exceptionally controversal.</font>
+<br>
+<br><font size=2 face="sans-serif">What I said until now is just the famous
+&quot;It might work in practice, but it will</font>
+<br><font size=2 face="sans-serif">never work in theory.&quot; Now my real
+problem is that I missed which important</font>
+<br><font size=2 face="sans-serif">problem the LIMIT procedure solves (satisfactorily
+or not) in Scheme.</font>
+<br>
+<br><font size=2 face="sans-serif">Cetero censeo... </font>
+<br><font size=2 face="sans-serif">1. Make sure the language does have
+arbitary rational numbers.</font>
+<br><font size=2 face="sans-serif">2. Get rid of &quot;inexact numbers.&quot;</font>
+<br><font size=2 face="sans-serif">3. Define separate industrial-strength
+floating point libraries.</font>
+<br>
+<br><font size=2 face="sans-serif">Sebastian.</font>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00031" href="msg00031.html">Re: [srfi-70] Limit</a></strong>
+<ul><li><em>From:</em> Aubrey Jaffer</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00028.html">Re: My suggestions to the R6RS committee about numerics</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00030.html">infinities reformulated [was Re: My ideas about infinity in Scheme (revised)]</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00030.html">infinities reformulated [was Re: My ideas about infinity in Scheme (revised)]</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00031.html">Re: [srfi-70] Limit</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00029"><strong>Date</strong></a></li>
+<li><a href="threads.html#00029"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

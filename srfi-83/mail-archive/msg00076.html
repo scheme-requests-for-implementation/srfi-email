@@ -1,0 +1,154 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: A portable implementation -->
+<!--X-From-R13: Oaqer ina Fbaqre <naqerNyngre.urg.oebja.rqh> -->
+<!--X-Date: Tue,  6 Dec 2005 19:11:42 +0100 (CET) -->
+<!--X-Message-Id: 200512061811.jB6IBWjA001458@later.het.brown.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>A portable implementation</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00075.html">Date Prev</a>][<a href="msg00077.html">Date Next</a>][<a href="msg00059.html">Thread Prev</a>][<a href="msg00080.html">Thread Next</a>][<a href="maillist.html#00076">Date Index</a>][<a href="threads.html#00076">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>A portable implementation</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-83@DOMAIN.HIDDEN">srfi-83@xxxxxxxxxxxxxxxxx</a>, <a href="mailto:mflatt@DOMAIN.HIDDEN">mflatt@xxxxxxxxxxx</a></li>
+<li><em>Subject</em>: A portable implementation</li>
+<li><em>From</em>: Andre van Tonder &lt;<a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 6 Dec 2005 13:11:32 -0500 (EST)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-83@DOMAIN.HIDDEN">srfi-83@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Reply-to</em>: Andre van Tonder &lt;<a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>I have completed a portable implementation of SRFI-83.  This
+implementation is fully integrated with my portable SRFI-72 macro
+expander.  
+
+It can be found at:
+
+  <a  rel="nofollow" href="http://www.het.brown.edu/people/andre/macros/index.htm">http://www.het.brown.edu/people/andre/macros/index.htm</a>
+  
+and will be updated, time permitting, as SRFI-83 evolves.
+
+The semantics is as in SRFI-83, but has been extended to
+allow import into higher phases (as is need when let-syntax
+is nested).
+
+Example:
+
+  (library &quot;m&quot; &quot;scheme://r6rs&quot;
+    (export z)
+    (define z 1))
+  
+  (import (for &quot;m&quot; run expand 2))  ; also (import (for &quot;m&quot; 0 1 2 ...))
+  
+  (let-syntax ((foo (lambda (form)
+                      (let-syntax ((bar (lambda (form)
+                                          (quasisyntax
+                                           (quasisyntax (list z ,z ,,z))))))
+                        (bar)))))
+    (foo))   
+               ;==&gt; (1 1 1)
+
+
+The import syntax is:
+
+  (for &lt;import-set&gt; &lt;import-phase&gt;*)
+
+where
+
+  &lt;import-phase&gt; ::= run | expand | all | 0 | 1 | 2 | ...
+
+Here 0 == run, 1 == expand, and |all| wil cause import into
+all phases, which is implicitly done with the &lt;language&gt;.
+See the link for many commented examples of use.
+
+The semantics is as follows:
+
+To invoke a library at phase N:
+
+   * Invoke at phase N any library that is imported by this library
+     for run time, and that is not yet invoked at phase N. 
+   * Evaluate all variable definitions and top-level expressions within
+     the library. (Macro definitions are not evaluated.)
+
+To visit a library at phase N:
+
+   * For each k &gt;= 1, invoke at phase N+k any library that is imported
+     by this library for .... (phase k), and that is not yet invoked at
+     phase N+k.
+   * For each k &gt;= 0, visit at phase N+k any library that is imported by
+     this library for .... (phase k), and that is not yet visited at phase
+     N+k.
+   * Evaluate all syntax definitions within the library.
+     (Top-level expressions are not evaluated, and the right-hand sides
+     of variable definitions are not evaluated.)
+
+Technical remarks:
+------------------
+
+* We do not enforce the no-shadowing and no-multiple-import
+  constraints.
+* We allow different bindings for the same identifier to be
+  imported into different phases.
+ 
+See the link for further description and commented examples.
+
+Regards
+Andre
+
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00075.html">Re: Independent optimizing compilation</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00077.html">Re: fundamental design issues (long message)</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00059.html">Re: fundamental design issues (long message) [files]</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00080.html">Reference implementation available?</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00076"><strong>Date</strong></a></li>
+<li><a href="threads.html#00076"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,141 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Why vectors? -->
+<!--X-From-R13: Bre Pbguare <creNobguare.pbz> -->
+<!--X-Date: Wed, 13 Aug 2008 09:36:23 +0200 (MST) -->
+<!--X-Message-Id: 48A28EC1.3090005@bothner.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 1218433189.7249.107.camel@eep -->
+<!--X-Reference: Pine.SOC.4.64.0808110850160.3030@oow.het.brown.edu -->
+<!--X-Reference: 1218491920.31048.174.camel@eep -->
+<!--X-Reference: Pine.LNX.4.61.0808111530180.17650@tesseract.thetesseract.org -->
+<!--X-Reference: 48A139DC.90803@bothner.com -->
+<!--X-Reference: Pine.LNX.4.61.0808121923200.7407@tesseract.thetesseract.org -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Why vectors?</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00043.html">Date Prev</a>][<a href="msg00045.html">Date Next</a>][<a href="msg00041.html">Thread Prev</a>][<a href="msg00008.html">Thread Next</a>][<a href="maillist.html#00044">Date Index</a>][<a href="threads.html#00044">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Why vectors?</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Elf &lt;<a href="mailto:elf@DOMAIN.HIDDEN">elf@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Why vectors?</li>
+<li><em>From</em>: Per Bothner &lt;<a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 13 Aug 2008 09:35:29 +0200</li>
+<li><em>Cc</em>: <a href="mailto:srfi-99@DOMAIN.HIDDEN">srfi-99@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-99@DOMAIN.HIDDEN">srfi-99@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:Pine.LNX.4.61.0808121923200.7407@DOMAIN.HIDDEN">Pine.LNX.4.61.0808121923200.7407@xxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:1218433189.7249.107.camel@DOMAIN.HIDDEN"><a href="msg00007.html">1218433189.7249.107.camel@eep</a></a>&gt;  &lt;<a href="mailto:Pine.SOC.4.64.0808110850160.3030@DOMAIN.HIDDEN">Pine.SOC.4.64.0808110850160.3030@xxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:1218491920.31048.174.camel@DOMAIN.HIDDEN"><a href="msg00018.html">1218491920.31048.174.camel@eep</a></a>&gt; &lt;<a href="mailto:Pine.LNX.4.61.0808111530180.17650@DOMAIN.HIDDEN">Pine.LNX.4.61.0808111530180.17650@xxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:48A139DC.90803@DOMAIN.HIDDEN">48A139DC.90803@xxxxxxxxxxx</a>&gt; &lt;<a href="mailto:Pine.LNX.4.61.0808121923200.7407@DOMAIN.HIDDEN">Pine.LNX.4.61.0808121923200.7407@xxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Thunderbird 2.0.0.16 (X11/20080723)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+Elf wrote:
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+On Tue, 12 Aug 2008, Per Bothner wrote:
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Elf wrote:
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+creation of a new fixed-length vector is O(1).
+</pre></blockquote><pre style="margin: 0em;">
+
+To be nit-picky: I don't see how that is possible.
+After all, the member for the vector does at least
+have to br zeroed out.
+
+Of course the constant factor is usually very low.
+
+</pre></blockquote><pre style="margin: 0em;">
+
+</pre><tt>it doesnt have to be zeroed if the gc sets everything to the undefined 
+</tt><tt>value
+</tt><tt>when dead.  vectors dont autoinitialise to zero, the initialise to 
+</tt><tt>undefined,
+</tt><tt>so its just a matter of creating a single header on top of sufficient 
+</tt><tt>space.
+</tt></blockquote><pre style="margin: 0em;">
+
+Whether an element is set to &quot;zero&quot; or &quot;the undefined value&quot; it
+takes just as long.  Whether this is done when allocating the
+object, or when collecting whatever was previously there - it
+still has to be done, and it's still O(N).  And you can't reuse
+whatever junk happens to be in those memory cells, since that
+would confuse the gc.
+
+Imagine allocating an array of a million elements, and you need to
+get fresh pages from the OS.  The OS will have zero'd out those
+pages (at least a modern desktop or server OS), for safety reasons.
+And doing so is proportional to the size of the vector.
+--
+	--Per Bothner
+per@xxxxxxxxxxx   <a  rel="nofollow" href="http://per.bothner.com/">http://per.bothner.com/</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00007" href="msg00007.html">Why vectors?</a></strong>
+<ul><li><em>From:</em> Derick Eddington</li></ul></li>
+<li><strong><a name="00015" href="msg00015.html">Re: Why vectors?</a></strong>
+<ul><li><em>From:</em> Physics</li></ul></li>
+<li><strong><a name="00018" href="msg00018.html">Re: Why vectors?</a></strong>
+<ul><li><em>From:</em> Derick Eddington</li></ul></li>
+<li><strong><a name="00021" href="msg00021.html">Re: Why vectors?</a></strong>
+<ul><li><em>From:</em> Elf</li></ul></li>
+<li><strong><a name="00033" href="msg00033.html">Re: Why vectors?</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+<li><strong><a name="00041" href="msg00041.html">Re: Why vectors?</a></strong>
+<ul><li><em>From:</em> Elf</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00043.html">Re: Two suggestions about record identity</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00045.html">ANN: Implementation of draft for Gambit</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00041.html">Re: Why vectors?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00008.html">Clarify mutability of all define-record-type &lt;field spec&gt;</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00044"><strong>Date</strong></a></li>
+<li><a href="threads.html#00044"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,241 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: comparison operators and *typos -->
+<!--X-From-R13: "Qubatxnv Luh" <zngurzngvpnNpvgvm.arg> -->
+<!--X-Date: Mon, 20 Jun 2005 06:48:54 +0200 (DFT) -->
+<!--X-Message-Id: 20050620044846.C585D1334@mx4.informatik.uni&#45;tuebingen.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: comparison operators and *typos</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00000.html">Date Prev</a>][<a href="msg00002.html">Date Next</a>][<a href="msg00000.html">Thread Prev</a>][<a href="msg00002.html">Thread Next</a>][<a href="maillist.html#00001">Date Index</a>][<a href="threads.html#00001">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: comparison operators and *typos</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &quot;Aubrey Jaffer&quot; &lt;<a href="mailto:agj@DOMAIN.HIDDEN">agj@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: comparison operators and *typos</li>
+<li><em>From</em>: &quot;Chongkai Zhu&quot; &lt;<a href="mailto:mathematica@DOMAIN.HIDDEN">mathematica@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 20 Jun 2005 12:48:21 +0800</li>
+<li><em>Cc</em>: &quot;<a href="mailto:srfi-73@DOMAIN.HIDDEN">srfi-73@xxxxxxxxxxxxxxxxx</a>&quot; &lt;<a href="mailto:srfi-73@DOMAIN.HIDDEN">srfi-73@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-73@DOMAIN.HIDDEN">srfi-73@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>======= At 2005-06-20, 10:06:21 Aubrey Jaffer wrote: =======
+
+&gt; | procedure: = z1 z2 z3 ...
+&gt; | procedure: &lt; x1 x2 x3 ...
+&gt; | procedure: &gt; x1 x2 x3 ...
+&gt; | procedure: &lt;= x1 x2 x3 ...
+&gt; | procedure: &gt;= x1 x2 x3 ...
+&gt; |     These procedures return #t if their arguments are (respectively):
+&gt; |     equal, monotonically increasing, monotonically decreasing,
+&gt; |     monotonically nondecreasing, or monotonically nonincreasing.
+&gt; | 
+&gt; | ...
+&gt; | (= 0 -0)                        ==&gt;  #t
+&gt; | 
+&gt; |     For any finite positive number x:
+&gt; | 
+&gt; | (&lt; #e-1/0 -x -0 0 x 1/0))       ==&gt;  #t
+&gt; | 
+&gt; |     These predicates are required to be transitive.
+&gt;
+&gt;A sequence cannot be both equal and monotonically increasing.
+&gt;(= -0 0) conflicts with (&lt; -0 0).
+&gt;
+
+My fault. (= -0 0) should be #f.
+
+&gt; | library procedure: infinite? z
+&gt;
+&gt;&quot;Infinite&quot; means not finite.  R5RS has `ZERO?' but not `NONZERO?';
+&gt;`POSITIVE?', but not `NONPOSITIVE?'; `NEGATIVE?' but not `NONNEGATIVE?'
+&gt;`FINITE?' is more in keeping with R5RS procedure names.
+
+The reason I define &quot;infinite?&quot; instead of &quot;finite?&quot; is that:
+
+(cond ((infinite? x) ...)
+      ((zero? x) ...)
+      ...)
+
+As I understand the problem, we always use a predicator to select a 
+minority (with some single character) (instead of a big part that can 
+be further divided) form the whole.
+
+&gt;
+&gt; | library procedure: zero? z
+&gt; | library procedure: positive? x
+&gt; | library procedure: negative? x
+&gt; | library procedure: odd? n
+&gt; | library procedure: even? n
+&gt; |     These numerical predicates test a number for a particular
+&gt; |     property, returning #t or #f. See note above.
+&gt; | 
+&gt; | (positive? #e1/0)             ==&gt;  #t
+&gt; | (negative? #e-1/0)            ==&gt;  #t
+&gt; | (infinite? #e-1/0)            ==&gt;  #t
+&gt; | (infinite? #e0/0)             ==&gt;  #t
+&gt; | (positive? 0)                 ==&gt;  #f
+&gt; | (negative? -0)                ==&gt;  #f
+&gt;
+&gt;What does (zero? -0) return?
+&gt;
+&gt;If (negative? -0) returns #f, and (= -0 0) returns #t, how does one
+&gt;test for `-0'?
+
+(zero? -0) ==&gt; #t
+
+&gt;
+&gt; | procedure: numerator q
+&gt; | procedure: denominator q
+&gt; |     These procedures return the numerator or denominator of their
+&gt; |     argument; the result is computed as if the argument was
+&gt; |     represented as a fraction in lowest terms.  The denominator is
+&gt; |     always positive or zero.  The denominator of 0 is defined to be
+&gt; |     1.
+&gt; | 
+&gt; | (numerator (/ 6 4))                    ==&gt;  3
+&gt; | (denominator (/ 6 4))                  ==&gt;  2
+&gt; | (denominator
+&gt; |   (exact-&gt;inexact (/ 6 4)))            ==&gt; 2.0
+&gt; | 
+&gt;*| (denominator #e1/0)                    ==&gt;  1
+&gt;*| (denominator #e-1/0)                   ==&gt;  -1
+&gt;*| (numerator #e1/0)                      ==&gt;  0
+&gt;*| (numerator #e-1/0)                     ==&gt;  0
+&gt;
+&gt;*Should numerator and denominator be swapped in the last 4 lines?
+
+Yes. My fault.
+
+&gt;
+&gt;What does (exact? -0) return?
+&gt;What does (integer? -0) return?
+&gt;What does (rational? -0) return?
+&gt;What does (numerator -0) return?
+&gt;What does (denominator -0) return?
+&gt;
+&gt;What does (floor -0) return?
+&gt;What does (ceiling -0) return?
+&gt;
+&gt;What does (* -0 -0) return?
+&gt;What does (sqrt 0) return?
+
+Please see the implementation.
+
+&gt;
+&gt; | procedure: - z1 z2
+&gt; | procedure: - z
+&gt; | optional procedure: - z1 z2 ...
+&gt; | procedure: / z1 z2
+&gt; | procedure: / z
+&gt; | optional procedure: / z1 z2 ...
+&gt; |     With one argument, these procedures return the additive or
+&gt; |     multiplicative inverse of their argument.
+&gt; | 
+&gt; |     With two or more arguments:
+&gt; | 
+&gt; |     (- z1 . z2)   =&gt;   (apply + z1 (map - z2))
+&gt; |     (/ z1 . z2)   =&gt;   (apply * z1 (map / z2))
+&gt; | 
+&gt; | (- 0)                                  ==&gt;  -0
+&gt; | (- -0)                                 ==&gt;  0
+&gt; | (- #e1/0)                              ==&gt;  #e-1/0
+&gt; | (- #-e1/0)                             ==&gt;  #e1/0
+&gt; | (- 3)                                  ==&gt;  -3
+&gt; | 
+&gt; | (/ 0)                                  ==&gt;  #e1/0
+&gt; | (/ -0)                                 ==&gt;  #e-1/0
+&gt;*| (/ #e1/0)                              ==&gt;  #0
+&gt;*| (/ #e-1/0)                             ==&gt;  #-0
+&gt; | (/ 3)                                  ==&gt;  1/3
+&gt;
+&gt;*Should `==&gt;  #' be replaced with `==&gt;  #e'?
+
+Typo.
+
+(/ #e1/0)                              ==&gt;  0
+(/ #e-1/0)                             ==&gt;  -0
+
+&gt;
+&gt; | Implementation
+&gt; | 
+&gt; | Here is my implementation, which is based on a Scheme implementation
+&gt; | that supports arbitrary-big integer arithmetic as well as exact
+&gt; | rational number computation.  To avoid confusion with identifies in
+&gt; | base-Scheme, all procedures defined in this SRFI (except infinite?)
+&gt; | and prefixed with &quot;my&quot; or &quot;my-&quot;.  This reference implementation also
+&gt; | requires SRFI-9, SRFI-13, SRFI-16, and SRFI-23.
+&gt; | 
+&gt; | (separate file attached)
+&gt;
+&gt;There is no link to the implementation file.
+&gt;
+
+It is at <a  rel="nofollow" href="http://srfi.schemers.org/srfi-73/exact.scm">http://srfi.schemers.org/srfi-73/exact.scm</a> 
+
+Sorry that I have made so many typos. A revised verions has been send to 
+Mike Sperber.
+
+
+-
+Chongkai Zhu
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00002" href="msg00002.html">Re: comparison operators and *typos</a></strong>
+<ul><li><em>From:</em> Aubrey Jaffer</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00000.html">comparison operators and *typos</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00002.html">Re: comparison operators and *typos</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00000.html">comparison operators and *typos</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00002.html">Re: comparison operators and *typos</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00001"><strong>Date</strong></a></li>
+<li><a href="threads.html#00001"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

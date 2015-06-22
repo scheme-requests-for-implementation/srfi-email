@@ -1,0 +1,170 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: let&#45;fluid problem -->
+<!--X-From-R13: Znef Fubznf Vnafra <yguNppf.arh.rqh> -->
+<!--X-Date: Tue, 16 Nov 1999 12:57:11 &#45;0600 (CST) -->
+<!--X-Message-Id: 199911161857.NAA16765@canopus.ccs.neu.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: m2vh72tkm0.fsf@magnus.bothner.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: let-fluid problem</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00005.html">Date Prev</a>][<a href="msg00007.html">Date Next</a>][<a href="msg00005.html">Thread Prev</a>][<a href="msg00002.html">Thread Next</a>][<a href="maillist.html#00006">Date Index</a>][<a href="threads.html#00006">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: let-fluid problem</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Per Bothner &lt;<a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: let-fluid problem</li>
+<li><em>From</em>: Lars Thomas Hansen &lt;<a href="mailto:lth@DOMAIN.HIDDEN">lth@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 16 Nov 1999 13:57:09 -0500</li>
+<li><em>Cc</em>: Lars Thomas Hansen &lt;<a href="mailto:lth@DOMAIN.HIDDEN">lth@xxxxxxxxxxx</a>&gt;, <a href="mailto:srfi-15@DOMAIN.HIDDEN">srfi-15@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: Your message of &quot;16 Nov 1999 09:24:55 PST.&quot;             &lt;<a href="mailto:m2vh72tkm0.fsf@DOMAIN.HIDDEN">m2vh72tkm0.fsf@xxxxxxxxxxxxxxxxxx</a>&gt; </li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+&gt;I like fluid-let.  My claim is that fluid-let is more powerful and
+&gt;more general than suggested by the srfi-15 specification.  The
+&gt;question is: Do we want to specify fluid-let in a way that does not
+&gt;work (or at least does not seem very appropriate) in the precense of
+&gt;threads, or do we want a different specification?  I proposed a
+&gt;different specification.
+
+I misunderstood your previous message.
+
+&gt;Specifically, can an implementation that follows the model I proposed
+&gt;(for example Kawa) claim to be consistent with this srfi or not?
+&gt;(Does it matter that Kawa does not yet implement full call/cc, and
+&gt;when/if it does, will probably not do so by default?)
+
+For reference, your proposal is:
+
+&gt;(see <a  rel="nofollow" href="http://sourceware.cygnus.com/ml/guile/1999-03/msg00023.html">http://sourceware.cygnus.com/ml/guile/1999-03/msg00023.html</a>):
+&gt;
+&gt;  Each thread has an association list of fluid bindings.
+&gt;  When fluid-let is evaluated, it conses up a new association to the
+&gt;  front of the list.  That becomes the current fluid binding
+&gt;  association list while the body of the fluid-let is evaluated.
+&gt;  The old list is restored when the fluid-let finishes.
+&gt;  (This can be implemented with the appropriate dynamic-wind.)
+&gt;  When a new thread is created, it initializes its fluid
+&gt;  binding list with the *current* list from the parent thread.
+&gt;  Thus all bindings are initially shared.  When a non-local
+&gt;  variable is evaluated, the evaluator searches the current thread's
+&gt;  fluid binding list, and finds the first binding for the given name.
+&gt;  If none, is found, the global binding is returned.
+&gt;  When a set! is evaluated, it also searches the fluid bindigs list
+&gt;  of the current thread, and modifies the first association whose
+&gt;  name matches.  If there is none, the global binding is modified.
+
+One difference is that the SRFI will work also on lexically visible
+variables whereas your spec implies that references and assignments to
+lexically visible variables are not subject to the lookup mechanism
+(taking &quot;non-local&quot; to mean &quot;global&quot; in your spec).
+
+Were you to modify your spec, simple analysis would be sufficient to
+avoid doing the search for any other lexical variables than the ones
+fluidly bound (almost none) but that kind of analysis would be outside
+the capability of most interpreters.
+
+I could modify the SRFI to exclude lexically visible variables, at
+the cost of precluding a portable implementation, but I'd prefer to
+keep that capability.
+
+For global variables (not shadowed), and with a single thread, I think
+the SRFI and your spec have the same behavior.  I think that is also
+true for call/cc based threads.
+
+As to whether the SRFI is inappropriate for real threads.  What you are
+getting at, presumably, is a situation like:
+
+	(define x 10)
+	(spawn (lambda () 
+		 (fluid-let ((x 20))
+		   ...)))
+	(spawn (lambda ()
+		 (fluid-let ((x 30))
+		   ...)))
+	(define y x)
+
+and the question is, if fluid-let is defined in terms of overriding
+variables in a dynamic scope, what value does y have when x is
+simultaneously overridden in several scopes?  We'd like to ensure that
+y=10.
+
+For call/cc threads this is easy, and the SRFI is unambiguous: the right
+thing happens.  For real threads the issue is thornier because the SRFI
+does not talk about control being in more than one dynamic scope at a
+time (nor does Scheme have such a notion).
+
+I propose that we add the following language to the SRFI:
+
+	In the event that the program executes in several dynamic
+	scopes simultaneously (as in a parallel system), then no use
+	of FLUID-LET to override a variable in one scope may affect the
+	value of that variable as observed from a different scope.
+
+That allows techniques like deep binding (modulo the issue of lexical
+variables) and it may allow others.
+
+What do you think?
+
+--lars
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00005" href="msg00005.html">Re: let-fluid problem</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00005.html">Re: let-fluid problem</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00007.html">Re: let-fluid problem</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00005.html">Re: let-fluid problem</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00002.html">Re: let-fluid problem</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00006"><strong>Date</strong></a></li>
+<li><a href="threads.html#00006"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

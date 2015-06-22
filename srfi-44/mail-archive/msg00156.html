@@ -1,0 +1,320 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Interface view of dictionaries -->
+<!--X-From-R13: orne <orneNfbavp.arg> -->
+<!--X-Date: Sun, 26 Oct 2003 08:47:15 +0100 (NFT) -->
+<!--X-Message-Id: Pine.LNX.4.58.0310252357380.3604@bolt.sonic.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20031021004429.GE4433@ogre.szonye.com -->
+<!--X-Reference: 20031021011250.GA26398@loki.vpn.szonye.com -->
+<!--X-Reference: 20031021072047.GB26398@loki.vpn.szonye.com -->
+<!--X-Reference: 20031023010959.GA20350@freenetproject.org -->
+<!--X-Reference: 20031023020257.GA6989@loki.vpn.szonye.com -->
+<!--X-Reference: 20031023024351.GA21257@freenetproject.org -->
+<!--X-Reference: 20031023033542.GB6989@loki.vpn.szonye.com -->
+<!--X-Reference: 20031025035254.GB26663@freenetproject.org -->
+<!--X-Reference: 20031025165854.GA18773@loki.vpn.szonye.com -->
+<!--X-Reference: Pine.LNX.4.58.0310251010190.5625@bolt.sonic.net -->
+<!--X-Reference: 20031026042704.GA22624@freenetproject.org -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Interface view of dictionaries</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00155.html">Date Prev</a>][<a href="msg00157.html">Date Next</a>][<a href="msg00243.html">Thread Prev</a>][<a href="msg00158.html">Thread Next</a>][<a href="maillist.html#00156">Date Index</a>][<a href="threads.html#00156">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Interface view of dictionaries</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:scgmille@DOMAIN.HIDDEN">scgmille@xxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Interface view of dictionaries</li>
+<li><em>From</em>: bear &lt;<a href="mailto:bear@DOMAIN.HIDDEN">bear@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 26 Oct 2003 00:47:04 -0700 (PDT)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20031026042704.GA22624@DOMAIN.HIDDEN">20031026042704.GA22624@xxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:20031021004429.GE4433@DOMAIN.HIDDEN">20031021004429.GE4433@xxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20031021011250.GA26398@DOMAIN.HIDDEN">20031021011250.GA26398@xxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20031021072047.GB26398@DOMAIN.HIDDEN">20031021072047.GB26398@xxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20031023010959.GA20350@DOMAIN.HIDDEN">20031023010959.GA20350@xxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20031023020257.GA6989@DOMAIN.HIDDEN">20031023020257.GA6989@xxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20031023024351.GA21257@DOMAIN.HIDDEN">20031023024351.GA21257@xxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20031023033542.GB6989@DOMAIN.HIDDEN">20031023033542.GB6989@xxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20031025035254.GB26663@DOMAIN.HIDDEN">20031025035254.GB26663@xxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20031025165854.GA18773@DOMAIN.HIDDEN">20031025165854.GA18773@xxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:Pine.LNX.4.58.0310251010190.5625@DOMAIN.HIDDEN">Pine.LNX.4.58.0310251010190.5625@xxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20031026042704.GA22624@DOMAIN.HIDDEN">20031026042704.GA22624@xxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+On Sat, 25 Oct 2003 scgmille@xxxxxxxxxxxxxxxxxx wrote:
+
+&gt;Lets examine your proposed API for dictionaries, and contrast it with
+&gt;SRFI-44.
+
+&gt;&gt; (*-fetch-deleting! dict key)
+&gt;[A]
+&gt;(define (*-fetch-deleting! dict key)
+&gt;  (let ([rv (*-get dict key)])
+&gt;    (*-remove! dict key)
+&gt;    rv))
+
+problem:  This definition is going to duplicate the effort of
+looking up the key.  For most dictionaries, it's going to be
+more efficient to provide a direct implementation in terms of
+the internal structures you're trying to abstract.  The
+fetch-deleting! forms allow such more efficient implementations
+to exist.  Trying to duplicate them with externally-defined
+functions, as above, will work, but it is clumsy and will, for
+most dictionary structures, slow the code down.
+
+&gt;Additionally, fetch-deleting! does not map to many dictionaries, for
+&gt;example disk file database, *without* doing the above.
+
+Right.  Versions of fetch-deleting! that suck can be applied to
+dictionaries whose structure implies that fetch-deleting! *has*
+to suck.  Let's not hobble other dictionaries because of that.
+
+
+&gt;&gt;      ;; get just gets one or more elements without caring which.
+&gt;&gt; (*-get-one dict)
+&gt;(*-get-left dict)
+
+What does &quot;left&quot; even *MEAN* here?!  Why is it in this name?
+
+
+&gt;&gt; (*-get-one-deleting! dict)
+&gt;As in [A], with the same caveats.
+
+And the same results.  Save the implementations that suck for
+dictionaries whose structure demands that they suck and allow
+space for better implementations where they can exist.
+
+
+&gt;&gt; (*-get-n dict num)
+&gt;&gt; (*-get-n-deleting! dict num)
+
+&gt;Trivially defined with enumeration.
+
+And with the same problem.  On a lot of dictionaries, if I go
+in knowing I want the first N elements, I can get them at one
+swell foop and not waste time traversing the structure again
+and again for each one.  Failure to provide a name for this
+function practically demands an implementation that sucks,
+which will then be applied to all dictionaries, whether the
+implementation of this function for that dictionary had to
+suck or not.
+
+
+&gt;&gt;      ;; the following two are for functions of the signature
+&gt;&gt;      ;; (callback dict keyval dataval)
+&gt;&gt; (*-foreach dict callback)
+&gt;&gt; (*-foreach! dict callback)
+
+&gt;(collection-fold-left dict fold-function)
+
+&gt;;; a copy is made of the dict to protect it from side effects
+&gt;Are you generating a new collection?  Then *-map is the name you want.
+&gt;for-each implies iteration over values (which is what the enumerators
+&gt;are for).
+
+And when joe code writer is looking at the API going, I want
+something that applies a function to each mapping, &quot;foreach&quot; is
+going to attract his attention.  &quot;Map&quot; may or may not, even though
+it's been used for lists.  &quot;Foreach&quot; is simply more obvious in its
+intent than &quot;Map.&quot;  Also, &quot;Map&quot;, if taken to mean the same thing
+it means with lists, should apply to MULTIPLE dictionaries, and
+create a new dictionary with the results of calling the callback
+function on the sets of mappings. That's not what someone is going
+for with &quot;foreach.&quot;
+
+The existence of mutating and non-mutating versions (with and
+without the exclamation point) is going to assure the coder that
+the one can be used, even with destructive callback functions,
+without worrying about destructive changes, but probably has a
+higher overhead, and that the other allows the callback functions
+to mutate the existing structure, or can be used with nondestructive
+functions without incurring more overhead.
+
+These are examples of functions that do exactly what their name
+says they do, which will be recognized instantly by coders.  &quot;Map&quot;
+implies things that these functions don't do, which are done by
+&quot;Map&quot; on lists.
+
+&gt;&gt; (get-iterator dict)   ;; returns an iterator function that
+&gt;&gt;                       ;; takes a key arg and returns some &quot;next&quot; key,
+&gt;&gt;                       ;; or takes '() and returns some (arbitrarily
+&gt;&gt;                       ;; chosen for unordered dictionaries) &quot;first&quot; key.
+&gt;&gt;
+&gt;&gt; (*-nextkey dict) ;; same as function returned from get-iterator
+&gt;&gt; (*-nextkey dict key) ;; same as returned from the get-iterator func above
+&gt;&gt; (*-lastkey dict)     ;; same as returned from the get-reversed-iterator func
+&gt;&gt; (get-reversed-iterator dict)
+&gt;
+&gt;See Olegs post on the hazards of iterators.
+
+I've seen it.  The &quot;Hazards&quot; arise when attempting to misuse them, eg,
+using them for things that aren't finite, using them across mutations
+of things, etc.  If you provide fold-left and fold-right, the first thing
+joe coder is going to do with them is implement iterators, because iterators
+are simpler to use.
+
+&gt;&lt;snip&gt;Efficiency procs
+&gt;Best left to a separate SRFI.
+
+Providing identical APIs for structures of profoundly different performance
+characteristics is a minefield in terms of efficiency.  Not giving people a
+way to check removes the last possible warning sign before the minefield is
+entered.  Performance is important, especially if providing an API that makes
+it so easy to write code whose performance sucks rocks.
+
+
+&gt;&gt; (*-fetchfirst dict number) ;; returns number entries
+&gt;[B] Trivially implemented with collection-fold-left
+
+But in most cases less efficiently than a native implementation could do it.
+
+
+&gt;&gt; (*-fetchfirst-deleting! dict)
+&gt;&gt; (*-fetchfirst-deleting! dict number)
+&gt;See [A]
+
+Uh huh.  I'm sensing a pattern here.
+
+&gt;&gt; (*-fetchlast dict)
+&gt;(*-get-right dict)
+&gt;&gt; (*-fetchlast dict number)
+&gt;See [B]
+
+Same argument, same problem.
+
+&gt;&gt; (*-fetchlast-deleting! dict)
+&gt;&gt; (*-fetchlast-deleting! dict number)
+&gt;See [A]
+
+Same argument, same problem.
+
+&gt;&gt; (*-fetchrange dict key1 key2)
+&gt;Possibly novel, but also implementable with enumeration
+
+The only way to implement it using the procedures in the SRFI is
+inferior, for most dictionaries, to the implementation that can
+be provided internally.  if I'm getting a range, I don't want to
+waste CPU time traversing the structure for each single damn
+element!
+
+
+&gt;&gt; (*-fetch-next-n dict key1 number)
+&gt;&gt; (*-fetch-next-n-deleting! dict key1 number)
+&gt;&gt; (*-fetch-prev-n dict key1 number)
+&gt;&gt; (*-fetch-prev-n-deleting! dict key1 number)
+&gt;&gt; (*-fetchrange-deleting! dict key1 key2)
+&gt;Above + [A]
+
+
+I'm offering you a way to avoid retraversing the structure for every
+element.  You're saying you don't need it because you don't mind
+writing code that sucks and retraverses the structure for every
+element.  Trust me when I say that most people mind.  Most people want
+to write code that's efficient.
+
+If I want to take the last ten elements of a million-element list, I
+don't want an implementation that gets them one at a time, by
+traversing the entire damn list from the head for each one.  I
+especially don't want an implementation that traverses the list ten
+times to get them and ten more times to delete them.
+
+I want a tail recursive algorithm that traverses that list exactly
+once and comes back with the goods.  This is what all the fetch-n,
+get-n, fetchrange, fetch-deleting!, etc, are about.  These functions
+need to be provided by the implementor of the dictionary because the
+implementor can, for most dictionaries, provide efficient versions.
+With the API you're proposing, the efficient versions cannot be
+implemented.
+
+&gt; So, you see, your API is almost *exactly* like the current SRFI
+&gt; apart from minor naming variations.  Where it differs, there has
+&gt; been strong refutation for that approach.  I must ask, did you
+&gt; *read* the SRFI carefully?
+
+My API allows efficient implementations.  The one proposed in the SRFI
+does not.  Because of that, they are not even remotely similar.  Yes,
+you could use the SRFI API to provide whacking slow versions of most
+of the functionality.  But every coder who has to live with them is
+going to hate them, either because they will waste CPU time that does
+not have to be wasted, or because redefining R5RS functions won't play
+nice with the existing code and module system, or both.
+
+				Bear
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00158" href="msg00158.html">Re: Interface view of dictionaries</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00103" href="msg00103.html">Re: s/-LEFT//g?</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+<li><strong><a name="00104" href="msg00104.html">Procedures (interfaces)</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+<li><strong><a name="00105" href="msg00105.html">Re: Procedures (interfaces)</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+<li><strong><a name="00115" href="msg00115.html">Re: Procedures (interfaces)</a></strong>
+<ul><li><em>From:</em> scgmille</li></ul></li>
+<li><strong><a name="00116" href="msg00116.html">Major issues</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+<li><strong><a name="00117" href="msg00117.html">Re: Major issues</a></strong>
+<ul><li><em>From:</em> scgmille</li></ul></li>
+<li><strong><a name="00118" href="msg00118.html">Re: Major issues</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+<li><strong><a name="00122" href="msg00122.html">Re: Major issues</a></strong>
+<ul><li><em>From:</em> scgmille</li></ul></li>
+<li><strong><a name="00125" href="msg00125.html">Re: Major issues</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+<li><strong><a name="00131" href="msg00131.html">Interface view of dictionaries</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+<li><strong><a name="00152" href="msg00152.html">Re: Interface view of dictionaries</a></strong>
+<ul><li><em>From:</em> scgmille</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00155.html">Re: Call for withdrawal</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00157.html">Re: Major issues</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00243.html">Re: Interface view of dictionaries</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00158.html">Re: Interface view of dictionaries</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00156"><strong>Date</strong></a></li>
+<li><a href="threads.html#00156"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

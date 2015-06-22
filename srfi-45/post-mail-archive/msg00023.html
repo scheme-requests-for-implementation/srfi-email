@@ -1,0 +1,132 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: simpler srfi 45 implementation -->
+<!--X-From-R13: OaqerinaFbaqre <naqerNurg.oebja.rqh> -->
+<!--X-Date: Wed, 14 Nov 2007 14:41:10 +0100 (MET) -->
+<!--X-Message-Id: Pine.SOC.4.64.0711140838330.18004@oow.het.brown.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 001001c825de$11b10380$2101a8c0@jos -->
+<!--X-Reference: 18233.39965.878836.78458@portuguese.ccs.neu.edu -->
+<!--X-Reference: y9l1wat9tfo.fsf@deinprogramm.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: simpler srfi 45 implementation</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00022.html">Date Prev</a>][<a href="msg00024.html">Date Next</a>][<a href="msg00020.html">Thread Prev</a>][<a href="msg00019.html">Thread Next</a>][<a href="maillist.html#00023">Date Index</a>][<a href="threads.html#00023">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: simpler srfi 45 implementation</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Phil Bewig &lt;<a href="mailto:pbewig@DOMAIN.HIDDEN">pbewig@xxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: simpler srfi 45 implementation</li>
+<li><em>From</em>: AndrevanTonder &lt;<a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 14 Nov 2007 08:41:05 -0500 (EST)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-45@DOMAIN.HIDDEN">srfi-45@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-45@DOMAIN.HIDDEN">srfi-45@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:y9l1wat9tfo.fsf@DOMAIN.HIDDEN">y9l1wat9tfo.fsf@xxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:001001c825de%2411b10380%242101a8c0@DOMAIN.HIDDEN">001001c825de$11b10380$2101a8c0@jos</a>&gt;  &lt;<a href="mailto:18233.39965.878836.78458@DOMAIN.HIDDEN">18233.39965.878836.78458@xxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:y9l1wat9tfo.fsf@DOMAIN.HIDDEN">y9l1wat9tfo.fsf@xxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+Just to avoid confusion.
+
+  This version is not safe for space and
+  does not implement SRFI-45.
+
+Andre
+
+On Wed, 14 Nov 2007, Phil Bewig wrote:
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Here is the code for stream-type, extracted from the latest version of
+SRFI-45 (at this writing, that version has been submitted to the editors but
+has not yet appeared on srfi.schemers.org).
+
+ (define-record-type (stream-type make-stream stream?)
+   (fields (mutable box stream-promise stream-promise!)))
+
+ (define-syntax stream-lazy
+   (syntax-rules ()
+     ((stream-lazy exp) (make-stream (lambda () exp)))))
+
+ (define-syntax stream-delay
+   (syntax-rules ()
+     ((stream-delay exp) (stream-lazy (make-stream (list exp))))))
+
+ (define (stream-force prom)
+   (let ((p (stream-promise prom)))
+     (cond ((pair? p)   (car p))
+           ((stream? p)
+             (let ((x (stream-force p)))
+               (let ((content (stream-promise prom)))
+                 (if (pair? content) (cdr content)
+                     (begin (stream-promise! prom (list x)) x)))))
+           ((procedure? p)
+             (let ((prom* (p)))
+               (if (not (pair? (stream-promise prom)))
+                   (if (stream? prom*)
+                       (begin (stream-promise! prom (stream-promise prom*))
+                              (stream-promise! prom* prom))
+                       (stream-promise! prom (list prom*))))
+               (stream-force prom)))
+           (else (error 'stream-force &quot;invalid promise&quot;)))))
+</pre></blockquote><pre style="margin: 0em;">
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00017" href="msg00017.html">Re: simpler srfi 45 implementation</a></strong>
+<ul><li><em>From:</em> Eli Barzilay</li></ul></li>
+<li><strong><a name="00020" href="msg00020.html">Re: simpler srfi 45 implementation</a></strong>
+<ul><li><em>From:</em> Phil Bewig</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00022.html">Re: simpler srfi 45 implementation</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00024.html">Simpler implementations incorrect!</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00020.html">Re: simpler srfi 45 implementation</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00019.html">simpler srfi 45 implementation</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00023"><strong>Date</strong></a></li>
+<li><a href="threads.html#00023"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

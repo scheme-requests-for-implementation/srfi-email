@@ -1,0 +1,135 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Multiple values -->
+<!--X-From-R13: Syv Pnemvynl <ryvNonemvynl.bet> -->
+<!--X-Date: Mon, 16 Oct 2006 03:08:58 +0200 (MST) -->
+<!--X-Message-Id: 17714.56230.159737.12945@lithuanian.ccs.neu.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Multiple values</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00006.html">Date Prev</a>][<a href="msg00008.html">Date Next</a>][<a href="msg00006.html">Thread Prev</a>][<a href="msg00008.html">Thread Next</a>][<a href="maillist.html#00007">Date Index</a>][<a href="threads.html#00007">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Multiple values</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-45@DOMAIN.HIDDEN">srfi-45@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Multiple values</li>
+<li><em>From</em>: Eli Barzilay &lt;<a href="mailto:eli@DOMAIN.HIDDEN">eli@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 15 Oct 2006 21:08:54 -0400</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-45@DOMAIN.HIDDEN">srfi-45@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Sender</em>: Eli Barzilay &lt;<a href="mailto:eli@DOMAIN.HIDDEN">eli@xxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+FWIW, here is an implementation of lazy/eager/delay/force that works
+with multiple values.  Additional notes:
+
+* Works on PLT, but this is mostly a technicality.  One thing is that
+  some diverging tests fail on PLT v352, but everything seems to work
+  fine on v352.7 (we think that it's because Matthew did some work on
+  optimizing `call-with-values' recently).
+
+* Requires `eager' to be a syntax too, so it can handle multiple
+  values.
+
+* Clarifies the relationship between plain `delay' and `lazy' (close
+  to the Dybvig implementation that is used in MzScheme).  The latter
+  is similar, but injects an extra level of reference, to
+  short-circuit force chains.
+
+
+(define-struct promise (p))
+
+(define-syntax lazy
+  (syntax-rules ()
+   [(lazy exp) (box (make-promise (lambda () exp)))]))
+
+(define-syntax eager
+  (syntax-rules ()
+    [(eager exp)
+     (box (make-promise (call-with-values (lambda () exp) list)))]))
+
+(define-syntax delay
+  (syntax-rules () [(delay exp) (lazy (eager exp))]))
+
+(define (force boxed)
+  (let* ([promise (unbox boxed)]
+         [content (promise-p promise)])
+    (if (procedure? content)
+      (let* ([boxed*  (content)]
+             [promise (unbox boxed)])                         ; *
+        (when (procedure? (promise-p promise))                ; *
+          (set-promise-p! promise (promise-p (unbox boxed*)))
+          (set-box! boxed* promise))
+        (force boxed))
+      (apply values content))))
+
+;; (*) These two lines re-fetch and check the original promise in case
+;;     the first line of the let* caused it to be forced.  For an example
+;;     where this happens, see reentrancy test 3 below.
+
+
+-- 
+          ((lambda (x) (x x)) (lambda (x) (x x)))          Eli Barzilay:
+                  <a  rel="nofollow" href="http://www.barzilay.org/">http://www.barzilay.org/</a>                 Maze is Life!
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00008" href="msg00008.html">Re: Multiple values</a></strong>
+<ul><li><em>From:</em> Eli Barzilay</li></ul></li>
+<li><strong><a name="00009" href="msg00009.html">Re: Multiple values</a></strong>
+<ul><li><em>From:</em> Eli Barzilay</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00006.html">SRFI-45 patched</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00008.html">Re: Multiple values</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00006.html">SRFI-45 patched</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00008.html">Re: Multiple values</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00007"><strong>Date</strong></a></li>
+<li><a href="threads.html#00007"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

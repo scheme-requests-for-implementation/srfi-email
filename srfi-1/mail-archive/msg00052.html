@@ -1,0 +1,189 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: SRFI&#45;1 round 3 discussion -->
+<!--X-From-R13: "Eretrv Stbebi" <rfyNvasbeznkvap.pbz> -->
+<!--X-Date: Tue, 29 Jun 1999 01:28:57 &#45;0500 (CDT) -->
+<!--X-Message-Id: 001e01bec1f8$d7bb0240$6a8aaccf@meurglys&#45;iv -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: SRFI-1 round 3 discussion</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00051.html">Date Prev</a>][<a href="msg00053.html">Date Next</a>][<a href="msg00051.html">Thread Prev</a>][<a href="msg00053.html">Thread Next</a>][<a href="maillist.html#00052">Date Index</a>][<a href="threads.html#00052">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: SRFI-1 round 3 discussion</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &lt;<a href="mailto:srfi-1@DOMAIN.HIDDEN">srfi-1@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: SRFI-1 round 3 discussion</li>
+<li><em>From</em>: &quot;Sergei Egorov&quot; &lt;<a href="mailto:esl@DOMAIN.HIDDEN">esl@xxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 29 Jun 1999 02:30:05 -0400</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>* Naming: right &amp; left variants
+
+I prefer FOLD and FOLD-RIGHT (and DROP / DROP-RIGHT).
+FOLD-LEFT and FOLD-RIGHT are also good choices.
+
+
+*IMPROPER LISTS
+
+Olin Shivers writes:
+&gt;I try for an &quot;accept a wide spectrum&quot; approach to the inputs the list
+&gt;functions take, and intend to spec as many of these procedures to work on
+&gt;improper lists as possible. Procedures that work on improper lists must be
+&gt;able to treat any non-pair as a list-tail signifying the end of the list --
+&gt;that is, the empty list. E.g. a robust LENGTH function that handles
+improper
+&gt;lists must be spec'd so that both of these calls return three:
+&gt;    (length '(a b c . ())) =&gt; 3 ; Proper
+&gt;    (length '(a b c . d))  =&gt; 3 ; Improper
+
+
+I think that the whole idea of &quot;robustness&quot; (meaning don't break under
+any circumstances) is not in a Scheme tradition: after all these years
+spent trying to convince programmers that (car '()) is an error,
+we are back to (length &quot;abc&quot;) =&gt; 0. Since &quot;improper list&quot; is synonymous
+to &quot;any object&quot; (anything or a pair = anything), we will end up with a
+list library that accepts (and often produces) nonsensical data.
+
+correct code:
+(filter even? '(2 7 1 8 2))  =&gt; (2 8 2)
+
+incorrect code, but no error is likely to be signalled, because
+the list is never 'applied' (but improperness is propagated)
+(filter '(2 7 1 8 2) even?) =&gt; #{procedure even?}
+
+This &quot;result&quot; can be propagated further without any warning:
+(length (filter '(2 7 1 8 2) even?)) =&gt; 0 ;no even numbers?
+
+Olin Shivers writes:
+&gt;This is the simplest, most consistent spec that covers improper lists.
+
+&gt;The functions in the current reference implementation have this property.
+
+&gt;
+&gt;In this spirit, *all* of the procedures in list-lib are defined to work
+&gt;on improper lists.
+
+
+The last phrase translates as follows: &quot;*all* of the procedures in list-lib
+are defined to accept *any* objects, not only lists&quot;. And still, the
+&quot;consistency&quot;
+will require to redefine NULL? and LIST? to return #t on all atoms
+(actually,
+LIST? should return #t on everything)...
+
+Couple more nonsensical (but legal under this SRFI) expressions:
+
+(length (current-input-port)) =&gt; 0
+(append 1 2 3 4) =&gt; 4 ;improperness is propagated
+(append &quot;foo&quot; &quot;bar&quot;) =&gt; &quot;bar&quot;
+
+Olin Shivers writes:
+&gt;There is a trade-off here. On one hand, widening the set of arguments
+&gt;acceptable to our utilities reduces our ability to provide error-checks
+&gt;when an improper list means an error. On the other, it widens the
+&gt;applicability of these procedures. I tilt towards the latter. Scheme
+&gt;supports improper lists; so I will support them. Were this ML, the issue
+&gt;would not arise -- tuple-trees and lists are statically distinguished by
+&gt;the type system.
+
+
+My own experience (~8 years of Scheme programming) tells that
+improper lists are VERY rear (probably because Scheme discouraged
+their use for a long time); the only exceptions are pieces of compilers/
+interpreters dealing with lambda lists. So widening the applicability
+to cover improper lists (i.e. everything else) in this manner doesn't
+give too much; on the other hand, it seriously affects understanding
+and reasoning about Scheme code. There are other, less dramatic
+ways to widen the applicability of these functions: allow them to
+handle vectors, strings and other sequences. This is done nicely
+in OakLisp; I don't insist that this is a good idea in general, but it
+doesn't affect understanding and doesn't complicate type inference.
+
+It is certainly true that Scheme supports improper lists; R2RS
+even had a special term &quot;proper list&quot; and both kinds were treated
+as equally important. But starting from R3RS, Scheme is moving
+away from improper lists in both terminology and functionality.
+Anybody can build improper and circular &quot;lists&quot;, but I think
+that corresponding functions should be named accordingly
+and moved out of the *list* library. Things like IMPROPER-LIST-LENGTH
+are much easier to spot in somebody else's code: you can see that
+something unusual is going on there.
+
+&gt;
+&gt;Or, let's put it another way: CONS, CAR and CDR support improper lists,
+&gt;so we need to follow through.
+
+
+This is a terminological error: CAR and CDR work on pairs, which are
+neither subset or superset of lists. Nonempty lists is proper subset
+of pairs; this allows us to use CAR and CDR on nonempty lists. CONS
+accepts any objects and returns a pair; it has a property that if its
+second argument is restricted to lists, its result will be a nonempty list.
+As I mentioned before, &quot;improper list&quot; means &quot;any object&quot;. CONS,
+CAR and CDR do not support &quot;any objects&quot;; they obey rules that
+are not as easy as I would like them to be, but these rules can be
+used by soft-typing compiler and enforced at run time.
+
+Regards,
+Sergei
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00053" href="msg00053.html">Improper lists [Was: SRFI-1 round 3 discussion]</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr. Preprocessor]</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00051.html">Left &amp; right [Was: SRFI-1 round 3 discussion]</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00053.html">Improper lists [Was: SRFI-1 round 3 discussion]</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00051.html">Left &amp; right [Was: SRFI-1 round 3 discussion]</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00053.html">Improper lists [Was: SRFI-1 round 3 discussion]</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00052"><strong>Date</strong></a></li>
+<li><a href="threads.html#00052"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

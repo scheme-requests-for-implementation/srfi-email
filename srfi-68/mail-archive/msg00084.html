@@ -1,0 +1,168 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Specification vs. Implementation -->
+<!--X-From-R13: Oyrk Euvaa <nyrkfuvaaNtznvy.pbz> -->
+<!--X-Date: Thu, 25 Aug 2005 03:33:51 +0200 (MST) -->
+<!--X-Message-Id: 5fb7e08705082418335a20cdf8@mail.gmail.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 5fb7e0870508221948311ded7f@mail.gmail.com -->
+<!--X-Reference: y9loe7pnmiw.fsf@sams.informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: 5fb7e0870508231948c0506fa@mail.gmail.com -->
+<!--X-Reference: y9lbr3njkjf.fsf@sams.informatik.uni&#45;tuebingen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Specification vs. Implementation</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00083.html">Date Prev</a>][<a href="msg00085.html">Date Next</a>][<a href="msg00078.html">Thread Prev</a>][<a href="msg00088.html">Thread Next</a>][<a href="maillist.html#00084">Date Index</a>][<a href="threads.html#00084">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Specification vs. Implementation</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Michael Sperber &lt;<a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Specification vs. Implementation</li>
+<li><em>From</em>: Alex Shinn &lt;<a href="mailto:alexshinn@DOMAIN.HIDDEN">alexshinn@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 25 Aug 2005 10:33:37 +0900</li>
+<li><em>Cc</em>: <a href="mailto:srfi-68@DOMAIN.HIDDEN">srfi-68@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-68@DOMAIN.HIDDEN">srfi-68@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Domainkey-signature</em>: a=rsa-sha1; q=dns; c=nofws;        s=beta; d=gmail.com;        h=received:message-id:date:from:to:subject:cc:in-reply-to:mime-version:content-type:content-transfer-encoding:content-disposition:references;        b=YVg3nFVPRnnSRzDWgcMheCzLdbGxbaZq22hqdpQ68H/3UKMawmSrptvHq4Vgp2m6lLo34cLvSgFMm/kpzM6dq1246dO7n7TVcXtJOUlmLZRekVDItr925BcltEorc5Ktd9rI3etUmUo3OEFyQe8/ad6kEGUs0GXG6x2+zU0q/K8=</li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:y9lbr3njkjf.fsf@DOMAIN.HIDDEN">y9lbr3njkjf.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:5fb7e0870508221948311ded7f@DOMAIN.HIDDEN">5fb7e0870508221948311ded7f@xxxxxxxxxxxxxx</a>&gt;	 &lt;<a href="mailto:y9loe7pnmiw.fsf@DOMAIN.HIDDEN">y9loe7pnmiw.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	 &lt;<a href="mailto:5fb7e0870508231948c0506fa@DOMAIN.HIDDEN">5fb7e0870508231948c0506fa@xxxxxxxxxxxxxx</a>&gt;	 &lt;<a href="mailto:y9lbr3njkjf.fsf@DOMAIN.HIDDEN">y9lbr3njkjf.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>On 8/25/05, Michael Sperber &lt;sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx&gt; wrote:
+&gt; 
+&gt; I don't understand why it would be a lot of work---that's what the
+&gt; reference implementation is for.  Just drop it in.  You mainly have to
+&gt; adapt the primitive I/O layer, which is usually pretty simple.  (You
+&gt; could even build it easily on a pre-existing ports layer.)
+
+You also have to rewrite your existing ports layer to distinguish
+between the original native ports and the new stream-based ports.
+
+There's also still a lot missing from SRFI-68 since it doesn't provide
+more than some trivial transcoders, and in cases like C's wchar
+implementation there is no direct way to transcode wstrings - you
+have to use an external library like iconv.
+
+&gt; The bottom two layers are there because they're useful.  If all layers
+&gt; are required, portable code could use whatever layer it wants to.  I
+&gt; don't see why the lower layers (especially the primitive layer) would
+&gt; necessarily be extremely slow---maybe you can elaborate why you think
+&gt; this is the case?
+
+If you aren't using a systems-level language (or don't want to go through
+the effort), then you have to base the lower-levels on an existing upper
+level, which implies all text gets buffered twice.
+
+I also have concerns about the stream-layer in general.  I really like
+the idea of being able to treat a port like a list (although given the
+choice I'd rather work with car and cdr than car+cdr).  However, it
+requires either large amounts of buffering or constant position checks
+followed by optional seeks.  The latter again is extra overhead (and
+seeks are very expensive and should be avoided whenever possible),
+so the reference implementation uses the former.  But consider the
+following code which reads an index from the start of a stream
+in order to determine the offset of a record, seeks to that record
+and then extracts it (using SRFI-71 let syntax):
+
+(define (read-nth-record file n)
+  (let* ((stream1 (open-file-input-stream file))
+         (index stream2 (read-index stream1))
+         (offset (nth-record-offset index n))
+         (stream3 (input-stream-at-position stream2 offset))
+         (result stream4 (read-record stream3)))
+    (close-input-stream stream4)
+    result))
+
+If the record is the last element of a 10GB file we would need
+10GB of memory to do this.  A smart compiler and gc could
+determine the older streams aren't re-used and reclaim them
+in this case, but what if they were re-used?  Or what if they
+aren't but the compiler can't prove it?
+
+Note I had to assume a new procedure
+
+  input-stream-at-position
+
+to seek within the file, which isn't provided by the current SRFI.
+This is a crucial procedure, but can't efficiently be implemented
+without closing the current stream and creating a new one from
+the underlying reader.  Likewise we need SET-PORT-POSITION!.
+
+Another issue is that buffering doesn't account for mutations
+performed between reads, so libraries like C provide explicit
+buffering controls, including non-buffering.  The current SRFI
+effectively prohibits ports from having this level of control.  They
+would in fact be better built on the readers and writers than on
+streams.
+
+-- 
+Alex
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00088" href="msg00088.html">Re: Specification vs. Implementation</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00063" href="msg00063.html">Specification vs. Implementation</a></strong>
+<ul><li><em>From:</em> Alex Shinn</li></ul></li>
+<li><strong><a name="00065" href="msg00065.html">Re: Specification vs. Implementation</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+<li><strong><a name="00068" href="msg00068.html">Re: Specification vs. Implementation</a></strong>
+<ul><li><em>From:</em> Alex Shinn</li></ul></li>
+<li><strong><a name="00078" href="msg00078.html">Re: Specification vs. Implementation</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00083.html">Re: a few questions about file-options</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00085.html">Re: Mixing characters and bytes</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00078.html">Re: Specification vs. Implementation</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00088.html">Re: Specification vs. Implementation</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00084"><strong>Date</strong></a></li>
+<li><a href="threads.html#00084"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

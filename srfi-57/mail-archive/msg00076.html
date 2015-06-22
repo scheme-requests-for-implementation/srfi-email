@@ -1,0 +1,170 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Chez implementation -->
+<!--X-From-R13: Oaqer ina Fbaqre <naqerNabj.urg.oebja.rqh> -->
+<!--X-Date: Fri, 10 Dec 2004 20:42:24 +0100 (NFT) -->
+<!--X-Message-Id: Pine.GSO.4.60.0412101434320.29725@now.het.brown.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Chez implementation</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00075.html">Date Prev</a>][<a href="msg00077.html">Date Next</a>][<a href="msg00075.html">Thread Prev</a>][<a href="msg00078.html">Thread Next</a>][<a href="maillist.html#00076">Date Index</a>][<a href="threads.html#00076">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Chez implementation</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-57@DOMAIN.HIDDEN">srfi-57@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Chez implementation</li>
+<li><em>From</em>: Andre van Tonder &lt;<a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 10 Dec 2004 14:42:18 -0500 (EST)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-57@DOMAIN.HIDDEN">srfi-57@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<tt>Here is a quick adaptation that uses (Petite) Chez native 
+</tt><tt>records.  Just prepend the reference implementation with the following 
+</tt><tt>code, adapted from Mike Sperber's code for MzScheme, which I believe falls 
+</tt><tt>under the LGPL license:
+</tt><pre style="margin: 0em;">
+
+
+;; Based on original by Mike Sperber, contributed 12/14/2001 to MzScheme.
+;; Minor adaptation for Chez Scheme by Andre van Tonder 12/10/2004.
+
+(define-syntax srfi-9:define-record-type
+
+  (let ()
+    (define (filter-map proc l)
+      (if (null? l)
+          '()
+          (let ((result (proc (car l))))
+            (if result
+                (cons result (filter-map proc (cdr l)))
+                (filter-map proc (cdr l))))))
+
+    (define (syntax-member? thing stuff)
+      (cond
+       ((null? stuff) #f)
+       ((free-identifier=? thing (car stuff)) #t)
+       (else (syntax-member? thing (cdr stuff)))))
+
+    (lambda (x)
+      (syntax-case x ()
+        ((_ type
+            (constructor constructor-tag ...)
+            predicate
+            (field-tag accessor more ...) ...)
+
+         (with-syntax
+             ((number-of-fields (length (syntax (field-tag ...))))
+              ((modifier ...)
+               (filter-map (lambda (descriptor)
+                             (syntax-case descriptor ()
+                               ((field-tag accessor) #f)
+                               ((field-tag accessor modifier)
+                                (syntax modifier))))
+                           (syntax ((field-tag accessor more ...) ...))))
+              ((constructor-arg ...)
+               (map (lambda (field-tag)
+                      (if (syntax-member? field-tag
+                                          (syntax (constructor-tag ...)))
+                          field-tag
+                          (syntax (void))))
+                    (syntax (field-tag ...))))
+              (generic-access (syntax generic-access))
+              (generic-mutate (syntax generic-mutate)))
+           (with-syntax
+               (((accessor-proc ...)
+                 (let loop ((i 0)
+                            (fields (syntax (field-tag ...))))
+                   (if (null? fields)
+                       '()
+                       (cons (with-syntax
+                                 ((i i))
+                               (syntax
+                                (lambda (s)
+                                  (generic-access s i))))
+                             (loop (+ 1 i)
+                                   (cdr fields))))))
+                ((modifier-proc ...)
+                 (let loop ((i 0)
+                            (descriptors
+                             (syntax ((field-tag accessor more ...) ...))))
+                   (if (null? descriptors)
+                       '()
+                       (syntax-case (car descriptors) ()
+                         ((field-tag accessor)
+                          (loop (+ 1 i)
+                                (cdr descriptors)))
+                         ((field-tag accessor modifier)
+                          (cons (with-syntax
+                                    ((i i))
+                                  (syntax
+                                   (lambda (s v)
+                                     (generic-mutate s i v))))
+                                (loop (+ 1 i)
+                                      (cdr descriptors)))))))))
+             (syntax
+              (begin
+                (define descriptor  (make-record-type &quot;&quot;
+                                                      '(field-tag ...)))
+                (define constructor (record-constructor descriptor))
+                (define predicate (record-predicate   descriptor))
+                (define accessor (record-field-accessor descriptor 'field-tag))
+                ...
+                (define modifier (record-field-mutator  descriptor 'field-tag))
+                ...)))))))))
+
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00075.html">MzScheme implementation</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00077.html">Re: Update available-- possibly last before finalization</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00075.html">MzScheme implementation</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00078.html">records all have same internal-name</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00076"><strong>Date</strong></a></li>
+<li><a href="threads.html#00076"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

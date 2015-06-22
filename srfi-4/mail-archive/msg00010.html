@@ -1,0 +1,133 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Read&#45;time _apply_: an external representation for any value -->
+<!--X-From-R13: [nep Trryrl <srryrlNveb.hzbagerny.pn> -->
+<!--X-Date: Mon, 26 Apr 1999 14:00:22 &#45;0500 (CDT) -->
+<!--X-Message-Id: 199904261900.PAA24961@trex.IRO.UMontreal.CA -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 199904112055.PAA31367@x16.dejanews.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Read-time _apply_: an external representation for any value</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00009.html">Date Prev</a>][Date Next][<a href="msg00009.html">Thread Prev</a>][Thread Next][<a href="maillist.html#00010">Date Index</a>][<a href="threads.html#00010">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Read-time _apply_: an external representation for any value</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:oleg@DOMAIN.HIDDEN">oleg@xxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Read-time _apply_: an external representation for any value</li>
+<li><em>From</em>: Marc Feeley &lt;<a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 26 Apr 1999 15:00:20 -0400</li>
+<li><em>Cc</em>: <a href="mailto:srfi-4@DOMAIN.HIDDEN">srfi-4@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:199904112055.PAA31367@DOMAIN.HIDDEN">199904112055.PAA31367@xxxxxxxxxxxxxxxx</a>&gt; (<a href="mailto:oleg@DOMAIN.HIDDEN">oleg@xxxxxxxxx</a>)</li>
+<li><em>References</em>: &lt;<a href="mailto:199904112055.PAA31367@DOMAIN.HIDDEN">199904112055.PAA31367@xxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; This article was inspired by an exchange of messages between
+&gt; Dr. Clinger and Dr. Feeley about external representation of uniform
+&gt; vectors, which are proposed in SRFI-4. This post attempts to make a
+&gt; rather sweeping generalization of Dr. Clinger's suggestion. It
+&gt; proposes an extensible, new old way for external representation of
+&gt; Scheme values: read-time _application_.
+
+As far as I am concerned your proposal has little to do with SRFI 4
+per se.  I will respond to it here but maybe you should consider
+submitting it as a separate SRFI.
+
+Although I am favourable to an extensible reader I think that your
+proposal is premature.  You propose to allow extending the reader by
+evaluating a form such as:
+
+        (define-reader-ctor 'vector vector)
+
+which would allow reading &quot;#`(vector 1 2 3)&quot; as the vector #(1 2 3).
+This assumes that there is only one &quot;reader&quot;, which is not a very
+modular approach (two modules may need to extend the reader in
+different ways, perhaps even overloading a certain constructor name).
+Better would be to have the ability to create readers and configure
+them separately (basically the &quot;readtable&quot; idea from CommonLisp).  But
+then, a problem this introduces is how to tell the &quot;read&quot; procedure
+which readtable to use: should it be an extra parameter to &quot;read&quot;,
+some dynamically bound variable (e.g. (current-readtable)), some
+configurable parameter on port objects?
+
+Moreover the &quot;write&quot; procedure must also be told which readtable to
+use so that a call to &quot;read&quot; with the same readtable will restore the
+object written (i.e.  for write/read invariance).  This means that
+just specifying a constructor is not enough, you also need to specify
+some mechanism for writing objects which have no standard external
+representation.  This could be done for example by specifying a
+type-predicate and a &quot;type-to-list&quot; procedure to extract the fields of
+the object, as long as the external representation is restricted to
+the form #`(&lt;constructor&gt; &lt;field1&gt; &lt;field2&gt;...):
+
+ (define-reader-syntax (current-readtable) 'vector vector vector? vector-&gt;list)
+
+Extra information may also be needed for the pretty-printer to do a
+good job (this is less of an issue if the syntax of the syntax
+extensions uses a simple pattern, as in the previous example).
+
+But perhaps this kind of reading/writing information should be
+specified when a new datatype is defined.  I believe Chez Scheme uses
+this approach (you can specify the name to be used when reading a
+record, and a &quot;print&quot; method).  This means reader syntax extensions
+are limited to records, but this is OK if the builtin datatypes
+(including those that are builtin extensions to R5RS such as
+f32vectors) have their own builtin syntax.
+
+I hope this shows that there is a wide space of solutions and
+certainly more thought on reader syntax extensions is required.
+
+Marc
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00009" href="msg00009.html">Read-time _apply_: an external representation for any value</a></strong>
+<ul><li><em>From:</em> oleg</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00009.html">Read-time _apply_: an external representation for any value</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00009.html">Read-time _apply_: an external representation for any value</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00010"><strong>Date</strong></a></li>
+<li><a href="threads.html#00010"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

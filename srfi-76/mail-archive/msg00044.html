@@ -1,0 +1,327 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Problems with field initialization: Proposal -->
+<!--X-From-R13: Oaqer ina Fbaqre <naqerNabj.urg.oebja.rqh> -->
+<!--X-Date: Tue, 20 Sep 2005 17:40:36 +0200 (MST) -->
+<!--X-Message-Id: Pine.GSO.4.60.0509201114150.23143@now.het.brown.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200509161821.j8GILbjA013626@later.het.brown.edu -->
+<!--X-Reference: y9lhdcgoxwo.fsf@sams.informatik.uni&#45;tuebingen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Problems with field initialization: Proposal</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00043.html">Date Prev</a>][<a href="msg00045.html">Date Next</a>][<a href="msg00034.html">Thread Prev</a>][<a href="msg00050.html">Thread Next</a>][<a href="maillist.html#00044">Date Index</a>][<a href="threads.html#00044">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Problems with field initialization: Proposal</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Michael Sperber &lt;<a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Problems with field initialization: Proposal</li>
+<li><em>From</em>: Andre van Tonder &lt;<a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 20 Sep 2005 11:40:31 -0400 (EDT)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-76@DOMAIN.HIDDEN">srfi-76@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-76@DOMAIN.HIDDEN">srfi-76@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:y9lhdcgoxwo.fsf@DOMAIN.HIDDEN">y9lhdcgoxwo.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:200509161821.j8GILbjA013626@DOMAIN.HIDDEN">200509161821.j8GILbjA013626@xxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:y9lhdcgoxwo.fsf@DOMAIN.HIDDEN">y9lhdcgoxwo.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+On Tue, 20 Sep 2005, Michael Sperber wrote:
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+
+Andre van Tonder &lt;andre@xxxxxxxxxxxxxxxxxxx&gt; writes:
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+   (define-type rational (x y)
+     (let ((common (gcd x y)))
+       (field-values
+         (num   (/ x common))
+         (denom (/ y common))))
+     (fields (num   (rational-num))
+             (denom (rational-denom))))
+</pre></blockquote><pre style="margin: 0em;">
+
+Could you elaborate on how the general mechanism would work?  I.e. is
+there a special syntax for the (let ...) stuff, or is it general
+Scheme, with FIELD-VALUES being a special form?
+</pre></blockquote><pre style="margin: 0em;">
+
+
+</pre><tt>Below is a very rough and ugly code fragment (MzScheme) that implements the 
+</tt><tt>inner workings, though not the surface syntax, of this idea.  More examples are 
+</tt><tt>at the end.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>In the following examples, INSTANTIATE is a local lexical macro valid in the 
+</tt><tt>constructor clause that does two orthogonal things:
+</tt><pre style="margin: 0em;">
+
+- It maps field names to positions.
+- It has an implicit argument, a version of the subtype constructor already
+  curried with the subtype field values.  It then further stages the inclusion
+  of the current fields and the invocation of the supertype constructor.
+
+The return value of INSTANTIATE is a record value of the appropriate /subtype/.
+As a result, a separate INIT! is unnecessary.
+
+</pre><tt>In the following examples, both the formals and the parent arguments can easily 
+</tt><tt>be factored out to reproduce the surface syntax of the SRFI, with a certain loss 
+</tt><tt>of expressiveness.
+</tt><pre style="margin: 0em;">
+
+  (define-type (rational make-rational)
+    (parent #f)
+    (fields (num   immutable)
+            (denom immutable))
+    (constructor (lambda (x y)
+                   (if (= y 0)
+                       (instantiate ()
+                         (num   1)
+                         (denom 0))
+                       (let ((common (gcd x y)))
+                         (instantiate ()
+                          (num   (/ x common))
+                          (denom (/ y common))))))))
+
+  (define-type (hash-table make-hash-table)
+    (parent #f)
+    (fields (pred   immutable)
+            (hasher immutable)
+            (data   mutable)
+            (count  mutable 0))
+    (constructor (lambda (pred hasher size)
+                   (instantiate ()
+                     (pred   pred)
+                     (hasher hasher)
+                     (data   (make-vector size))))))
+
+  (define-type (eq-hash-table make-eq-hash-table)
+    (parent hash-table)
+    (fields (gc-count mutable 0))
+    (constructor (lambda (pred hasher size)
+                   (instantiate (pred hasher size)))))
+
+
+Cheers
+Andre
+
+
+;===================================================
+;
+; Implementation:
+;
+;===================================================
+
+
+(begin-for-syntax
+
+  (define registry '())
+
+  (define (register type)
+    (set! registry
+          (cons (cons (syntax-object-&gt;datum (car type))
+                      (cdr type))
+                registry)))
+
+  (define (lookup type-name)
+    (assq (syntax-object-&gt;datum type-name) registry))
+
+  (define type-constructor       cadr)
+  (define type-parent            caddr)
+  (define type-fields            cadddr)
+  (define (type-constructor-k t) (car (cddddr t)))
+
+  (define (order init-list type-name)
+</pre><tt>    (let ((fields (map syntax-&gt;list (syntax-&gt;list (type-fields (lookup 
+</tt><tt>type-name)))))
+</tt><pre style="margin: 0em;">
+          (init-list (map (lambda (elem)
+                            (let ((elem (syntax-&gt;list elem)))
+                              (cons (syntax-object-&gt;datum (car elem))
+                                    (cdr elem))))
+                          (syntax-&gt;list init-list))))
+      (map (lambda (field)
+             (cond ((assq (syntax-object-&gt;datum (car field)) init-list) =&gt; cadr)
+                   (else (if (= (length field) 3)
+                             (caddr field)
+</pre><tt>                             (raise-syntax-error #f &quot;Uninitialized field: &quot; (car 
+</tt><tt>field))))))
+</tt><pre style="margin: 0em;">
+           fields)))
+
+  ) ; begin-for-syntax
+
+(define (make-object-k k)
+  (lambda ()
+    (k '())))
+
+
+(define-syntax define-type
+   (lambda (form)
+     (syntax-case form (parent fields constructor)
+       ((_ (t make-t)
+           (parent p)
+           (fields f ...)
+           (constructor proc))
+</pre><tt>        (with-syntax ((make-t-k (datum-&gt;syntax-object (syntax t) (gensym 
+</tt><tt>'make-t-k)))) ; gensym needed due to bug in MzScheme
+</tt><pre style="margin: 0em;">
+          (begin
+            (register (list (syntax t)
+                            (syntax make-t)
+                            (syntax p)
+                            (syntax (f ...))
+                            (syntax make-t-k)))
+            (with-syntax ((parent-constructor-k
+                           (cond ((lookup (syntax p)) =&gt; type-constructor-k)
+                                 (else
+                                  (syntax make-object-k))))
+                          (instantiate
+                              (datum-&gt;syntax-object (syntax t) 'instantiate)))
+              (syntax
+               (begin
+                 (define make-t-k
+                   (lambda (k)
+                     (let-syntax ((instantiate
+                                      (lambda (form)
+                                        (syntax-case form ()
+                                          ((_ parent-fields . fields)
+                                           (quasisyntax
+                                            ((parent-constructor-k
+                                              (lambda (super-fields)
+</pre><tt>                                                (k (append super-fields (list . 
+</tt><tt>#,(order (syntax fields) (syntax t)))))))
+</tt><pre style="margin: 0em;">
+                                             . parent-fields)))))))
+                       proc)))
+</pre><tt>                 (define make-t (make-t-k (lambda (fields) (cons 't 
+</tt><tt>fields)))))))))))))
+</tt><pre style="margin: 0em;">
+
+
+(define-type (point make-point)
+  (parent #f)
+  (fields (x immutable)
+          (y immutable)
+          (remark immutable 'hello))
+  (constructor (lambda (x y)
+                 (instantiate ()
+                   (x (/ x))
+                   (y (/ y))))))
+
+(make-point 1 2)
+
+(define-type (cpoint make-cpoint)
+  (parent point)
+  (fields (color immutable 'white))
+  (constructor (lambda (x y c)
+                 (instantiate (x y)
+                   (color c)))))
+
+(make-cpoint 1 2 'blu)
+
+(define-type (hash-table make-hash-table)
+  (parent #f)
+  (fields (pred   immutable)
+          (hasher immutable)
+          (data   mutable)
+          (count  mutable 0))
+  (constructor (lambda (pred hasher size)
+                 (instantiate ()
+                   (pred   pred)
+                   (hasher hasher)
+                   (data   (make-vector size))))))
+
+(make-hash-table eq? #f 5)
+
+(define-type (eq-hash-table make-eq-hash-table)
+  (parent hash-table)
+  (fields (gc-count mutable 0))
+  (constructor (lambda (pred hasher size)
+                 (instantiate (pred hasher size)))))
+
+
+(make-eq-hash-table eq? #f 5)
+
+(define-type (rational make-rational)
+  (parent #f)
+  (fields (num   immutable)
+          (denom immutable))
+  (constructor (lambda (x y)
+                 (if (= y 0)
+                     (instantiate ()
+                       (num   1)
+                       (denom 0))
+                     (let ((common (gcd x y)))
+                       (instantiate ()
+                        (num   (/ x common))
+                        (denom (/ y common))))))))
+
+(make-rational 4 8)
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00050" href="msg00050.html">Re: Problems with field initialization: Proposal</a></strong>
+<ul><li><em>From:</em> Andre van Tonder</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00027" href="msg00027.html">Re: Problems with field initialization: Proposal</a></strong>
+<ul><li><em>From:</em> Andre van Tonder</li></ul></li>
+<li><strong><a name="00034" href="msg00034.html">Re: Problems with field initialization: Proposal</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00043.html">Re: Why Single Inheritance Restriction?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00045.html">Re: Incompatibility with pattern matching</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00034.html">Re: Problems with field initialization: Proposal</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00050.html">Re: Problems with field initialization: Proposal</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00044"><strong>Date</strong></a></li>
+<li><a href="threads.html#00044"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

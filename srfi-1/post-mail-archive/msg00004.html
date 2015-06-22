@@ -1,0 +1,201 @@
+<!-- MHonArc v2.6.16 -->
+<!--X-Subject: SRFI&#45;1's fold is not fold&#45;left! -->
+<!--X-From-R13: Brgre Ybhemnabi <crgre.xbhemnabiNtznvy.pbz> -->
+<!--X-Date: Sat,  3 Nov 2012 12:16:58 +0000 (UTC) -->
+<!--X-Message-Id: y9l4nl6swxu.fsf@deinprogramm.de -->
+<!--X-Content-Type: multipart/mixed -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>SRFI-1's fold is not fold-left!</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00003.html">Date Prev</a>][<a href="msg00005.html">Date Next</a>][<a href="msg00003.html">Thread Prev</a>][<a href="msg00005.html">Thread Next</a>][<a href="maillist.html#00004">Date Index</a>][<a href="threads.html#00004">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>SRFI-1's fold is not fold-left!</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-1@DOMAIN.HIDDEN">srfi-1@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: SRFI-1's fold is not fold-left!</li>
+<li><em>From</em>: Peter Kourzanov &lt;<a href="mailto:peter.kourzanov@DOMAIN.HIDDEN">peter.kourzanov@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 03 Nov 2012 13:17:01 +0100</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-1@DOMAIN.HIDDEN">srfi-1@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Old-date</em>: Wed, 31 Oct 2012 10:44:09 +0100</li>
+<li><em>User-agent</em>: Gnus/5.110011 (No Gnus v0.11) XEmacs/21.5-b31 (darwin)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Dear Manuel, et.al.,
+
+While translating some OCaml code I have come across the following
+discrepancy. Although it is known, it is worthwhile to mention it, I
+think. The SRFI-1's fold is not actually a fold-left (it is mentioned 
+in passing in SRFI-1 itself that F's args are flipped w.r.t. MIT-Scheme
+and Haskell). 
+
+To set things straight, I think, it would make sense to add a fold-left
+function to Bigloo (and maybe to the SRFI-1 itself). An example patch is
+attached (fold-left)
+
+Kind regards,
+Pjotr
+
+P.S. Also attached is a comparable patch for SLIB.
+</pre><pre># HG changeset patch
+# Parent a3c09eae22b731dc89af30c71769fc1ff4b2866e
+
+diff -r a3c09eae22b7 api/srfi1/src/Llib/srfi1.srfi
+--- a/api/srfi1/src/Llib/srfi1.srfi	Wed Oct 31 09:27:15 2012 +0100
++++ b/api/srfi1/src/Llib/srfi1.srfi	Wed Oct 31 09:54:10 2012 +0100
+@@ -835,8 +835,21 @@
+       (let recur ((seed seed))
+ 	(if (p seed) '()
+ 	    (cons (f seed) (recur (g seed)))))))
+-      
+ 
++; real fold-left (ala Haskell &amp; OCaml)
++(define (fold-left kons knil lis1 . lists)
++  (check-arg procedure? kons fold-left)
++  (if (pair? lists)
++      (let lp ((lists (cons lis1 lists)) (ans knil))	; N-ary case
++	(receive (cars cdrs) (%cars+cdrs lists)
++	  (if (null? cars) ans ; Done.
++	      (lp cdrs (apply kons ans cars)))))
++	    
++      (let lp ((lis lis1) (ans knil))			; Fast path
++	(if (null-list? lis) ans
++	    (lp (cdr lis) (kons ans (car lis)))))))
++
++; fold-left with flipped args (kept for compatibility purposes)
+ (define (fold kons knil lis1 . lists)
+   (check-arg procedure? kons fold)
+   (if (pair? lists)
+@@ -875,6 +888,20 @@
+       (let recur ((lis lis1))				; Fast path
+ 	(if (null-list? lis) zero (f lis (recur (cdr lis)))))))
+ 
++; This one is easier that fold-left, surprisingly...
++(define (pair-fold-left f zero lis1 . lists)
++  (check-arg procedure? f pair-fold-left)
++  (if (pair? lists)
++      (let lp ((lists (cons lis1 lists)) (ans zero))	; N-ary case
++	(let ((tails (%cdrs lists)))
++	  (if (null? tails) ans
++	      (lp tails (apply f ans lists)))))
++
++      (let lp ((lis lis1) (ans zero))
++	(if (null-list? lis) ans
++	    (let ((tail (cdr lis)))		; Grab the cdr now,
++	      (lp tail (f ans lis)))))))
++
+ (define (pair-fold f zero lis1 . lists)
+   (check-arg procedure? f pair-fold)
+   (if (pair? lists)
+@@ -897,6 +924,12 @@
+   (if (null-list? lis) ridentity
+       (fold f (car lis) (cdr lis))))
+ 
++; use fold-left rather than fold...
++(define (reduce-left f ridentity lis)
++  (check-arg procedure? f reduce-left)
++  (if (null-list? lis) ridentity
++      (fold-left f (car lis) (cdr lis))))
++
+ (define (reduce-right f ridentity lis)
+   (check-arg procedure? f reduce-right)
+   (if (null-list? lis) ridentity
+</pre><pre>--- srfi-1.scm	2008-12-08 03:29:50.000000000 +0100
++++ srfi-1.scm	2012-10-31 10:01:58.512712354 +0100
+@@ -234,6 +234,13 @@
+       z
+       (apply fold (cons* f (apply f (append! (map car l) (list z)))
+ 			 (map cdr l)))))
++
++(define (fold-left f z l1 . l)
++  (set! l (cons l1 l))
++  (if (any null? l)
++      z
++      (apply fold-left (cons* f (apply f (append! (list z) (map car l)))
++			 (map cdr l)))))
+ ;;@args kons knil clist1 clist2 ...
+ (define (fold-right f z l1 . l)
+   (set! l (cons l1 l))
+@@ -247,6 +254,11 @@
+       z
+       (let ((tail (cdr l)))
+ 	(pair-fold f (f l z) tail))))
++(define (pair-fold-left f z l)		;XXX should be multi-arg
++  (if (null? l)
++      z
++      (let ((tail (cdr l)))
++	(pair-fold-left f (f z l) tail))))
+ ;;@args kons knil clist1 clist2 ...
+ (define (pair-fold-right f z l)		;XXX should be multi-arg
+   (if (null? l)
+@@ -264,6 +276,17 @@
+ 		       ridentity
+ 		       (fold f (car list) (cdr list)))))
+ 	     args))))
++
++(define reduce-left
++  (let ((comlist-reduce reduce-left))
++    (lambda args
++      (apply (if (= 2 (length args))
++		 comlist-reduce
++		 (lambda (f ridentity list)
++		   (if (null? list)
++		       ridentity
++		       (fold-left f (car list) (cdr list)))))
++	     args))))
+       
+ (define (reduce-right f ridentity list)
+   (if (null? list)
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00003.html">Buglet in reference implementation of SRFI 1 fixed</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00005.html">Re: SRFI-1's fold is not fold-left!</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00003.html">Buglet in reference implementation of SRFI 1 fixed</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00005.html">Re: SRFI-1's fold is not fold-left!</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00004"><strong>Date</strong></a></li>
+<li><a href="threads.html#00004"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

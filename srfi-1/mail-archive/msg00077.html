@@ -1,0 +1,161 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: One more vote on "linear update" and "!" -->
+<!--X-From-R13: fuvirefNnv.zvg.rqh -->
+<!--X-Date: Fri, 13 Aug 1999 18:53:54 &#45;0500 (CDT) -->
+<!--X-Message-Id: 199908132353.TAA03595@mongkok.ai.mit.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 14259.10335.274657.958166@shell5.ba.best.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>One more vote on &quot;linear update&quot; and &quot;!&quot;</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00076.html">Date Prev</a>][<a href="msg00078.html">Date Next</a>][<a href="msg00075.html">Thread Prev</a>][<a href="msg00078.html">Thread Next</a>][<a href="maillist.html#00077">Date Index</a>][<a href="threads.html#00077">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>One more vote on &quot;linear update&quot; and &quot;!&quot;</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-1@DOMAIN.HIDDEN">srfi-1@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: One more vote on &quot;linear update&quot; and &quot;!&quot;</li>
+<li><em>From</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxx</a></li>
+<li><em>Date</em>: Fri, 13 Aug 1999 19:53:53 -0400</li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:14259.10335.274657.958166@DOMAIN.HIDDEN">14259.10335.274657.958166@xxxxxxxxxxxxxxxxxx</a>&gt; (message from Dan	Bornstein on Thu, 12 Aug 1999 13:02:39 -0700 (PDT))</li>
+<li><em>References</em>: &lt;<a href="mailto:14259.10335.274657.958166@DOMAIN.HIDDEN">14259.10335.274657.958166@xxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Reply-to</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>You guys just love messing with my life, don't you? Enough of this
+last-minute, stay-of-execution, midnight-phone-call-from-the-governor
+stuff. Throw the switch and let's fry this thing.
+
+   From: Dan Bornstein &lt;danfuzz@xxxxxxxx&gt;
+   Date: Thu, 12 Aug 1999 13:02:39 -0700 (PDT)
+
+   I've been thinking a lot about the whole linear update issue, and I agree
+   that having a way to advise the system about object use without forcing a
+   particular paradigm (destructive or not) is a good thing. However, the
+   simple fact is that the pre-existing meaning of &quot;!&quot; in Scheme is *not*
+   linear update--it is destructive modification--as most obviously
+   demonstrated by these procedures:
+
+       set!
+       set-car!
+       set-cdr!
+
+   What would each of these mean if they were linear update anyway? They all
+   return unspecified values, for one thing, so if they were recast in a
+   linear update light, that would have to change. But let's say that you did
+   that, then there are still problems. For example, set-cdr! is often used to
+   create circular lists, but if it were defined to be nondestructive in a
+   particular implementation, there would be no way to do this.
+
+No, no. SET-CAR! and SET-CDR! are undoubtedly non-linear, guaranteed
+side-effecting procedures. I do not mean to imply otherwise.
+
+Here's my take on the linear list procedures. REVERSE!, APPEND! and friends
+have been around for a while, even though they aren't RnRS. These procedures
+have *always* had to be used in a &quot;linear&quot; fashion, even before I came along
+and did list-lib -- because of the empty list.
+
+That is, you cannot, *in general,* rely on this working:
+     (begin (append! foo bar)
+            foo) ; Use FOO non-linearly -- is now a longer list
+The problem is that FOO might be bound to (). Then APPEND has nothing to
+SET-CDR!; it just returns BAR. 
+
+All the side-effecting list procedures have this property. If you provide a
+guaranteed side-effecting list procedure, in general you must use it in in a
+linear fashion (note I said &quot;in general&quot; -- if you can guarantee that the list
+argument is non-empty, then you can get around this). In other words, you
+*can't* provide a guaranteed side-effecting list procedure, really, because
+*not all lists can be side-effected.*
+
+I would have used another convention if I'd been able to think one up.
+But neither I nor anyone else had a really good idea. I suppose I could
+have used a &quot;1&quot; suffix (e.g., APPEND1, REVERSE1) for &quot;linear,&quot; but that
+is obscure and seems ugly to me.
+
+Very well. Let us take one more vote. Would people like to see the linear
+update procs renamed to
+   take1
+   drop-right1
+   append1
+   append-reverse1
+   append-map1 
+   map1
+   filter1
+   partition1
+   remove1 
+   delete1 
+   delete-duplicates1
+   alist-delete1
+   reverse1
+   lset-union1
+   lset-intersection1
+   lset-difference1 
+   lset-xor1
+   lset-diff+intersection1
+
+I am *not* going to provide procedures that are guaranteed-side-effecting-
+when-possible-otherwise-functional. Ech. I *will* consider renaming these
+procedures. But this 1-suffix convention is pretty ugly, and you are going to
+see it again and again in the SRFI's I am getting ready to propose for
+vectors, character sets, strings, sorting, etc.
+     -Olin
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00075" href="msg00075.html">One more voice on &quot;linear update&quot; and &quot;!&quot;</a></strong>
+<ul><li><em>From:</em> Dan Bornstein</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00076.html">Re: SRFI-1 final draft available</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00078.html">Linear-update suffix: ! 1 or @</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00075.html">One more voice on &quot;linear update&quot; and &quot;!&quot;</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00078.html">Linear-update suffix: ! 1 or @</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00077"><strong>Date</strong></a></li>
+<li><a href="threads.html#00077"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

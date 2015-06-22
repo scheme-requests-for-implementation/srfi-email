@@ -1,0 +1,621 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Corrected version, performance, withdrawal? -->
+<!--X-From-R13: Oaqer ina Fbaqre <naqerNurg.oebja.rqh> -->
+<!--X-Date: Sat,  3 Apr 2004 03:20:50 +0200 (DFT) -->
+<!--X-Message-Id: Pine.sola.4.10.10404022009060.20587&#45;100000@now.het.brown.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Corrected version, performance, withdrawal?</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00035.html">Date Prev</a>][<a href="msg00037.html">Date Next</a>][<a href="msg00031.html">Thread Prev</a>][<a href="msg00037.html">Thread Next</a>][<a href="maillist.html#00036">Date Index</a>][<a href="threads.html#00036">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Corrected version, performance, withdrawal?</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-53@DOMAIN.HIDDEN">srfi-53@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Corrected version, performance, withdrawal?</li>
+<li><em>From</em>: Andre van Tonder &lt;<a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 2 Apr 2004 20:20:36 -0500 (EST)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-53@DOMAIN.HIDDEN">srfi-53@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>I have discovered and corrected some serious scoping and unintentional
+capture bugs involving syntax-bind (previously syntax-do) bound
+variables.  This involved rewriting the whole substitution
+engine to make use of bound-indentifier=? equivalence instead of the
+free-indentifier? equivalence that was used before.
+
+The resulting code, with tests, is recorded below.  Note that I have *not
+yet* made most of the modifications that came up in the discussions.
+
+The resulting code runs so slowly as to be likely unusable in practice.
+This is mainly due to the expense of testing for bound
+identifier equivalence of symbols.  It can be very
+dramatically sped up by cheating as follows:  On systems that provide
+syntax-case just replace the corresponding macros below with:
+
+(define-syntax bound=
+  (lambda (stx)
+    (syntax-case stx ()
+      ((_ id b kt kf)
+       (if (bound-identifier=? (syntax id) (syntax b))
+           (syntax kt)
+           (syntax kf))))))
+
+(define-syntax symbol
+  (lambda (stx)
+    (syntax-case stx ()
+      ((symbol x sk fk)
+       (if (identifier? (syntax x))
+           (syntax sk)
+           (syntax fk))))))
+
+However, this brings up the question of what this SRFI is for.  Originally
+my intention was to provide a convenient portable library to make
+&quot;procedural&quot; programming with SYNTAX-RULES easier (note that one of the
+raisons d'etre of the SRFI process is indeed as a repository for *library*
+proposals: <a  rel="nofollow" href="http://srfi.schemers.org/srfi-history.html">http://srfi.schemers.org/srfi-history.html</a>).  However, it is
+becoming clear to me that such a library cannot be practically implemented
+using just syntax-rules, due to problems with efficiency.  We therefore do
+not have portability.  Since I find it unlikely that implementors will en
+masse provide special support for yet another macro proposal, we are
+therefore reduced to using elements from, e.g., an already
+present SYNTAX-CASE implementation.
+
+So we need something like SYNTAX-CASE to be already present.  In that case
+one might as well just use SYNTAX-CASE and be done with it.
+It should clear from the document that computation-rules reproduces (more or
+less &quot;up to isomorphism&quot;) a restricted fragment of SYNTAX-CASE and that the
+style of macro programming described in the document can be easily done in
+SYNTAX-CASE.
+
+So unless the performance problem can be ameliorated, giving a practical
+and truly portable implementation based on SYNTAX-RULES, there may be a
+case for withdrawal.  Possible reasons for keeping it alive regardless
+of current performance are its conceptual simplicity (this remains a pure
+rewriting system, without the phase separation complexities of
+syntax-case), and the possibility that future additions to SYNTAX-RULES
+may enable a more efficient implementation (however, it seems more likely 
+that something like SYNTAX-CASE will become part of the standard).      
+
+Regards
+Andre
+
+==============================
+Code below:
+
+Caveat:  While this runs on Petite Chez and MzScheme (Solaris build 2.5),
+there appears to
+             be a bug in the Windows build of MzScheme that prevents
+completion of all the tests.
+
+;====================================================================
+; Andre van Tonder 2004.
+
+(define-syntax reduce
+  (syntax-rules (syntax-bind syntax let-syntax-computation
+                 letrec-syntax-computation computation-rules)
+    ((reduce k (syntax-bind ((x computation))
+                 computation*))
+     (reduce (replace (reduce* k) x computation*) computation))
+    ((reduce k (syntax stx))
+     (appl k stx))
+    ((reduce k (let-syntax-computation
+                   ((name
+                     (computation-rules (lit ...)
+                       ((*name . pat) computation)
+                       ...))
+                    ...)
+                 computation*))
+     (let-syntax ((name
+                   (syntax-rules (lit ...)
+                     ((*name k* . pat) (reduce k* computation))
+                     ...))
+                  ...)
+       (reduce k computation*)))
+    ((reduce k (letrec-syntax-computation
+                   ((name
+                     (computation-rules (lit ...)
+                       ((*name . pat) computation)
+                       ...))
+                    ...)
+                 computation*))
+     (letrec-syntax ((name
+                      (syntax-rules (lit ...)
+                        ((*name k* . pat) (reduce k* computation))
+                        ...))
+                     ...)
+       (reduce k computation*)))
+    ((reduce k f)
+     (appl f k))))
+
+(define-syntax reduce*
+  (syntax-rules ()
+    ((reduce* computation k)
+     (reduce k computation))))
+
+(define-syntax appl
+  (syntax-rules ()
+    ((appl (f . args) val)
+     (f val . args))))
+
+(define-syntax replace
+  (syntax-rules (syntax-bind)
+    ((replace val k x (syntax-bind ((y computation)) computation*))
+     (bound= x y
+             (appl k (syntax-bind ((y computation)) computation*))
+             (replace val (recons syntax-bind k) x
+                      (((y computation)) computation*))))
+    ((replace val k x (h . t))
+     (replace val (replace-cdr k x val t) x h))
+    ((replace val k x y)
+     (symbol x
+             (symbol y
+                     (bound= x y
+                             (appl k val)
+                             (appl k y))
+                     (appl k y))
+             (appl k y)))))
+
+(define-syntax replace-cdr
+  (syntax-rules ()
+    ((replace-cdr h k x val t)
+     (replace val (recons h k) x t))))
+
+(define-syntax recons
+  (syntax-rules ()
+    ((recons t h k)
+     (appl k (h . t)))))
+
+(define-syntax bound=
+  (syntax-rules ()
+    ((bound= id b kt kf)
+      (let-syntax
+          ((id (syntax-rules ()
+                 ((id kt** kf**) kf**)))
+           (ok (syntax-rules ()
+                 ((ok kt** kf**) kt**))))
+        (let-syntax
+            ((test (syntax-rules ()
+                     ((_ b kt* kf*) (id kt* kf*)))))
+          (test ok kt kf))))))
+
+(define-syntax symbol
+  (syntax-rules ()
+    ((symbol x sk fk)
+     (let-syntax ((test (syntax-rules ()
+                          ((test x sk* fk*)     sk*)
+                          ((test non-x sk* fk*) fk*))))
+       (test foo sk fk)))))
+
+(define-syntax ident
+  (syntax-rules ()
+    ((ident x) x)))
+
+(define-syntax qident
+  (syntax-rules ()
+    ((qident x) 'x)))
+
+(define-syntax syntax-run
+  (syntax-rules ()
+    ((syntax-run computation)
+     (reduce (ident) computation))))
+
+(define-syntax syntax-inspect
+  (syntax-rules ()
+    ((syntax-run computation)
+     (reduce (qident) computation))))
+
+(define-syntax define-syntax-computation
+  (syntax-rules (computation-rules)
+    ((define-syntax-computation name
+       (computation-rules (lit ...)
+         ((*name . pat) computation)
+         ...))
+     (define-syntax name
+       (syntax-rules (lit ...)
+         ((*name k . pat) (reduce k computation))
+         ...)))))
+
+;-------------------------------------------------------------------
+; Tests:
+
+
+(syntax-run (syntax-bind ((x (syntax y)))
+              (syntax (let ((x 1)) y))))         ;==&gt; 1
+
+(syntax-inspect (syntax-bind ((x (syntax 1)))
+                  (syntax-bind ((y (syntax x)))
+                    (syntax y))))                ;==&gt; 1
+
+(syntax-inspect (syntax-bind ((x (syntax 1)))
+                  (syntax-bind ((y (syntax 2)))
+                    (syntax (x y)))))            ;==&gt; (1 2)
+
+(syntax-inspect (syntax-bind ((x (syntax 1)))
+                  (syntax-bind ((x (syntax 2)))
+                    (syntax x))))                ;==&gt; 2
+
+(syntax-inspect (syntax-bind ((x (syntax 1)))
+                  (syntax-bind ((y (syntax 2)))
+                    (syntax-bind ((x (syntax 3)))
+                      (syntax x)))))             ;==&gt; 3
+
+; Correct scoping
+
+(syntax-inspect (syntax-bind ((x (syntax-bind ((y (syntax 1)))
+                                   (syntax 2))))
+                  (syntax y)))                   ;==&gt; y
+
+(define-syntax-computation test
+  (computation-rules ()
+    ((test a) (syntax-bind ((x (syntax 1)))
+                (syntax (x a))))))
+
+(syntax-inspect (test x))                        ;==&gt; (1 x)
+
+; Adapted from Hilsdale and Friedman
+
+(define-syntax-computation syntax-eq?
+  (computation-rules ()
+    ((syntax-eq? x y)
+     (syntax-if (syntax-symbol? x)
+                (let-syntax-computation
+                 ((test (computation-rules (x)
+                          ((test x)     (syntax #t))
+                          ((test non-x) (syntax #f)))))
+                 (test y))
+                (syntax-if (syntax-atom? x)
+                           (syntax-match* y
+                                          (x     (syntax #t))
+                                          (non-x (syntax #f)))
+                           (syntax #f))))))
+
+; Adapted from Oleg Kiselyov
+
+(define-syntax-computation syntax-symbol?
+  (computation-rules ()
+    ((syntax-symbol? (x . y))  (syntax #f))
+    ((syntax-symbol? #(x ...)) (syntax #f))
+    ((syntax-symbol? x)
+     (let-syntax-computation
+      ((test (computation-rules ()
+               ((test x) (syntax #t))
+               ((test y) (syntax #f)))))
+      (test foo)))))
+
+(define-syntax-computation syntax-atom?
+  (computation-rules ()
+    ((syntax-atom? (x . y))  (syntax #f))
+    ((syntax-atom? #(x ...)) (syntax #f))
+    ((syntax-atom? x)        (syntax #t))))
+
+(define-syntax-computation syntax-if
+  (computation-rules ()
+    ((syntax-if sc x y)
+     (syntax-bind ((s sc))
+       (syntax-if* s x y)))))
+
+(define-syntax-computation syntax-if*
+  (computation-rules ()
+    ((syntax-if* #f x y) y)
+    ((syntax-if* truish x y) x)))
+
+(define-syntax-computation syntax-match
+  (computation-rules ()
+    ((syntax-match sc (pat computation) ...)
+     (syntax-bind ((s sc))
+       (syntax-match* s (pat computation) ...)))))
+
+(define-syntax-computation syntax-match*
+  (computation-rules ()
+    ((syntax-match* s (pat computation) ...)
+     (let-syntax-computation
+      ((f (computation-rules ()
+            ((f pat) computation)
+            ...)))
+      (f s)))))
+
+(define-syntax-computation syntax-temporaries
+  (computation-rules ()
+    ((syntax-temporaries lst)           (syntax-temporaries lst ()))
+    ((syntax-temporaries () temps)      (syntax temps))
+    ((syntax-temporaries (h . t) temps) (syntax-temporaries t (temp .
+temps)))))
+
+(define-syntax-computation syntax-append
+  (computation-rules ()
+    ((syntax-append () y)      (syntax y))
+    ((syntax-append (h . t) y) (syntax-bind ((rest (syntax-append t y)))
+                                 (syntax (h . rest))))))
+
+(define-syntax-computation syntax-reverse
+  (computation-rules ()
+    ((syntax-reverse s)
+     (letrec-syntax-computation
+         ((syntax-reverse*
+           (computation-rules ()
+             ((syntax-reverse* () accum) (syntax accum))
+             ((syntax-reverse* (h . t) accum)
+              (syntax-reverse* t (h . accum))))))
+       (syntax-reverse* s ())))))
+
+; Simple test of let-syntax-computation:
+
+(syntax-run
+ (let-syntax-computation
+  ((atom?
+    (computation-rules ()
+      ((atom? (x . y))        (syntax #f))
+      ((atom? x)              (syntax #t)))))
+  (atom? (x y))))
+                                       ;==&gt; #f
+
+(syntax-run (syntax-atom? x))          ;==&gt; #t
+(syntax-run (syntax-atom? (1 . 2)))    ;==&gt; #f
+
+; Simple tests of list primitives
+
+(syntax-run (syntax-append (list 1 2) (4 5 7)))  ;==&gt; (1 2 4 5 7)
+
+(syntax-run (syntax-reverse (1 2 3 5 list)))     ;==&gt; (5 3 2 1)
+
+; syntax-eq?
+
+(syntax-run (syntax-eq? x x))              ;==&gt; #t
+(syntax-run (syntax-eq? x y))              ;==&gt; #f
+(syntax-run (syntax-eq? x 1))              ;==&gt; #f
+(syntax-run (syntax-eq? #t x))             ;==&gt; #f
+(syntax-run (syntax-eq? #t #t))            ;==&gt; #t
+(syntax-run (syntax-eq? (x . y) (x . y)))  ;==&gt; #f
+
+; conditionals:
+
+(syntax-run (syntax-if (syntax #f)
+                       (syntax 1)
+                       (syntax 2)))  ;==&gt; 2
+
+(syntax-run (syntax-if (syntax-eq? x x)
+                       (syntax 1)
+                       (syntax 2)))  ;==&gt; 1
+
+; Temporaries
+
+(syntax-inspect (syntax-temporaries (x y z)))  ;==&gt; (temp~1 temp~2 temp~3)
+
+; Predicates
+
+(syntax-run (syntax-symbol? x))     ;==&gt; #t
+(syntax-run (syntax-symbol? 1))     ;==&gt; #f
+(syntax-run (syntax-symbol? (x y))) ;==&gt; #f
+
+(syntax-run (syntax-atom? 1))        ;==&gt; #t
+(syntax-run (syntax-atom? (1 . 2)))  ;==&gt; #f
+
+
+;======================================================================
+; More complex example:
+; Records with labeled fields implementing:
+;    - Compile-time constructing by label
+;    - Compile-time matching by label
+
+(define-syntax define-record
+  (syntax-rules ()
+    ((define-record name (make-name label ...))
+     (begin
+       (define (make-name label ...)
+         (list 'name label ...))
+       (define-syntax-computation name
+         (computation-rules ()
+           ((name) (syntax (make-name (label ...))))))))))
+
+(define-syntax make-record
+  (syntax-rules (=)
+    ((make-record name (= label value) ...)
+     (syntax-run
+      (syntax-match (name)
+        ((make-name labels) (populate make-name
+                                      labels
+                                      ((= label value) ...)
+                                      ((= label value) ...)
+                                      ())))))))
+
+(define-syntax-computation populate
+  (computation-rules (=)
+    ((populate make-name () () bindings (value* ...))
+     (syntax (make-name value* ...)))
+    ((populate make-name (label* . labels*) () bindings values*)
+     (syntax-error &quot;No binding for&quot; label* &quot;in&quot; make-name bindings))
+    ((populate make-name () ((= label value) . rest) bindings values*)
+     (syntax-error &quot;Wrong label&quot; label &quot;in&quot; make-name bindings))
+    ((populate make-name
+               (label* . labels*)
+               ((= label value) . binds)
+               bindings
+               (value* ...))
+     (syntax-if (syntax-eq? label label*)
+                (syntax-bind ((new-bindings (remove-bind label* bindings)))
+                  (populate make-name
+                            labels*
+                            new-bindings
+                            new-bindings
+                            (value* ... value)))
+                (populate make-name
+                          (label* . labels*)
+                          binds
+                          bindings
+                          (value* ...))))))
+
+(define-syntax-computation remove-bind
+  (computation-rules ()
+    ((remove-bind label* ())
+     (syntax ()))
+    ((remove-bind label* ((= label value) . bindings))
+     (syntax-if (syntax-eq? label label*)
+                (syntax bindings)
+                (syntax-bind ((rest (remove-bind label* bindings)))
+                  (syntax ((= label value) . rest)))))))
+
+(define-syntax match-record
+  (syntax-rules ()
+    ((match-record val (name (= label var) ...) . body)
+     (if (and (pair? val)
+              (eq? (car val) 'name))
+         (let ((fields (cdr val)))
+           (syntax-run
+            (syntax-match (name)
+              ((make-name labels)
+               (match-fields fields
+                             labels
+                             ((= label var) ...)
+                             ((= label var) ...)
+                             body)))))
+         (error &quot;Record type does not match&quot;)))))
+
+(define-syntax-computation match-fields
+  (computation-rules ()
+    ((match-fields fields labels () () body)
+     (syntax (begin .  body)))
+    ((match-fields fields (label* . labels*) () bindings body)
+     (syntax-bind ((rest (match-fields fields+
+                                       labels*
+                                       bindings
+                                       bindings
+                                       body)))
+       (syntax
+        (let ((fields+ (cdr fields)))
+          rest))))
+    ((match-fields fields () ((= label var) . binds) bindings body)
+     (syntax-error &quot;No field&quot; label &quot;in record&quot;))
+    ((match-fields fields
+                   (label* . labels*)
+                   ((= label var) . binds)
+                   bindings
+                   body)
+     (syntax-if (syntax-eq? label label*)
+                (syntax-bind ((new-bindings (remove-bind label* bindings)))
+                  (syntax-bind ((rest (match-fields fields+
+                                                    labels*
+                                                    new-bindings
+                                                    new-bindings
+                                                    body)))
+                    (syntax
+                     (let ((var     (car fields))
+                           (fields+ (cdr fields)))
+                         rest))))
+                (match-fields fields
+                              (label* . labels*)
+                              binds
+                              bindings
+                              body)))))
+
+;---------------------------------------------------------------
+; Tests:
+
+(define-record test (make-test x y))
+
+; Now the following:
+
+(make-record test (= y 5) (= x 6))   ;==&gt; (test 6 5)
+
+; expands at compile-time to
+
+(make-test 6 5)                      ;==&gt;  ;==&gt; (test 6 5)
+
+(make-record test (= x 5) (= y 6))   ;==&gt; (test 5 6)
+
+(make-record test (= y (make-record test (= x 1) (= y 2)))
+             (= x 7))
+;==&gt; (test 7 (test 1 2))
+
+;(make-record test (= y 5) (= x 6) (= w 1))
+
+;==&gt; error: bad syntax in: (error &quot;Wrong label&quot; w &quot;in&quot; make-test ((= w 1)))
+
+(define testing (make-test 8 9))
+
+; Now the following:
+
+(match-record testing
+              (test (= y u) (= x v)) (list u v))           ;==&gt; (9 8)
+
+; expands at compile-time to:
+
+(if (and (pair?  testing)
+         (eq? (car testing) 'test))
+    (let ((fields (cdr testing)))
+      (let ((v (car fields))
+            (fields+ (cdr fields)))
+        (let ((u (car fields+))
+              (fields+ (cdr fields+)))
+          (list u v))))
+    (error &quot;Record type does not match&quot;))      ;==&gt; (9 8)
+
+(match-record testing
+              (test (= x u)) u)                            ;==&gt; 8
+
+(match-record testing
+              (test (= y u)) u)                            ;==&gt; 9
+
+(match-record testing
+              (test (= x u) (= y v)) (list u v))           ;==&gt; (8 9)
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00037" href="msg00037.html">Re: Corrected version, performance, withdrawal?</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00035.html">Re: Initial comments &amp; questions</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00037.html">Re: Corrected version, performance, withdrawal?</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00031.html">Re: Request for potential addition</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00037.html">Re: Corrected version, performance, withdrawal?</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00036"><strong>Date</strong></a></li>
+<li><a href="threads.html#00036"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

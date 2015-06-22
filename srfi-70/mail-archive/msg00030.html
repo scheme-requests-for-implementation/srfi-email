@@ -1,0 +1,169 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: infinities reformulated [was Re: My ideas about infinity in Scheme (revised)] -->
+<!--X-From-R13: Ohoerl Xnssre <ntwNnyhz.zvg.rqh> -->
+<!--X-Date: Tue, 24 May 2005 19:19:28 +0200 (DFT) -->
+<!--X-Message-Id: 20050524171941.724671B77B4@voluntocracy.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200505231703.j4NH3PTO029180@mail.savaJe.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>infinities reformulated [was Re: My ideas about infinity in Scheme (revised)]</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00029.html">Date Prev</a>][<a href="msg00031.html">Date Next</a>][<a href="msg00025.html">Thread Prev</a>][<a href="msg00029.html">Thread Next</a>][<a href="maillist.html#00030">Date Index</a>][<a href="threads.html#00030">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>infinities reformulated [was Re: My ideas about infinity in Scheme (revised)]</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:alexshinn@DOMAIN.HIDDEN">alexshinn@xxxxxxxxx</a></li>
+<li><em>Subject</em>: infinities reformulated [was Re: My ideas about infinity in Scheme (revised)]</li>
+<li><em>From</em>: Aubrey Jaffer &lt;<a href="mailto:agj@DOMAIN.HIDDEN">agj@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 24 May 2005 13:19:41 -0400 (EDT)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-70@DOMAIN.HIDDEN">srfi-70@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-70@DOMAIN.HIDDEN">srfi-70@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:200505231703.j4NH3PTO029180@DOMAIN.HIDDEN">200505231703.j4NH3PTO029180@xxxxxxxxxxxxxxx</a>&gt; (message from Alex	Shinn on Mon, 23 May 2005 15:30:02 +0900)</li>
+<li><em>References</em>: &lt;<a href="mailto:200505231703.j4NH3PTO029180@DOMAIN.HIDDEN">200505231703.j4NH3PTO029180@xxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre> | Date: Mon, 23 May 2005 15:30:02 +0900
+ | From: Alex Shinn &lt;alexshinn@xxxxxxxxx&gt;
+ | 
+ | On 5/23/05, Aubrey Jaffer &lt;agj@xxxxxxxxxxxx&gt; wrote:
+ | &gt;  | Date: Sun, 22 May 2005 20:46:53 +0900
+ | &gt;  | From: Alex Shinn &lt;alexshinn@xxxxxxxxx&gt;
+ | &gt;  |
+ | &gt;  | On 5/22/05, Aubrey Jaffer &lt;agj@xxxxxxxxxxxx&gt; wrote:
+ | &gt;  | &gt;
+ | &gt;  | &gt; In hundreds of years of using rational numbers, mathematicians have
+ | &gt;  | &gt; not discovered 1/0 to be a useful extension to the rational numbers.
+ | &gt;  |
+ | &gt;  | Well, mathematically 1/0 isn't real or complex either, as it doesn't
+ | &gt;  | obey the properties of a field
+ | &gt; 
+ | &gt; 1/0 and -1/0 can be added in a way that preserves the total ordering
+ | &gt; of the real numbers.
+ | 
+ | But closure is lost because (+ 1/0 -1/0) is not real (at which point
+ | it's no longer a group, much less field).  Introduction of 0/0 to
+ | regain closure breaks the inverse element property of groups (the
+ | identity element is still 1 but 0/0 has no inverse).
+
+I have come up with a clearer formulation:
+
+  6.2.2x Inexactness
+
+  In an implementation which represents inexact real numbers with
+  IEEE-754 64-bit flonums:
+
+  (= 3.141592653589793
+     3.14159265358979323846
+     3.1415926535897932384626433
+     3.141592653589793238462643383279
+     3.14159265358979323846264338327950288)       ==&gt;  #t
+
+  Thus an inexact real number represents not a single value, but a
+  neighborhood of (mathematical) real numbers.  The inaccuracies of
+  inexact calculations are due to misalignment of functional
+  projection of a given neighborhood onto the real line neighborhoods.
+
+  The interpretation of real infinities is that 1/0 represents real
+  numbers greater than can be encoded by finite inexacts in the
+  implementation (&gt; 179.76931348623158e306 for IEEE-754 64-bit
+  flonums) and that -1/0 represents numbers less than can be encoded
+  by finite inexacts in the implementation (&lt; -179.76931348623158e306
+  for IEEE-754 64-bit flonums).  This preserves the total ordering of
+  the (mathematical) real numbers and extends Scheme's representation
+  to cover the entire real line.  Note that no numerical infinity,
+  with its attendant theoretical problems, is constructed; 1/0 and
+  -1/0 represent the half-lines beyond either end of the
+  implementation's inexact rational range.  For any finite real number
+  x:
+
+  (= -1/0 x))                 ==&gt;  #f
+  (= 1/0 x))                  ==&gt;  #f
+  (&lt; -1/0 x 1/0))             ==&gt;  #t
+  (&gt; 1/0 x -1/0))             ==&gt;  #t
+
+  Implementations of Scheme which provide inexact real numbers shall
+  implement positive infinity and negative infinity as unique inexact
+  real numbers.
+
+  An optional third infinity, which is not real, may be returned by a
+  numerical function when no inexact neighborhood (including
+  infinities) contains the correct answer.  An implementation may
+  report a violation of an implementation restriction in any
+  calculation for which the result would be an unreal infinity.
+
+I believe these semantics avoid the problems caused by introduction of
+new elements to the field.
+
+ | &gt; Many ideas about efficiency have been invalidated by the growth of
+ | &gt; instruction speed far outstripping growth in L1 cache size.  An
+ | &gt; article about this is:
+ | &gt; &lt;<a  rel="nofollow" href="http://swiss.csail.mit.edu/~jaffer/CNS/interpreter-speed">http://swiss.csail.mit.edu/~jaffer/CNS/interpreter-speed</a>&gt;
+ | 
+ | An interpreter is still an order of magnitude slower than a native
+ | compiler.  Regardless, if there are situations (either explicit
+ | from the use of real? or implicit via method polymorphism) where in
+ | the middle of a loop you must check against the IEEE-754
+ | infinities, then you will suffer a serious performance loss.
+
+IEEE 64-bit infinities are those numbers whose 11-bit exponent field
+is all ones (2047).  They can be quickly detected without using a FPU.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00025" href="msg00025.html">Re: My ideas about infinity in Scheme (revised)</a></strong>
+<ul><li><em>From:</em> Alex Shinn</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00029.html">Re: [srfi-70] Limit</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00031.html">Re: [srfi-70] Limit</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00025.html">Re: My ideas about infinity in Scheme (revised)</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00029.html">Re: [srfi-70] Limit</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00030"><strong>Date</strong></a></li>
+<li><a href="threads.html#00030"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

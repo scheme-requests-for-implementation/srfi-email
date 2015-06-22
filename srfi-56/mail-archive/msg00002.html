@@ -1,0 +1,149 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: SRFI 56 Binary I/O -->
+<!--X-From-R13: orne <orneNfbavp.arg> -->
+<!--X-Date: Thu, 17 Jun 2004 02:44:55 +0200 (DFT) -->
+<!--X-Message-Id: Pine.LNX.4.58.0406161650420.25594@bolt.sonic.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>SRFI 56 Binary I/O</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00001.html">Date Prev</a>][<a href="msg00003.html">Date Next</a>][<a href="msg00001.html">Thread Prev</a>][<a href="msg00003.html">Thread Next</a>][<a href="maillist.html#00002">Date Index</a>][<a href="threads.html#00002">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>SRFI 56 Binary I/O</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-56@DOMAIN.HIDDEN">srfi-56@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: SRFI 56 Binary I/O</li>
+<li><em>From</em>: bear &lt;<a href="mailto:bear@DOMAIN.HIDDEN">bear@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 16 Jun 2004 17:44:48 -0700 (PDT)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-56@DOMAIN.HIDDEN">srfi-56@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+&lt;applause&gt;
+
+	In higher-level code I'll want to stick character encoding
+information and endianness into the port objects, but you have
+correctly identified the real primitives of I/O.
+
+	read-byte
+        write-byte
+        peek-byte
+        byte-ready?
+
+	are what we need, because at this moment in history there
+are several competing &quot;standard&quot; ways to write characters (and
+unicode is multiplicitous, which means that reading/writing &quot;a
+character&quot; can never have a fundamental, unambiguous meaning
+in terms of binary I/O ever again).
+
+	I would, in fact, advocate that any and all definitions
+of read-char, write-char, etc, be defined in terms of these
+operations rather than the other way 'round, so that they can
+be redefined for different character environments by loading
+different libraries.
+
+	One issue; how much of a standard is BER?  12.5 percent
+protocol lossage seems like a lot to me.  I'd rather use 1 bit
+out of 16 than 1 bit out of 8 to carry the &quot;continuing&quot; information.
+bits to encode various &quot;actual&quot; integer lengths:
+
+length      8-bit BER     16-bit modified BER
+32-36       40*              48 &gt;
+37-41       48               48 =
+42-48       56*              64 &gt;
+49-55       64               64 =
+56-59       72              *64 &lt;
+60-63       72*              80 &gt;
+64-69       80               80 =
+70-74       88              *80 &lt;
+75-76       88*              96 &gt;
+77-83       96               96 =
+84-90      104              *96 &lt;
+91-97      112              112 =
+
+
+	As you can see, for small values 8-bit BER is more
+efficient, but the difference between 8 and 16 bit BER breaks
+even right around 64 bits, and after we hit 77 bits in real
+length, 8 bit BER is never more efficient again.
+
+	Since hardware is increasingly supporting reads and
+writes of 16 bits as faster than reads and writes of 8 bits,
+and since numeric formats up to around 64 bits are often
+supported by special purpose instructions, and since in the
+ranges where we're forced to a BER type representation we'll
+probably use fewer bits with a 16-bit BER, I think we should
+prefer a 16-bit unit with a continuation  bit rather than an
+8-bit unit with a continuation bit.
+
+	But the difference is awfully small in importance.
+If there are existing tools out there that support the 8-bit
+BER format, I'd say go with it.
+
+				Bear
+
+
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00003" href="msg00003.html">Re: SRFI 56 Binary I/O</a></strong>
+<ul><li><em>From:</em> Alex Shinn</li></ul></li>
+<li><strong><a name="00004" href="msg00004.html">Re: SRFI 56 Binary I/O</a></strong>
+<ul><li><em>From:</em> Thomas Bushnell, BSG</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00001.html">Re: Some comments...</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00003.html">Re: SRFI 56 Binary I/O</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00001.html">Re: Some comments...</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00003.html">Re: SRFI 56 Binary I/O</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00002"><strong>Date</strong></a></li>
+<li><a href="threads.html#00002"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

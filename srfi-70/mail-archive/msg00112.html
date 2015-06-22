@@ -1,0 +1,148 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: comparison operators and *typos -->
+<!--X-From-R13: Ohoerl Xnssre <ntwNnyhz.zvg.rqh> -->
+<!--X-Date: Sat,  9 Jul 2005 04:24:53 +0200 (DFT) -->
+<!--X-Message-Id: 20050709022515.C74C61B77B4@voluntocracy.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: BEF2B887.ABEC%schlie@comcast.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: comparison operators and *typos</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00111.html">Date Prev</a>][<a href="msg00113.html">Date Next</a>][<a href="msg00109.html">Thread Prev</a>][<a href="msg00114.html">Thread Next</a>][<a href="maillist.html#00112">Date Index</a>][<a href="threads.html#00112">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: comparison operators and *typos</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:schlie@DOMAIN.HIDDEN">schlie@xxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: comparison operators and *typos</li>
+<li><em>From</em>: Aubrey Jaffer &lt;<a href="mailto:agj@DOMAIN.HIDDEN">agj@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri,  8 Jul 2005 22:25:15 -0400 (EDT)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-70@DOMAIN.HIDDEN">srfi-70@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-70@DOMAIN.HIDDEN">srfi-70@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:BEF2B887.ABEC%25schlie@DOMAIN.HIDDEN">BEF2B887.ABEC%schlie@xxxxxxxxxxx</a>&gt; (message from Paul Schlie on	Thu, 07 Jul 2005 10:46:31 -0400)</li>
+<li><em>References</em>: &lt;<a href="mailto:BEF2B887.ABEC%25schlie@DOMAIN.HIDDEN">BEF2B887.ABEC%schlie@xxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre> | Date: Thu, 07 Jul 2005 10:46:31 -0400
+ | From: Paul Schlie &lt;schlie@xxxxxxxxxxx&gt;
+ | 
+ | &gt;  | Date: Wed, 06 Jul 2005 13:55:40 -0400
+ | &gt;  | From: Paul Schlie &lt;schlie@xxxxxxxxxxx&gt;
+ | &gt;  | 
+ | &gt;  | Where absolute zero is designated as 0, and who's reciprocal is 0, as
+ | &gt;  | the average value of it's -1/0 and +1/0 limits would be 0; as would 0/0,
+ | &gt; 
+ | &gt; Then the FINITE? predicate becomes useless.
+ | 
+ | - so?
+
+SRFI-70:
+
+  This SRFI attempts to strike a balance between tolerance and
+  signaling of range errors.  Having #i+/0 and #i-/0 allows one level
+  of calculation to be executed before bounds checking.
+
+That detection is via the FINITE? procedure.
+
+  Subsequent numerical calculations on infinities can signal an error
+  or return a non-real infinity: #i0/0.  #i0/0 can be considered an
+  error waiting to happen.
+
+I'm sorry that SRFI-70 can't accommodate your proposals.  They are
+complicated and nonuniform; they don't significantly improve upon the
+capabilities of SRFI-70; and you have not grounded them in terms of
+standard mathematical constructs.
+
+ | &gt;  | (limit (lambda (x) (tan x)) (pi/2 -0/1)) =&gt; +1/0
+ | &gt;  | (limit (lambda (x) (tan x)) (pi/2 +0/1)) =&gt; -1/0
+ | &gt;  | 
+ | &gt;  | (+ 4. (/ (abs 0) 0)) =&gt; 4.0
+ | &gt;  | (limit (lambda (x) (+ 4. (/ (abs x) x))) (0 -0/1)) =&gt; 3.0
+ | &gt;  | (limit (lambda (x) (+ 4. (/ (abs x) x))) (0 +0/1)) =&gt; 5.0
+ | &gt; 
+ | &gt; LIMIT already handles these cases correctly.  But I am unconvinced
+ | &gt; that a procedure can automatically pick the evaluation points given no
+ | &gt; information about the test function.
+ | 
+ | - it seems fairly straight foreword to for +-0/1 to imply the use
+ | of the smallest value representable by an implementation as the
+ | delta value in it's calculation of a limit value its argument's
+ | value?
+
+That doesn't work in general.  Intermediate quantities in a
+calculation can overflow or underflow if the delta is too small.
+
+(define (func x) (expt (+ (/ x) (exp (/ x)) (exp (/ 2 x))) x))
+
+;;The mathematically correct answer is e^2 = 7.3890560989306504:
+
+(limit func 0 1/40)	==&gt; 7.3890560989306504
+(limit func 0 1/41)	==&gt; #i0/0
+(limit func 0 1/42)	==&gt; #f
+(limit func 0 1/43)	==&gt; #i+/0
+(limit func 0 1/444)	==&gt; #i+/0
+(limit func 0 1e-323)	==&gt; #i+/0
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00114" href="msg00114.html">Re: limit function</a></strong>
+<ul><li><em>From:</em> Paul Schlie</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00109" href="msg00109.html">Re: comparison operators and *typos</a></strong>
+<ul><li><em>From:</em> Paul Schlie</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00111.html">Re: Nitpick with FLOOR etc.</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00113.html">Revision of SRFI 70 available</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00109.html">Re: comparison operators and *typos</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00114.html">Re: limit function</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00112"><strong>Date</strong></a></li>
+<li><a href="threads.html#00112"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

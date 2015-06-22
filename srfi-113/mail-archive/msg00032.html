@@ -1,0 +1,140 @@
+<!-- MHonArc v2.6.18 -->
+<!--X-Subject: Re: Open issues for SRFI 113 -->
+<!--X-From-R13: Yriva Ibegzna <xjbegznaNtznvy.pbz> -->
+<!--X-Date: Mon,  9 Dec 2013 01:43:57 +0100 (MET) -->
+<!--X-Message-Id: 52A51248.8090700@gmail.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20131204043726.GF22362@mercury.ccil.org -->
+<!--X-Reference: 52A3F70B.7020707@gmail.com -->
+<!--X-Reference: 20131208180500.GO23243@mercury.ccil.org -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Open issues for SRFI 113</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00031.html">Date Prev</a>][<a href="msg00033.html">Date Next</a>][<a href="msg00029.html">Thread Prev</a>][<a href="msg00034.html">Thread Next</a>][<a href="maillist.html#00032">Date Index</a>][<a href="threads.html#00032">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Open issues for SRFI 113</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: John Cowan &lt;<a href="mailto:cowan@DOMAIN.HIDDEN">cowan@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Open issues for SRFI 113</li>
+<li><em>From</em>: Kevin Wortman &lt;<a href="mailto:kwortman@DOMAIN.HIDDEN">kwortman@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 08 Dec 2013 16:43:52 -0800</li>
+<li><em>Cc</em>: <a href="mailto:srfi-113@DOMAIN.HIDDEN">srfi-113@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-113@DOMAIN.HIDDEN">srfi-113@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Dkim-signature</em>: v=1; a=rsa-sha256; c=relaxed/relaxed;        d=gmail.com; s=20120113;        h=message-id:date:from:user-agent:mime-version:to:cc:subject         :references:in-reply-to:content-type:content-transfer-encoding;        bh=DdfcxDzuaCcl+WDiCXEBOGVeik5bOcqQWmsjav0jsJk=;        b=dlOYzj36h3x+gfCukZMRmYKhaEta3elhS3/oPdbIqlTMoEuiC40qFQVZJzIGxe05lO         P8Su3pqwHYTxdbARGmqipk0QFzV9ti93nZREGQvdLWQh3Gy5eSLMV6R0vOMREnQoOOu0         uNYLHMPAeSuA6tgoC72AiyZHxr/09vXLj4QFgbCMgL3SeP4GYPcObH3GvIWAVn70s+Ke         uXMQDJa6u2R2mgcd7Bh52x8LmZswtAsfXuVU1Gsq7EFzkDN4fVvJgxUOqgqJn7QNJm6f         cbGS4QdN6fXAcVj3PWRNWcaOasV6GwuXMSW3tDTaP9RkHKkkXQ1Q61z5XjmQi0YxiXBJ         O7kw==</li>
+<li><em>In-reply-to</em>: &lt;<a href="msg00028.html">20131208180500.GO23243@mercury.ccil.org</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="msg00023.html">20131204043726.GF22362@mercury.ccil.org</a>&gt; &lt;<a href="msg00026.html">52A3F70B.7020707@gmail.com</a>&gt; &lt;<a href="msg00028.html">20131208180500.GO23243@mercury.ccil.org</a>&gt;</li>
+<li><em>User-agent</em>: Mozilla/5.0 (X11; Linux x86_64; rv:24.0) Gecko/20100101 Thunderbird/24.1.0</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>On 12/08/2013 10:05 AM, John Cowan wrote:
+&gt;&gt; [13] In my use cases the time and effort that it takes programmers to find
+&gt;&gt; and import multiple fine-grained libraries is far costlier than the time
+&gt;&gt; it might take a Scheme environment to load a single coarse one, so I say
+&gt;&gt; stick with one library.
+&gt; 
+&gt; It's not so much time-to-load as namespace pollution.  The library as
+&gt; currently specified introduces 238 identifiers.  Admittedly they are
+&gt; named according to a fairly small number of patterns, which hopefully
+&gt; will make collisions unlikely.  I'll leave things as they are.
+
+Yeah I think collisions with these names are unlikely, and if they were
+to occur, the import syntax has clean ways of handling it.
+
+&gt;&gt; [14] This can be deceptively complex with mutable structures, since all the
+&gt;&gt; interactions between mutative operations and pre-existing cursors need
+&gt;&gt; to be defined precisely.
+&gt; 
+&gt; Or just say, as Java does and as I do in HashTablesCowan, that the effect
+&gt; of mutating a hash table with live cursors is undefined.
+
+That's OK, although it makes some intuitive algorithms impossible to
+implement. For example a straightforward way of computing the set
+difference (A - B) destructively is
+
+for each element x in set A:
+  if x is in set B:
+    delete x from A
+
+If the &quot;delete x from A&quot; operation invalidates the &quot;for each element x&quot;
+cursor then you're out of luck.
+
+Then again, insisting that live cursors stay valid is a heavy
+implementation burden that adds a lot of complexity and effectively
+prohibits some data structures.
+
+IMO the better part of valor is to try to get away with not having
+cursors into mutable data structures. Almost all use cases can already
+be handled by the &quot;Mapping and folding&quot; procedures.
+
+Kevin Wortman
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00034" href="msg00034.html">Re: Open issues for SRFI 113</a></strong>
+<ul><li><em>From:</em> John Cowan</li></ul></li>
+<li><strong><a name="00035" href="msg00035.html">Re: Open issues for SRFI 113</a></strong>
+<ul><li><em>From:</em> Alex Shinn</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00023" href="msg00023.html">Open issues for SRFI 113</a></strong>
+<ul><li><em>From:</em> John Cowan</li></ul></li>
+<li><strong><a name="00026" href="msg00026.html">Re: Open issues for SRFI 113</a></strong>
+<ul><li><em>From:</em> Kevin Wortman</li></ul></li>
+<li><strong><a name="00028" href="msg00028.html">Re: Open issues for SRFI 113</a></strong>
+<ul><li><em>From:</em> John Cowan</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00031.html">Re: Open issues for SRFI 113</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00033.html">Re: New release of SRFI 113</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00029.html">Re: Open issues for SRFI 113</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00034.html">Re: Open issues for SRFI 113</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00032"><strong>Date</strong></a></li>
+<li><a href="threads.html#00032"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

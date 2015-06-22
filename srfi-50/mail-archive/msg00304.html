@@ -1,0 +1,222 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Comparing Pika&#45;syle and JNI&#45;style -->
+<!--X-From-R13: Xvz Pynaql <wvzoNerqung.pbz> -->
+<!--X-Date: Wed, 14 Jan 2004 21:45:56 +0100 (NFT) -->
+<!--X-Message-Id: vt265fecl8l.fsf@zenia.home -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: E1AfQRd&#45;0000Qa&#45;00@mail.mumble.net -->
+<!--X-Reference: vt2y8scua4h.fsf@zenia.home -->
+<!--X-Reference: 877jzwtzaz.fsf@becket.becket.net -->
+<!--X-Reference: vt2ptdn2bqq.fsf@zenia.home -->
+<!--X-Reference: vt2isje3nna.fsf_&#45;_@zenia.home -->
+<!--X-Reference: 200401141840.KAA07050@morrowfield.regexps.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Comparing Pika-syle and JNI-style</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00303.html">Date Prev</a>][<a href="msg00305.html">Date Next</a>][<a href="msg00315.html">Thread Prev</a>][<a href="msg00305.html">Thread Next</a>][<a href="maillist.html#00304">Date Index</a>][<a href="threads.html#00304">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Comparing Pika-syle and JNI-style</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Tom Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Comparing Pika-syle and JNI-style</li>
+<li><em>From</em>: Jim Blandy &lt;<a href="mailto:jimb@DOMAIN.HIDDEN">jimb@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: 14 Jan 2004 15:45:46 -0500</li>
+<li><em>Cc</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:200401141840.KAA07050@DOMAIN.HIDDEN">200401141840.KAA07050@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:E1AfQRd-0000Qa-00@DOMAIN.HIDDEN">E1AfQRd-0000Qa-00@xxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:vt2y8scua4h.fsf@DOMAIN.HIDDEN">vt2y8scua4h.fsf@xxxxxxxxxx</a>&gt;	&lt;<a href="mailto:877jzwtzaz.fsf@DOMAIN.HIDDEN">877jzwtzaz.fsf@xxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:vt2ptdn2bqq.fsf@DOMAIN.HIDDEN">vt2ptdn2bqq.fsf@xxxxxxxxxx</a>&gt;	&lt;<a href="mailto:vt2isje3nna.fsf_-_@DOMAIN.HIDDEN">vt2isje3nna.fsf_-_@xxxxxxxxxx</a>&gt;	&lt;<a href="mailto:200401141840.KAA07050@DOMAIN.HIDDEN">200401141840.KAA07050@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Sender</em>: <a href="mailto:jimb@DOMAIN.HIDDEN">jimb@xxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Gnus/5.09 (Gnus v5.9.0) Emacs/21.3</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+Tom Lord &lt;lord@xxxxxxx&gt; writes:
+&gt; /* untested code */
+&gt; t_scm_error
+&gt; scm_assq (t_scm_word * answer,
+&gt;           t_scm_arena instance,
+&gt;           t_scm_word * key,
+&gt;           t_scm_word * alist)
+&gt; {
+&gt;   struct assq_frame
+&gt;   {
+&gt;     SCM_FRAME;
+&gt;     scm_word_t * pair;
+&gt;     scm_word_t * key;
+&gt;   } l;
+&gt; 
+&gt;   SCM_PROTECT_FRAME (l);
+&gt; 
+&gt; 
+&gt;   scm_make_false (answer, instance);
+&gt; 
+&gt;   while (scm_is_pair (instance, alist))
+&gt;     {
+&gt;       scm_car (&amp;l.pair, instance, alist);
+&gt;       scm_car (&amp;l.key, instance, &amp;l.pair);
+&gt;       if (scm_values_eq (instance, &amp;l.key, key))
+&gt;         {
+&gt;           SCM_LSET (answer, instance, &amp;l.pair);
+&gt;           break;
+&gt;         }
+&gt;       scm_cdr (alist, instance, alist);
+&gt;     }
+&gt; 
+&gt;   SCM_UNPROTECT_FRAME (l);
+&gt;   return 0;
+&gt; }
+
+It's worth noting here that SCM_LSET is essentially a 'linearizing'
+assignment operator.  I'd been thinking of providing a similar
+operator for Minor:
+
+    /* Free the reference DEST, if DEST is non-zero; then return SRC.
+       This is meant to help free a variable's value before assigning
+       to it:
+
+          x = mn_set (c, x, new_value);  */
+    mn_ref *mn_set (mn_call *, mn_ref *dest, mn_ref *src);
+
+If Minor provided an operator like that, then one could write the
+Minor example in a very similar fashion to the Pika example:
+
+     mn_ref *
+     assq (mn_call *c, mn_ref *key, mn_ref *alist)
+     {
+       mn_ref *pair = 0;
+       mn_ref *pair_key = 0;
+
+       while (mn_pair_p (c, alist))
+         {
+           pair     = mn_set (c, pair,     mn_car (c, alist));
+           pair_key = mn_set (c, pair_key, mn_car (c, pair));
+ 
+           if (mn_ref_eq (c, key, pair_key))
+             return pair;
+ 
+           alist = mn_to_cdr (c, alist);
+         }
+ 
+       return mn_false (c);
+     }
+
+Here's Tom's code again, for reference:
+
+    /* untested code */
+    t_scm_error
+    scm_assq (t_scm_word * answer,
+              t_scm_arena instance,
+              t_scm_word * key,
+              t_scm_word * alist)
+    {
+      struct assq_frame
+      {
+        SCM_FRAME;
+        scm_word_t * pair;
+        scm_word_t * key;
+      } l;
+
+      SCM_PROTECT_FRAME (l);
+
+      scm_make_false (answer, instance);
+
+      while (scm_is_pair (instance, alist))
+        {
+          scm_car (&amp;l.pair, instance, alist);
+          scm_car (&amp;l.key, instance, &amp;l.pair);
+          if (scm_values_eq (instance, &amp;l.key, key))
+            {
+              SCM_LSET (answer, instance, &amp;l.pair);
+              break;
+            }
+          scm_cdr (alist, instance, alist);
+        }
+
+      SCM_UNPROTECT_FRAME (l);
+      return 0;
+    }
+
+I think this underscores how fundamentally similar the two are:
+- Minor calls correspond to Pika frames.
+- Minor heap-allocates while Pika stack-allocates.
+
+I think the biggest difference between the two is that Pika ties
+reference lifetimes very tightly to lexical block lifetimes, whereas
+Minor binds them to call lifetimes, but allows/requires you to do some
+other explicit frees.  Each has some advantages and some
+disadvantages.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00305" href="msg00305.html">Re: Comparing Pika-syle and JNI-style</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00262" href="msg00262.html">Re: when GC is permitted</a></strong>
+<ul><li><em>From:</em> Richard Kelsey</li></ul></li>
+<li><strong><a name="00283" href="msg00283.html">temporarily withdrawing SRFI-50</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+<li><strong><a name="00287" href="msg00287.html">Re: temporarily withdrawing SRFI-50</a></strong>
+<ul><li><em>From:</em> Thomas Bushnell, BSG</li></ul></li>
+<li><strong><a name="00294" href="msg00294.html">Re: temporarily withdrawing SRFI-50</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+<li><strong><a name="00295" href="msg00295.html">Comparing Pika-syle and JNI-style</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+<li><strong><a name="00296" href="msg00296.html">Re: Comparing Pika-syle and JNI-style</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00303.html">Re: Comparing Pika-syle and JNI-style</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00305.html">Re: Comparing Pika-syle and JNI-style</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00315.html">Re: Comparing Pika-syle and JNI-style</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00305.html">Re: Comparing Pika-syle and JNI-style</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00304"><strong>Date</strong></a></li>
+<li><a href="threads.html#00304"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

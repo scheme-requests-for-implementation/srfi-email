@@ -1,0 +1,271 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: REPOST:Permitting and Supporting Extended Character Sets: response. (fwd) -->
+<!--X-From-R13: orne <orneNfbavp.arg> -->
+<!--X-Date: Tue, 10 Feb 2004 03:21:54 +0100 (NFT) -->
+<!--X-Message-Id: Pine.LNX.4.58.0402091820570.14665@bolt.sonic.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>REPOST:Permitting and Supporting Extended Character Sets: response. (fwd)</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00001.html">Date Prev</a>][<a href="msg00003.html">Date Next</a>][<a href="msg00003.html">Thread Prev</a>][<a href="msg00004.html">Thread Next</a>][<a href="maillist.html#00002">Date Index</a>][<a href="threads.html#00002">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>REPOST:Permitting and Supporting Extended Character Sets: response. (fwd)</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-52@DOMAIN.HIDDEN">srfi-52@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: REPOST:Permitting and Supporting Extended Character Sets: response. (fwd)</li>
+<li><em>From</em>: bear &lt;<a href="mailto:bear@DOMAIN.HIDDEN">bear@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 9 Feb 2004 18:21:48 -0800 (PST)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-52@DOMAIN.HIDDEN">srfi-52@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&lt;previously posted on SRFI-50&gt;
+
+
+On Sat, 7 Feb 2004, Tom Lord wrote:
+
+&gt; (in &quot;Permitting and Supporting Extended Character Sets&quot;:)
+
+&gt; The specification of symbol-&gt;string says:
+&gt; Returns the name of symbol as a string. If the symbol was part of an
+&gt; object returned as the value of a literal expression (section 4.1.2)
+&gt; or by a call to the read procedure, and its name contains alphabetic
+&gt; characters, then the string returned will contain characters in the
+&gt; implementation's preferred standard case -- some implementations
+&gt; will prefer upper case, others lower case. If the symbol was
+&gt; returned by string-&gt;symbol, the case of characters in the string
+&gt; returned will be the same as the case in the string that was passed
+&gt; to string-&gt;symbol. It is an error to apply mutation procedures like
+&gt; string-set! to strings returned by this procedure.
+
+&gt; It should say:
+&gt; Returns the name of symbol as a string. If the symbol was part of an
+&gt; object returned as the value of a literal expression (section 4.1.2)
+&gt; or by a call to the read procedure, its name will be in the
+&gt; implementation's preferred standard case -- some implementations
+&gt; will prefer upper case, others lower case. If the symbol was
+&gt; returned by string-&gt;symbol, the string returned will be string=? to
+&gt; the string that was passed to string-&gt;symbol. It is an error to
+&gt; apply mutation procedures like string-set! to strings returned by
+&gt; this procedure.
+
+
+I would propose instead:
+
+ Returns the name of symbol as a string. If the symbol was part of an
+ object returned as the value of a literal expression (section 4.1.2)
+ or by a call to the read procedure, then all cased characters in the
+ identifier (see the definition of char-cased? for a precise definition
+ of cased and uncased characters) will be in the implementation's preferred
+ standard case -- some implementations will prefer upper case, others
+ lower case.  If the symbol was returned by string-&gt;symbol, the case
+ of the characters in the string returned will be the same as the case
+ in the string that was passed to string-&gt;symbol. It is an error to
+ apply mutation procedures like string-set! to strings returned by this
+ procedure.
+
+Rationale; I think it's simply clearer.  The above wording
+specifically permits uncased characters (ie, characters which do not
+conform to &quot;normal&quot; expectations of cased characters) to be present
+in lowercase in identifiers even if the preferred case is uppercase,
+and presumably vice versa.
+
+&gt; With regard to character class predicates such as char-alphabetic?
+&gt; the Revised Report says:
+&gt; These procedures return #t if their arguments are alphabetic,
+&gt; numeric, whitespace, upper case, or lower case characters,
+&gt; respectively, otherwise they return #f. The following remarks, which
+&gt; are specific to the ASCII character set, are intended only as a
+&gt; guide: The alphabetic characters are the 52 upper and lower case
+&gt; letters. The numeric characters are the ten decimal digits. The
+&gt; whitespace characters are space, tab, line feed, form feed, and
+&gt; carriage return.
+
+&gt; It should instead say:
+&gt; These procedures return #t if their arguments are alphabetic,
+&gt; numeric, whitespace, upper case, or lower case characters,
+&gt; respectively, otherwise they return #f. The characters a..z and A..Z
+&gt; must be alphabetic. The digits 0..9 must be numeric. Space and
+&gt; newline must be whitespace.
+
+&gt; The procedure char-alphabetic? is deprecated. New programs should
+&gt; usually use char-letter? (see below) instead. char-alphabetic? has a
+&gt; precise definition in terms of char-letter?:
+
+&gt;    (define (char-alphabetic? c)
+&gt;      (and (char-letter? c)
+&gt;           (char-upper-case? (char-upcase c))
+&gt;           (char-lower-case? (char-downcase c))))
+
+&gt; In other words, a character is &quot;alphabetic&quot; if it is a letter and
+&gt; the letter has both upper and lowercase forms. The characters #\a..#\z
+&gt; and #\A..#\Z are both &quot;alphabetic&quot; and &quot;letters&quot; -- however,
+&gt; implementations are free to add letters which are not alphabetic.
+
+This is not how linguists use the term &quot;alphabetic.&quot;  Please do not
+propose &quot;alphabetic&quot; as a procedure to use to mean this, as it will
+frustrate and confuse people.
+
+I propose instead:
+
+char-alphabetic?
+char-numeric?
+char-whitespace?
+char-upper-case?
+char-lower-case?
+
+ These procedures return #t if their arguments are alphabetic,
+ numeric, whitespace, uppercase, or lowercase characters, respectively.
+ Otherwise they return #f. The characters a..z and A..Z are required to
+ be alphabetic. The digits 0..9 must be numeric.  The space, newline, and
+ tab characters must be whitespace.  The characters a..z are required to
+ be lowercase.  The characters A..Z are required to be uppercase.  No
+ character may be both uppercase and lowercase.
+
+char-cased?
+char-uncased?
+
+ Char-cased? returns #t if its argument is a character which conforms to
+ &quot;normal&quot; case expectations, (see below) and #f otherwise.
+
+ Char-uncased returns #t if its argument is a character which does not
+ have both lowercase and uppercase forms which are single characters, or
+ if it is neither the preferred uppercase mapping of its own preferred
+ lowercase mapping nor the preferred lowercase mapping of its own
+ preferred uppercase mapping.  Otherwise, it returns #f.
+
+ These two functions could be defined by:
+
+   (define char-cased? (lambda (chararg)
+      (and (character? (char-upcase chararg))
+           (char-upper-case? (char-upcase chararg))
+           (character? (char-downcase chararg))
+           (char-lower-case? (char-downcase chararg))
+           (or (char=? chararg (char-downcase (char-upcase chararg)))
+               (char=? chararg (char-upcase (char-downcase chararg)))))))
+
+   (define char-uncased? (lambda chararg)
+       (not (char-cased? chararg)))
+
+ In the ASCII character set, whitespace, numeric, and punctuation
+ characters are uncased and alphabetic characters are cased.  However,
+ an implementation may provide uncased characters which are alphabetic,
+ such as hebrew characters or chinese ideographs which have no notion
+ of case, or german eszett, which is char-lower-case? but for which
+ there is no corresponding upper case character.
+
+Rationale: This allows char-lower-case?, char-upper-case?, and
+char-alphabetic? to go on meaning the same thing with respect to the
+96-character portable character set and meaning the same thing
+linguists mean when they use these terms.  This will reduce confusion
+in the long run.  This particular notion of cased and uncased
+characters is also useful in other parts of the standard for saying
+exactly which characters case requirements should apply to.  It leaves
+implementors free to not sweat about what to do with identifiers
+containing eszett, regardless of what they do with calls to
+(char-upcase #\eszett).
+
+Finally, the proposed redefinition of char-alphabetic? was not
+sufficient to capture all the potential problems that uncased (in the
+above sense) characters can cause.
+
+&gt; With regard to case-mapping, the specification of char-upcase and char-upcase says:
+
+&gt; These procedures return a character char2 such that (char-ci=? char
+&gt; char2). In addition, if char is alphabetic, then the result of
+&gt; char-upcase is upper case and the result of char-downcase is lower
+&gt; case.
+
+&gt; It should say
+
+&gt; These procedures return a character char2 such that (char-ci=? char
+&gt; char2). In addition, char-upcase must map a..z to A..Z and
+&gt; char-downcase must map A..Z to a..z.
+
+I would propose instead:
+
+ These procedures return a character char2 such that (char-ci=? char
+ char2). In addition, if char is alphabetic and cased, then the result
+ of char-upcase is upper case and the result of char-downcase is lower
+ case.
+
+&gt; The introduction to strings says:
+
+&gt; Some of the procedures that operate on strings ignore the difference
+&gt; between upper and lower case. The versions that ignore case have
+&gt; ``-ci'' (for ``case insensitive'') embedded in their names.
+
+&gt; It should say:
+
+&gt; Some of the procedures that operate on strings ignore the difference
+&gt; between strings in which upper and lower case variants of the same
+&gt; character occur in corresponding positions. The versions that ignore
+&gt; case have ``-ci'' (for ``case insensitive'') embedded in their
+&gt; names.
+
+I would propose instead:
+
+ Some of the procedures that operate on strings ignore the difference
+ between upper and lower case cased characters. The versions that
+ ignore case in cased characters have ``-ci'' (for ``case
+ insensitive'') embedded in their names.
+
+I think that if we have the new procedures char-cased? and char-uncased?
+we do not need the proposed char-letter? predicate.
+
+
+				Bear
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00001.html">Repost: Permitting and Supporting Extended Character Sets: response.</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00003.html">REPOST: Permitting and Supporting Extended Character Sets: response.</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00003.html">REPOST: Permitting and Supporting Extended Character Sets: response.</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00004.html">case mappings, character sets &amp; character properties</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00002"><strong>Date</strong></a></li>
+<li><a href="threads.html#00002"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

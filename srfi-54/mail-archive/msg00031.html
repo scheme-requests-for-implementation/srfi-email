@@ -1,0 +1,436 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: feedback -->
+<!--X-From-R13: fbb <gvyqrNgvyqr.pb.xe> -->
+<!--X-Date: Wed, 31 Mar 2004 15:46:56 +0200 (DFT) -->
+<!--X-Message-Id: 873c7pyvpp.fsf@tilde.co.kr -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: BC8F31A1.AF27%schlie@comcast.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: feedback</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00030.html">Date Prev</a>][<a href="msg00032.html">Date Next</a>][<a href="msg00030.html">Thread Prev</a>][<a href="msg00032.html">Thread Next</a>][<a href="maillist.html#00031">Date Index</a>][<a href="threads.html#00031">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: feedback</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Paul Schlie &lt;<a href="mailto:schlie@DOMAIN.HIDDEN">schlie@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: feedback</li>
+<li><em>From</em>: soo &lt;<a href="mailto:tilde@DOMAIN.HIDDEN">tilde@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: 31 Mar 2004 22:47:30 +0900</li>
+<li><em>Cc</em>: <a href="mailto:srfi-54@DOMAIN.HIDDEN">srfi-54@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-54@DOMAIN.HIDDEN">srfi-54@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:BC8F31A1.AF27%25schlie@DOMAIN.HIDDEN">BC8F31A1.AF27%schlie@xxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:BC8F31A1.AF27%25schlie@DOMAIN.HIDDEN">BC8F31A1.AF27%schlie@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Sender</em>: soo &lt;<a href="mailto:soo@DOMAIN.HIDDEN">soo@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Gnus/5.09 (Gnus v5.9.0) Emacs/21.2</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre> * From: Paul Schlie &lt;schlie@xxxxxxxxxxx&gt;
+ * Date: Tue, 30 Mar 2004 09:32:21 -0500
+ * Subj: Re: feedback
+
+ | Please consider:
+ | - personally believe fmt-xxx should produce a string (or lazy stream) where
+  a quoted scheme object, when displayed and then read back, would would be
+  equivalent, if not quoted, it's simply evaluated and then correspondingly
+  treated. which I suspect would be more generally useful and intuitive:
+
+I agree.
+
+ | - the value of fmt-xxx potentially yielding/consuming ports (or streams),
+  is that it enables lazily evaluated arbitrary length hierarchically
+  specified format specifications; which would likely be otherwise
+  potentially physically impractical to achieve.
+  (which format does not enable)
+
+Do you mean that &lt;show&gt; parameter should be allowed to be any procedure of
+two arguments (object and string-port)?
+If so, I agree.
+
+ | And while I'm at it, how about accepting arbitrary hierarchical lists of
+ | format specifiers such they may be composed without requiring their splicing
+ | into the format specifier list:
+ | (let ((sign-fmt '(-t s: +)))
+  (let ((field-fmt '(w: 10 f: 3)))
+    (fmt-num 12 sign-fmt field-fmt)))
+ | =&gt; &quot; #e+12.000&quot;
+
+If it is positively necessary, I think the above also can be expressed as
+(apply fmt-num 12 (append sign-fmt field-fmt)).
+
+ | Last few observations, in hope they may be helpful:
+ | - the \ escapes in the resulting formatted strings I presume are not
+ | literally present, but merely print that way; as (string #\a #\&quot; #\b) =&gt;
+ | &quot;a\&quot;b&quot; although 3 characters long.
+
+ | - The fmt-string (or whatever name, as not differentiating between string,
+ | number, etc format routines seems to lead to ambiguities, as noted by
+ | others; as (fmt 12 10 3 '+) =&gt; &quot;12 10 3 +&quot; would seem perfectly legitimate);
+ | who's behavior suggested below is similar to your cat procedure example
+ | (unless I'm missing something), except it would basically (eval) and (write)
+ | all objects with the exception of string and character arguments, which will
+ | use (display) if not quoted; implying it's necessity to be implemented as a
+ | macro/syntax-def, as otherwise it wouldn't be possible to differentiate
+ | between quoted and unquoted string and character arguments; which basically
+ | eliminates the necessity to explicitly identify write format attributes,
+ | enabling write and display formatted objects to be intermixed relatively
+ | easily and reasonably intuitively.
+
+Suppose that we have two procedure, fmt/number and fmt/others, and we don't
+know the values and the types of a and b:
+(define a 12)
+(define b &quot;str&quot;)
+
+(cat (if (number? a) (fmt/number a 10 2 '+) (fmt/others a 10 'u))
+     (if (number? b) (fmt/number a 10 2 '+) (fmt/others a 10 'u)))
+
+(cat (if (number? a) (fmt a 10 2 '+) (fmt a 10 'u))
+     (if (number? b) (fmt a 10 2 '+) (fmt a 10 'u)))
+	 
+What is the difference between the aboves?
+I think the solution of this problem is for FMT to hold the parameters of
+number type and those of others type in common.
+So, I've modified the definition of FMT (I change this into FORMATTER).
+Now we can use it, like this:
+(cancat (formatter a 10 2 'sign 'up) (formatter b 10 2 'sign 'up))
+
+The following is a simple spec of FORMATTER to show the changes.
+
+(FORMATTER &lt;object&gt; [[&lt;width@&gt;] [&lt;precision%&gt;] [&lt;char@&gt;] [&lt;writer@&gt;] [&lt;radix%&gt;]
+		     [&lt;plus%&gt;] [&lt;exactness%&gt;] [&lt;count$&gt;] [&lt;case$&gt;]
+		     [&lt;string@&gt;] ...])
+
+     * suffix @ : effective in all type of &lt;object&gt;.
+              % : effective only if &lt;object&gt; is the number type.
+	      $ : effective in all type except the number type of &lt;object&gt;.
+     * &lt;width&gt; is an exact integer whose absolute value specifies the width of
+       the resulting string.  When the resulting string has fewer characters
+       than the absolute value of &lt;width&gt;, it is padded with &lt;char&gt;s, either
+       on the left if &lt;width&gt; is positive, or on the right if &lt;width&gt; is
+       negative.  On the other hand, when the resulting string has more
+       characters than the absolute value of &lt;width&gt;, the &lt;width&gt; is ignored.
+     * &lt;precision&gt; is a exact integer whose absolute value specifies the
+       number of decimal digits after decimal point.  If &lt;precision&gt; is
+       non-negative integer, an exact sign (#e) can be prefixed to the
+       resulting string.
+     * &lt;char&gt; is a padding character.
+     * &lt;writer&gt; is a procedure of two arguments, object and string port.
+     * &lt;radix&gt; is a symbol: binary, decimal, octal, hexadecimal.
+     * If &lt;plus&gt; is a symbol, sign, and &lt;object&gt; is a positive number without a
+       positive sign, the positive sign is prefixed to the resulting string.
+     * &lt;exactness&gt; is a symbol: exact, inexact.
+     * &lt;count&gt; is a list whose elements are exact integers, and the number of
+       elements of the list is 1 or 2.  If the absolute value of the first
+       element is n, the resulting string takes n-characters if it is positive
+       or the remains except n-characters if it is negative, on the left. The
+       process is also same in case of the second element except in the right.
+     * &lt;case&gt; is a symbol: up (upcase), down (downcase), title (titlecase)
+     * &lt;string&gt;s are strings that are appended to the resulting string.
+
+The order of optional arguments is ignored except that &lt;precision&gt; can be
+defined only after &lt;width&gt; is defined.
+
+*** 2 general procedures
+
+(define (concat . objects)
+  (get-output-string
+   (let ((string-port (open-output-string)))
+     (for-each (lambda (object)
+		 ((or (and (or (number? object)
+			       (string? object)
+			       (char? object)
+			       (boolean? object))
+			   display)
+		      write)
+		  object string-port))
+	       objects)
+     string-port)))
+
+(define (print . objects)
+  (for-each (lambda (object)
+	      ((or (and (or (number? object)
+			    (string? object)
+			    (char? object)
+			    (boolean? object))
+			display)
+		   write)
+	       object))
+	    objects))
+
+(define (formatter object . rest)
+  (receive (width precision char writer radix plus exactness count
+		  case . str-list)
+      (opt-values rest
+		  (cons #f (lambda (x) (and (integer? x) (exact? x))))
+		  (cons #f (lambda (x) (and (integer? x) (exact? x))))
+		  (cons #f char?)
+		  (cons #f procedure?)
+		  (list 'decimal 'binary 'octal 'hexadecimal)
+		  (cons #f (lambda (x) (eq? x 'sign)))
+		  (cons #f (lambda (x) (memq x '(exact inexact))))
+		  (cons #f (lambda (x)
+			     (and (list? x)
+				  (&lt;= 1 (length x) 2)
+				  (every (lambda (x)
+					   (and (integer? x) (exact? x)))
+					 x))))
+		  (cons #f (lambda (x) (memq x '(up down title)))))
+    (arg-ors (&quot;formatter: bad argument&quot; str-list
+	      (not (every string? str-list)))
+	     (&quot;formatter: unnecessary padding character&quot; char
+	      (and char (not width))))
+    (cond
+     ((number? object)
+      (arg-ors (&quot;formatter: non-decimal cannot be inexact&quot; radix
+		(and (memq radix '(binary octal hexadecimal))
+		     (or precision
+			 (and (inexact? object) (not (eq? exactness 'exact)))
+			 (eq? exactness 'inexact))))
+	       (&quot;formatter: you didn't choose exact sign&quot; precision
+		(and precision (&lt; precision 0) (eq? exactness 'exact)))
+	       (&quot;formatter: you didn't choose default writer&quot; writer
+		(and writer
+		     (not (memq writer (list display write)))
+		     (or precision
+			 exactness
+			 (memq radix '(binary octal hexadecimal))))))
+      (let* ((width (or width 0))
+	     (char (or char #\space))
+	     (sign (if (&lt; width 0) '- '+))
+	     (exact-sign (and (and precision
+				   (&lt;= 0 precision)
+				   (or (eq? exactness 'exact)
+				       (and (exact? object)
+					    (not (eq? exactness 'inexact)))))
+			      &quot;#e&quot;))
+	     (str
+	      (if (or (not writer) (eq? writer display) (eq? writer write))
+		  (let ((str
+			 (number-&gt;string
+			  (if (or (not precision) (&lt;= 0 precision))
+			      (if exact-sign
+				  (if (exact? object)
+				      (exact-&gt;inexact object) object)
+				  (if exactness
+				      (if (eq? exactness 'exact)
+					  (if (inexact? object)
+					      (inexact-&gt;exact object) object)
+					  (if (exact? object)
+					      (exact-&gt;inexact object) object))
+				      object))
+			      (if exactness
+				  (if (eq? exactness 'exact)
+				      (if (inexact? object)
+					  (inexact-&gt;exact object) object)
+				      (if (exact? object)
+					  (exact-&gt;inexact object) object))
+				  (if (and precision (exact? object))
+				      (exact-&gt;inexact object) object)))
+			  (cdr (assq radix
+				     '((decimal . 10) (binary . 2) (octal . 8)
+				       (hexadecimal . 16)))))))
+		    (if precision
+			(let ((precision (abs precision))
+			      (e-index (or (string-index str #\e)
+					   (string-index str #\E)))
+			      (+-index (string-index str #\+ 1))
+			      (--index (string-index str #\- 1)))
+			  (define (mold str pre)
+			    (let ((len (string-length str))
+				  (index (string-index str #\.)))
+			      (if index
+				  (let ((d-len (- len (+ index 1))))
+				    (if (&lt;= d-len pre)
+					(string-append str (make-string
+							    (- pre d-len) #\0))
+					(mold
+					 (number-&gt;string
+					  (let ((num
+						 (string-&gt;number
+						  (substring str 0
+							     (+ (if (= pre 0)
+								    0 1)
+								index pre)))))
+					    ((if (&lt; num 0) - +)
+					     num
+					     (if (&lt; 4 (string-&gt;number
+						       (string (string-ref
+								str
+								(+ 1 index
+								   pre)))))
+						 (expt 0.1 pre) 0))))
+					 pre)))
+				  (string-append str &quot;.&quot;
+						 (make-string pre #\0)))))
+			  (cond
+			   (e-index
+			    (string-append
+			     (mold (substring str 0 e-index) precision)
+			     (substring str e-index (string-length str))))
+			   (+-index
+			    (string-append
+			     (mold (substring str 0 +-index) precision)
+			     &quot;+&quot;
+			     (mold (substring str (+ 1 +-index)
+					      (- (string-length str) 1))
+				   precision)
+			     (string (string-ref str
+						 (- (string-length str) 1)))))
+			   (--index
+			    (string-append
+			     (mold (substring str 0 --index) precision)
+			     &quot;-&quot;
+			     (mold (substring str (+ 1 --index)
+					      (- (string-length str) 1))
+				   precision)
+			     (string (string-ref str
+						 (- (string-length str) 1)))))
+			   (else
+			    (mold str precision))))
+			str))
+		  (get-output-string
+		   (let ((str-port (open-output-string)))
+		     (writer object str-port)
+		     str-port))))
+	     (str (if (and (&lt; 0 (real-part object))
+			   (not (eqv? #\+ (string-ref str 0)))
+			   plus)
+		      (string-append &quot;+&quot; str)
+		      str))
+	     (len (string-length str))
+	     (pad (- (abs width) (+ len (if exact-sign 2 0)))))
+	(apply string-append
+	       (cond
+		((&lt;= pad 0) 
+		 (string-append (or exact-sign &quot;&quot;) str))
+		((eq? sign '+)
+		 (if (and (eqv? char #\0)
+			  (or (eqv? #\+ (string-ref str 0))
+			      (eqv? #\- (string-ref str 0))))
+		     (string-append (or exact-sign &quot;&quot;)
+				    (string (string-ref str 0))
+				    (make-string pad char)
+				    (substring str 1 len))
+		     (string-append (make-string pad char)
+				    (or exact-sign &quot;&quot;)
+				    str)))
+		(else
+		 (string-append (or exact-sign &quot;&quot;)
+				str
+				(make-string pad char))))
+	       str-list)))
+     (else
+      (let* ((width (or width 0))
+	     (char (or char #\space))
+	     (sign (if (&lt; width 0) '- '+))
+	     (str (get-output-string
+		   (let ((str-port (open-output-string)))
+		     ((or writer
+			  (and (or (string? object)
+				   (char? object)
+				   (boolean? object))
+			       display)
+			  write)
+		      object str-port)
+		     str-port)))
+	     (str
+	      (if count
+		  (let ((len (string-length str))
+			(left (car count))
+			(right (if (not (null? (cdr count))) (cadr count) 0)))
+		    (string-append (if (&lt; left 0)
+				       (substring str (if (&lt; len (abs left))
+							  len (abs left))
+						  len)
+				       (substring str 0 (if (&lt; len left)
+							    len left)))
+				   (if (&lt; right 0)
+				       (substring str 0
+						  (if (&lt; len (abs right))
+						      0 (- len (abs right))))
+				       (substring str
+						  (if (&lt; len right)
+						      len (- len right))
+						  len))))
+		  str))
+	     (str (if case
+		      ((cdr (assq case `((down . ,string-downcase)
+					 (up . ,string-upcase)
+					 (title . ,string-titlecase)))) str)
+		      str))
+	     (pad (- (abs width) (string-length str))))
+	(apply string-append
+	       (cond
+		((&lt;= pad 0) str)
+		((eq? sign '+) (string-append (make-string pad char) str))
+		(else (string-append str (make-string pad char))))
+	       str-list))))))
+
+Thanks.
+
+-- 
+INITERM
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00032" href="msg00032.html">Re: feedback</a></strong>
+<ul><li><em>From:</em> Paul Schlie</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00030" href="msg00030.html">Re: feedback</a></strong>
+<ul><li><em>From:</em> Paul Schlie</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00030.html">Re: feedback</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00032.html">Re: feedback</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00030.html">Re: feedback</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00032.html">Re: feedback</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00031"><strong>Date</strong></a></li>
+<li><a href="threads.html#00031"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

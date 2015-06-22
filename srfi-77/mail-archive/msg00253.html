@@ -1,0 +1,178 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Common Lisp solved this problem 20 years ago -->
+<!--X-From-R13: Fnlybe Qnzcoryy <pnzcoryyNzhzoyr.arg> -->
+<!--X-Date: Thu, 27 Oct 2005 01:51:08 +0200 (MST) -->
+<!--X-Message-Id: 20051026235105.6891998027@pluto.mumble.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 435FE944.4060700@bothner.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Common Lisp solved this problem 20 years ago</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00252.html">Date Prev</a>][<a href="msg00254.html">Date Next</a>][<a href="msg00267.html">Thread Prev</a>][<a href="msg00257.html">Thread Next</a>][<a href="maillist.html#00253">Date Index</a>][<a href="threads.html#00253">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Common Lisp solved this problem 20 years ago</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Common Lisp solved this problem 20 years ago</li>
+<li><em>From</em>: Taylor Campbell &lt;<a href="mailto:campbell@DOMAIN.HIDDEN">campbell@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 26 Oct 2005 23:51:05 +0000 (UTC)</li>
+<li><em>Cc</em>: <a href="mailto:a.watson@DOMAIN.HIDDEN">a.watson@xxxxxxxxxxxxxxxx</a>, <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-77@DOMAIN.HIDDEN">srfi-77@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:435FE944.4060700@DOMAIN.HIDDEN">435FE944.4060700@xxxxxxxxxxx</a>&gt; (<a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a>)</li>
+<li><em>Sender</em>: Taylor Campbell &lt;<a href="mailto:campbell@DOMAIN.HIDDEN">campbell@xxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: IMAIL/1.21; Edwin/3.116; MIT-Scheme/7.7.90.+</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>   Date: Wed, 26 Oct 2005 13:38:28 -0700
+   From: Per Bothner &lt;per@xxxxxxxxxxx&gt;
+
+   Taylor Campbell wrote:
+   &gt; I'm a bit unclear on one part of your proposal: is the type
+   &gt; declaration syntax merely a suggestion to the compiler, or does it
+   &gt; actually affect the semantics of a program?
+
+   The latter, but perhaps not quite the way you're thinking.
+   (let ((V :: TYPE init)) ...)
+   has semantics like:
+   (let ((V (coerce-to-TYPE init))) ...)
+
+You say it only has the effect of coercion, but below you seem to
+imply more meaning than that, so I'm a little confused here.  (More on
+this below where you seemed to imply that.)
+
+Also, I agree with Thomas Bushnell that it is not a good idea to
+introduce the core syntax like this that is fundamentally intertwined
+with heavy semantic operations.  If you want this kind of coercion,
+why not provide the COERCE-TO-... procedures by which you explained
+the meaning of the :: syntax, which could be parameterized even
+further and more simply?  Coercion to integers of a given modulus, for
+example, from other integers, is accomplished with a procedure we
+already have in R5RS, namely MODULO; coercion to lesser-precision
+numerical representations would be useful to be parameterized on
+rounding, too, either from greater- to lesser-precision floats or from
+floats to integers, for the latter of which we also already have
+several routines for that kind of coercion, namely FLOOR, CEILING,
+ROUND, and TRUNCATE.
+
+   One could also specify that within the scope of V that
+   (set! V exp)
+   gets translated to:
+   (set! V (coerce-to-TYPE exp))
+   though I don't believe Kawa actually does that.  (I'd have to check.)
+
+(I think SET! and mutable variables are an abomination of which the
+language should be rid anyway.  But that is another topic for another
+discussion.)
+
+   &gt; That is, if I specify
+   &gt; that an expression's value is an IEEE double-precision flonum, do
+   &gt; arithmetic operations in that context 'become' IEEE 64-bit flonum
+   &gt; operations, with roundoff &amp;c. as specified by IEEE, or may the system
+   &gt; actually do something else?
+
+   Neither: it's not the operations that change: It's the
+   operand that changes.  The operation + is already defined so that
+   if the operands are IEEE 64-bit *values* then we use 64-bit flonum
+   flonum addition etc.  But's that's the way R5RS already works - we're
+   just being more precise and allowing for more data types.
+
+Why would it not be perfectly allowable for, say, the * procedure to
+return a 128-bit flonum when given two 64-bit flonums?  Similarly,
+why would you not specify that you want IEEE 64-bit flonum arithmetic
+using an explicit IEEE 64-bit flonum operation, like IEEE-FLO64*, to
+clearly indicate this in the program?
+
+   &gt; Would this be the case with the integer
+   &gt; declarations and n-bit modular arithmetic as well?
+
+   The declarations coerce to an appropriate data type.
+   I.e. you coerce an integer to a (modulo-int N), and arithmetic
+   on the (modulo-int N) *type* is defined to be modular.
+
+So are you saying that the 'type declaration' really *does* affect the
+semantics of the operations on the integer objects?  I'm not quite
+clear on how you can otherwise signify that some integer is 'modular'
+in a way that the + operator can distinguish by run-time tag; integers
+are integers.
+
+   &gt; While type declarations are useful (though I *abhor* the :: syntax),
+
+   It's not the most elegant syntax, but finding something better that
+   works in the context of the existing Scheme language isn't trivial.
+   Suggestions welcome.  I'm not fond of the Common Lisp syntax, with
+   its verbosity and weird scoping rules.
+
+Minor syntactic verbosity is not really a concern to me.  Simplicity
+of expression, however, is, and I think that a simple way to say to
+the compiler 'the value of this variable is an index into this array,'
+for example, is an important assertion to express which I can find no
+simpler way to write than (DECLARE ARRAY-INDEX I ARRAY), or something
+along those lines.  However, as I said, that's somewhat outside the
+scope of this SRFI, and for this SRFI I think coercion routines
+suffice to express simple kinds of assertions such as 'this is a
+flonum, or if it's not here's how to get one from something else.'
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00257" href="msg00257.html">Re: Common Lisp solved this problem 20 years ago</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00235" href="msg00235.html">Re: Common Lisp solved this problem 20 years ago</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00252.html">Re: reading NaNs</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00254.html">Re: reading NaNs</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00267.html">Re: Common Lisp solved this problem 20 years ago</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00257.html">Re: Common Lisp solved this problem 20 years ago</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00253"><strong>Date</strong></a></li>
+<li><a href="threads.html#00253"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,150 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: specification of STREAM&#45;UNFOLDN generators -->
+<!--X-From-R13: [ngguvnf @rhonhre <arhonhreNvasbezngvx.hav&#45;servohet.qr> -->
+<!--X-Date: Tue,  5 Aug 2003 10:28:16 +0200 (DFT) -->
+<!--X-Message-Id: y9lwudsh5k1.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>specification of STREAM-UNFOLDN generators</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00050.html">Date Prev</a>][<a href="msg00052.html">Date Next</a>][<a href="msg00053.html">Thread Prev</a>][<a href="msg00054.html">Thread Next</a>][<a href="maillist.html#00051">Date Index</a>][<a href="threads.html#00051">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>specification of STREAM-UNFOLDN generators</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-40@DOMAIN.HIDDEN">srfi-40@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: specification of STREAM-UNFOLDN generators</li>
+<li><em>From</em>: Matthias Neubauer &lt;<a href="mailto:neubauer@DOMAIN.HIDDEN">neubauer@xxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 05 Aug 2003 10:28:14 +0200</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-40@DOMAIN.HIDDEN">srfi-40@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Old-date</em>: 04 Aug 2003 22:48:49 +0200</li>
+<li><em>User-agent</em>: Gnus/5.090019 (Oort Gnus v0.19) XEmacs/21.5 (cassava, berkeley-unix)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Hi Phil,
+
+I really like your new draft! Looks awesome! :-)
+
+I found something that looks counterintuitive to me (or it is just me
+who can't see the rationale of the current specification ... :-).
+
+The type of the generator of STREAM-UNFOLDN is now specified as
+follows:
+
+    (proc seed) -&gt; seed result0 ... resultN
+
+   where resultI indicates how to produce the next element of the Ith
+   result stream:
+
+     (value)  -&gt; value is the next car of this result stream
+     #f       -&gt; no new information for this result stream
+     ()       -&gt; the end of this result stream has been reached
+
+Wouldn't it be more &quot;natural&quot; to swap the result types? Something like
+this:
+
+     (v)      -&gt; v is the next car of this result stream
+     ()       -&gt; no new information for this result stream
+     #f       -&gt; the end of this result stream has been reached
+
+Then, if a list is returned (case 1 and 2), it is just like this new
+list gets &quot;prepended&quot; to the result stream. Additionally, #f feels
+more like signaling &quot;the end&quot; to me ... :-)
+
+I would then even consider to make the results of the generators more
+general. Now, you're only allowed to prepend zero or one new element
+to the beginning of the result stream. Why not two, three, or more?
+The generalization would also simplify the specification:
+
+     (v0 ... vn) -&gt; v0 ... vn is the beginning of this result stream
+     #f          -&gt; the end of this result stream has been reached
+
+Here is a little toy function FOO demonstrating this &quot;feature&quot;: given
+a stream of pairs of ints and something else, e.g.
+
+    ((3 . a) (4 . b) (0 . x) (42 . y) ...),
+
+FOO generates a new stream, repeating the &quot;cdrs&quot; of the pairs
+according to the count in their &quot;cars&quot;. For the above stream the
+result would be
+
+    (a a a b b b b y y y y y y ...).
+
+Using the new interface FOO can be written as follows:
+
+(define (foo s)
+  (stream-unfoldn
+   (lambda (seed)
+     (if (stream-null? seed) 
+	 (values 'dummy #f)
+	 (values 
+	  (stream-cdr seed)
+	  (let ((h (stream-car seed)))
+	    (make-list (car h) (cdr h))))))
+   s
+   1))
+
+The advantage of the new interface is obvious: you don't have to
+handle the empty list separately, and adding the new elements to the
+beginning of the result stream is done in one go.
+
+-Matthias
+
+-- 
+Matthias Neubauer                                       |
+Universit&#xE4;t Freiburg, Institut f&#xFC;r Informatik           | tel +49 761 203 8060
+Georges-K&#xF6;hler-Allee 79, 79110 Freiburg i. Br., Germany | fax +49 761 203 8052
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00050.html">Re: specification of STREAM-UNFOLDN generators</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00052.html">Re: specification of STREAM-UNFOLDN generators</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00053.html">Re: specification of STREAM-UNFOLDN generators</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00054.html">Much simpler leak-free implementation possible?</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00051"><strong>Date</strong></a></li>
+<li><a href="threads.html#00051"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

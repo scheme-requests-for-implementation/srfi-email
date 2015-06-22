@@ -1,0 +1,159 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Strings/chars -->
+<!--X-From-R13: Fbz Zbeq <ybeqNrzs.arg> -->
+<!--X-Date: Wed, 24 Dec 2003 05:47:37 +0100 (NFT) -->
+<!--X-Message-Id: 200312240511.VAA20258@morrowfield.regexps.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: opr0lf0hi7w2xcd0@mx.freenet.de -->
+<!--X-Reference: 20031222.115128.628193033.shiro@lava.net -->
+<!--X-Reference: 200312222237.OAA06962@morrowfield.regexps.com -->
+<!--X-Reference: 87ad5j53tl.wl@strelka.synthcode.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Strings/chars</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00048.html">Date Prev</a>][<a href="msg00050.html">Date Next</a>][<a href="msg00048.html">Thread Prev</a>][<a href="msg00032.html">Thread Next</a>][<a href="maillist.html#00049">Date Index</a>][<a href="threads.html#00049">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Strings/chars</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:foof@DOMAIN.HIDDEN">foof@xxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Strings/chars</li>
+<li><em>From</em>: Tom Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 23 Dec 2003 21:11:12 -0800 (PST)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:87ad5j53tl.wl@DOMAIN.HIDDEN">87ad5j53tl.wl@xxxxxxxxxxxxxxxxxxxxx</a>&gt; (message from Alex Shinn on	Wed, 24 Dec 2003 11:48:06 +0900)</li>
+<li><em>References</em>: &lt;<a href="mailto:opr0lf0hi7w2xcd0@DOMAIN.HIDDEN">opr0lf0hi7w2xcd0@xxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:20031222.115128.628193033.shiro@DOMAIN.HIDDEN">20031222.115128.628193033.shiro@xxxxxxxx</a>&gt;	&lt;<a href="mailto:200312222237.OAA06962@DOMAIN.HIDDEN">200312222237.OAA06962@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:87ad5j53tl.wl@DOMAIN.HIDDEN">87ad5j53tl.wl@xxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+    &gt; From: Alex Shinn &lt;foof@xxxxxxxxxxxxx&gt;
+
+    &gt; Shiro's proposal is well thought out, handles encoding simply,
+    &gt; and is based on real working practice in Gauche.
+
+    &gt; The main complication is that Scheme strings don't necessarily
+    &gt; have anything to do with C strings.  Shared substrings, in fact,
+    &gt; are not C strings as already acknowledged by the API and strings
+    &gt; as lists or Boehm cords aren't even consecutive memory
+    &gt; references.  Handle these issues and the only thing left for
+    &gt; Unicode is to specify the default encoding (and an advanced SRFI
+    &gt; could specify fetching w/ alternate encodings for efficiency).
+
+
+My own thinking in this area isn't fully cooked yet but let me make a
+few general observations.
+
+
+* portable FFI vs. native FFI
+
+  It's worth keeping clear the difference between an FFI for writing
+  code portable across multiple implementations vs. an FFi exposing
+  the full glory of a particular implementation.
+
+  In a portable FFI, we can tolerate moderate inefficiences, loss of
+  generality, and all kinds of sins -- just so long as the result
+  really is portable and really is enough to write useful code
+  in a large number of cases.
+
+  In terms of strings, I like the idea of ALLOCATE_COPY_OF rather than 
+  EXTRACT:  function(s) that give you copies of strings or parts of
+  strings, in whatever encoding you like (from a small set), but 
+  which don't share state with the actual Scheme string and do have 
+  to be explicitly freed.
+
+  That's at least enough to be able to, for example, get the name of a
+  file you're supposed to open.
+
+
+
+* indexes are a total nightmare
+
+  Let's suppose a C function wants to hand Scheme the return value of
+  mb_strlen.   Or that Scheme wants to hand C a &quot;string index&quot;.
+
+  Total train wreck.
+
+
+
+* the real problem is C and C libraries
+
+  The standard C facilities for large character sets are fairly lame.
+  The de facto standard practice of using UTF-8 for everything is
+  limiting.   Indeed, there are no standard libraries for things such 
+  as ropes, edit buffers, and so forth.
+
+  It's beyond the scope of SRFI-50 but I think that in the longer
+  term, as we build these next generation Schemes with good Unicode
+  support, an interesting possibility is to aim for a run-time system
+  that doubles as a next-generation C library for Unicode text
+  manipulation.
+
+
+-t
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00004" href="msg00004.html">Couple things...</a></strong>
+<ul><li><em>From:</em> felix</li></ul></li>
+<li><strong><a name="00009" href="msg00009.html">Strings/chars</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+<li><strong><a name="00011" href="msg00011.html">Re: Strings/chars</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00048" href="msg00048.html">Re: Strings/chars</a></strong>
+<ul><li><em>From:</em> Alex Shinn</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00048.html">Re: Strings/chars</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00050.html">Re: GC safety and return values</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00048.html">Re: Strings/chars</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00032.html">Re: Strings/chars</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00049"><strong>Date</strong></a></li>
+<li><a href="threads.html#00049"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,156 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Different interface to Basic String Ports -->
+<!--X-From-R13: [nep Trryrl <srryrlNveb.hzbagerny.pn> -->
+<!--X-Date: Mon, 26 Apr 1999 09:13:03 &#45;0500 (CDT) -->
+<!--X-Message-Id: 199904261412.KAA24364@trex.IRO.UMontreal.CA -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Different interface to Basic String Ports</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[Date Prev][<a href="msg00001.html">Date Next</a>][Thread Prev][<a href="msg00001.html">Thread Next</a>][<a href="maillist.html#00000">Date Index</a>][<a href="threads.html#00000">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Different interface to Basic String Ports</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-6@DOMAIN.HIDDEN">srfi-6@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Different interface to Basic String Ports</li>
+<li><em>From</em>: Marc Feeley &lt;<a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 26 Apr 1999 10:12:58 -0400</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>The draft of SRFI 6 proposes 3 new procedures:
+
+1) (open-input-string &lt;string&gt;)     returns a port to read from &lt;string&gt;
+2) (open-output-string)             returns a port accumulating into a string
+3) (get-output-string &lt;output-string-port&gt;)  returns accumulated string
+
+I have used this interface in early versions of Gambit, but I now use
+a different interface which I think is superior because it provides
+higher efficiency and more functionality with fewer procedures.
+&quot;open-input-string&quot; and &quot;open-output-string&quot; are defined as above, and
+the procedures &quot;close-input-port&quot; and &quot;close-output-port&quot; are extended
+to return a string when their argument is a string port.  Specifically:
+
+
+  (close-output-port &lt;output-string-port&gt;) returns a string containing
+  the characters accumulated on the &lt;output-string-port&gt;.
+
+  example:
+
+  (let ((o (open-output-string)))
+    (write &quot;cloud&quot; o)
+    (write (* 3 3) o)
+    (close-output-port o))
+   --&gt; &quot;\&quot;cloud\&quot;9&quot;
+
+
+  (close-input-port &lt;input-string-port&gt;) returns a string containing
+  the characters that were not read from the string passed to
+  &quot;open-input-string&quot;.
+
+  example:
+
+  (let ((i (open-input-string &quot;alice #(1 2)&quot;)))
+    (let ((a (read i)))
+      (list a (close-input-port i))))
+   --&gt; (alice &quot; #(1 2)&quot;)
+
+
+Because we know (close-output-port &lt;output-string-port&gt;) is the last
+use of the &lt;output-string-port&gt;, we can return the **internal** string
+that is being used to accumulate the characters.  Note that for this
+to really be efficient the implementation needs to support a
+&quot;string-shrink!&quot; operation to decrease the length of the internal
+string and the usual technique of reallocating a string twice the size
+of the internal string when it overflows can be used.
+
+The string returned by (close-input-port &lt;input-string-port&gt;) is
+useful if some subsequent parsing of the remaining input is needed.
+For example by checking if the string is &quot;&quot; you can verify that the
+whole input string was read (this is not a very good example because
+with the draft proposal (and my proposal) you can simply do
+(eof-object? (read-char &lt;port&gt;))).  Also, the program can tell how
+much of the input string was read.  Although this functionality is
+also available with Clinger's proposal, usually more work is required
+(such as a loop to count all the characters remaining in the input
+string or a loop accumulating the remaining characters in a string (or
+output-string-port)).
+
+Note that there is no need to call &quot;close-output-port&quot; and
+&quot;close-input-port&quot; if the resulting string is not needed (the garbage
+collector will simply reclaim all the storage when the port is no
+longer reachable) so the cost of building the strings is only paid
+when you need them.
+
+What I like most in my proposal is the duality of the
+&quot;open-xxx-string&quot; and &quot;close-xxx-port&quot; procedures.
+&quot;open-input-string&quot; and &quot;open-output-string&quot; allow going from the
+string representation to the port representation, and
+&quot;close-input-port&quot; and &quot;close-output-port&quot; when passed a string port
+allow going from the port representation to the string representation.
+
+My proposal also extends well to what I call &quot;input-output string
+ports&quot; (basically a FIFO queue where each character written to the
+port can subsequently be read in the order written).  Among other
+things input-output string ports can be useful for interthread
+communication (one thread writes to the port and another reads from
+it).  When an input-output string port is created an initial string of
+characters is specified.  The procedures &quot;close-output-port&quot; and
+&quot;close-input-port&quot; return the string of characters that were written
+but not read.  With this it is easy to define &quot;open-input-string&quot; and
+&quot;open-output-string&quot; as special cases:
+
+(define (open-input-string str) (open-input-output-string str))
+(define (open-output-string) (open-input-output-string &quot;&quot;))
+
+Please consider revising your proposal to support this interface.
+
+Marc
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Next by Date:
+<strong><a href="msg00001.html">Alternative prior art</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00001.html">Alternative prior art</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00000"><strong>Date</strong></a></li>
+<li><a href="threads.html#00000"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

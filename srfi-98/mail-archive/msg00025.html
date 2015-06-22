@@ -1,0 +1,125 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: getenv vs. locale -->
+<!--X-From-R13: Wina Euznxbi <vinaNgurbel.nfh.eh> -->
+<!--X-Date: Fri, 18 Jul 2008 19:53:39 +0200 (MST) -->
+<!--X-Message-Id: m2d4lbaxv3.fsf@cherry.siamics.int -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>getenv vs. locale</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00024.html">Date Prev</a>][<a href="msg00026.html">Date Next</a>][<a href="msg00024.html">Thread Prev</a>][<a href="msg00026.html">Thread Next</a>][<a href="maillist.html#00025">Date Index</a>][<a href="threads.html#00025">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>getenv vs. locale</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-98@DOMAIN.HIDDEN">srfi-98@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: getenv vs. locale</li>
+<li><em>From</em>: Ivan Shmakov &lt;<a href="mailto:ivan@DOMAIN.HIDDEN">ivan@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 19 Jul 2008 00:46:56 +0700</li>
+<li><em>Cc</em>: Ivan Shmakov &lt;<a href="mailto:oneingray@DOMAIN.HIDDEN">oneingray@xxxxxxxxx</a>&gt;</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-98@DOMAIN.HIDDEN">srfi-98@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Reply-to</em>: Ivan Shmakov &lt;<a href="mailto:oneingray@DOMAIN.HIDDEN">oneingray@xxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Gnus/5.110006 (No Gnus v0.6) Emacs/21.4 (gnu/linux)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>	SRFI 98 reads:
+
+--cut--
+    For obtaining the value of the environment value, getenv may use
+    locale-setting information to encode the name, and decode the value
+    of the environment variable.
+--cut--
+
+	And it doesn't seem appropriate.
+
+	Historically, environment variables are used to specify
+	filenames (either sole, or lists, as in the case of PATH.)
+	However, filenames aren't actually ``strings'' on a number of
+	the general purpose platforms currently in use, most notably on
+	those of the POSIX flavour.
+
+	Indeed, a filename is more like a NUL-terminated byte vector on
+	such platforms.  It's perfectly valid to have a filename like
+	this (sans the NUL):
+
+#u8(1 2 3 ... 46 48 ... 255)
+
+	However, this byte vector has no interpretation as an UTF-8
+	string.  Therefore, it would be an error for Scheme
+	implementation to ``use locale-setting information to [...]
+	decode the value of the environment variable'', when the
+	environment variable's value is like that, and the locale
+	settings specify the use of the UTF-8 encoding.
+
+	On the other hand, the implementations which are capable of
+	passing the byte vector obtained from the process' environment
+	directly to open () (without trying to interpret it as a string)
+	would be able to work with the file irrespective of the locale
+	settings currently in effect.
+
+	Actually, I'm not aware of any platforms which specify the
+	encoding used for either the names or values of the environment
+	variables.  Therefore, I'd rather be suggesting for `getenv' to
+	be standardised as returning SRFI-4 byte vector.  However, this
+	``view'' on the OS interface doesn't seem to be widely accepted.
+	Indeed, Scheme48 is the only implementation I know that takes an
+	attempt to solve this somewhat peculiar problem.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00026" href="msg00026.html">Re: getenv vs. locale</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00024.html">New revision of SRFI 98 available</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00026.html">Re: getenv vs. locale</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00024.html">New revision of SRFI 98 available</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00026.html">Re: getenv vs. locale</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00025"><strong>Date</strong></a></li>
+<li><a href="threads.html#00025"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

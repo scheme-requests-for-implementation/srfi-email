@@ -1,0 +1,129 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: no constants please -->
+<!--X-From-R13: orne <orneNfbavp.arg> -->
+<!--X-Date: Wed, 31 Dec 2003 18:09:25 +0100 (NFT) -->
+<!--X-Message-Id: Pine.LNX.4.58.0312310851120.13125@bolt.sonic.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: E1Abhgn&#45;000244&#45;00@mail.mumble.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: no constants please</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00117.html">Date Prev</a>][<a href="msg00119.html">Date Next</a>][<a href="msg00117.html">Thread Prev</a>][<a href="msg00120.html">Thread Next</a>][<a href="maillist.html#00118">Date Index</a>][<a href="threads.html#00118">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: no constants please</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Richard Kelsey &lt;<a href="mailto:kelsey@DOMAIN.HIDDEN">kelsey@xxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: no constants please</li>
+<li><em>From</em>: bear &lt;<a href="mailto:bear@DOMAIN.HIDDEN">bear@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 31 Dec 2003 09:09:09 -0800 (PST)</li>
+<li><em>Cc</em>: <a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>, <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:E1Abhgn-000244-00@DOMAIN.HIDDEN">E1Abhgn-000244-00@xxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:E1Abhgn-000244-00@DOMAIN.HIDDEN">E1Abhgn-000244-00@xxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+On Wed, 31 Dec 2003, Richard Kelsey wrote:
+
+&gt;Are there any implementations of Scheme in use where SCHEME_FALSE,
+&gt;SCHEME_TRUE, SCHEME_NULL, or SCHEME_UNSPECIFIC should be freshly
+&gt;allocated?  Or where EQ? and == are not equivalent?  (These are not
+&gt;rhetorical questions; I really would like to know -- is this an
+&gt;existing or only potential problem for portability?)
+&gt;
+&gt;                                         -Richard
+
+== the pointer comparison is how you pretty much have to compare
+(scheme eq?) any boxed values.  But unboxed values like short
+integers, short characters, and floats get compared using ==
+the value comparison instead.
+
+I have constants corresponding to the &quot;unboxed value&quot; of #t and #f
+on the C side as well, but they are used mainly as data sources.
+IE, I don't represent scheme-false and scheme-true by pointing at
+them, I represent those values by copying them.  So I do have
+freshly-allocated #f's and #t's as unboxed values in the runtime.
+
+unspecific is not a constant at all; I use an error type which
+records what form the error arose in and what the values of the
+referenced variables were when the form was evaluated.  Thus
+instead of #,(UNSPECIFIC) the internal representation (which I
+intend to use to support a debugger) is going to be something
+like
+
+#,(ERROR: '((car foo) == (&lt;compiled function&gt; ()) 341.20))
+
+indicating that the form (car foo) at line 341 column 20 attempted
+to take the car of '().  The error object is returned from the
+car operation, and propagated back from there to whatever called
+car, etc, until it hits a handler.  These #UNSPECIFIC's are freshly-
+allocated boxed values and get compared (by handlers) using a
+pointer comparison.
+
+			Bear
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00120" href="msg00120.html">Re: no constants please</a></strong>
+<ul><li><em>From:</em> Richard Kelsey</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00117" href="msg00117.html">Re: no constants please</a></strong>
+<ul><li><em>From:</em> Richard Kelsey</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00117.html">Re: no constants please</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00119.html">Re: no constants please</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00117.html">Re: no constants please</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00120.html">Re: no constants please</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00118"><strong>Date</strong></a></li>
+<li><a href="threads.html#00118"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

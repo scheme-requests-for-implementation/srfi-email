@@ -1,0 +1,203 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: shared&#45;text substrings -->
+<!--X-From-R13: Ayva Euviref <fuvirefNzbatxbx.nv.zvg.rqh> -->
+<!--X-Date: Thu, 23 Mar 2000 18:27:42 &#45;0600 (CST) -->
+<!--X-Message-Id: 200003240027.TAA16473@mongkok.ai.mit.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: shared-text substrings</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00083.html">Date Prev</a>][<a href="msg00085.html">Date Next</a>][<a href="msg00072.html">Thread Prev</a>][<a href="msg00085.html">Thread Next</a>][<a href="maillist.html#00084">Date Index</a>][<a href="threads.html#00084">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: shared-text substrings</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-13@DOMAIN.HIDDEN">srfi-13@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: shared-text substrings</li>
+<li><em>From</em>: Olin Shivers &lt;<a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 23 Mar 2000 19:27:41 -0500</li>
+<li><em>Reply-to</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Howdy, everyone. The thing is: I invented (stumbled over?) this new sorting
+algorithm for lists. So my recent weekends have been spent doing the proofs
+and writing the paper instead of drawing up my replies to the recent posts. My
+apologies. Here are my comments on shared-text. Let's move on from here; it's
+time to get the Unicode issues resolved and that will be that.
+
+I have also recently been wandering through Java's spec for Unicode strings,
+but will put the results from that in a following msg. Once again, I apologise
+for the delay in the SRFI-13 progress.
+
+Here are my comments on shared-text string procs and library size.
+
+   Well, sure, anyone can see what you're talking about.  You still don't
+   have hard, experimental data that all of these things will make a
+   difference in practice.
+
+Yes, true enough. But I cannot sit down and do a careful study; that would be
+an enormous effort. I can report from my experience that these things *have*
+made a difference in my use -- I can't report on timings, but I certainly have
+experience with heap problems.
+
+   Olin&gt; You don't *have* to use these procedures. You can always, in a GC'd,
+   Olin&gt; functional language, play it safe and use pure functions. These
+   Olin&gt; procedures simply give you a portable way to write efficient code. I
+   Olin&gt; like to write efficient code. I have been burned using inefficient
+   Olin&gt; code.
+
+   But it's a fallacy that additional functionality in a SRFI hurts
+   nobody.  The sheer size of SRFI 13 will make people who need only a
+   handful of string ops shrink away from it, and the associated
+   complexity will make it harder to handle in practice.
+
+Languages should be small. Libraries should be large. It's about providing a
+rich vocabulary for programming. The library writer gets it right once, and no
+one ever has to re-invent the wheel. It is not hard to handle this library --
+shoot, the *entire* reference implementation was written by one guy in his
+spare time. It's only 700 lines of code -- even though it's bummed pretty
+tightly for speed, e.g., I replicated loops to speed up special cases. 700
+lines doesn't compile down to too many bytes. The only hard thing about it was
+the KMP and Boyer-Moore code, which was very painful -- but only a handful of
+lines of code. Subtle algorithms requiring careful reasoning. Which makes them
+prime candidates for being packaged up once &amp; for all.
+
+As for the complexity of the interface: The library presents the procedures
+organised by general function, so that humans can index into it &amp; get the
+operation they need. It's carefully designed to have a lot of regular
+structure, so that in general, you don't really need to even precisely
+remember the name and parameter-passing conventions for a particular operation
+-- if you just &quot;make it up&quot; using the general rules, you'll get it right.
+
+Let me tell how I got started writing libraries. I have a friend, Jin Choi.
+Jin is an expert scsh programmer, actually has done stuff down in the
+sources. One day, Jin told me about some little one-shot text-munging task
+he'd done on the log files at his web startup. I asked him what language he'd
+used. He replied: perl. I said, &quot;whoa -- why'd you do that? Most commoners
+would use perl, but you know a better way. Why didn't you use scsh?&quot; He said,
+&quot;You don't understand. I just wanted to read in the lines, pick out a date
+field with a regexp, uppercase the month, and write things back out in a
+rearranged order.&quot;  I said: &quot;Fine, no problem. Scsh has regexps. Scsh has
+awk. Scsh has strings.  You need to uppercase a string? Scsh has loops,
+CHAR-UPCASE, everything you need. It's a complete programming language.&quot; Jin
+said -- and here is the point -- &quot;You don't understand. I just wanted to say:
+upcase the string.  I didn't want to write a loop.&quot; I was quiet for a
+second. Then I said: &quot;OK. You're right. I'm wrong.&quot; And I went home that
+weekend and started writing a string library, so programmers can express
+themselves more easily. Jin did not want to write a loop and implement
+STRING-UPCASE by hand. What he wanted to do was rearrange his log files.
+
+I don't care that you think a particular set of the procs in the library are
+not useful. Someone else out there disagrees with you, and they additionally
+think the procs that you like are not useful. Now, I'm only willing to put in
+widely useful procedures that help people write efficient, portable
+code... but I don't feel it's ultra-important to build a minimalist
+library. Such a library would be MAKE-STRING, STRING-SET!, STRING-LENGTH,
+STRING-INDEX, and STRING?.  That's not the point. People want to slice
+strings. And scan them. And map over them. And search them. And compare
+them. I use these operations in my code. I've done a lot of string
+programming, because of my involvement with scsh. My code would be better --
+clearer, less buggy, easier to read, write and maintain -- if I could rely on
+having these operations around.
+
+If I *don't* put these procs in the SRFI, then people will continually
+re-invent &amp; reimplement them. The bugs and aggravation are one cost.
+Even more irritating is that no two re-inventions will be exactly alike.
+They'll be roughly the same thing... but always slightly different: different
+parameter-passing conventions, different boundary cases. What a mess. Get
+it set down and be done with it. Let's move on to network protocols or
+parser generators or URLs or something more interesting.
+
+Guy Steele has a nice talk called &quot;Growing a language.&quot;
+    <a  rel="nofollow" href="http://www.sun.com/research/java-topics/pubs/98-oopsla-growing.ps">http://www.sun.com/research/java-topics/pubs/98-oopsla-growing.ps</a>
+I don't want to give away too much about the talk, since it ruins the
+paper if you know some things about it in advance (it is quite fun to 
+read or hear), but it makes the case well that it is very limiting to have to
+express things in a restricted &quot;vocabulary.&quot;  One of Guy's points is that
+languages should allow you to grow the vocabulary. SRFI-13 follows this
+notion: we want an expressive, rich vocabulary for programmers, so they
+don't spend all their time defining these little building blocks. Small,
+extensible languages. Large, powerful libraries.
+
+   I'm not saying shard-text substrings aren't useful.  But there's no
+   good reason not to move it to a different SRFI.  
+
+SRFI-13 isn't providing shared-text substrings! It has a few calls that allow
+users to indicate to the system that results may share storage with
+parameters. Scheme implementations that *do* have shared-text substrings can
+exploit this.  Scheme implementations that *don't* have shared-text substrings
+can ignore it, or exploit a few simpler cases. In *either* case, the code is
+portable. Programmers that *do* want this efficiency win can exploit the spec;
+programmers that *don't* can use the careful, pure-functional, less-efficient
+bindings.
+
+   This SRFI tries to do too many things at once.  
+
+This SRFI tries to codify and standardise common, useful string operations,
+in a portable and efficient manner. Period. It's a toolkit for string hacking.
+
+   A good indicator is the fact that the discussion period is once again
+   exceeding the limit.
+
+The fault lies closer to home: this SRFI has gone over time because I was
+unable to work on it during the winter and early spring.
+    -Olin
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00085" href="msg00085.html">Re: shared-text substrings</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr. Preprocessor]</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00083.html">Is the end in sight?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00085.html">Re: shared-text substrings</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00072.html">Re: shared-text substrings</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00085.html">Re: shared-text substrings</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00084"><strong>Date</strong></a></li>
+<li><a href="threads.html#00084"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

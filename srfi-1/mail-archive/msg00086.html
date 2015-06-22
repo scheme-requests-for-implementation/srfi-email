@@ -1,0 +1,493 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Update &#45;&#45; !, UNFOLD, COUNT, LIST= &#38; set ops -->
+<!--X-From-R13: fuvirefNnv.zvg.rqh -->
+<!--X-Date: Sat, 4 Sep 1999 20:05:36 &#45;0500 (CDT) -->
+<!--X-Message-Id: 199909050105.VAA13987@mongkok.ai.mit.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Update -- !, UNFOLD, COUNT, LIST= &amp; set ops</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00085.html">Date Prev</a>][<a href="msg00087.html">Date Next</a>][<a href="msg00085.html">Thread Prev</a>][<a href="msg00087.html">Thread Next</a>][<a href="maillist.html#00086">Date Index</a>][<a href="threads.html#00086">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Update -- !, UNFOLD, COUNT, LIST= &amp; set ops</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-1@DOMAIN.HIDDEN">srfi-1@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Update -- !, UNFOLD, COUNT, LIST= &amp; set ops</li>
+<li><em>From</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxx</a></li>
+<li><em>Date</em>: Sat, 4 Sep 1999 21:05:38 -0400</li>
+<li><em>Reply-to</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>1. I am staying with ! for the linear-update suffix.
+
+2. Sergei is right: UNFOLD comes in directional flavors, in concert
+   with the two directions of FOLD. I am sticking with the FOO and FOO-RIGHT
+   general convention, and adding the left unfold. I am also making the
+   tail parameter an optional argument, hence unfold/tail is going away.
+   This gives us
+	unfold       p f g seed [tail]
+	unfold-right p f g seed [tail-gen]
+
+   I append the new specs.
+
+3. I have added two more procedures. The first is taken from Common Lisp:
+       count PRED list1 list2 ... -&gt; integer
+   It applies PRED across the lists and returns the number of the
+   true values thus produced. My experience, at least, tells me this
+   is a very common operation; one worth naming.
+
+   Secondly, I realised that list-lib has no equality procedure for lists!
+   It's a check-list item: constructor, selector, predicate, comparison.
+   So I have added one:
+      list= elt= lis1 ...
+   Two proper lists are equal if they are the same and their elements are
+   equal (as determined by ELT=). It is an error to apply LIST= to anything
+   except proper lists. Implementations may choose to extend it to circular
+   lists. It cannot reasonably be extended to dotted lists, as there is
+   no way to specify an equality procedure for comparing the list terminators.
+
+   I did not add list *inequality* procedures LIST&lt; and LIST&lt;=. What would
+   they be? Elementwise &quot;tuple&quot; comparison is one possibility, but so is
+   lexicographic order. If lexicographic order, then which endianness is
+   used? Taking left elements to be more significant than right elements
+   fits the natural implementation of the comparison function, but one 
+   could argue that, given that we *construct* lists right-to-left, the
+   most significant elements should be the earliest ones, i.e., the rightmost
+   ones. In practice, these issues will be application-specific. In the
+   absence of a clear-cut obvious single choice, I decided it was best not
+   to institutionalise a particular comparison semantics in the library.
+
+   I mention these inequality issues mostly to have them in the discussion
+   record for future reference.
+
+   I append the new specs for COUNT and LIST=.
+
+5. I also considered adding, along the lines of LIST=, a TREE= function:
+	   (define (tree= elt= x y)
+             (let recur ((x x) (y y))
+               (if (pair? x)
+                   (and (pair? y)
+                        (recur (car x) (car y))
+                        (recur (cdr x) (cdr y)))
+                   (and (not (pair? y))
+		        (elt= x y)))))
+   Then I realised that besides TREE= and TREE-COPY, we also want
+   various kinds of tree folding operations, tree unfolders, tree
+   mappers, ...
+
+   Partial coverage is bogus. So I'm killing TREE-COPY, and have no
+   tree procs at all. Designing a good tree library is a thoughtful
+   task; it's time to push this library out into the world, so we
+   will leave that for another time, another library, another SRFI
+   process.
+
+5. I have more carefully specified the list-set operations, which were 
+   not spec'd in a detailed way. I append the definitions.
+
+   The two most significant design elements of my spec for the 
+   list-set operations are:
+
+   - The element-equality predicate must be &quot;consistent&quot; with EQ?. That
+     is, for element-comparison function elt=,
+	(eq? x y) =&gt; (elt= x y).
+     This, in turn, implies that two lists that are EQ? are set-equal under
+     any legal element-comparison function.
+
+   - I have pretty carefully pinned down what the set ops do. For
+     example, the intersection operator returns a filtered version
+     of its first list argument -- elements are not disordered from
+     the order in which they appear in the first list argument. One
+     reason for such a spec is so that programmers can use ordered
+     lists as sets, without disarranging useful order that might be
+     important in later, non-set use of the results.
+
+     Other points that are unambiguously pinned down are how
+     multiple occurences of identical elements in a list are
+     handled, and what order arguments are given to the element 
+     comparison procedure.
+
+     So there's more in the spec than is strictly necessary for the
+     bare requirements of a set operation, but it does make for a
+     complete and reliable specification of the list-&gt;list operation
+     performed.
+
+   - The spec is tuned to allow fast, constant-time execution in
+     specific special cases (EQ? arguments, () arguments).
+
+6. I've gone ahead and added the R5RS text for all the R5RS procs exported
+   by this library (CONS, CAR, CDR, ASSQ, ...), so the document is a complete
+   spec/reference.
+
+7. I have put a lot of work into updating the documentation. The HTML, in
+   particular, is now nicely formatted; I have built a CSS style sheet for
+   writing up SRFI's and other HTML documents that define procedures; it
+   even exploits bugs in Netscape's CSS handling to work around other bugs
+   in Netscape's CSS handling, and works fine with IE. But the HTML text
+   is now also out-of-date wrt the text version. For the current state of
+   the SRFI, be sure and check the text version:
+       <a  rel="nofollow" href="ftp://ftp.ai.mit.edu/people/shivers/srfi/srfi-1/srfi-1.txt">ftp://ftp.ai.mit.edu/people/shivers/srfi/srfi-1/srfi-1.txt</a>
+
+The only one of these items on which I see much potential for
+controversy is the spec for the list-set ops.
+
+Whew.
+    -Olin
+
+-------------------------------------------------------------------------------
+list= elt= list1 ... -&gt; boolean
+    Determines list equality, given an element-equality procedure.
+    Proper list A equals proper list B if they are of the same length,
+    and their elements are equal, as determined by ELT=. If the
+    element-comparison procedure's first argument is from LISTi, then
+    its second argument is from LISTi+1, i.e. it is always called as
+        (elt= a b)
+    for a an element of list A, and b an element of list B.
+
+    In the n-ary case, every LISTi is compared to LISTi+1 (as opposed,
+    for example, to comparing LIST1 to every LISTi, for i&gt;1). If there
+    are no lists arguments at all, LIST= simply returns #t.
+
+    It is an error to apply LIST= to anything except proper lists. While
+    implementations may choose to extend it to circular lists, note that it
+    cannot reasonably be extended to dotted lists, as it provides no way to
+    specify an equality procedure for comparing the list terminators.
+
+    Note that the dynamic order in which the ELT= procedure is applied to
+    pairs of elements is not specified. For example, if LIST= is applied
+    to three lists, A, B, and C, it may first completely compare A to B,
+    then compare B to C, or it may compare the first elements of A and B,
+    then the first elements of B and C, then the second elements of A and
+    B, and so forth.
+
+    The equality procedure must be consistent with EQ?. That is, 
+    it must be the case that
+	(eq? x y) =&gt; (elt= x y).
+    Note that this implies that two lists which are EQ? are always LIST=,
+    as well.
+
+count pred clist1 clist2 ... -&gt; integer
+    PRED is a procedure taking as many arguments as there
+    are lists and returning a single value. It is applied 
+    element-wise to the elements of the LISTs, and a count is
+    tallied of the number of true values produced. This count
+    is returned. COUNT is &quot;iterative&quot; in that it is guaranteed
+    to apply PRED to the LIST elements in a left-to-right order.
+    The counting stops when the shortest list expires.
+
+        (count even? '(3 1 4 1 5 9 2 5 6)) =&gt; 3
+        (count &lt; '(1 2 4 8) '(2 4 6 8 10 12 14 16)) =&gt; 3
+
+    At least one of the argument lists must be finite:
+	(count &lt; '(3 1 4 1) (circular-list 1 10)) =&gt; 2
+
+unfold p f g seed [tail] -&gt; value
+    UNFOLD constructs a list with the following loop:
+        (let lp ((seed seed) (lis tail))
+          (if (p seed) lis
+              (lp (g seed)
+                  (cons (f seed) lis))))
+
+    P: Determines when to stop unfolding.
+    F: Maps each seed value to the corresponding list element.
+    G: Maps each seed value to next seed value.
+    SEED: The &quot;state&quot; value for the unfold.
+    TAIL: list terminator; defaults to '().
+
+    UNFOLD is the fundamental iterative list constructor, just as FOLD is the
+    fundamental iterative list consumer. While UNFOLD may seem a bit abstract
+    to novice functional programmers, it can be used in a number of ways:
+
+	(unfold zero?			; List of squares: 1^2 ... 10^2.
+		(lambda (x) (* x x))
+		(lambda (x) (- x 1))
+		10)
+		
+	(unfold null-list? car cdr lis) ; Reverse a proper list.
+
+	;; Read current input port into a list of values.
+	(unfold eof-object? values (lambda (x) (read)) (read))
+
+	;; (APPEND-REVERSE rev-head tail)
+	(unfold null-list? car cdr rev-head tail)
+
+    Interested functional programmers may enjoy noting that FOLD and UNFOLD
+    are in some sense inverses. That is, given operations KNULL?, KAR, KDR, 
+    KONS, and KNIL satisfying
+	(kons (kar x) (kdr x)) = x  and (knull? knil) = #t
+    then
+	(FOLD kons knil (UNFOLD knull? kar kdr x)) = x
+    and
+	(UNFOLD knull? kar kdr (FOLD kons knil x)) = x.
+
+    This combinator presumably has some pretentious mathematical name;
+    interested readers are invited to communicate it to the author.
+
+unfold-right p f g seed [tail-gen]-&gt; list
+    UNFOLD-RIGHT is best described by its basic recursion:
+	(unfold-right p f g seed) = (if (p seed) (tail-gen seed)
+                                        (cons (f seed)
+                                              (unfold-right p f g (g seed))))
+    P: Determines when to stop unfolding.
+    F: Maps each seed value to the corresponding list element.
+    G: Maps each seed value to next seed value.
+    SEED: The &quot;state&quot; value for the unfold.
+    TAIL-GEN: creates the tail of the list; defaults to (lambda (x) '())
+
+    UNFOLD-RIGHT is the fundamental recursive list constructor, just as
+    FOLD-RIGHT is the fundamental recursive list consumer. While UNFOLD-RIGHT
+    may seem a bit abstract to novice functional programmers, it can be used
+    in a number of ways:
+
+	(unfold-right (lambda (x) (&gt; x 10))	; List of squares: 1^2 ... 10^2.
+		      (lambda (x) (* x x))
+		      (lambda (x) (+ x 1))
+		      1)
+		
+	(unfold-right null-list? car cdr lis)	; Copy a proper list.
+
+	;; Read current input port into a list of values.
+	(unfold-right eof-object? values (lambda (x) (read)) (read))
+
+	;; Copy a possibly non-proper list:
+	(unfold-right not-pair? car cdr lis 
+                      values)
+
+	;; Append HEAD onto TAIL:
+	(unfold-right null-list? car cdr head 
+                      (lambda (x) tail))
+
+    Interested functional programmers may enjoy noting that FOLD-RIGHT and
+    UNFOLD-RIGHT are in some sense inverses. That is, given operations KNULL?,
+    KAR, KDR, KONS, and KNIL satisfying
+	(kons (kar x) (kdr x)) = x  and (knull? knil) = #t
+    then
+	(FOLD-RIGHT kons knil (UNFOLD-RIGHT knull? kar kdr x)) = x
+    and
+	(UNFOLD-RIGHT knull? kar kdr (FOLD-RIGHT kons knil x)) = x.
+
+    This combinator sometimes is called an &quot;anamorphism;&quot; when an
+    explicit TAIL-GEN procedure is supplied, it is called an
+    &quot;apomorphism.&quot;
+
+
+** Set operations on lists
+==========================
+The following procedures all take an = argument used to compare
+elements of lists. This equality procedure is required to be
+consistent with EQ?. That is, it must be the case that
+	   (eq? x y) =&gt; (= x y).
+Note that this implies, in turn, that two lists that are EQ? are
+also set-equal by any legal comparison procedure. This allows for
+constant-time determination of set operations on EQ? lists.
+
+Be aware that these procedures typically run in time O(n * m) for N-
+and M-element list arguments.  Performance-critical applications
+operating upon large sets will probably wish to use other data
+structures and algorithms.
+
+lset&lt;= = list1 ... -&gt; boolean
+    Returns true iff every LISTi is a subset of LISTi+1, using = for the
+    element equality procedure. List A is a subset of list B if every
+    element in A is equal to some element of B. When performing an
+    element comparison, the = procedure's first argument is an element
+    of A; its second, an element of B.
+
+    (lset&lt;= eq? '(a) '(a b a) '(a b c c)) =&gt; #t
+
+    (lset&lt;= eq?) =&gt; #t		; Trivial cases
+    (lset&lt;= eq? '(a)) =&gt; #t
+
+
+lset= = list1 list2 ... -&gt; boolean
+    Returns true iff every LISTi is set-equal to LISTi+1, using = for
+    the element equality procedure. &quot;Set-equal&quot; simply means that
+    LISTi is a subset of LISTi+1, and LISTi+1 is a subset of LISTi.
+
+    (lset= eq? '(b e a) '(a e b) '(e e b a)) =&gt; #t
+
+    (lset= eq?) =&gt; #t		; Trivial cases
+    (lset= eq? '(a)) =&gt; #t
+
+lset-adjoin = list elt1 ... -&gt; list
+    Adds the ELTi elements not already in the list parameter to the 
+    result list. The result shares a common tail with the list parameter.
+    The new elements are added to the front of the list, but no guarantees
+    are made about their order. The = parameter is an equality procedure
+    used to determine if an ELTi is already a member of LIST. Its first 
+    argument is an element of LIST; its second is one of the ELTi.
+
+    The list parameter is always a suffix of the result -- even if the list
+    parameter contains repeated elements, these are not reduced.
+
+    (lset-adjoin eq? '(a b c d c e) 'a 'e 'i 'o 'u) =&gt; (u o i a b c d c e)
+
+lset-union = list1 ... -&gt; list
+    Returns the union of the lists, using = for the element equality
+    procedure. 
+
+    The union of lists A and B is constructed as follows:
+        - If A is the empty list, the answer is B (or a copy of B).
+        - Otherwise, the result is initialised to be list A (or a copy of A).
+	- Proceed through the elements of list B in a left-to-right order.
+	  If b is such an element of B, compare every element r of the current
+	  result list to b: (= r b). If all comparisons fail, b is consed
+	  onto the front of the result.
+    However, there is no guarantee that = will be applied to every pair
+    of arguments from A and B. In particular, if A is EQ? to B, the operation
+    may immediately terminate.
+
+    In the n-ary case, the two-argument list-union operation is simply
+    folded across the argument lists.
+
+    (lset-union eq? '(a b c d e) '(a e i o u)) =&gt; (u o i a b c d e)
+    
+    ;; Repeated elements in LIST1 are preserved.
+    (lset-union eq? '(a a c) '(x a x)) =&gt; (x a a c)
+
+    (lset-union eq?)          =&gt; ()		; Trivial cases
+    (lset-union eq? '(a b c)) =&gt; (a b c)
+
+lset-intersection = list1 list2 ... -&gt; list
+    Returns the intersection of the lists, using = for the element equality
+    procedure. 
+
+    The intersection of lists A and B is comprised of every element of A
+    that is = to some element of B: (= a b), for a in A, and b in B.
+    Note this implies that an element which appears in B and multiple times
+    in list A will also appear multiple times in the result.
+
+    The order in which elements appear in the result is the same as
+    they appear in LIST1 -- that is, LSET-INTERSECTION essentially
+    filters LIST1, without disarranging element order. The result may
+    share a common tail with LIST1.
+
+    In the n-ary case, the two-argument list-intersection operation is simply
+    folded across the argument lists. However, the dynamic order in which the
+    applications of = are made is not specified. The procedure may check an
+    element of LIST1 for membership in every other list before proceeding to
+    consider the next element of LIST1, or it may completely intersect LIST1
+    and LIST2 before proceeding to LIST3, or it may go about its work in some
+    third order.
+
+    (lset-intersection eq? '(a b c d e) '(a e i o u)) =&gt; (a e)
+    
+    ;; Repeated elements in LIST1 are preserved.
+    (lset-intersection eq? '(a x y a) '(x a x z)) =&gt; '(a x a)
+
+    (lset-intersection eq? '(a b c)) =&gt; (a b c)	; Trivial case
+    
+lset-difference = list1 list2 ... -&gt; list
+    Returns the difference of the lists, using = for the element equality
+    procedure -- all the elements of LIST1 that are not = to any element from
+    one of the other LISTi parameters. 
+
+    The = procedure's first argument is always an element of LIST1; its second
+    is an element of one of the other LISTi. The result may share a common
+    tail with LIST1. Elements that are repeated multiple times in the LIST1
+    parameter will occur multiple times in the result. No constraint is placed
+    on the ordering of the elements in the result. The result may share a
+    common tail with LIST1.
+
+    (lset-difference eq? '(a b c d e) '(a e i o u)) =&gt; (b c d)
+
+    (lset-difference eq? '(a b c)) =&gt; (a b c) ; Trivial case
+
+lset-xor = list1 ... -&gt; list
+    Returns the XOR of the lists, using = for the element equality
+    procedure. If there are exactly two lists, this is all the elements
+    that appear in exactly one of the two lists. The operation is associative,
+    and thus extends to the n-ary case -- the elements that appear in an
+    odd number of the lists. The result may share a common tail with any of
+    the LISTi parameters.
+
+    More precisely, for two lists A and B, A xor B is a list of
+        - every element a of A such that there is no element b of B
+          such that (= a b)
+        - every element b of B such that there is no element a of A
+          such that (= b a)
+    In the n-ary case, the binary-xor operation is simply folded across
+    the lists.
+
+    (lset-xor eq? '(a b c d e) '(a e i o u)) =&gt; (d c b i o u)
+    
+    ;; Trivial cases.
+    (lset-xor eq?) =&gt; ()
+    (lset-xor eq? '(a b c d e)) =&gt; (a b c d e)
+
+lset-diff+intersection = list1 list2 ... -&gt; [list list]
+    Returns two values -- the difference and the intersection of the lists.
+    Is equivalent to 
+        (values (lset-difference   = list1 list2 ...)
+	        (lset-intersection = list1 list2 ...))
+    but can be implemented more efficiently.
+
+    The = procedure's first argument is an element of LIST1; its second is
+    an element of one of the other LISTi.
+
+    Either of the answer lists may share a common tail with LIST1.
+    This operation essentially partitions LIST1.
+
+lset-union!        	= list1 ... -&gt; list
+lset-intersection! 	= list1 list2 ... -&gt; list
+lset-difference!   	= list1 list2 ... -&gt; list
+lset-xor!          	= list1 ... -&gt; list
+lset-diff+intersection! = list1 list2 ... -&gt; [list list]
+    These are linear-update variants. They are allowed, but not required,
+    to use the cons cells in their first list parameter to construct their
+    answer. LSET-UNION! is permitted to recycle cons cells from *any* of its
+    list arguments.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00085.html">FOLD/UNFOLD inconsistency?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00087.html">SRFI-1 -- going once...</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00085.html">FOLD/UNFOLD inconsistency?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00087.html">SRFI-1 -- going once...</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00086"><strong>Date</strong></a></li>
+<li><a href="threads.html#00086"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

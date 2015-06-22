@@ -1,0 +1,171 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: PLT conformance, multi&#45;arg flags, and spaces before arguments -->
+<!--X-From-R13: Oagubal Qneevpb <npneevpbNzrzrornz.bet> -->
+<!--X-Date: Fri, 27 Sep 2002 02:52:49 +0200 (DFT) -->
+<!--X-Message-Id: Pine.LNX.4.44.0209261907250.5789&#45;100000@sub&#45;d.memebeam.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200209261909.g8QJ9bD17652@wrath.cs.utah.edu -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: PLT conformance, multi-arg flags, and spaces before arguments</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00019.html">Date Prev</a>][<a href="msg00021.html">Date Next</a>][<a href="msg00019.html">Thread Prev</a>][<a href="msg00021.html">Thread Next</a>][<a href="maillist.html#00020">Date Index</a>][<a href="threads.html#00020">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: PLT conformance, multi-arg flags, and spaces before arguments</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Matthew Flatt &lt;<a href="mailto:mflatt@DOMAIN.HIDDEN">mflatt@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: PLT conformance, multi-arg flags, and spaces before arguments</li>
+<li><em>From</em>: Anthony Carrico &lt;<a href="mailto:acarrico@DOMAIN.HIDDEN">acarrico@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 26 Sep 2002 20:55:32 -0400 (EDT)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-37@DOMAIN.HIDDEN">srfi-37@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-37@DOMAIN.HIDDEN">srfi-37@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:200209261909.g8QJ9bD17652@DOMAIN.HIDDEN">200209261909.g8QJ9bD17652@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Sender</em>: Anthony Carrico &lt;<a href="mailto:acarrico@DOMAIN.HIDDEN">acarrico@xxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>On Thu, 26 Sep 2002, Matthew Flatt wrote:
+
+&gt; On parsing multiple flag arguments:
+&gt; ...
+&gt; I mention this because it seems like employing &quot; &quot; or &quot;,&quot; as a
+&gt; flag-argument delimitter (e.g., for -L in MzScheme) would be making that
+&gt; same mistake again. But Posix also has experience behind it, so what am
+&gt; I missing?
+
+I had thought of that, and sort of hoped it would stay under the rug :). I
+must admit that this is a very good argument for the PLT convention.
+
+POSIX: When multiple option-arguments are specified to follow a single
+  option, they should be presented as a single argument, using commas
+  within that argument or &lt;blank&gt;s within that argument to separate them.
+
+I hate to be in the impossible position of defending a Posix guideline,
+but the best counter-argument I can come up with, is that the Posix
+convention allows sub-parsing an arbitrary number of sub-arguments,
+where-as the PLT convention does not (unless you enforce operands to
+follow all options, something relaxed by GNU).
+
+I'm not very passionate about this issue. My objective was just to
+implement the POSIX/GNU conventions (or at least a general interpretation
+of those guidelines), so I'm still inclined not to add this feature. Did
+anyone in the PLT-style camp try patching the reference code without
+breaking the POSIX/GNU compatibility. Did you like the results?
+
+&gt; On combining a flag and its argument:
+&gt;
+&gt; The other troublesome change for us would be allowing a flag's argument
+&gt; to be combined with the flag (i.e., leaving out the space). This seems
+&gt; to be a deprecated convention. (Posix guideline 6 says &quot;don't do it,
+&gt; but you can if you want&quot;. The SRFI says &quot;for historical reasons&quot;.) Is
+&gt; there strong support for continuing it?
+
+It is silly, and it is also strange that long arguments use &quot;=&quot;, whereas
+short options take the next program argument (or the rest of the current
+one). I guess Unix wasn't designed, it just kind of evolved.
+
+&gt; The SRFI seems to depart from both Posix and GNU (as documented) in
+&gt; allowing multiple flag names to follow &quot;-&quot; *and* argument without a
+&gt; space for the last flag. Is that actually supported by GNU, and/or am I
+&gt; overlooking something in the Posix guidelines?
+
+POSIX: Options without option-arguments should be accepted when grouped
+  behind one '-' delimiter.
+
+GNU: Multiple options may follow a hyphen delimiter in a single token if
+  the options do not take arguments. Thus, -abc is equivalent to -a -b -c.
+
+It is open to a little interpretation, but I think Matthew is strictly
+correct. I followed what I thought was existing practice and liberally
+interpreted &quot;the options&quot; as &quot;the leading options&quot;. This interpretation
+allows examples like those on the Debian tar man page:
+  tar -xvvf foo.tar
+  tar -xvvzf foo.tar.gz
+  tar -cvvf foo.tar foo/
+
+Matthew, do you believe that &quot;foo.tar&quot; should be treated as an operand, or
+are you just pointing out that the guidelines must be stretched to
+accommodate common practice? [BTW, that was an honest question, I expected
+that this SRFI would generate some controversy, since it is based on
+something very ill defined].
+
+GNU: An option and its argument may or may not appear as separate tokens.
+  (In other words, the whitespace separating them is optional.) Thus, -o
+   foo and -ofoo are equivalent.
+
+As for the &quot;*and*&quot; in Mathew's point, I think that once you allow the
+trailing option to have an argument, it should behave the same as other
+option arguments.
+
+Thank you for weighing in. As I wrote in the SRFI draft, &quot;there are many
+common (often conflicting) ways take care of this task, so a custom
+processor is often necessary; however, many programmers (and their users)
+would welcome a convenient interface supporting common guidelines.&quot; It is
+an array-of-strings interface with a lot of historical baggage. I'm sure
+that many programs would benefit from a cool non-POSIX/GNU argument
+processor, but that would be another SRFI.
+
+  -Anthony Carrico
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00021" href="msg00021.html">Re: PLT conformance, multi-arg flags, and spaces before arguments</a></strong>
+<ul><li><em>From:</em> Matthew Flatt</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00019" href="msg00019.html">PLT conformance, multi-arg flags, and spaces before arguments</a></strong>
+<ul><li><em>From:</em> Matthew Flatt</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00019.html">PLT conformance, multi-arg flags, and spaces before arguments</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00021.html">Re: PLT conformance, multi-arg flags, and spaces before arguments</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00019.html">PLT conformance, multi-arg flags, and spaces before arguments</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00021.html">Re: PLT conformance, multi-arg flags, and spaces before arguments</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00020"><strong>Date</strong></a></li>
+<li><a href="threads.html#00020"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

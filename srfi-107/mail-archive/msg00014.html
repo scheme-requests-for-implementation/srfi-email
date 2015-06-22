@@ -1,0 +1,179 @@
+<!-- MHonArc v2.6.18 -->
+<!--X-Subject: finishing SRFI&#45;107 &#45; representation of namespace declarations -->
+<!--X-From-R13: Bre Pbguare <creNobguare.pbz> -->
+<!--X-Date: Sun, 27 Oct 2013 04:33:11 +0100 (MET) -->
+<!--X-Message-Id: 526C84B4.2070101@bothner.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>finishing SRFI-107 - representation of namespace declarations</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00013.html">Date Prev</a>][<a href="msg00015.html">Date Next</a>][<a href="msg00013.html">Thread Prev</a>][<a href="msg00015.html">Thread Next</a>][<a href="maillist.html#00014">Date Index</a>][<a href="threads.html#00014">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>finishing SRFI-107 - representation of namespace declarations</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-107@DOMAIN.HIDDEN">srfi-107@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: finishing SRFI-107 - representation of namespace declarations</li>
+<li><em>From</em>: Per Bothner &lt;<a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 26 Oct 2013 20:12:52 -0700</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-107@DOMAIN.HIDDEN">srfi-107@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Mozilla/5.0 (X11; Linux x86_64; rv:17.0) Gecko/20130805 Thunderbird/17.0.8</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+SRFI-107 has been languishing for a while, but I'm going
+to try to finish it up.  My latest edit is at
+<a  rel="nofollow" href="http://per.bothner.com/tmp/srfi-107/srfi-107.html">http://per.bothner.com/tmp/srfi-107/srfi-107.html</a>
+(NOTE: This isn't quite ready yet for review: I
+think the syntax and translations (into core S-expressions)
+are close to done, but the over-all structure needs more work.)
+
+First, I'd like to nail down the translation of namespace declarations.
+The current translation (as in the above URL, which is
+different from the older version at srfi.schemers.org) is:
+
+&lt;prefix2:a xmlns:prefix1=&quot;URI1&quot;
+   xmlns:prefix2=&quot;URI&amp;foo;2&quot;
+   xmlns=&quot;DURI&quot;&gt;...&lt;/a&gt; xmlns=&quot;DURI&quot;&gt;...&lt;/prefix2:a&gt;
+==&gt;
+($xml-element$ ((prefix1 &quot;URI1&quot;)
+                (prefix2 &quot;URI&quot; $entity$:foo &quot;2&quot;)
+                (|| &quot;DURI&quot;))
+               ($resolve-qname$ a prefix2) ...)
+
+I.e.:
+
+- The set of namespace declarations is translated to a list,
+one element for each declaration.
+- Each namespace declaration is a (sub-)list that starts with the prefix
+being defined, and continues with the URI being bound to the prefix.
+- Each prefix is a symbol. A default (element) namespace declaration
+is represented with an empty symbol, or equivalently the &quot;reserved&quot;
+prefix $default-element-namespace$.
+- Normally the the namespace URI is a literal string (and possibly
+entity references), but the format allows for evaluated expressions,
+using the same format as attributes.
+
+Note that the prefix names in both $resolve-qname$ and the namespace-
+declaration list are unquoted symbols.  These forms are conceptually
+a kind of variable reference and variable declaration, respectively,
+in a kind of lexical scoping.  Therefore, using either strings
+or quoted symbols would be IMO wrong.
+
+The implication is that both $xml-element$ and $resolve-qname$
+cannot be bound to functions - they must be syntax,  John Cowan
+has expressed a preference that it be possible that these be
+functions.  I don't think that is feasible while also supporting
+namespaces, unless you use a rather clumsy encoding.  Specifically,
+evaluating the tag-expression and the child-expressions must be
+done *after* the binding is created, so they're evaluated in the
+&quot;scope&quot; of the namespace declaration.  This can be done by wrapping
+he sub-expressions as lambda-expressions, and resolving prefixes
+using a hash-table.  However, the use of lambda expressions makes
+for an unacceptably verbose and ugly encoding.
+
+It is easy for $xml-element$ to be a function if namespace
+support is not needed.  But maybe we can tweak the encoding so
+that $xml-element$ can be a function when namespaces aren't needed,
+while still supporting namespaces (requiring $xml-element$ to be macro)?
+
+The first problem is that the above encoding translates an
+empty namespace-declaration list to an empty list - which is
+not self-evaluating (at least in portable Scheme).  We can
+fix this by using a vector instead of a list:
+
+&lt;a xmlns:prefix1=&quot;URI1&quot;&gt;...&lt;/&gt;
+==&gt;
+($xml-element$ #((prefix1 &quot;URI1&quot;)) ...)
+
+The advantage is that vectors are self-evaluating, and specifically
+an empty vector is.  A modest disadvantage is that empty vectors
+aren't necessarily shared.
+
+The other problem is that even a prefix-less element tag a is
+translated to ($resolve-qname$ a).  This is needed in case there
+is default namespace declaration.  A non-namespace-supporting
+implementation can easily define a macro that translates
+($resolve-qname$ a) to (quote a).  If it is important that
+$resolve-qname$ be implementable as a function, we can change
+the reader-mapping to ($resolve-qname$ 'a), but it makes for a
+more inefficient mapping.  The original namespace-using
+example would be:
+
+&lt;prefix2:a xmlns:prefix1=&quot;URI1&quot;
+   xmlns:prefix2=&quot;URI&amp;foo;2&quot;
+   xmlns=&quot;DURI&quot;&gt;...&lt;/a&gt; xmlns=&quot;DURI&quot;&gt;...&lt;/prefix2:a&gt;
+==&gt;
+($xml-element$ #((prefix1 &quot;URI1&quot;)
+                (prefix2 &quot;URI&quot; $entity$:foo &quot;2&quot;)
+                (|| &quot;DURI&quot;))
+               ($resolve-qname$ (quote a) prefix2) ...)
+
+That's not terrible, but it is clumsier and less efficient
+than the original mapping.  Personally, I don't see the value of
+supporting a function-only implementation.  What is the use case?
+Therefore, my preference is the mapping at the start of this
+message, but if there is a strong expressed preference for the
+mapping just above, that is acceptable too.
+--
+	--Per Bothner
+per@xxxxxxxxxxx   <a  rel="nofollow" href="http://per.bothner.com/">http://per.bothner.com/</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00015" href="msg00015.html">Re: finishing SRFI-107 - representation of namespace declarations</a></strong>
+<ul><li><em>From:</em> John Cowan</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00013.html">Re: Simplifying SRFI 109, part 1: entities</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00015.html">Re: finishing SRFI-107 - representation of namespace declarations</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00013.html">Re: Simplifying SRFI 109, part 1: entities</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00015.html">Re: finishing SRFI-107 - representation of namespace declarations</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00014"><strong>Date</strong></a></li>
+<li><a href="threads.html#00014"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,220 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: complexity of mechanism -->
+<!--X-From-R13: Syv Pnemvynl <ryvNonemvynl.bet> -->
+<!--X-Date: Wed, 12 Apr 2006 22:54:35 +0200 (MST) -->
+<!--X-Message-Id: 17469.26703.264819.995826@lithuanian.ccs.neu.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: bd22bd7a0604121239j5052c234re6086fa661c003a3@mail.gmail.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: complexity of mechanism</title>
+<link rev="made" href="mailto:eli@barzilay.org">
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00031.html">Date Prev</a>][<a href="msg00033.html">Date Next</a>][<a href="msg00031.html">Thread Prev</a>][<a href="msg00033.html">Thread Next</a>][<a href="maillist.html#00032">Date Index</a>][<a href="threads.html#00032">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: complexity of mechanism</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &quot;felix winkelmann&quot; &lt;<a href="mailto:bunny351%40gmail.com">bunny351@gmail.com</a>&gt;</li>
+<li><em>Subject</em>: Re: complexity of mechanism</li>
+<li><em>From</em>: Eli Barzilay &lt;<a href="mailto:eli%40barzilay.org">eli@barzilay.org</a>&gt;</li>
+<li><em>Date</em>: Wed, 12 Apr 2006 16:51:27 -0400</li>
+<li><em>Cc</em>: <a href="mailto:srfi-89%40srfi.schemers.org">srfi-89@srfi.schemers.org</a>,	&quot;Marc Feeley&quot; &lt;<a href="mailto:feeley%40iro.umontreal.ca">feeley@iro.umontreal.ca</a>&gt;</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-89%40srfi.schemers.org">srfi-89@srfi.schemers.org</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:bd22bd7a0604121239j5052c234re6086fa661c003a3%40mail.gmail.com"><a href="msg00031.html">bd22bd7a0604121239j5052c234re6086fa661c003a3@mail.gmail.com</a></a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:bd22bd7a0604121239j5052c234re6086fa661c003a3%40mail.gmail.com"><a href="msg00031.html">bd22bd7a0604121239j5052c234re6086fa661c003a3@mail.gmail.com</a></a>&gt;</li>
+<li><em>Sender</em>: Eli Barzilay &lt;<a href="mailto:eli%40ccs.neu.edu">eli@ccs.neu.edu</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>On Apr 12, felix winkelmann wrote:
+&gt; 
+&gt; I must say that even though I use keyword args regularly, I don't
+&gt; think they are the be-all and end-all solution for everything.
+&gt; Keywords are one possible way to handle complex argument sets, it's
+&gt; relatively easy to implement and scales (sort of) with regard to
+&gt; maintenance.
+
+That same description applies to plenty of other srfis that are far
+from a &quot;be-all and end-all solution&quot;.  (That's what RnRS is for...
+hopefully...)
+
+
+&gt; We can slap a keyword-enabled interface on to everything, but that
+&gt; doesn't mean we should (this also applies to SRFI-76). It's a nice
+&gt; solution if you need something quickly, but tends to get ugly later
+&gt; and is less efficient than (say) wrapping parameter-sets into custom
+&gt; data structures or providing a multi-procedure interface.
+
+Certain situations certainly do call for lots of keywords -- and since
+this is a srfi, then it sounds more like it's intended for private
+solutions to abstraction problems you face, and not changing the core
+with things like (member x l :test ...) instead of other member
+functions.
+
+Let me give an example -- in PLT there is a library called SlideShow
+for generating presentations.  It currently has these functions for
+constructing slides:
+
+  (slide/title title-string element ...)
+  (slide/title/tall title-string element ...)
+  (slide/title/center title-string element ...)
+  (slide element ...)
+  (slide/center element ...)
+  (slide/title/inset title-string slide-inset element ...)
+  (slide/title/tall/inset title-string slide-inset element ...)
+  (slide/title/center/inset title-string slide-inset element ...)
+  (slide/inset slide-inset element ...)
+  (slide/center/inset slide-inset element ...)
+  (slide/name title-string element ...)
+  (slide/name/tall title-string element ...)
+  (slide/name/center title-string element ...)
+  (slide/name/inset title-string slide-inset element ...)
+  (slide/name/tall/inset title-string slide-inset element ...)
+  (slide/name/center/inset title-string slide-inset element ...)
+
+You can see how all of this can be folded into a single function.  One
+popular argument is: &quot;So what?  These functions construct different
+kinds of things, so it's only proper that they have different names.&quot;.
+
+This was exactly how this library was constructed.  Nobody seem to
+like keywords too much, and it took time to reach the above
+ridiculously long list to face the problem.  It is currently clear
+that this is not a good solution -- nobody can use this thing without
+the manual open.  (Was it `slide/title/center/inset' or
+`slide/center/title/inset'?)
+
+Another popular argument is that you could use a better interface, say
+something like:
+
+  (slide options element ...)
+  ;; options is some alist or whatever
+
+This sort of works, but it has two problems.  First, I have never seen
+it used in complex situations where it's really needed.  (The closest
+thing I've seen is a list of symbols that serve as gui flags, like
+(message-box &quot;title&quot; &quot;prompt&quot; '(gui feature symbols)).)  My assumption
+is that feels heavy enough that you'll never do it in practice.  It
+feels heavy because you'll be consing some structure on every call --
+yes, the same happens for a rest argument, but that doesn't feel
+heavy, partly because the syntax for calling a function is very
+light.  (I never saw a keyword facility that requires calling function
+with something like (foo `(:bar . 3) `(:baz . ,x)).)  Again, please
+don't bother to tell me how stupid this argument is: I did use &quot;feel&quot;,
+and I do believe that syntax matters (otherwise I'd use a lot more
+braces in my code).
+
+A second problem with this, which I consider more important is that
+the above requires me to change the function in a way that all
+call-sites need to be updated.  This is a serious problem, and
+sometime it's not even feasible when the code is used in enough
+places.  Another good example is make-struct-type in MzScheme.  Each
+time there's a new feature added, another argument is added to the
+infinite list of arguments.  The result is yet another one of these
+use-with-the-manual-only functions, and in this case if you happen to
+use the recently added feature, you'll need to go over the whole list
+and stick in the appropriate default values (some are 0, some null,
+and some #f).
+
+Keyword arguments can perform miracles in such situations: you can
+customize the function in a way that nothing needs to be updated.  It
+took me some time to discover how useful this is -- I first added
+keywords to Swindle as yet another hack that makes it possible to
+imitate CL stuff in Scheme, but didn't use it much.  Only when I got
+to write web pages I found it to be so useful.  It's exactly what Paul
+Graham writes about at
+
+  <a  rel="nofollow" href="http://lib.store.yahoo.net/lib/paulgraham/bbnexcerpts.txt">http://lib.store.yahoo.net/lib/paulgraham/bbnexcerpts.txt</a>
+
+So purists don't like it.  I don't care.  As a semi-purist (at times
+when I choose to be one) I can dislike it too, but for getting stuff
+done it's damn useful.
+
+
+&gt; So I must say that I can understand Taylor's reservations regarding the
+&gt; complexity of this facility. Specifically the descriptions of the whole
+&gt; #!rest-before-#!key or #!rest-after-#!key thingy borders on the
+&gt; hilarious.
+
+That can be confusing, which is why we chose to stick with differen
+meta keyword in the argument list -- but the functionality is very
+convenient, with xml as the natural analogy for using the rest after
+teh keys thing.  (But I'm talking about attributes for function calls
+still; please avoid redundant arguments about encoding xml.)
+
+
+&gt; Again, I use this stuff: I like quick hacks and I have to think less
+&gt; about API-design when using keyword args. But It's still ugly and
+&gt; ad-hoc, and no SRFI material for me (everything IMHO, naturally).
+
+As Joe Marshall said at some point -- it's a complex hack, and not too
+good-looking, but it's still very practical.  (But I don't know what
+you're trying to say above -- you argue for the thing, then conclude
+that it's not srfi material.  I can think of several srfis that are
+less useful thant this one.)
+
+-- 
+          ((lambda (x) (x x)) (lambda (x) (x x)))          Eli Barzilay:
+                  <a  rel="nofollow" href="http://www.barzilay.org/">http://www.barzilay.org/</a>                 Maze is Life!
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00033" href="msg00033.html">Re: complexity of mechanism</a></strong>
+<ul><li><em>From:</em> &quot;felix winkelmann&quot; &lt;bunny351@gmail.com&gt;</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00031" href="msg00031.html">Re: complexity of mechanism</a></strong>
+<ul><li><em>From:</em> &quot;felix winkelmann&quot; &lt;bunny351@gmail.com&gt;</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00031.html">Re: complexity of mechanism</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00033.html">Re: complexity of mechanism</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00031.html">Re: complexity of mechanism</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00033.html">Re: complexity of mechanism</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00032"><strong>Date</strong></a></li>
+<li><a href="threads.html#00032"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

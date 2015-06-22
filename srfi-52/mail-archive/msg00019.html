@@ -1,0 +1,195 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Encodings. -->
+<!--X-From-R13: orne <orneNfbavp.arg> -->
+<!--X-Date: Thu, 12 Feb 2004 08:44:49 +0100 (NFT) -->
+<!--X-Message-Id: Pine.LNX.4.58.0402112331390.11073@bolt.sonic.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200402102106.NAA13325@morrowfield.regexps.com -->
+<!--X-Reference: 87ekt1avo8.wl@strelka.synthcode.com -->
+<!--X-Reference: 20040212024256.GA7434@ogre.szonye.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Encodings.</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00018.html">Date Prev</a>][<a href="msg00020.html">Date Next</a>][<a href="msg00037.html">Thread Prev</a>][<a href="msg00020.html">Thread Next</a>][<a href="maillist.html#00019">Date Index</a>][<a href="threads.html#00019">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Encodings.</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &quot;Bradd W. Szonye&quot; &lt;<a href="mailto:bradd%2Bsrfi@DOMAIN.HIDDEN">bradd+srfi@xxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Encodings.</li>
+<li><em>From</em>: bear &lt;<a href="mailto:bear@DOMAIN.HIDDEN">bear@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 11 Feb 2004 23:44:43 -0800 (PST)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-52@DOMAIN.HIDDEN">srfi-52@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-52@DOMAIN.HIDDEN">srfi-52@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20040212024256.GA7434@DOMAIN.HIDDEN">20040212024256.GA7434@xxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:200402102106.NAA13325@DOMAIN.HIDDEN">200402102106.NAA13325@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:87ekt1avo8.wl@DOMAIN.HIDDEN">87ekt1avo8.wl@xxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20040212024256.GA7434@DOMAIN.HIDDEN">20040212024256.GA7434@xxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+&gt;The other thing I didn't care for (in UTR 15) was the recommendation to
+&gt;use NFC for case-sensitive languages and NFKC for case-insensitive
+&gt;languages. NFC is designed for round-trip conversions, and it often uses
+&gt;different encodings for visually indistinguishable symbols. For example,
+&gt;the letters &quot;ffi&quot; and the &quot;ffi&quot; ligature are distinct under NFC (IIRC).
+&gt;That's a very bad property for programming language identifiers.
+
+&gt;Unfortunately, NFKC isn't perfect either. One thing I especially dislike
+&gt;is that it flattens the differences between the mathematical alphabets.
+&gt;Here you have a case where graphemes *are* visually distinguishable, and
+&gt;for good reason, but the normalization form treats them as identical. If
+&gt;you're working on a sublanguage for symbolic mathematics, you might be
+&gt;tempted to write &quot;double-struck small letter j&quot; for a unit vector and
+&gt;&quot;italic small letter j&quot; for the imaginary unit. But NFKC folds them
+&gt;together. You'll need to modify NFKC for mathematics, or track the
+&gt;semantic data separately (which amounts to the same thing).
+
+I'm pretty sure that the hashcode of an identifier (its 'identity')
+needs to be calculated from a normalized form of that identifier.
+I'm also pretty sure that a system which didn't also literally
+convert identical-hashing identifiers to identical representation
+and screen appearance would be worse instead of better, because the
+fundamental property of identifiers is that we the programmers need
+to be able to distinguish between them correctly.
+
+   Note: In the following, I'm not going to talk about NFD or NFKD; they
+   are equivalent in expressive power to NFC and NFKC, respectively, and
+   we are unconcerned with issues of strictly internal representation.
+   The points below apply to them as well.
+
+As you correctly point out there are problems with both NFC and with
+NFKC. However, the existence of NFKC makes the use of NFC identifiers
+risky in several ways.  Although I like NFC better technically, I'd
+have to recommend NFKC as a standard because of the danger that text
+created to be distinguishable under NFKC is &quot;safe&quot; from bogus format
+changes to NFC, but the reverse is not true.  Three scenarios follow.
+
+If an implementation goes with NFC, and an editor (even an editor that
+understands that these are different characters and doesn't confuse
+the save) fails to make separate, distinct glyphs for all those
+mathematical variants, then code that uses them to form
+indistinguishable-looking identifiers that are actually distinct is
+going to appear damned mysterious to users of that editor.  Nothing
+breaks except the user's mind as he attempts to understand the code.
+
+However, if code is written for an NFC system and then read on a
+system that folds all of those distinctions by converting identifiers
+into NFKC form, then we will have the same problem, except that the
+compiler is now confused rather than the user.
+
+Now imagine an NFC system containing a source file with a function
+using identifiers which would be indistinguishable under NFKC --
+possibly a math library.  A user loads the source into an editor that
+treats it as &quot;text&quot; meaning NFKC, and without necessarily even seeing
+the function that uses the now-identical identifiers, he edits some
+unrelated function and saves the file.  Breakage follows even though
+he has not migrated between compilers.
+
+
+
+We can 'standardize' NFC, which is capable of finer distinctions, and
+users will occasionally, until their personal learning curves are
+climbed, be burned by editors, tools, and nonconforming systems that
+treat program text as NFKC.  Meanwhile code written for those
+nonconforming systems will not be burned by tools and editors and
+compilers that conform.
+
+or we can 'standardize' NFKC, which is capable of less distinction,
+thereboy limiting the range of identifiers available to programmers,
+and develop a generation of editors and compilers that will make the
+later adoption of NFC effectively impossible because program text for
+an NFC system cannot be reasonably kept out of 'standard' editors and
+tools.
+
+Or we can let the standard not-speak on this issue, and let a thousand
+flowers bloom... with chaotic results and lots of source code that
+won't go between systems and ad-hoc tools for converting from one form
+to another and etc etc etc with general chaos and nonportable code
+ensuing for decades. The disadvantages of this are obvious, but the
+advantage is that we don't lose implementors by demanding that they
+'go with' one or the other before they've reached a real consensus
+about which is better.  Remember, it's not a standard unless people
+follow it, and we're documenting which direction people have gone as
+much as we are telling them which direction to go.  We don't know
+which direction they're going yet, and this bunch is as predictable as
+a herd of cats.  If we try to standardize it, we may be guessing
+wrong.
+
+&gt;It's especially bad if you're considering a language for typesetting
+&gt;mathematics! (Not that anybody would ever want to implement a TeX-like
+&gt;language in Scheme, right?) The Unicode character set is well-suited to
+&gt;that task, but the normalization forms aren't, IMO.
+
+ah-heh...  I assume there's a smiley in there somewhere...
+
+				Bear
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00020" href="msg00020.html">Re: Encodings.</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+<li><strong><a name="00021" href="msg00021.html">Re: Encodings.</a></strong>
+<ul><li><em>From:</em> Ken Dickey</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00007" href="msg00007.html">terminology</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00016" href="msg00016.html">Re: terminology</a></strong>
+<ul><li><em>From:</em> Alex Shinn</li></ul></li>
+<li><strong><a name="00017" href="msg00017.html">Re: terminology</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00018.html">Identifiers</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00020.html">Re: Encodings.</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00037.html">Re: Identifiers</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00020.html">Re: Encodings.</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00019"><strong>Date</strong></a></li>
+<li><a href="threads.html#00019"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

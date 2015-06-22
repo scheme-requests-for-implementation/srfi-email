@@ -1,0 +1,202 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Stream&#45;filter and space leaks -->
+<!--X-From-R13: [ngguvnf @rhonhre <arhonhreNvasbezngvx.hav&#45;servohet.qr> -->
+<!--X-Date: Wed, 19 Mar 2003 16:27:30 +0100 (NFT) -->
+<!--X-Message-Id: y9lfzpj1in5.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: E18njkT&#45;0005vR&#45;00@rosebud -->
+<!--X-Reference: xg8isv8nj1l.fsf@hapuna.informatik.uni&#45;freiburg.de -->
+<!--X-Reference: y9lr89vsbet.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: xg8n0kjkw2g.fsf@hapuna.informatik.uni&#45;freiburg.de -->
+<!--X-Reference: y9l1y1eq79w.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Stream-filter and space leaks</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00043.html">Date Prev</a>][<a href="msg00045.html">Date Next</a>][<a href="msg00043.html">Thread Prev</a>][<a href="msg00045.html">Thread Next</a>][<a href="maillist.html#00044">Date Index</a>][<a href="threads.html#00044">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Stream-filter and space leaks</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a> (Michael Sperber [Mr. Preprocessor])</li>
+<li><em>Subject</em>: Re: Stream-filter and space leaks</li>
+<li><em>From</em>: Matthias Neubauer &lt;<a href="mailto:neubauer@DOMAIN.HIDDEN">neubauer@xxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 19 Mar 2003 16:27:26 +0100</li>
+<li><em>Cc</em>: Richard Kelsey &lt;<a href="mailto:kelsey@DOMAIN.HIDDEN">kelsey@xxxxxxx</a>&gt;, <a href="mailto:pbewig@DOMAIN.HIDDEN">pbewig@xxxxxxxxxx</a>,	<a href="mailto:srfi-40@DOMAIN.HIDDEN">srfi-40@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-40@DOMAIN.HIDDEN">srfi-40@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:y9l1y1eq79w.fsf@DOMAIN.HIDDEN">y9l1y1eq79w.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Old-date</em>: 19 Mar 2003 15:46:19 +0100</li>
+<li><em>References</em>: &lt;<a href="mailto:E18njkT-0005vR-00@DOMAIN.HIDDEN"><a href="msg00025.html">E18njkT-0005vR-00@rosebud</a></a>&gt;	&lt;<a href="mailto:xg8isv8nj1l.fsf@DOMAIN.HIDDEN">xg8isv8nj1l.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:y9lr89vsbet.fsf@DOMAIN.HIDDEN">y9lr89vsbet.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:xg8n0kjkw2g.fsf@DOMAIN.HIDDEN">xg8n0kjkw2g.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:y9l1y1eq79w.fsf@DOMAIN.HIDDEN">y9l1y1eq79w.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Gnus/5.090015 (Oort Gnus v0.15) XEmacs/21.5 (cabbage)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx (Michael Sperber [Mr.  Preprocessor]) writes:
+
+&gt; &gt;&gt;&gt;&gt;&gt; &quot;Matze&quot; == Matthias Neubauer &lt;neubauer@xxxxxxxxxxxxxxxxxxxxxxxxxx&gt; writes:
+&gt; 
+&gt; Matze&gt; The real problem is see is the following: as soon as I apply some kind
+&gt; Matze&gt; of abstraction over STREAM-FILTER---which is something every Schemer
+&gt; Matze&gt; wants to do of course---, hell breaks loose again. E.g., if I type 
+&gt; 
+&gt; Matze&gt;    (define (filter-zero stream)
+&gt; Matze&gt;      (stream-filter (lambda (x) (zero? x)) 
+&gt; Matze&gt;                     stream))
+&gt;    
+&gt; Matze&gt;    (stream-car (filter-zero (stream-from 1)))
+&gt; 
+&gt; Matze&gt; in scsh, I will again see a space leak.
+&gt; 
+&gt; Matze&gt; Considering all the major Scheme implementations, how common is it to
+&gt; Matze&gt; use a flat closure representation for procedures?
+&gt; 
+&gt; This won't be solved by flat closures---the call to FILTER-ZERO is a
+&gt; non-tail call, and it'd be necessary to mark dead variables in
+&gt; continuation frames to make this not leak.
+
+Your're right of course. There is not only the possibility that we
+have to deal with closures that retain too many references but we can
+also have continuation frames with this exact same deficiency.
+
+Just for kicks, I just tested some Scheme implementations I had access
+to to see how they'd behave in this respect. I tried
+
+scsh 0.6.4 (Beta 1) | Scheme 48 0.57 | petite scheme 6.0a | MzScheme3m 203.6 | Larceny v1.0a1
+
+Always in this very order, always without any special runtime
+options. &quot;ok&quot; means that an example leads to a true endless loop,
+&quot;leaks&quot; means that the system aborts after a while.
+
+
+;; ex 1: simple loop
+
+(let loop ((p (cons 1 2)))
+  (let ((p2 (cons 1 2)))
+    (set-cdr! p p2)
+    (loop p2)))
+
+;; ok | ok | ok | ok | ok
+
+
+;; ex 2: almost the same but not quite ...
+
+(let ((p (cons 1 2)))
+  (let loop ((p p))
+    (let ((p2 (cons 1 2)))
+      (set-cdr! p p2)
+      (loop p2))))
+
+;; leaks | ok | ok | ok | ok
+
+
+;; ex 3: closure check
+
+(let ((p (cons 1 2)))
+  (let ((fun (lambda (x) x)))
+    (let loop ((p p))
+      (let ((p2 (cons 1 2)))
+	(set-cdr! p p2)
+	(fun 42)
+	(loop p2)))))
+
+;; leaks | ok | ok | ok | ok
+
+
+;; ex 4: continuation frame check
+
+(let ((p1 (cons 1 2)))
+  (let loop ((p p1))
+    (let ((p2 (cons 1 2)))
+      (set-cdr! p p2)
+      (loop p2)))
+  '42)
+
+;; leaks | leaks | leaks | leaks | ok
+
+
+Maybe this SRFI should require a Scheme implementation with a certain
+safe-for-space property.  Or maybe every implementation of this SRFI
+should at least state somehow how it behaves under implementations
+with different safe-for-space properties.
+
+Otherwise users will trip into the exact same problems I did when
+filtering streams with scsh ...
+
+Cheers
+
+   Matthias
+
+-- 
+Matthias Neubauer                                       |
+Universit&#xE4;t Freiburg, Institut f&#xFC;r Informatik           | tel +49 761 203 8060
+Georges-K&#xF6;hler-Allee 79, 79110 Freiburg i. Br., Germany | fax +49 761 203 8052
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00045" href="msg00045.html">Re: Stream-filter and space leaks</a></strong>
+<ul><li><em>From:</em> felix</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00025" href="msg00025.html">Re: Stream-filter and space leaks</a></strong>
+<ul><li><em>From:</em> Richard Kelsey</li></ul></li>
+<li><strong><a name="00026" href="msg00026.html">Re: Stream-filter and space leaks</a></strong>
+<ul><li><em>From:</em> Matthias Neubauer</li></ul></li>
+<li><strong><a name="00028" href="msg00028.html">Re: Stream-filter and space leaks</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr.  Preprocessor]</li></ul></li>
+<li><strong><a name="00029" href="msg00029.html">Re: Stream-filter and space leaks</a></strong>
+<ul><li><em>From:</em> Matthias Neubauer</li></ul></li>
+<li><strong><a name="00031" href="msg00031.html">Re: Stream-filter and space leaks</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr.  Preprocessor]</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00043.html">Re: Stream-filter and space leaks</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00045.html">Re: Stream-filter and space leaks</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00043.html">Re: Stream-filter and space leaks</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00045.html">Re: Stream-filter and space leaks</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00044"><strong>Date</strong></a></li>
+<li><a href="threads.html#00044"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

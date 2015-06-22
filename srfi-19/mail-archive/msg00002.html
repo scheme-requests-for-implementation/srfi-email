@@ -1,0 +1,174 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: leap seconds -->
+<!--X-From-R13: [nep Trryrl <srryrlNWDA.G[bagerny.QO> -->
+<!--X-Date: Tue, 14 Mar 2000 09:32:33 &#45;0600 (CST) -->
+<!--X-Message-Id: 200003141532.KAA06567@trex.IRO.UMontreal.CA -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 000901bf8dbf$724c82b0$11969fd0@fitzgerald_nt -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: leap seconds</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00001.html">Date Prev</a>][<a href="msg00003.html">Date Next</a>][<a href="msg00001.html">Thread Prev</a>][<a href="msg00007.html">Thread Next</a>][<a href="maillist.html#00002">Date Index</a>][<a href="threads.html#00002">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: leap seconds</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:fitzgerald@DOMAIN.HIDDEN">fitzgerald@xxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: leap seconds</li>
+<li><em>From</em>: Marc Feeley &lt;<a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 14 Mar 2000 10:32:32 -0500</li>
+<li><em>Cc</em>: <a href="mailto:srfi-19@DOMAIN.HIDDEN">srfi-19@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:000901bf8dbf%24724c82b0%2411969fd0@DOMAIN.HIDDEN"><a href="msg00001.html">000901bf8dbf$724c82b0$11969fd0@fitzgerald_nt</a></a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:000901bf8dbf%24724c82b0%2411969fd0@DOMAIN.HIDDEN"><a href="msg00001.html">000901bf8dbf$724c82b0$11969fd0@fitzgerald_nt</a></a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; Some quick responses to quick comments.
+
+OK, here are my quick replies to your your quick responses to my quick
+comments.
+
+&gt; It doesn't assume this many seconds in a year;
+
+Note: you mean &quot;day&quot; not &quot;year&quot; (i.e. a day is 86400 seconds roughly).
+You made this error in the SRFI also.
+
+&gt;  it defines this many
+&gt; seconds in a year. One advantage is that you get a deterministic
+&gt; algorithm (as you say). Another important advantage is that you can
+&gt; treat time as a number, and use standard mathematical operators. The
+&gt; disadvantage is that drift from UTC, as you say.
+
+This is not a disadvantage, it is a blatant error!  If you call something
+&quot;universal time&quot; it better correspond to UTC.  Common Lisp made a big
+mistake here.
+
+&gt; Sorry, I missed the last Scheme Naming Convention--when was it held?
+&gt; Seriously, I don't have a problem changing the names, but perhaps you
+&gt; could point out a &quot;here's how to name Scheme procedures&quot; document; I'd
+&gt; appreciate it.
+
+Just the R5RS and predecessors, with (current-input-port) et al.  My
+model for the computer's clock is that there is an implicit parameter
+to the program that is updated continuously by the hardware.  So in
+this respect it is very much like the implicit parameters that are the
+current input port, et al.
+
+&gt; The main reason is just that bug-a-boo of mine to be consistent with
+&gt; Common Lisp; I'll reconsider this. I've found the CL approach clumsy in
+&gt; just this way.
+
+But it would still be consistent if you specified that the resolution
+is at least 1 second, because you can always strip the fractional part
+if you don't want this (and your Common Lisp style accessors could do
+this by default).
+
+&gt; &gt; 5) Instead of the &quot;multiple value&quot; interface of decode-universal-time
+&gt; &gt; I prefer single-value accessors of the kind:
+&gt; &gt;
+&gt; &gt;   (universal-time-second ut)
+&gt; &gt;   (universal-time-minute ut)
+&gt; &gt;   ...
+&gt; &gt;
+&gt; &gt; and also (universal-time-second ut) would return a real, possibly
+&gt; &gt; inexact.
+&gt; &gt;
+&gt; 
+&gt; Maybe. Perhaps you could give me reason beyond 'I prefer'?
+
+A multiple value interface is clumsy and slow because if you want a
+single component you have to extract them all (and there are many
+components) and this is a common case (get the day of the week, or the
+year).  Moreover you have to remember all the components and their
+order.  For 2 or 3 components that's doable, but I couldn't do it
+without the documentation for 9.  Finally, the interface lacks
+modularity and upgradability.  If as an implementor I'd like to add a
+component (such as microseconds) then to keep the multiple value
+interface I'd have to change all the code that calls
+decode-universal-time and that may not be possible.
+
+&gt; Again, CWCL. 1-1-2000 seems like a poor choice because time isn't
+&gt; defined before this number. 1-1-1970 might be fine.
+
+Now this is a major bug.  I was born in 1961.  I want to be able to
+represent my birthday to put in a database, etc or simply to figure
+out on which day of the week I was born.  In fact, I'd like to do that
+for any point in time.  Bignums, positive and negative, allow us to do
+this easily.  What is the problem here?  The SRFI doesn't say there is
+an upper limit, so you have to use bignums anyway, no?  Once again
+Common Lisp got it wrong.
+
+&gt; The main reason is insist that it be a number is one can use standard
+&gt; mathematical operators on them, without converting. You don't need a
+&gt; special time&gt;, etc.
+
+I'm sure you are aware of all the advantages of abstract datatypes and
+all the disadvantages of concrete ones.  The extra calls to
+the conversion functions are well worth it.
+
+Marc
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00007" href="msg00007.html">new time and date procedures</a></strong>
+<ul><li><em>From:</em> Will Fitzgerald</li></ul></li>
+<li><strong><a name="00008" href="msg00008.html">more revisions</a></strong>
+<ul><li><em>From:</em> Will Fitzgerald</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00001" href="msg00001.html">RE: leap seconds</a></strong>
+<ul><li><em>From:</em> Will Fitzgerald</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00001.html">RE: leap seconds</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00003.html">Re: leap seconds</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00001.html">RE: leap seconds</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00007.html">new time and date procedures</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00002"><strong>Date</strong></a></li>
+<li><a href="threads.html#00002"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

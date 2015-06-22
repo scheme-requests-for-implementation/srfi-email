@@ -1,0 +1,189 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Overuse of strings -->
+<!--X-From-R13: Znhev Oynaxb <ynNvxv.sv> -->
+<!--X-Date: Wed, 25 Jan 2006 19:19:33 +0100 (MET) -->
+<!--X-Message-Id: y9lpsmgkw5r.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: y9lirs9mrqk.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: 43D68546.4020307@bothner.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Overuse of strings</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00107.html">Date Prev</a>][<a href="msg00109.html">Date Next</a>][<a href="msg00105.html">Thread Prev</a>][<a href="msg00109.html">Thread Next</a>][<a href="maillist.html#00108">Date Index</a>][<a href="threads.html#00108">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Overuse of strings</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Per Bothner &lt;<a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Overuse of strings</li>
+<li><em>From</em>: Lauri Alanko &lt;<a href="mailto:la@DOMAIN.HIDDEN">la@xxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 25 Jan 2006 19:19:28 +0100</li>
+<li><em>Cc</em>: <a href="mailto:srfi-83@DOMAIN.HIDDEN">srfi-83@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-83@DOMAIN.HIDDEN">srfi-83@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:43D68546.4020307@DOMAIN.HIDDEN">43D68546.4020307@xxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:y9lirs9mrqk.fsf@DOMAIN.HIDDEN">y9lirs9mrqk.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:43D68546.4020307@DOMAIN.HIDDEN">43D68546.4020307@xxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Gnus/5.110003 (No Gnus v0.3) XEmacs/21.5-b24 (darwin)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>On Tue, Jan 24, 2006 at 11:51:34AM -0800, Per Bothner wrote:
+&gt; What would using symbols and s-exp gain?  What kind of
+&gt; operations would it make easier?
+
+There are two different issues here: how should paths or URIs be
+represented at run-time, and what kind of notation should be used for
+giving literal values for them in code. As you are speaking about
+&quot;operations&quot;, I assume you mean the former here.
+
+To me it is obvious: _all_ common operations on URIs are easier if you
+have a structured representation instead of a flat string. Maybe the
+most common operation is resolving a relative URI against a base URI. A
+purely string-based implementation is a huge mess that involves
+searching for slashes from right to left (but remembering that
+consequent slashes count as a single one), detecting &quot;..&quot; and &quot;.&quot;
+-segments and whatnot... it's the sort of thing you expect to see only
+in C code. 
+
+Any sane implementation will first parse the URI into its constituents
+and form a list of path segments, and then operate on that list. It
+would be just silly to constantly parse and unparse the URIs at every
+operation, so it's better to have a distinct internal representation for
+them. And indeed, this is why many languages do have special types or
+classes for representing URIs.
+
+But I wasn't talking about this, but about the syntax of the module
+language. And, indeed, you're right about this one:
+
+&gt; Your argument is an aethetic one - which is certainly valid.
+
+Essentially, yes. I very much like the minimalism and cleanliness of
+Scheme's syntax: there's just names, spaces and parentheses, and no icky
+$-prefixes for identifiers, nor quotation marks anywhere except in plain
+text literals. I just find it distasteful if a _string_ is being used as
+an identifier.
+
+You are right that URIs are standard way of identifying resources, and
+as such they are a fine choice for a library path. However, to my mind a
+URI is is essentially an abstract object that has various attributes
+(scheme, username, hostname, port, path, query string) that may be
+present or not. The URIs have a standardized written representation that
+is intended to be useful in all kinds of contexts (e.g. an unescaped
+space is forbidden in URI syntax since URIs are often inserted into
+plain text as such). However, Scheme source code is a special context
+because in this context there is already a conventional way of
+representing all kinds structured data: s-expressions. Having structured
+data in some other format looks just plain weird.
+
+For an analogy, consider regular expressions: POSIX-style regexps are
+compact, but quite un-schemish to my mind. And to others' minds too.
+Hence we have SRE notation, which represents the structure of a regexp
+exactly the same way as all structures are represented in Scheme: with
+s-expressions. URIs should be no different.
+
+&gt; What about &quot;path names&quot; (as used in file operations): Should they be
+&gt; structured objects or strings?
+
+Definitely objects. Nowadays PLT Scheme has built-in support for path
+objects, but before that I used to use a simple library:
+
+  ;; A path is (dir subdir subsubdir . file), or the file may be missing,
+  ;; designating the actual directory.
+  ;; If the path starts with /, it's absolute
+
+  (define (reverse-path path)
+    (if (pair? path)
+        (cons '.. (reverse-path (cdr path)))
+        '()))
+
+  (define (relative-path from to)
+    (or (and (pair? to) 
+             (let ((h (car to)))
+               (or (and (pair? from) (eq? (car from) h) 
+                        (relative-path (cdr from) (cdr to)))
+                   (and (eq? h '/) to))))
+        (append (reverse-path from) to)))
+
+Here relative-path calculates the relative path from &quot;from&quot; to &quot;to&quot;.
+Would you like to do this kind of stuff using _strings_?
+
+I just find it sad that underneath all these high-level conveniences,
+the operating system still uses strings for paths in the system call
+interface. As a result, '/' is an utterly magical character that cannot
+appear in any file's name.
+
+&gt; There are good reasons to prefer strings (standard, universal, and
+&gt; familiar, as listed above). At least it makes sense to read and print
+&gt; pathnames using URI syntax.
+
+Certainly it should be possible, but hardly the default. XML's surface
+syntax is also standard, universal and familiar. Would you suggest that
+XML data in Scheme code be therefore expressed with strings:
+&quot;&lt;foo&gt;bar&lt;baz/&gt;&lt;/foo&gt;&quot; instead of, say, Xexprs: (foo &quot;bar&quot; (baz))?
+
+
+Lauri
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00109" href="msg00109.html">Re: Overuse of strings</a></strong>
+<ul><li><em>From:</em> Neil Van Dyke</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00101" href="msg00101.html">Re: Overuse of strings</a></strong>
+<ul><li><em>From:</em> Lauri Alanko</li></ul></li>
+<li><strong><a name="00102" href="msg00102.html">Re: Overuse of strings</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00107.html">Re: Overuse of strings</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00109.html">Re: Overuse of strings</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00105.html">Re: Overuse of strings</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00109.html">Re: Overuse of strings</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00108"><strong>Date</strong></a></li>
+<li><a href="threads.html#00108"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

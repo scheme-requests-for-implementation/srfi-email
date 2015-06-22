@@ -1,0 +1,155 @@
+<!-- MHonArc v2.6.16 -->
+<!--X-Subject: Re: SRFI 105: Curly&#45;infix&#45;expressions -->
+<!--X-From-R13: Euveb Ynjnv <fuvebNynin.arg> -->
+<!--X-Date: Mon, 27 Aug 2012 07:32:21 +0000 (UTC) -->
+<!--X-Message-Id: 20120826.213139.1108322852317673718.shiro@lava.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: E1T5nSK&#45;00084G&#45;6i@fenris.runbox.com -->
+<!--X-Reference: 20120826.182304.931495076416921545.shiro@lava.net -->
+<!--X-Reference: CAF+kUQWBRMkf48gjQdp9GoEhiv9t209=f_t=iWtxCd5m_Zv5zw@mail.gmail.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: SRFI 105: Curly-infix-expressions</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00017.html">Date Prev</a>][<a href="msg00019.html">Date Next</a>][<a href="msg00017.html">Thread Prev</a>][<a href="msg00019.html">Thread Next</a>][<a href="maillist.html#00018">Date Index</a>][<a href="threads.html#00018">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: SRFI 105: Curly-infix-expressions</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:almkglor@DOMAIN.HIDDEN">almkglor@xxxxxxxxx</a>, <a href="mailto:dwheeler@DOMAIN.HIDDEN">dwheeler@xxxxxxxxxxxx</a>, <a href="mailto:srfi-105@DOMAIN.HIDDEN">srfi-105@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: SRFI 105: Curly-infix-expressions</li>
+<li><em>From</em>: Shiro Kawai &lt;<a href="mailto:shiro@DOMAIN.HIDDEN">shiro@xxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 26 Aug 2012 21:31:39 -1000 (HST)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-105@DOMAIN.HIDDEN">srfi-105@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:CAF%2BkUQWBRMkf48gjQdp9GoEhiv9t209%3Df_t%3DiWtxCd5m_Zv5zw@DOMAIN.HIDDEN">CAF+kUQWBRMkf48gjQdp9GoEhiv9t209=f_t=iWtxCd5m_Zv5zw@xxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:E1T5nSK-00084G-6i@DOMAIN.HIDDEN">E1T5nSK-00084G-6i@xxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:20120826.182304.931495076416921545.shiro@DOMAIN.HIDDEN">20120826.182304.931495076416921545.shiro@xxxxxxxx</a>&gt;	&lt;<a href="mailto:CAF%2BkUQWBRMkf48gjQdp9GoEhiv9t209%3Df_t%3DiWtxCd5m_Zv5zw@DOMAIN.HIDDEN">CAF+kUQWBRMkf48gjQdp9GoEhiv9t209=f_t=iWtxCd5m_Zv5zw@xxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>From: Alan Manuel Gloria &lt;almkglor@xxxxxxxxx&gt;
+Subject: Re: SRFI 105: Curly-infix-expressions
+Date: Mon, 27 Aug 2012 14:14:11 +0800
+
+&gt; Dunno.  But one major use of curly-infix in my own code is
+&gt; with comparison operators like &gt; &lt; =
+&gt; 
+&gt; WAAY back in kindergarten my teachers taught me to view
+&gt;&gt; as a mouth.  The mouth wants to eat the bigger thing, so
+&gt; it faces the bigger thing.  If it's &gt;, the bigger thing is on the
+&gt; left, while if it's &lt;, the bigger thing is on the right.
+
+That's a good argument.  I do prefer comparison ops infix.
+
+&gt; We want to reserve the &quot;{&quot; and &quot;}&quot; symbols now for curly-infix,
+&gt; and the community can vote with its feet (i.e. by using or
+&gt; not using particular `nfx` implementations) on what precedence
+&gt; system to use.
+
+Layering is a good idea.  If we take this approach, we can
+make responsibilities for each step more clearly separated;
+that is, one layer simply maps {a b c} to (nfx a b c), and
+another layer specifies the default behavior of nfx macro,
+which implements 0, 1, 2-ary and simple C-expr cases.
+Those don't need to be separate srfis; just multiple layers.
+
+Putting responsibility of transformation solely on a macro
+may have some benefits:
+
+- The current way of nfx specification seems like an ad-hoc
+  escape exit.
+
+- I think whether the following C-expr is 'simple' or not
+  depends on implementation, correct?
+
+    `{x ,op y ,op z}
+
+  Having reader to recognize simple C-exprs might introduce
+  nasty edge cases.  If macro handles transformation, the
+  behavior would be more predictable.
+
+- Scope of reader extension isn't well defined.  If an
+  implementation provides multiple extensions of C-exprs
+  (either through nfx or transform-mixed-infix), when and
+  how those are used?  Each implementation would have its
+  own rules; it'd be pretty wild.  On the other hand, the
+  scope of macros (in terms of module systems) is pretty
+  well defined.
+
+
+The reason why you didn't take this approach may be possible
+interferences with n-expressions.  If so, I'd like to see
+the reasoning noted in the srfi, or (I prefer) modifying
+the way n-expressions work so that it can work with
+&quot;macro-transfers-all&quot; approach.
+
+--shiro
+
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00019" href="msg00019.html">Re: SRFI 105: Curly-infix-expressions</a></strong>
+<ul><li><em>From:</em> Alan Manuel Gloria</li></ul></li>
+<li><strong><a name="00021" href="msg00021.html">Re: SRFI 105: Curly-infix-expressions</a></strong>
+<ul><li><em>From:</em> David A. Wheeler</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00011" href="msg00011.html">Re: SRFI 105: Curly-infix-expressions</a></strong>
+<ul><li><em>From:</em> David A. Wheeler</li></ul></li>
+<li><strong><a name="00016" href="msg00016.html">Re: SRFI 105: Curly-infix-expressions</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+<li><strong><a name="00017" href="msg00017.html">Re: SRFI 105: Curly-infix-expressions</a></strong>
+<ul><li><em>From:</em> Alan Manuel Gloria</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00017.html">Re: SRFI 105: Curly-infix-expressions</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00019.html">Re: SRFI 105: Curly-infix-expressions</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00017.html">Re: SRFI 105: Curly-infix-expressions</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00019.html">Re: SRFI 105: Curly-infix-expressions</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00018"><strong>Date</strong></a></li>
+<li><a href="threads.html#00018"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

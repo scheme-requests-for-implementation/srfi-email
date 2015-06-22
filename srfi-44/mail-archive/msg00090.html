@@ -1,0 +1,306 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Traits, dictionaries -->
+<!--X-From-R13: "Penqq I. Embalr" <oenqq+fesvNfmbalr.pbz> -->
+<!--X-Date: Thu, 16 Oct 2003 21:29:30 +0200 (DFT) -->
+<!--X-Message-Id: 20031016192923.GC2858@ogre.szonye.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20031016105959.GG8421@loki.vpn.szonye.com -->
+<!--X-Reference: 20031016170717.GA9033@freenetproject.org -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Traits, dictionaries</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00089.html">Date Prev</a>][<a href="msg00091.html">Date Next</a>][<a href="msg00091.html">Thread Prev</a>][<a href="msg00094.html">Thread Next</a>][<a href="maillist.html#00090">Date Index</a>][<a href="threads.html#00090">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Traits, dictionaries</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Traits, dictionaries</li>
+<li><em>From</em>: &quot;Bradd W. Szonye&quot; &lt;<a href="mailto:bradd%2Bsrfi@DOMAIN.HIDDEN">bradd+srfi@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 16 Oct 2003 12:29:23 -0700</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20031016170717.GA9033@DOMAIN.HIDDEN">20031016170717.GA9033@xxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Mail-followup-to</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>References</em>: &lt;<a href="mailto:20031016105959.GG8421@DOMAIN.HIDDEN">20031016105959.GG8421@xxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20031016170717.GA9033@DOMAIN.HIDDEN">20031016170717.GA9033@xxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mutt/1.4i</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; Bradd W. Szonye wrote:
+&gt;&gt; 1. Bidirectionality and folding
+
+scgmille@xxxxxxxxxxxxxxxxxx wrote:
+&gt; Perhaps the real solution is to make it optional that an ordered
+&gt; collection support a reverse fold in addition to a
+&gt; bidirectional-collection attribute.
+
+Yes, that would be the simplest way to do it. I've been thinking about
+how to deal with this without too much impact -- I don't want to hold up
+finalization too much. Your SRFI is very close to having excellent
+support for generic programming, but the collection &quot;traits&quot; fall just a
+little bit short. (Also, I have some concerns about dictionaries; see
+the end of the message.)
+
+In generic programming, it's important for data structures to support
+two kinds of traits: feature tests and performance traits. The feature
+tests are also important from the OO point of view, because they're
+effectively a kind of classification (inheritance)! The SRFI already
+reflects this partially, by treating ordered collections as a &quot;class&quot; in
+some contexts. In other words, bag? and ordered-collection? are both
+classes (from the OO point of view), and they're both feature traits
+(from the GP point of view).
+
+Methods like ordered-collection? and bag? are feature traits; they tells
+you which operations are valid on a collection. Methods like
+bidirectional-collection? describe performance traits; they tell you
+whether a given operation is &quot;reasonable&quot; for regular use.
+
+While I recommend the inclusion of some performance traits, they're not
+absolutely necessary. If you think it's too much trouble to include
+them, they could always be postponed to a &quot;generic programming&quot; SRFI
+based on SRFI-44.
+
+&gt;&gt; For most unidirectional collections, collection-reverse-fold could be
+&gt;&gt; an alias for collection-fold. For some of them, like unidirectional
+&gt;&gt; sequences (i.e., lists), it can provide an inefficient reverse fold.
+
+&gt; I don't like that as much.  Reverse fold should be undefined if its
+&gt; semantics are the same as ordinary fold.
+
+On second thought, you're correct. I also made the mistake of conflating
+two different traits. There's a difference between asking whether you
+*can* reverse a collection and asking whether you *should*.
+
+&gt; For sequences it should probably be defined even if inefficiently.
+&gt; The programmer can use the bidirectional attribute to figure out if
+&gt; this is going to be cost prohibitive.
+
+Right! What we actually need is a feature trait (reversible-collection?)
+and a performance trait (bidirectional-collection?). The former tells
+you whether you can reverse the collection; the latter tells you whether
+it's inexpensive. Vectors and proper lists are both reversible
+collections, but only the vector is bidirectional.
+
+I think the SRFI is only missing two important feature traits:
+
+    reversible-collection?      supports collection-reverse-fold
+    finite-collection?          collection-fold will halt on its own
+
+Justification: Consider the sequence &quot;fibonacci,&quot; which generates its
+values instead of storing them. The Nth index of the sequence is the
+(N+1)th fibonacci number. This collection is ordered but not finite or
+reversible. You could use (sequence-ref fibonacci 3) to get the 4th
+fibonacci number. To get a subsequence, you can fold the collection:
+
+    (define (fibonacci-subsequence start end)
+      (define (f n v s e acc)
+         (cond? ((&lt; n s) (values #t s e acc))
+                ((&lt;= n e) (values #t s e (cons v acc)))
+                (else (values #f s e acc)))
+      (let-values ((s e acc)
+                     (collection-fold-keys fibonacci f start end '()))
+        (reverse acc))))
+
+This gives us generated sequences like Clean and ML! (A later SRFI could
+extend your collection classes to standardize the interface for this
+kind of sequence.)
+
+Of course, you can't reverse fibonacci, even though it's ordered, so
+reversible-collection? must be false. Likewise, folder-procs must
+explicitly halt enumeration, so finite-collection? must be false.
+
+This sort of thing is also handy for collections like circular lists,
+wrap-around vectors, and similar collections.
+
+I also think it would be a good idea to include a few performance
+traits, like bidirectional-collection? and random-access-collection?,
+but you could leave that to a future GP SRFI if you think it's
+unecessary. However, it would be a good idea to at least explain the
+concept of performance traits, especially since you already have one:
+        
+The mutable-collection? trait is essentially a performance trait. It
+tells you to prefer the *-proc!! interfaces over the functional
+interfaces. (By the way, I agree with Matthias Radestock: The ! and !!
+procedures seem redundant. Do you know of any case where it's important
+to actually distinguish between the two? It seems to me that you could
+always trivially implement ! by returning the result of !!.) It's also a
+feature trait, because it tells you about the interface, even if you
+merge ! and !!: It tells you that you're allowed to ignore the returned
+value of the mutable methods, because it's always eq? to the input
+collection.
+
+Summary of my opinions on collection traits:
+
+1. The reversible-collection? and finite-collection? feature traits are
+   NECESSARY to implement several desirable collections.
+
+2. The bidirectional-collection? and random-access-collection?
+   performance traits would be HELPFUL for generic programming.
+
+3. I recommend merging the ! and !! procedures unless there's a strong
+   argument not to.
+
+&gt;&gt; 2. Equivalence of dictionaries
+
+&gt; This is a weakness in the wording I imagine.  Dictionaries compare
+&gt; keys and values using the same equivalence function, which takes two
+&gt; values at a time, not key/value pairs.  The equivalence function would
+&gt; be applied to two keys, one from each dictionary, then two the two
+&gt; values from each dictionary mapping.
+
+That's a reasonable default, but it must not be a requirement, because
+it makes some dictionaries impossible to implement!
+
+For example, consider a dictionary that maps case-insensitive user IDs
+to case-sensitive user names. There's no straightforward way to
+implement this. You could do it by encapsulating the keys or values in
+some other data structure, but why? That's just a hack to accommodate an
+inflexible interface.
+
+It would be better to have separate equivalence predicates for the keys
+and the values (if necessary). Here's how I'd spec the constructor:
+
+    (unordered-dictionary [key-eqv? [val-eqv?]] pair ...)
+    (ordered-dictionary [less?] [val-eqv?] pair ...)
+
+For unordered dictionaries, key-eqv? and val-eqv? both default to eqv?.
+Ordered dictionaries are similar, except that they can derive key-eqv?
+from less?, as long as it's a strict weak order (which includes &lt; but
+not partial orders like &lt;=).
+
+This complicates *-equivalence-function, since there's now more than one
+of them. I can think of three ways to deal with that:
+
+1. *-equivalence-function d =&gt; key-eqv? val-eqv?  -or-
+   *-equivalence-function d =&gt; (cons key-eqv? val-eqv?)
+
+Bad idea, because it breaks the Liskov substitution rule for
+polymorphism. (A subtype's methods should be more generous about inputs
+and stricter about outputs, which is false for this method. By the way,
+this is a good reason *not* to make sequence a subtype of dictionary --
+while all sequences are a kind of dictionary, the interface would break
+the Liskov substitution rule.)
+
+2. Introduce *-key-equivalence-function and *-value-equivalence-function,
+   with *-equivalence-function =&gt; *-key-equivalence-function.
+
+Question: (collection-fold dict) enumerates the values, right? That
+seems like the right thing to do, because it makes for an interface
+similar to sequences. However, there are also good reasons to enumerate
+the keys or to enumerate key-value pairs (i.e., (cons key value)). I
+keep arguing with myself over what's the best &quot;default&quot; enumeration for
+dictionaries, and I can't make up my mind.
+
+Anyway, assuming that it does enumerate values, there's some potential
+here for confusion: The &quot;default&quot; enumerator operates on values, but the
+&quot;default&quot; equivalence function operates on keys. I can think of two ways
+to fix *that*:
+
+2a. As above, but *-equivalence-function =&gt; *-value-equivalence-function.
+
+Bad idea, because the equivalence function is supposed to &quot;return true
+if they should be considered equivalent for the purposes of contains?,
+value insertion, removal, and key lookup.&quot;
+
+2b. As above, (collection-fold dict) enumerates key-value pairs, and
+    *-equivalence-function tests two pairs for equivalence.
+
+That is, the &quot;equivalence function&quot; is a composition:
+(lambda (a b) (and (key-eqv? (car a) (car b)) (val-eqv? (cdr a) (cdr b))))
+
+This is better than 2a, but it still isn't really testing for key
+equivalence. The basic problem here is that there are at least two major
+uses of the equivalence function: dealing with keys within a single
+collection, and comparing two entire collections.
+
+I think the best solution is #2: Introduce explicit key-eqv? and
+val-eqv? accessors, and have the &quot;default&quot; be the key comparator.
+Generic algorithms will therefore need to be careful about combining
+collection-fold with *-equivalence-function, but I think that's the
+least of all evils in this case.
+
+3. Get rid of *-equivalence-function for dictionaries.
+
+If you don't like any of the alternatives, you could remove the accessor
+entirely. I don't think it's necessary, but it is a viable option.
+
+Summary of my opinions on dictionaries:
+
+1. Dictionaries MUST have separate key-eqv? and val-eqv? predicates.
+
+2. Ordered dictionaries SHOULD derive key-eqv? from the ordering
+   predicate whenever possible. Specifically, they should encourage
+   strict weak orders and discourage partial orders, which makes the
+   less-&gt;eqv? conversion possible.
+
+3. A dictionary's *-equivalence-function SHOULD return the key
+   comparator. Dictionaries should have at least one additional accessor
+   to obtain the value comparator.
+-- 
+Bradd W. Szonye
+<a  rel="nofollow" href="http://www.szonye.com/bradd">http://www.szonye.com/bradd</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00094" href="msg00094.html">Re: Traits, dictionaries</a></strong>
+<ul><li><em>From:</em> scgmille</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00083" href="msg00083.html">Bidirectionality and other comments</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+<li><strong><a name="00086" href="msg00086.html">Re: Bidirectionality and other comments</a></strong>
+<ul><li><em>From:</em> scgmille</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00089.html">Re: Bidirectionality and other comments</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00091.html">Re: Bidirectionality and other comments</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00091.html">Re: Bidirectionality and other comments</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00094.html">Re: Traits, dictionaries</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00090"><strong>Date</strong></a></li>
+<li><a href="threads.html#00090"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,171 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: SRFI&#45;19 reference implementation problem -->
+<!--X-From-R13: Ivyy Tvgmtrenyq <jsvgmtNxmbb.rqh> -->
+<!--X-Date: Thu, 27 Feb 2003 19:04:42 +0100 (NFT) -->
+<!--X-Message-Id: FA3DBB7F&#45;4A7D&#45;11D7&#45;9415&#45;000393B66774@kzoo.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: SRFI-19 reference implementation problem</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00001.html">Date Prev</a>][<a href="msg00003.html">Date Next</a>][<a href="msg00001.html">Thread Prev</a>][<a href="msg00003.html">Thread Next</a>][<a href="maillist.html#00002">Date Index</a>][<a href="threads.html#00002">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: SRFI-19 reference implementation problem</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-19@DOMAIN.HIDDEN">srfi-19@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: SRFI-19 reference implementation problem</li>
+<li><em>From</em>: Will Fitzgerald &lt;<a href="mailto:wfitzg@DOMAIN.HIDDEN">wfitzg@xxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 27 Feb 2003 13:04:56 -0500</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-19@DOMAIN.HIDDEN">srfi-19@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+A new fixed version is up at:
+
+<a  rel="nofollow" href="http://max.cs.kzoo.edu/~wfitzg/srfi-19/">http://max.cs.kzoo.edu/~wfitzg/srfi-19/</a>
+
+These are based on Martin Gasbichler's comments, which I address below.
+
+
+Martin Gasbichler asks, and I answer:
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Some small remarks I came across while porting this to scsh:
+
+Why not using SRFI-9 for the definition of the record types? This
+would it also make possible omit the definition of mutators completely
+instead of redefining them to throw an error.
+</pre></blockquote><pre style="margin: 0em;">
+
+</pre><tt>I tried to make as few assumptions about the implementation as  
+</tt><tt>possible, especially because some parts of the code are OS-specific.
+</tt><pre style="margin: 0em;">
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+
+Why is the definition of COPY-TIME not simply:
+
+(define (copy-time time)
+   (make-time (time-type time)
+              (time-second time)
+              (time-nanosecond time)))
+
+</pre></blockquote><pre style="margin: 0em;">
+
+Sometimes, I'm an idiot. I fixed this.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+
+/ with more than two arguments is an optional procedure in R5RS, same
+applies to -. IMHO using the binary variants makes the code much more
+readable...
+
+</pre></blockquote><pre style="margin: 0em;">
+
+</pre><tt>Hmm, we could quibble on the readability, but for max. portability of  
+</tt><tt>this
+</tt><tt>less than portable code, I've changed calls to / and - to 1 or 2  
+</tt><tt>arguments. I think there was only one arity three call for each.
+</tt><pre style="margin: 0em;">
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Scsh's reader is case-sensitive, it therefore fails to understand
+#\Space. Also #\Tab or #\tab is not in R5RS, maybe you could use a
+string containing a tabulator character instead (for the scsh port I
+used scsh's ASCII package).
+
+</pre></blockquote><pre style="margin: 0em;">
+
+</pre><tt>No #\tab character in R5RS! Argh! I changed this to (integer-&gt;char 9)  
+</tt><tt>and
+</tt><pre style="margin: 0em;">
+hope for ascii or equivalents.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+The scsh version of your code with these things fixed is available
+from scsh's CVS at
+
+</pre><tt><a  rel="nofollow" href="http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/*checkout*/scsh/scsh-">http://cvs.sourceforge.net/cgi-bin/viewcvs.cgi/*checkout*/scsh/scsh-</a> 
+</tt><tt>0.6/scheme/srfi/srfi-19.scm?rev=HEAD&amp;content-type=text/plain
+</tt><pre style="margin: 0em;">
+
+
+Before successfully running the test suite I had to fix two minor
+tweaks:
+
+In the test suite you use the non-standard |...| notation for
+symbols.
+</pre></blockquote><pre style="margin: 0em;">
+
+OK, I changed this in my code, too.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+
+Also in the test suite you use tm:nano which is obviously an internal
+constant of the library.
+</pre></blockquote><pre style="margin: 0em;">
+
+OK, I changed this in my code, too.
+
+
+--
+Will Fitzgerald
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00003" href="msg00003.html">Re: SRFI-19 reference implementation problem</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr.  Preprocessor]</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00001.html">Re: SRFI-19 reference implementation problem</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00003.html">Re: SRFI-19 reference implementation problem</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00001.html">Re: SRFI-19 reference implementation problem</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00003.html">Re: SRFI-19 reference implementation problem</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00002"><strong>Date</strong></a></li>
+<li><a href="threads.html#00002"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

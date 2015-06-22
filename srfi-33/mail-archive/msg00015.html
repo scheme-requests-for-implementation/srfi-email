@@ -1,0 +1,208 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: names, trivial ops, variadic extensions &#38; bitwise&#45;= -->
+<!--X-From-R13: fuvirefNpp.tngrpu.rqh -->
+<!--X-Date: Wed, 24 Jul 2002 06:39:47 +0200 (DFT) -->
+<!--X-Message-Id: 200207240439.g6O4dKn11757@mongkok.dyndns.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>names, trivial ops, variadic extensions &amp; bitwise-=</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00014.html">Date Prev</a>][<a href="msg00016.html">Date Next</a>][<a href="msg00014.html">Thread Prev</a>][<a href="msg00018.html">Thread Next</a>][<a href="maillist.html#00015">Date Index</a>][<a href="threads.html#00015">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>names, trivial ops, variadic extensions &amp; bitwise-=</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-33@DOMAIN.HIDDEN">srfi-33@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: names, trivial ops, variadic extensions &amp; bitwise-=</li>
+<li><em>From</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxxxxx</a></li>
+<li><em>Date</em>: Wed, 24 Jul 2002 00:39:20 -0400</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-33@DOMAIN.HIDDEN">srfi-33@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Reply-to</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>    From: Aladdin Petrofsky &lt;aladdin@xxxxxxxxxxxxx&gt; 
+    The fact that (= x1 x2 x3 ...) means (and (= x1 x2) (= x2 x3 ...))
+    creates a reasonable expectation that (bitwise-eqv x1 x2 x3) might
+    mean (bitwise-and (bitwise-eqv x1 x2) (bitwise-eqv x2 x3 ...)).  For
+    this reason, perhaps xnor would be a better name than eqv.  
+
+Yes, as a name, XNOR generalises well to the n-ary case: I'm confused
+completely independent of the number of arguments passed to the function.
+
+    &gt; Just for a little context, play this game: ask yourself, &quot;How many
+    &gt; functions are there from two booleans to a boolean?&quot; Go ahead; work
+    &gt; it out. Then you will see that SRFI 33 provides a name for every one
+    &gt; of them, and defines one operation for each such function
+
+    &gt; That is the *core idea* underlying that part of the library.
+
+    In one sense, the srfi &quot;provides a name&quot; for bitwise-const0, etc., but
+    in the words of the srfi these operations are &quot;not provided&quot;.
+
+    In a previous email you said that providing these would be &quot;beyond the
+    pale&quot;, but now you say they are part of &quot;the *core idea*&quot;.
+
+    I could go either way, but I'm a little confused by your rhetoric.
+
+Good point. Ok, let me flesh out the path from the rhetoric to the
+reality. The SRFI *names* all sixteen dyadic boolean functions:
+    and or nand nor xor eqv andc1 andc2 orc1 orc2 
+    const0 const1 arg1 arg2 not1 not2
+We can then consider the Scheme procedures which lift these functions
+to bitwise mappings over integers. Six of these are trivial and uninteresting,
+not worth binding to Scheme identifiers. The other ten, however, are worth
+providing, with standard bindings -- and they also are the ones that need
+compiler- or interpreter-primitive implementations.
+
+So we start with a core idea, flesh it out, then trim the fat. That's how I
+square my rhetoric with the design.
+
+I hope, in passing, that anyone who ever does anything with dyadic boolean
+functions in the future, uses these names. Conventions are your friend, and
+the more you observe them, the better they are to you.
+
+    ... four [of the trivial ops] are associative [and hence have n-ary
+    associative extensions].  Appropriate specifications (ignoring errors) 
+    would be:
+
+      (define (bitwise-const0 . args) 0)
+      (define (bitwise-const1 . args) -1)
+      (define (bitwise-arg1 arg1 . args) arg1)
+      (define (bitwise-arg2 arg1 . args)
+	(if (null? args) arg1 (apply bitwise-arg2 args)))
+      (define (bitwise-not1 x y) (bitwise-not x))
+      (define (bitwise-not2 x y) (bitwise-not y))
+
+    In light of its associative extension, perhaps bitwise-arg2 is a bad
+    name, just as bitwise-eqv is a misleading name once you extend it to
+    more than two arguments.  Maybe bitwise-arg1 and bitwise-arg2 should
+    be bitwise-first and bitwise-last.
+
+    Also, bitwise-not1 and bitwise-not2, although nonassociative, do have
+    obvious extensions to n-arity (as do nand and nor), if you rename them
+    to bitwise-not-first and bitwise-not-last.  The same goes for andc1,
+    andc2, orc1, and orc2.
+
+    I think I agree with your initial instinct that all associative
+    operations should be variadic and all nonassociative ones should not.
+
+This is getting way too complicated. I guess the issue is that, while there
+are only 16 dyadic boolean functions, there are just lots and lots and lots of
+variadic boolean functions, and once we start considering variadics, we go
+right off the side of a cliff. Consider, for example, if we went with
+BITWISE-FIRST and BITWISE-LAST. Then mightn't we also want BITWISE-SEVENTH,
+and maybe a few more? Same reasoning applies to n-ary variants of andc1,
+andc2, orc1 and orc2 -- maybe we need andc7 and a few more. Just say no.
+
+- There's no way to make andc1, andc2, orc1 &amp; orc2 n-ary that fits into
+  a limited but general framework. So leave them dyadic.
+- If we punt the trivial ops, we don't have to fool with making *them* n-ary.
+- We can make nand &amp; nor n-ary, which is reasonable.
+- Or we can retreat to the simple world of associative-only n-aries.
+
+I'm going to stick with plan c, but would like to hear voices beyond mine
+and Al Addin's.
+
+    From: Jim Blandy &lt;jimb@xxxxxxxxxxxx&gt;
+    Would it also be useful to have an operation
+      (bitwise-= a ...)
+    in which bit i is set in the result if bit i is the same in all the
+    inputs?  You can't get this function by folding, since you have to
+    propagate three states for each bit: consensus 1, consensus 0, and no
+    consensus.
+
+Al Fresco gave a nice definition, synthesizing BITWISE-= from and/or/not:
+    (bitwise-or (apply bitwise-and args)
+                (apply bitwise-and (map bitwise-not args))))
+
+Yeah, it's interesting to contemplate adding it. I considered it briefly. But
+I decided it isn't sufficiently important to warrant inclusion. When was the
+last time you needed *n-ary* BITWISE-= ? Note that it coincides with
+BITWISE-EQV for the dyadic case, so we're covered there. I am also put off by
+the fact that it *looks* like BITWISE=, which has the appearance of the
+bitstring equality function, otherwise known as = (since bitstrings are just
+integers).
+
+You might ask, in turn: well, when was the last time you needed BITWISE-ANDC1
+-- *that* made the cut. Well, yes. But that springs from this whole path I
+laid out at the beginning of this msg: start with the notion of defining the
+*set* of dyadic boolean functions. Throw out the *really* trivial ones,
+provide all the rest, and there you are: andc1 snuck in along with and, or,
+xor, eqv, nand &amp; nor.
+
+Where do these more exotic dyadic boolean functions get used? One example
+is the graphical bitblt operation, which is parameterised by a dyadic boolean
+that says how to combine the source bit with the destination bit. 
+
+   The library *does* provide a name for what you're calling
+   bitwise-const0.  It's `0'.
+
+Heh? (bitwise-const0 4 9 -15) =&gt; 0, but (0 4 9 -15), uh, doesn't.
+
+I have worked comments from all this discussion into the latest version, which
+I have placed at
+    <a  rel="nofollow" href="http://www.cc.gatech.edu/srfi/srfi-33.txt">http://www.cc.gatech.edu/srfi/srfi-33.txt</a>
+and will soon appear at the official SRFI-33 site
+    <a  rel="nofollow" href="http://srfi.schemers.org/srfi-33/">http://srfi.schemers.org/srfi-33/</a>
+once Francisco Solsona, the hardest-working editor in rock 'n roll, has
+copied it over.
+    -Olin
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00018" href="msg00018.html">Re: names, trivial ops, variadic extensions &amp; bitwise-=</a></strong>
+<ul><li><em>From:</em> Alma Mater Petrofsky</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00014.html">Correct thought &amp; proper citation</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00016.html">bit vectors, exact integers, and sets</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00014.html">Correct thought &amp; proper citation</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00018.html">Re: names, trivial ops, variadic extensions &amp; bitwise-=</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00015"><strong>Date</strong></a></li>
+<li><a href="threads.html#00015"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

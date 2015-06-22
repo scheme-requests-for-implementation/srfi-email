@@ -1,0 +1,198 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Still on David's issues; SRFI 44 -->
+<!--X-From-R13: Bnah Ynyyvbxbfxv <ngrujnNfnatr.sv> -->
+<!--X-Date: Sun, 14 Aug 2005 21:12:02 +0200 (DFT) -->
+<!--X-Message-Id: 20050814191154.GA2256@humma -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Still on David's issues; SRFI 44</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00061.html">Date Prev</a>][<a href="msg00063.html">Date Next</a>][<a href="msg00061.html">Thread Prev</a>][<a href="msg00063.html">Thread Next</a>][<a href="maillist.html#00062">Date Index</a>][<a href="threads.html#00062">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Still on David's issues; SRFI 44</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-69@DOMAIN.HIDDEN">srfi-69@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Still on David's issues; SRFI 44</li>
+<li><em>From</em>: Panu Kalliokoski &lt;<a href="mailto:atehwa@DOMAIN.HIDDEN">atehwa@xxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 14 Aug 2005 22:11:57 +0300</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-69@DOMAIN.HIDDEN">srfi-69@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Mutt/1.5.9i</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Now that I've cooled off a bit, let's try something destructive.
+
+Whether SRFI 69 should be about general mappings or hash tables, has
+been IMO adequately addressed; if there are suggestions about how to
+make it clearer in the abstract that it _is_ about hash tables, they are
+welcome.
+
+What I haven't been adequately addressing is the neglection of SRFI 44.
+This is mainly because I have no motivation for criticising an
+already-finalised SRFI; I was hoping I could just go ahead and work this
+SRFI to be good, unhindered by SRFI 44.  It's possible that some other
+people feel the same way, I don't know.
+
+But because David seems to be very concerned about the neglection of
+SRFI 44, I probably have to tell why I'm not heeding its call.
+Personally, I can't see this as such a serious matter as I don't think
+an SRFI being _finalised_ is reason enough to obey it.  The &quot;real&quot; test
+for an SRFI is whether it will ever get added in mainstream
+implementations, not whether it is able to go through peer review.  Peer
+review is only a means to get it good enough to appeal to implementors.
+
+Now, let's get to the point.  The first objection I have to SRFI 44 is
+that it's an example of biting more than one can chew.  Standardising
+naming conventions for a data structure requires, in my opinion, a lot
+of everyday work with that data structure.  SRFI 44 not only tries to
+address lots and lots of data structures at once, it also tries to
+address forthcoming collections whose characteristics are unknown.
+There is very little hope that it will provide an optimal naming scheme
+or taxonomy for those data structures.
+
+Nor is this kind of &quot;abstraction first&quot; approach needed.  Being an SRFI
+about _lists_ did not prevent SRFI 1 from affecting SRFI 69's naming
+conventions.  Of course, all the SRFI's for concrete data types will
+look for an example in the already-existing data types.  This kind of
+careful work that balances similarity with already existing data types
+and special needs of the new data type is what will most probably make
+the proper API for a wide variety of data structures.
+
+The second (or third) objection is that SRFI 44 itself is confused about
+its emphasis.  It addresses two relatively orthogonal issues: the naming
+schemes of concrete data types, and how these concrete data types are
+arranged in a type hierarchy (and how that type hierarchy is
+implemented).  The second one is alien in a language like Scheme, which
+has always been about concrete data types, and brings us all the
+problems of taxonomy.  Similarly to Aristotle's ontological
+categorisation, SRFI 44 has a weird division of genera against
+qualities: for example, sequence is a subtype of bag, but pure
+mutability and directionality are properties separate from the
+hierarchy.  Some properties are, however, dependent on others, such as
+every ordered collection is a directional collection.  There are also
+other attributes which receive a mention but are not separately listed
+as &quot;attributes&quot;, such as immutability.
+
+The subtype hierarchy is also flawed: for example, the SRFI states that
+there is collection-fold-keys-left, but the procedure is only defined
+for sequences and maps.  Ergo, set is-not-a collection.
+
+The common thing about these problems is that they are both problems
+very generally found in object oriented design: premature abstraction,
+and arbitrariness in domain analysis.  And I think these problems,
+together with the vastness of the scope of SRFI 44, contribute to the
+problems in SRFI 44's mapping API.  For instance, sequences could be a
+subtype of map, with very limited domain.  But they are not, and so we
+have *-get instead of *-ref and *-put! instead of *-set!.  (SRFI 69
+originally had both naming schemes, but *-get, *-put! was downvoted, and
+IMO, righteously so.)
+
+Now, on to concrete criticism.  What would SRFI 44 API of hash tables
+look like?
+
+Hash tables would have two supertypes: map and collection.  Collection
+operations would forget about the keys.  No indexed collection could be
+a subtype of a hash table, and no keyed collection could be a subtype of
+an indexed collection.
+
+There would be an asymmetry between items in a set and keys in a map:
+even though these two are very similar, the former are treated as
+&quot;values&quot; while the latter are treated as &quot;keys&quot;.  Consequently,
+operations for these have different names.
+
+Hash tables could have a value equivalence function which would be never
+used, but the user could not supply a hash function.  This implies that
+appropriate hash functions could be guaranteed only up to some specific
+coarseness (as with SRFI 69 defaults), and beyond that, hash tables
+could not guarantee their complexity constraints.  In fact, every time
+the user supplied an unrecognised key equivalence function, the
+implementation would have to use a constant hash function (like (lambda
+(x) 0) for example) to guarantee correctness, destroying all the value
+of hash tables.
+
+Hash tables would lack an operation that folds with both keys and
+values, and hash-table-&gt;alist.  Generally, _all_ access to the actual
+associations of the hash table would be indirect.
+
+hash-table-update! would not be there, forcing people to look up the key
+twice when they update the value.
+
+Hash tables should be able to implement -delete-from! for a bag datatype
+that does not yet exist.
+
+Despite all this, I've tried to craft SRFI 69 so that it does not
+_prevent_ a SRFI 44 style API to hash tables.  The only unclear point,
+which David diligently dug out, is hash-table-equivalence-function.  It
+can be that systems implementing both SRFI 44 and SRFI 69 will have to
+add the (meaningless) item equivalence function to the hash table
+implementation data structure _just in case_ somebody asks for it.  But
+I hope the rest of the world can safely just not bother.
+
+Panu
+
+-- 
+personal contact: atehwa@xxxxxx, +35841 5323835, +3589 85619369
+work contact: panu.kalliokoski@xxxxxxxxxxx, +35850 3678003
+kotisivu (henkkoht):	<a  rel="nofollow" href="http://www.iki.fi/atehwa/">http://www.iki.fi/atehwa/</a>
+homepage (technical):	<a  rel="nofollow" href="http://sange.fi/~atehwa/">http://sange.fi/~atehwa/</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00063" href="msg00063.html">Re: Still on David's issues; SRFI 44</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+<li><strong><a name="00067" href="msg00067.html">Re: Still on David's issues; SRFI 44</a></strong>
+<ul><li><em>From:</em> David Van Horn</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00061.html">Re: Comments on SRFI 69</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00063.html">Re: Still on David's issues; SRFI 44</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00061.html">Re: Comments on SRFI 69</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00063.html">Re: Still on David's issues; SRFI 44</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00062"><strong>Date</strong></a></li>
+<li><a href="threads.html#00062"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

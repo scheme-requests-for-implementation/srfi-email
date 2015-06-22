@@ -1,0 +1,489 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Monad for lazy evaluation -->
+<!--X-From-R13: Oaqer ina Fbaqre <naqerNurg.oebja.rqh> -->
+<!--X-Date: Thu, 21 Aug 2003 08:28:37 +0200 (DFT) -->
+<!--X-Message-Id: Pine.sola.4.10.10308210139480.7458&#45;100000@now.het.brown.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Monad for lazy evaluation</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00058.html">Date Prev</a>][<a href="msg00060.html">Date Next</a>][<a href="msg00061.html">Thread Prev</a>][<a href="msg00062.html">Thread Next</a>][<a href="maillist.html#00059">Date Index</a>][<a href="threads.html#00059">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Monad for lazy evaluation</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-40@DOMAIN.HIDDEN">srfi-40@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Monad for lazy evaluation</li>
+<li><em>From</em>: Andre van Tonder &lt;<a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 21 Aug 2003 02:28:29 -0400 (EDT)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-40@DOMAIN.HIDDEN">srfi-40@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>I have found a nice abstraction for the CPS-style approach to lazy
+computation, which make the definitions very simple and transparent.  
+
+The abstraction relies on a monad M representing delayed computations that 
+  - hides the continuations that appear in the CPS solution.
+  - makes it impossible to define a well-typed function M a -&gt; b.  
+    Since functions of this type would be exactly those that returned
+    instead of calling their continuations, we now have a uniform 
+    way of ensuring that we only write safe functions.   
+
+All the examples below run in constant space in MzScheme.  It would be
+good to test in other Schemes.  
+
+The definition of a leak-free stream-filter now becomes very simple (see
+below for full definitions): 
+
+(define (stream-filter p? s)
+  (stream-match s
+    [()      stream-nil]
+    [(h . t) (if (p? h) 
+                 (stream-cons h (stream-filter p? t))
+                 (stream-filter p? t))]))
+
+Notice that now we can use stream constructors, and we do not have to
+break the definition into two separate funtions as in the previous
+CPS-style attempt. 
+
+The definition of (a basic) unfold is equally simple:
+
+; unfold : (b -&gt; ((M #f) | (stream-cons (a | 'drop) b)) b -&gt; stream a
+
+(define (unfold f seed)
+  (letm ([res (f seed)])
+    (cond [res (match res
+                 [()      (return 'error)]
+                 [(h . t) (if (eq? h 'drop)
+                              (unfold f t)
+                              (stream-cons h (unfold f t)))])]
+          [else stream-nil])))
+
+which is pretty transparent as well.  One point to mention here is
+that typing forces us to use a monadic let, called letm here.     
+
+Defining a stream of integers is easy:
+ 
+(define (integers-from n)
+  (stream-cons n (integers-from (+ n 1))))
+
+Lazy computations are invoked by &quot;run&quot; as follows: e.g.
+
+(run (stream-car (integers-from 5)))    ; ===&gt; 5
+
+(run (times3 5))  ; ===&gt; 15
+
+The function &quot;run&quot; is only meant to be used at the toplevel.  Elsewhere it
+is unsafe for space consumption (since it causes a function to return
+instead of calling its continuation).   
+
+Alternative definitions of stream-filter are, for example, not using
+stream-match:
+
+(define (stream-filter1 p? s)
+  (ifm (stream-null? s)
+       stream-nil
+       (letm ([h (stream-car s)])   
+         (if (p? h) 
+             (stream-cons h (stream-filter1 p? (stream-cdr s)))
+             (stream-filter1 p? (stream-cdr s))))))
+
+or in  terms of unfold:
+
+(define (stream-filter3 p? s)
+  (unfold (lambda (s) 
+            (stream-match s
+              [()      (return #f)]
+              [(h . t) (if (p? h)
+                           (stream-cons h t)
+                           (stream-cons 'drop t))])) 
+          s))
+
+
+Regards
+Andre
+
+
+; Monad for lazy evaluation in Scheme:
+
+; Copyright 2003 Andre van Tonder
+
+; Principle: 
+
+; Based on a CPS-style memoizing delay, which appears to be safe for space
+; as long as the entire computation stays in CPS style.
+; 
+; This is enforced by defining a monad M for lazy evaluation which
+;   - hides the continuation
+;   - makes it impossible to define a well-typed function 
+;       M a -&gt; a
+
+; Since functions of type M a -&gt; a would be exactly the functions that 
+; returned instead of calling their continuation, in this way we ensure 
+; that the computation stays CPS.  
+
+; The only unsafe function is run : M a -&gt; b, 
+; which is meant to be called at top-level only.
+
+;=======================================================================
+; CPS-style delay
+
+(define-syntax codelay 
+  (syntax-rules ()
+    [(codelay thunk-cps)
+     (let ([memo-pair (cons #f #f)])
+       (lambda (k*)
+         (if (car memo-pair)
+             (k* (cdr memo-pair))
+             (thunk-cps (make-memoizer memo-pair k*)))))]))
+
+(define (make-memoizer memo-pair k)
+  (lambda (x)
+    (set-car! memo-pair #t)
+    (set-cdr! memo-pair x)
+    (k x)))
+
+;========================================================================
+; Lazy monad - similar to continuation monad. 
+; see Wadler: How to declare an imperative for the latter.
+
+; We are defining (Monad M) where M = make-lazy. 
+
+
+; Constructor for elements of the monad:
+
+(define-syntax make-lazy
+  (syntax-rules ()
+    [(make-lazy exp) (codelay (lambda (k) (k exp)))]))
+
+
+; &gt;&gt;= : (M a) (a -&gt; (M b)) -&gt; (M b)
+
+(define (&gt;&gt;= ma f:a-&gt;mb)
+  (lambda (j) 
+    (ma (lambda (x)
+          ((f:a-&gt;mb x) j)))))
+
+
+; return : a -&gt; (M a)
+
+(define-syntax return
+  (syntax-rules ()
+    [(return exp) (make-lazy exp)]))
+
+
+; Syntax allowing infix &gt;&gt;=:
+; in-monad : (M a) (a -&gt; M b) -&gt; (M b)
+;    etc. 
+
+(define-syntax in-monad
+  (syntax-rules (&gt;&gt;=)
+    [(in-monad exp1 &gt;&gt;= exp2 ...)
+     (&gt;&gt;= exp1 (in-monad exp2 ...))]
+    [(in-monad exp) exp]))
+
+
+; The only unsafe operation.  Using run at other than
+; toplevel may lead to space leaks...
+
+; run : (M a) -&gt; a
+
+(define (run k) (k (lambda (x) x)))
+
+
+; Monadic let: 
+;   initializer : (M a)
+;   expression  : (M b)
+;   letm        : (M b)
+
+(define-syntax letm
+  (syntax-rules ()
+    [(letm ((name initializer)) expression)
+     (&gt;&gt;= initializer (lambda (name) expression))]))
+
+
+; Nested monadic let:
+
+(define-syntax letm*
+  (syntax-rules ()
+    [(letm* () expr) expr] 
+    [(letm* (binding1 binding2 ...) expr) 
+     (letm (binding1) (letm* (binding2 ...) expr))]))
+
+
+; Monadic if:
+;   ifm (M a) (M b) (M c) 
+
+(define-syntax ifm 
+  (syntax-rules ()
+    [(ifm cond branch1 branch2)
+     (in-monad cond &gt;&gt;= 
+               (lambda (cond*) (if cond* branch1 branch2)))])) 
+
+
+;=========================================================================
+; Convenient list deconstructor.
+
+(define-syntax match
+  (syntax-rules ()
+    [(match lst 
+       [()      exp1]
+       [(h . t) exp2])
+     (cond [(null? lst) exp1]
+           [(pair? lst) (let ([h (car lst)]
+                              [t (cdr lst)])
+                          exp2)]
+           [else 'match-error])]))
+
+;=========================================================================
+; Stream primitives:
+
+; define-type: Stream = M List
+
+
+; stream-nil : Stream
+
+(define stream-nil
+  (return '()))  
+
+
+; stream-cons : a Stream -&gt; Stream
+
+(define-syntax stream-cons
+  (syntax-rules ()
+    [(stream-cons h t)
+     (return (cons h t))]))
+
+
+; Stream deconstructor where:
+;   s    : Stream
+;   exp1 : M b
+;   exp3 : M c
+;      h : a
+;      t : Stream
+; stream-match : M b | M c 
+
+(define-syntax stream-match
+  (syntax-rules ()   
+    [(stream-match s
+       [()      exp1]
+       [(h . t) exp2])
+     (in-monad s &gt;&gt;= 
+               (lambda (s*) 
+                 (match s*  
+                   [()      exp1]
+                   [(h . t) exp2])))]))
+
+
+; stream-car : Stream -&gt; M b
+
+(define (stream-car s)
+  (stream-match s
+    [()      (return 'error-stream-car)]
+    [(h . t) (return h)]))
+
+
+; stream-cdr : Stream -&gt; Stream
+
+(define (stream-cdr s)
+  (stream-match s
+    [()      (return 'error-stream-cdr)]
+    [(h . t) t]))
+
+
+; stream-null : Stream -&gt; M Bool
+
+(define (stream-null? s)
+  (stream-match s
+    [()      (return #t)]
+    [(h . t) (return #f)]))
+
+
+;=========================================================================
+; Stream functions - LEAK-FREE:
+
+
+; stream-filter : (a -&gt; bool) Stream -&gt; Stream 
+
+(define (stream-filter p? s)
+  (stream-match s
+    [()      stream-nil]
+    [(h . t) (if (p? h) 
+                 (stream-cons h (stream-filter p? t))
+                 (stream-filter p? t))]))
+
+
+; unfold : (b -&gt; ((M #f) | (stream-cons (a | 'drop) b)) b -&gt; stream a
+
+(define (unfold f seed)
+  (letm ([res (f seed)])
+    (cond [res (match res
+                 [()      (return 'error)]
+                 [(h . t) (if (eq? h 'drop)
+                              (unfold f t)
+                              (stream-cons h (unfold f t)))])]
+          [else stream-nil])))
+
+
+; integers-from : int -&gt; Stream
+
+(define (integers-from n)
+  (stream-cons n (integers-from (+ n 1))))
+
+
+; stream-ref : int Stream -&gt; M a
+
+(define (stream-ref index s)
+  (stream-match s
+    [()      (return (error 'stream-ref))]
+    [(h . t) (if (zero? index)
+                 (return h)
+                 (stream-ref (- index 1) t))]))
+
+;========================================================================
+; TESTS
+
+;-----------------------------------------------------------------------
+; Check memoization
+
+(define s (return (begin (display 'evaluating) 1)))
+
+(run s)    
+(run s)    
+; ==&gt; Should display 'evaluating only once
+
+
+(define (lazy-add x y)
+  (letm* ([x* x]
+          [y* y])
+         (return (+ x* y*))))
+
+(run (let ([s (return (begin (display 'evaluating1) 1))])
+       (lazy-add s s)))
+
+; ==&gt; Should display 'evaluating1 only once
+
+;-----------------------------------------------------------------------
+; Check for off-by-one error:
+
+(run (stream-ref 0 (stream-filter
+                    zero?
+                    (integers-from 0))))     
+
+;==&gt; should terminate giving 0
+
+;--------------------------------------------------------------------
+; Check for leak in stream-filter:
+
+(define (times3 n)
+  (stream-ref 3 (stream-filter
+                 (lambda (x) (zero? (modulo x n)))
+                 (integers-from 0))))
+
+(run (times3 5))  
+
+;(times3 100000000)    ; ==&gt; runs in constant space
+
+
+;===================================================================
+; Alternative definition testing stream primitives:
+
+
+; stream-filter1 : (a -&gt; bool) Stream -&gt; Stream 
+
+(define (stream-filter1 p? s)
+  (ifm (stream-null? s)
+       stream-nil
+       (letm ([h (stream-car s)])   
+         (if (p? h) 
+             (stream-cons h (stream-filter1 p? (stream-cdr s)))
+             (stream-filter1 p? (stream-cdr s))))))
+
+(define (times3-1 n)
+  (stream-ref 3 (stream-filter1
+                 (lambda (x) (zero? (modulo x n)))
+                 (integers-from 0))))
+
+(run (times3-1 10))
+
+;(run (times3-1 100000000))  ;==&gt; Runs in constant space
+
+;-----------------------------------------------------------------
+; Yet another definition testing stream-fold:
+
+
+; stream-filter3 : (a -&gt; bool) Stream -&gt; Stream 
+
+(define (stream-filter3 p? s)
+  (unfold (lambda (s) 
+            (stream-match s
+              [()      (return #f)]
+              [(h . t) (if (p? h)
+                           (stream-cons h t)
+                           (stream-cons 'drop t))])) 
+          s))
+
+(define (times3-3 n)
+  (stream-ref 3 (stream-filter3
+                 (lambda (x) (zero? (modulo x n)))
+                 (integers-from 0))))
+
+(run (times3-3 17))
+
+;(run (times3-3 100000000))   ; stream-fold runs in constant space
+
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00058.html">Re: Much simpler leak-free implementation possible?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00060.html">Re: Much simpler leak-free implementation possible?</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00061.html">Re: Much simpler leak-free implementation possible?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00062.html">Yet another reference implementation</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00059"><strong>Date</strong></a></li>
+<li><a href="threads.html#00059"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

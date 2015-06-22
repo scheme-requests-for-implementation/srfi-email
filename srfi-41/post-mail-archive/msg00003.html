@@ -1,0 +1,181 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: [plt&#45;scheme] SRFI 41 -->
+<!--X-From-R13: Oaqer ina Fbaqre <naqerNurg.oebja.rqh> -->
+<!--X-Date: Thu,  9 Oct 2008 00:04:45 +0200 (MST) -->
+<!--X-Message-Id: Pine.SOC.4.64.0810081736090.10664@oow.het.brown.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 209967.29400.qm@web31107.mail.mud.yahoo.com -->
+<!--X-Reference: da4fbdb30810081220g6a26a1echf59b72d6911fef8b@mail.gmail.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: [plt-scheme] SRFI 41</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00002.html">Date Prev</a>][<a href="msg00004.html">Date Next</a>][<a href="msg00002.html">Thread Prev</a>][<a href="msg00004.html">Thread Next</a>][<a href="maillist.html#00003">Date Index</a>][<a href="threads.html#00003">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: [plt-scheme] SRFI 41</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Phil Bewig &lt;<a href="mailto:pbewig@DOMAIN.HIDDEN">pbewig@xxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: [plt-scheme] SRFI 41</li>
+<li><em>From</em>: Andre van Tonder &lt;<a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 8 Oct 2008 17:37:32 -0400 (EDT)</li>
+<li><em>Cc</em>: <a href="mailto:nowgate@DOMAIN.HIDDEN">nowgate@xxxxxxxxx</a>, <a href="mailto:plt-scheme@DOMAIN.HIDDEN">plt-scheme@xxxxxxxxxxxxxxxxx</a>, <a href="mailto:srfi-41@DOMAIN.HIDDEN">srfi-41@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-41@DOMAIN.HIDDEN">srfi-41@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:da4fbdb30810081220g6a26a1echf59b72d6911fef8b@DOMAIN.HIDDEN">da4fbdb30810081220g6a26a1echf59b72d6911fef8b@xxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:209967.29400.qm@DOMAIN.HIDDEN">209967.29400.qm@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:da4fbdb30810081220g6a26a1echf59b72d6911fef8b@DOMAIN.HIDDEN">da4fbdb30810081220g6a26a1echf59b72d6911fef8b@xxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<tt>The typing you describe is in fact consistent with that of ordinary (R5RS) 
+</tt><tt>member, which does not end in a question mark.
+</tt><pre style="margin: 0em;">
+
+On Wed, 8 Oct 2008, Phil Bewig wrote:
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+The definition of stream-member given in the text of SRFI-41 is incorrect.
+The problem is inconsistent typing: one branch of the cond returns #f, which
+is not a stream, while another branch of the cond returns strm, which is a
+stream.  Here is a definition of stream-member? which returns either #t or
+#f; it uses normal define, not stream-define, and normal let, not
+stream-let:
+
+(define (stream-member? eql? obj strm)
+ (let loop ((strm strm))
+   (cond ((stream-null? strm) #f)
+         ((eql? (stream-car strm) obj) #t)
+         (else (loop (stream-cdr strm))))))
+
+Given that, (stream-member? equal? 'c (stream 'a 'b)) evaluates to #f, as
+you expect.
+
+Another definition of stream-member, the one that was intended by SRFI-41,
+is:
+
+(define-stream (stream-member eql? obj strm)
+ (stream-let loop ((strm strm))
+   (cond ((stream-null? strm) (stream #f))
+         ((eql? obj (stream-car strm)) strm)
+         (else (loop (stream-cdr strm))))))
+
+That definition type-checks because both branches of the cond evaluate to a
+stream.  Given that definition, (stream-car (stream-member equal? 'c (stream
+'a 'b))) evaluates to #f, and (stream-car (stream-member equal? 'a (stream
+'a 'b))) evaluates to a.
+
+Note that stream-member is not defined in SRFI-41; it is just an example in
+the text (worse, it is an incorrect example in the text).  If PLT includes
+stream-member in its version of SRFI-41, that is an extension of SRFI-41.
+If PLT wants to extend SRFI-41, it would be better to define the library in
+such a way that it is loaded by (require srfi/41-extended-by-PLT) or some
+such mechanism.  By taking the liberty of extending the base definition of
+SRFI-41, PLT confuses users and makes code written using its extended
+version of SRFI-41 non-portable to other Scheme systems that adhere to
+SRFI-41 as it is written.
+
+I will forward this note to the SRFI-41 mailing list.
+
+Phil
+
+On Wed, Oct 8, 2008 at 1:11 PM, michael rice &lt;nowgate@xxxxxxxxx&gt; wrote:
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+ There's a stream-member function given in SRFI 41 that doesn't seem to
+work as expected.
+
+=================
+
+(require srfi/41)
+
+(define s1 (stream-cons 'a (stream-cons 'b stream-null)))
+
+(define-stream (stream-member eql? obj strm)
+  (stream-let loop ((strm strm))
+    (cond ((stream-null? strm) #f)
+          ((eql? obj (stream-car strm)) strm)
+          (else (loop (stream-cdr strm))))))
+
+===================
+
+Welcome to DrScheme, version 4.1 [3m].
+Language: Swindle; memory limit: 128 megabytes.
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+(stream-member equal? 'c s1)
+</pre></blockquote><pre style="margin: 0em;">
+#&lt;stream&gt;
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+
+</pre></blockquote><pre style="margin: 0em;">
+
+===================
+
+Shouldn't the answer be #f?
+
+Michael
+
+
+_________________________________________________
+ For list-related administrative tasks:
+ <a  rel="nofollow" href="http://list.cs.brown.edu/mailman/listinfo/plt-scheme">http://list.cs.brown.edu/mailman/listinfo/plt-scheme</a>
+
+
+</pre></blockquote><pre style="margin: 0em;">
+
+</pre></blockquote><pre style="margin: 0em;">
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00002" href="msg00002.html">Re: [plt-scheme] SRFI 41</a></strong>
+<ul><li><em>From:</em> Phil Bewig</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00002.html">Re: [plt-scheme] SRFI 41</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00004.html">Stream-member</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00002.html">Re: [plt-scheme] SRFI 41</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00004.html">Stream-member</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00003"><strong>Date</strong></a></li>
+<li><a href="threads.html#00003"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

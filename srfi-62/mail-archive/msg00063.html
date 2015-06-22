@@ -1,0 +1,137 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: new, simpler formal specification -->
+<!--X-From-R13: Bnhy Epuyvr <fpuyvrNpbzpnfg.arg> -->
+<!--X-Date: Thu, 24 Mar 2005 16:57:27 +0100 (NFT) -->
+<!--X-Message-Id: BE684D8D.997A%schlie@comcast.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: BE67BC41.9964%schlie@comcast.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: new, simpler formal specification</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00062.html">Date Prev</a>][Date Next][<a href="msg00062.html">Thread Prev</a>][Thread Next][<a href="maillist.html#00063">Date Index</a>][<a href="threads.html#00063">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: new, simpler formal specification</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Paul Schlie &lt;<a href="mailto:schlie@DOMAIN.HIDDEN">schlie@xxxxxxxxxxx</a>&gt;,	Taylor Campbell &lt;<a href="mailto:campbell@DOMAIN.HIDDEN">campbell@xxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: new, simpler formal specification</li>
+<li><em>From</em>: Paul Schlie &lt;<a href="mailto:schlie@DOMAIN.HIDDEN">schlie@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 24 Mar 2005 10:57:17 -0500</li>
+<li><em>Cc</em>: &lt;<a href="mailto:srfi-62@DOMAIN.HIDDEN">srfi-62@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-62@DOMAIN.HIDDEN">srfi-62@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:BE67BC41.9964%25schlie@DOMAIN.HIDDEN">BE67BC41.9964%schlie@xxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Microsoft-Entourage/11.1.0.040913</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; From: Paul Schlie &lt;schlie@xxxxxxxxxxx&gt;
+&gt;&gt; Taylor Campbell &lt;campbell@xxxxxxxxxxxxxxxxxx&gt; wrote:
+&gt;&gt; This is the crux of your argument, and it is wrong.  A &lt;datum&gt; is built
+&gt;&gt; by a stream of tokens.  Any token may be preceded by intertoken space,
+&gt;&gt; which is ignored.  Since you have specified that &lt;datum-comment&gt; is
+&gt;&gt; considered a comment, which in turn is considered intertoken space, a
+&gt;&gt; &lt;datum&gt;, which begins with a token, may always be preceded by that
+&gt;&gt; token's intertoken space, which may be a &lt;datum-comment&gt;.  Therefore:
+&gt;&gt; 
+&gt;&gt;       --- intertoken space --- (datum comment with B (from '#; A B'))
+&gt;&gt;      /                datum    \
+&gt;&gt;     /            vvvvvvvvvvvvvvv
+&gt;&gt;    #;            #; A          B   C  &lt;-- datum (token C, preceded by
+&gt;&gt;                  ^^^^\                    intertoken space '#; #; A B')
+&gt;&gt;                    |  \ datum (token A)
+&gt;&gt;                     \ intertoken space (datum comment with A)
+&gt; 
+&gt; - Sorry, in a nutshell, I don't believe a left recursive grammar is
+&gt;   consistent with scheme's existing exclusively right recursive grammar;
+&gt;   and candidly still surprised anyone would, but what you advocate is:
+&gt;  
+&gt;     &lt;datum-comment&gt; -&gt; #; &lt;datum-comment*-datum&gt;
+&gt;     &lt;datum-comment*-datum&gt; -&gt; &lt;datum-comment&gt;* &lt;datum&gt;    ; left recursive
+&gt; 
+&gt;     &quot;#; #; A B C&quot; =&gt; &quot;{datum-comment {datum-comment A} B} C&quot; =&gt; &quot;C&quot;
+&gt; 
+&gt;   -vs-
+&gt; 
+&gt;     &lt;datum-comment&gt; -&gt; #; &lt;datum-or-datum-comment&gt;
+&gt;     &lt;datum-or-datum-comment&gt; -&gt; &lt;datum&gt; | &lt;datum-comment&gt; ; right recursive
+&gt; 
+&gt;    &quot;#; #; A B C&quot; =&gt; &quot;{datum-comment {datum-comment A}} B C&quot; =&gt; &quot;B C&quot;
+&gt; 
+&gt;    (as &quot;' ' A B C&quot; =&gt; &quot;(quote (quote A)) B C&quot;, not &quot;(quote (quote A) B) C&quot;)
+
+- After more thought, agreeing the grammar: &lt;datum-comment&gt; -&gt; #; &lt;datum&gt;
+  is unfortunately naturally left recursive as it's an &lt;intertoken-space&gt;.
+
+  I still believe it's inconsistent with scheme's grammar which is otherwise
+  fully right recursive.  However this inconsistency can be avoided by
+  forcing it's definition to be right recursive:
+
+    &lt;datum-comment&gt; -&gt; &lt;datum-comment-token&gt;+ &lt;datum&gt;
+    &lt;datum-comment-token&gt; -&gt; #;
+
+  Thereby forcing the treatment of all sequential #; as being effectively
+  redundant; thereby eliminating it's otherwise undesirable left recursive
+  behavior. (Which otherwise results in sequential datum-comment-token's
+  affecting statements beyond those immediately following them, which is
+  more likely to be error prone, than intentionally desirable or useful.)
+
+  Thereby: &quot;#; #; A B C&quot; =&gt; {&lt;datum-comment&gt; #; #; A} B C&quot; =&gt; &quot;B C&quot;
+
+  (might this please be considered)
+
+
+
+
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00062" href="msg00062.html">Re: new, simpler formal specification</a></strong>
+<ul><li><em>From:</em> Paul Schlie</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00062.html">Re: new, simpler formal specification</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00062.html">Re: new, simpler formal specification</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00063"><strong>Date</strong></a></li>
+<li><a href="threads.html#00063"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

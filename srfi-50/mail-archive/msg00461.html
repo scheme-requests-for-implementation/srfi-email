@@ -1,0 +1,185 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: More JNI vs. Pika comparison -->
+<!--X-From-R13: Xvz Pynaql <wvzoNerqung.pbz> -->
+<!--X-Date: Wed, 18 Feb 2004 00:22:58 +0100 (NFT) -->
+<!--X-Message-Id: vt2d68dgulx.fsf@zenia.home -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>More JNI vs. Pika comparison</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00460.html">Date Prev</a>][<a href="msg00462.html">Date Next</a>][<a href="msg00460.html">Thread Prev</a>][<a href="msg00462.html">Thread Next</a>][<a href="maillist.html#00461">Date Index</a>][<a href="threads.html#00461">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>More JNI vs. Pika comparison</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: More JNI vs. Pika comparison</li>
+<li><em>From</em>: Jim Blandy &lt;<a href="mailto:jimb@DOMAIN.HIDDEN">jimb@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: 17 Feb 2004 18:21:46 -0500</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Sender</em>: <a href="mailto:jimb@DOMAIN.HIDDEN">jimb@xxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Gnus/5.09 (Gnus v5.9.0) Emacs/21.3</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+I've come across a situation which is reasonably straightforward to
+handle in a JNI-style interface, but which I think requires machinery
+I haven't seen yet in Pika-style.  I'd like to see the Pika folks'
+solution here.
+
+When I write actions for a Bison grammar, it's pretty straightforward
+to use Minor references in the semantic actions.  I've included most
+of the .y file here in case someone wanted all the details, but skip
+down to the list_data nonterminal to see what I'm talking about.
+
+(I'm inflicting untested code on you folks again.  I'll earn some kind
+of gonzo reward eventually.  Sorry.  But I think the point is safe
+enough.)
+
+%{
+
+/* The type of Bison semantic values.  */
+#define YYSTYPE mn_ref *
+
+/* Our parser takes an mn_call, cast to a void *, as a parameter.  */
+#define YYPARSE_PARAM untyped_call
+#define c ((mn_call *) untyped_call)
+
+%}
+
+%pure_parser
+
+%token CHARACTER
+%token FALSE
+%token IDENTIFIER
+%token NEWLINE_CHARACTER
+%token NUMBER
+%token SPACE_CHARACTER
+%token START_VECTOR
+%token STRING
+%token TRUE
+%token UNQUOTE_SPLICING
+
+%%
+
+datum: simple_datum | compound_datum;
+
+simple_datum: boolean | NUMBER | character | STRING | symbol;
+
+boolean: TRUE | FALSE;
+
+character: SPACE_CHARACTER | NEWLINE_CHARACTER | CHARACTER ;
+
+symbol: IDENTIFIER;
+
+compound_datum: list | vector;
+
+list: '(' list_data ')' { $$ = $2 };
+
+list_data:
+    datum list_data { $$ = mn_to_cons (c, $1, $2); }
+  | datum '.' datum { $$ = mn_to_cons (c, $1, $3); }
+  |                 { $$ = mn_null (c); }
+  ;
+
+vector:
+    START_VECTOR vector_data ')'
+      { 
+        $$ = mn_list_to_vector (c, $2);
+        mn_free_local_ref (c, $2);
+      }
+  ;
+
+vector_data:
+    datum vector_data { $$ = mn_to_cons (c, $1, $2); }
+  |                   { $$ = mn_null (c); }
+  ;
+
+%%
+
+The underlying issue here is that we want the generated parser's stack
+of semantic values to hold references to Scheme objects.  Since a
+JNI-style interface works on pointers to dynamically allocated
+references, one can simply declare semantic values to be such
+pointers, as we do with the #definition of YYSTYPE above.  We use
+&quot;linear&quot; functions like mn_to_cons to free intermediate references.
+If the parser exits with an error, any local references on the stack
+are freed properly when the mn_call returns.
+
+It seems to me that handling this in Pika requires one to use a
+separate facility that hasn't been described on this list before,
+which allows Pika references to appear inside other data structures,
+gives them dynamic lifetimes, and requires them to be explicitly freed
+--- much as with a JNI-style interface.  Then, one writes code much
+like the above.  And the user would need to write their own mechanism
+for cleaning things up in the case of a parser error.
+
+It seems to me similar problems will occur working with any
+third-party tool that presumes it is sufficient to let people pass
+around pointers to data of their own definition.
+
+So, in the end, it looks to me as if Pika will need to provide a
+JNI-style interface anyway, in addition to the C compound-statement-
+bound interface, which would still be the preferred interface for C
+code written against Pika interfaces.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00462" href="msg00462.html">Re: More JNI vs. Pika comparison</a></strong>
+<ul><li><em>From:</em> Matthew Dempsky</li></ul></li>
+<li><strong><a name="00465" href="msg00465.html">Re: More JNI vs. Pika comparison</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00460.html">Re: Encodings.</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00462.html">Re: More JNI vs. Pika comparison</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00460.html">Re: Encodings.</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00462.html">Re: More JNI vs. Pika comparison</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00461"><strong>Date</strong></a></li>
+<li><a href="threads.html#00461"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

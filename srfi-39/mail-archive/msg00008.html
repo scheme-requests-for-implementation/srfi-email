@@ -1,0 +1,183 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Some comments -->
+<!--X-From-R13: sryvk <sryvkhaqqhavNserrarg.qr> -->
+<!--X-Date: Mon, 23 Dec 2002 22:32:05 +0100 (NFT) -->
+<!--X-Message-Id: 3E077CA2.2040703@freenet.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 3E050560.6090507@freenet.de -->
+<!--X-Reference: 200212220251.gBM2p2Y14110@dino00.iro.umontreal.ca -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Some comments</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00007.html">Date Prev</a>][<a href="msg00009.html">Date Next</a>][<a href="msg00003.html">Thread Prev</a>][<a href="msg00009.html">Thread Next</a>][<a href="maillist.html#00008">Date Index</a>][<a href="threads.html#00008">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Some comments</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Marc Feeley &lt;<a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Some comments</li>
+<li><em>From</em>: felix &lt;<a href="mailto:felixundduni@DOMAIN.HIDDEN">felixundduni@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 23 Dec 2002 22:14:10 +0100</li>
+<li><em>Cc</em>: <a href="mailto:srfi-39@DOMAIN.HIDDEN">srfi-39@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-39@DOMAIN.HIDDEN">srfi-39@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>References</em>: &lt;<a href="mailto:3E050560.6090507@DOMAIN.HIDDEN">3E050560.6090507@xxxxxxxxxx</a>&gt; &lt;<a href="mailto:200212220251.gBM2p2Y14110@DOMAIN.HIDDEN">200212220251.gBM2p2Y14110@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.0.0) Gecko/20020529</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+Marc Feeley wrote:
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+
+I'm not sure what you mean by reentrant in this particular case.  But
+yes it is possible that the before and after thunks (of a particular
+call to dynamic-wind) are called by different threads.  This is
+consistent with SRFI 18, specifically with the concept that dynamic
+environments are attached to continuations (i.e. when a continuation
+is created the current dynamic environment is attached to it, when the
+continuation is resumed, possibly by another thread than the one that
+created the continuation, the dynamic environment will be restored).
+</pre></blockquote><pre style="margin: 0em;">
+
+Ah, yes, I see it now.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+
+When writing code, you really have to think of the parameters created
+by make-parameter as read-only, and those created by
+make-mutable-parameter as read-write.  It is only to simplify the
+migration of legacy code that the parameters created by make-parameter
+are possibly mutable (with an implementation dependent semantics).
+</pre></blockquote><pre style="margin: 0em;">
+
+This is unfortunate, since this SRFI really moves all that &quot;legacy&quot;
+code into non-specifiedness...
+I think parameters (as used in Chez, PLT or (say) Chicken) are
+(IMHO) well understood and heavily used.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+2) `parameterize' changes the parameters by &quot;swapping&quot;, as
+   in the traditional implementation.
+</pre></blockquote><pre style="margin: 0em;">
+
+
+What do you mean by &quot;swapping&quot;?  Do you mean that parameterize does
+not create a new cell and simply saves the content of the cell,
+changes the content of the cell for the duration of the body, and then
+restores the cell?
+</pre></blockquote><pre style="margin: 0em;">
+
+Right.
+
+&gt; This would be unbelievably difficult to use in a
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+multithreaded system, unless of course thread creation copies the
+dynamic environment of the parent (which I guess is why you want point
+3).  Moreover, this implementation is expensive when using
+continuations to jump between different dynamic scopes (you have to
+undo a bunch of parameter mutations, and then redo a bunch of other
+mutations).
+</pre></blockquote><pre style="margin: 0em;">
+
+I don't think so. You could use a &quot;copy-on-write&quot; strategy that
+copies the dynamic (parameter) environment only if a thread actually
+mutates the parameter: say you have a global parameter environment,
+and `make-parameter' puts the value into this. Every thread gets its
+own parameter-environment (initially a copy of the parent thread's env [*]).
+Then, when the parameter is referenced, you check wether the thread's
+parameter-environment contains a value, and, if not, take the
+global one. Mutating a parameter does the copying (if needed).
+This should result in a negligible overhead for thread-creation,
+and a not-too-expensive overhead in the worst case (a shallow vector
+copy is used in Chicken, for example).
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+3) Make all parameters thread-local, child threads inherit
+   the parameter-settings of their parents.
+</pre></blockquote><pre style="margin: 0em;">
+
+
+By thread-local you mean copy the dynamic environment (including the
+cells)?  Then see my previous response to a comment by Matthew Flatt
+(to summarize: it isn't clean and it is expensive when you create a
+thread).
+
+</pre></blockquote><pre style="margin: 0em;">
+
+Clean? Well, that's a matter of taste. Expensive? Not necessarily
+(see above).
+
+
+cheers,
+felix
+--
+[*] Note that this will be empty, unless the parent has already
+created its own environment.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00009" href="msg00009.html">Re: Some comments</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00001" href="msg00001.html">Some comments</a></strong>
+<ul><li><em>From:</em> felix</li></ul></li>
+<li><strong><a name="00003" href="msg00003.html">Re: Some comments</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00007.html">Re: initial impressions/questions</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00009.html">Re: Some comments</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00003.html">Re: Some comments</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00009.html">Re: Some comments</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00008"><strong>Date</strong></a></li>
+<li><a href="threads.html#00008"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

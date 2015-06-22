@@ -1,0 +1,146 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Scheme flonum literals -->
+<!--X-From-R13: "Penqq I. Embalr" <oenqq+fesvNfmbalr.pbz> -->
+<!--X-Date: Fri,  7 Jan 2005 14:24:14 +0100 (NFT) -->
+<!--X-Message-Id: 20050107132408.GC18722@ogre.szonye.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: Pine.LNX.4.44.0412262207080.10074&#45;100000@autodrip.bloodandcoffee.net -->
+<!--X-Reference: 20041230222337.3D7BD1B7711@voluntocracy.org -->
+<!--X-Reference: Pine.LNX.4.58.0412301550550.3862@bolt.sonic.net -->
+<!--X-Reference: 20050105012438.GD6573@ogre.szonye.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Scheme flonum literals</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00105.html">Date Prev</a>][<a href="msg00107.html">Date Next</a>][<a href="msg00095.html">Thread Prev</a>][<a href="msg00107.html">Thread Next</a>][<a href="maillist.html#00106">Date Index</a>][<a href="threads.html#00106">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Scheme flonum literals</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-58@DOMAIN.HIDDEN">srfi-58@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Scheme flonum literals</li>
+<li><em>From</em>: &quot;Bradd W. Szonye&quot; &lt;<a href="mailto:bradd%2Bsrfi@DOMAIN.HIDDEN">bradd+srfi@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 7 Jan 2005 05:24:08 -0800</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-58@DOMAIN.HIDDEN">srfi-58@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20050105012438.GD6573@DOMAIN.HIDDEN">20050105012438.GD6573@xxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Mail-followup-to</em>: <a href="mailto:srfi-58@DOMAIN.HIDDEN">srfi-58@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>References</em>: &lt;<a href="mailto:Pine.LNX.4.44.0412262207080.10074-100000@DOMAIN.HIDDEN">Pine.LNX.4.44.0412262207080.10074-100000@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20041230222337.3D7BD1B7711@DOMAIN.HIDDEN">20041230222337.3D7BD1B7711@xxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:Pine.LNX.4.58.0412301550550.3862@DOMAIN.HIDDEN">Pine.LNX.4.58.0412301550550.3862@xxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20050105012438.GD6573@DOMAIN.HIDDEN">20050105012438.GD6573@xxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mutt/1.4.1i</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Just FYI, a little more background on Scheme's exponent markers:
+
+A couple days ago, I wrote up this table with my best guess at how the
+Scheme flonum precisions correspond to IEEE 754 and C floating-point
+numbers.
+
+&gt;     IEEE 754 format     C type          Scheme precision
+&gt;     ----------------------------------------------------
+&gt;     single              float           f/single
+&gt;     single extended     N/A             s/short (?)
+&gt;     double              double          d/double
+&gt;     double extended     long double     l/long
+
+I was correct to put a (?) after the s/short entry -- it doesn't belong
+there. For one thing, an IEEE 754 system wouldn't normally have both
+extended formats. More importantly, s/short should not be more precise
+than f/single.
+
+Today, I was browsing CLTL2, and I stumbled across the Common Lisp rules
+for flonum literals. CL uses exactly the same set of flonum types, but
+unlike R5RS it actually explains their rationale and meaning. It's good
+stuff, and Scheme systems should follow it even though it isn't
+documented in R5RS.
+
+S/short is for the system's smallest flonum type. Ideally, a short
+flonum should be small enough to fit (unboxed) in a cell. On a 32-bit
+system, I think you could do that by reserving the least significant
+bits of an IEEE 754 &quot;single&quot; for type tags, just like most systems do
+with fixnums.
+
+L/long is for the system's largest flonum type.
+
+F/single and D/double allude to the IEEE 754 basic formats and should
+use those formats if they're available. Why &quot;F&quot;? Probably because
+&quot;short&quot; and &quot;single&quot; both start with S, and only one of them had an
+obvious alternate abbreviation (I don't think it's any coincidence that
+F, D, L also stand for float, double, long double).
+
+An x86 Lisp/Scheme system could implement the four flonum formats thus:
+
+S/short  = IEEE 754 single with type tags stuffed in the significand
+F/single = IEEE 754 single (binary32)
+D/double = IEEE 754 double (binary64)
+L/long   = x86 extended precision (binaryx)
+-- 
+Bradd W. Szonye
+<a  rel="nofollow" href="http://www.szonye.com/bradd">http://www.szonye.com/bradd</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00107" href="msg00107.html">Re: Scheme flonum literals</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00002" href="msg00002.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+<ul><li><em>From:</em> campbell</li></ul></li>
+<li><strong><a name="00006" href="msg00006.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+<ul><li><em>From:</em> Aubrey Jaffer</li></ul></li>
+<li><strong><a name="00007" href="msg00007.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+<li><strong><a name="00068" href="msg00068.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00105.html">Re: Floating-point formats and standards</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00107.html">Re: Scheme flonum literals</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00095.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00107.html">Re: Scheme flonum literals</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00106"><strong>Date</strong></a></li>
+<li><a href="threads.html#00106"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,162 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Namespaces -->
+<!--X-From-R13: Yrvgu Ievtug <xjevtugNserr&#45;pbzc&#45;fubc.pbz> -->
+<!--X-Date: Thu, 18 Aug 2005 23:01:16 +0200 (DFT) -->
+<!--X-Message-Id: 200508182059.j7IKxwnN003405@fcs12.free&#45;comp&#45;shop.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: Pine.GSO.4.60.0508141113450.22403@now.het.brown.edu -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Namespaces</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00080.html">Date Prev</a>][<a href="msg00082.html">Date Next</a>][<a href="msg00065.html">Thread Prev</a>][<a href="msg00064.html">Thread Next</a>][<a href="maillist.html#00081">Date Index</a>][<a href="threads.html#00081">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Namespaces</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-72@DOMAIN.HIDDEN">srfi-72@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Namespaces</li>
+<li><em>From</em>: Keith Wright &lt;<a href="mailto:kwright@DOMAIN.HIDDEN">kwright@xxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 18 Aug 2005 16:59:58 -0400</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-72@DOMAIN.HIDDEN">srfi-72@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:Pine.GSO.4.60.0508141113450.22403@DOMAIN.HIDDEN">Pine.GSO.4.60.0508141113450.22403@xxxxxxxxxxxxxxxxx</a>&gt; (message	from Andre van Tonder on Sun, 14 Aug 2005 11:32:36 -0400 (EDT))</li>
+<li><em>References</em>: &lt;<a href="mailto:Pine.GSO.4.60.0508141113450.22403@DOMAIN.HIDDEN">Pine.GSO.4.60.0508141113450.22403@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; From: Andre van Tonder &lt;andre@xxxxxxxxxxxxxxxxx&gt;
+&gt; 
+&gt; I have been wondering about the following technical issue:
+&gt; 
+&gt;    (let ((x 1))
+&gt;      (let-syntax ((m (lambda (form)
+&gt;                        (let ((x 2))
+&gt;                          (syntax x)))))
+&gt;        (m))) ?
+
+&gt; Matthias Neubauer &lt;neubauer@xxxxxxxxxxxxxxxxxxxxxxxxxx&gt; writes:
+&gt; 
+&gt; I don't suggest to return an error but to return &quot;1&quot;. As I said
+&gt; before, lexical scoping does not apply because (SYNTAX 2) is
+&gt; data. You don't expect
+&gt; 
+&gt; (eval `(let ((x 1))
+&gt;           ,(let ((x 2))
+&gt;               'x)))
+&gt;       
+&gt; to evaluate to anything else but 1, right?
+
+First, a closer parallel to the original question is
+
+  (let ((x 1))
+     (let ((m (lambda (form)
+                 (let ((x 2))
+                    (quote x))) ))
+        (eval (m '(m)))))
+
+and just to keep all possiblities straight, let's assume we have
+
+  (define x 0)
+
+somewhere before we begin.  So what does this return?
+
+One could imagine it would return 1. and so this is a good
+argument.  I must modify my statement that &quot;I don't see how
+anyone can advocate otherwise&quot;, I now see how one might
+be led down this path.
+
+But I am still not buying the conclusion.  As my
+philosophy professor used to say: One man's modus ponens
+is another's reductio ad absurdum.  I take this as further
+proof of the rightiousness of the slogan: Eval is evil.
+
+My example is not valid R5RS Scheme (neither is yours), because
+|eval| requires another argument.  If that other argument is
+ (scheme-report-environment 5)
+then the result is Error: reference to undefined id x.
+If the other argument is (interaction-environment) then the
+result is 0.  To get a 1 out of this, you need to assume
+some kind of (lexical-environment) procedure, which would
+give you  an environment where local variables are
+visible.
+
+Such a thing is possible, maybe even a good thing for some
+purposes, but it still seems like a spanner in the works
+for a compilable hygienic macro system.  Back in Elder
+Days when |eval| was a great new idea, and symbols were
+the same as identifiers, and barely distinguished from
+strings, and macros were FEXPR's which were just a recursive
+call to |eval| with the program text as argument, I might have
+followed you down that path.
+
+But that age of innocence is long gone.  Identifiers are
+not symbols, they have a scope manifest in the source
+code.  The safe answer to the question is a message from
+the compiler asking if you are sure you know what you are
+doing, and suggesting that you either rename one of your
+local variables to clarify your intention, change
+(syntax x) to (quasisyntax ,x), or put in an explicit
+call to |eval|.
+
+-- 
+     -- Keith Wright
+
+Programmer in Chief, Free Computer Shop
+ ---  Food, Shelter, Source code.  ---
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00047" href="msg00047.html">Namespaces</a></strong>
+<ul><li><em>From:</em> Andre van Tonder</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00080.html">Re: question on the opaque syntax object debate</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00082.html">Re: The power of Lists</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00065.html">Re: Namespaces</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00064.html">The power of Lists</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00081"><strong>Date</strong></a></li>
+<li><a href="threads.html#00081"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

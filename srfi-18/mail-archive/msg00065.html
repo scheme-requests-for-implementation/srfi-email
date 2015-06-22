@@ -1,0 +1,127 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: non critical&#45;section uses of mutexes -->
+<!--X-From-R13: byrtNcbobk.pbz -->
+<!--X-Date: Wed, 26 Apr 2000 21:23:24 &#45;0500 (CDT) -->
+<!--X-Message-Id: 200004270221.CAA07983@fnmoc.navy.mil -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: non critical-section uses of mutexes</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00064.html">Date Prev</a>][<a href="msg00066.html">Date Next</a>][<a href="msg00064.html">Thread Prev</a>][<a href="msg00066.html">Thread Next</a>][<a href="maillist.html#00065">Date Index</a>][<a href="threads.html#00065">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: non critical-section uses of mutexes</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: non critical-section uses of mutexes</li>
+<li><em>From</em>: <a href="mailto:oleg@DOMAIN.HIDDEN">oleg@xxxxxxxxx</a></li>
+<li><em>Date</em>: Thu, 27 Apr 2000 02:21:40 GMT</li>
+<li><em>Cc</em>: <a href="mailto:srfi-18@DOMAIN.HIDDEN">srfi-18@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Reply-to</em>: <a href="mailto:oleg@DOMAIN.HIDDEN">oleg@xxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+Marc,
+
+&gt; Under what authority does T3 terminate T1?  As I have pointed out in
+&gt; the spec, thread-terminate! must be used very carefully to avoid
+&gt; stopping a thread at an &quot;unsafe&quot; point (such as in the middle of a
+&gt; critical section).  
+
+But that was exactly the point of the original example: T1 was NOT in
+an explicit critical section, when it was killed. As I understand the
+example uses mutexes specifically for the purpose _other_ than to
+introduce a critical section.
+
+It appears that you have already given a solution to the problem.
+In a message
+	<a  rel="nofollow" href="http://srfi.schemers.org/srfi-18/mail-archive/msg00038.html">http://srfi.schemers.org/srfi-18/mail-archive/msg00038.html</a>
+you showed an example that uses a mutex just to guard a critical
+section. If that example is modified as
+	
+    (define (put! obj)
+      (mutex-lock! mutex)
+      (let loop ()
+        (if full?
+            (begin
+              (condition-variable-wait! put-condvar mutex)
+              (loop))
+            (begin
+              (set! cell obj)
+              (set! full? #t)
+              (condition-variable-signal! get-condvar)
+              (mutex-unlock! mutex)))))
+
+(that is, signaling on condvar is moved inside the critical section),
+the example seems to become immune to the unsafe dying problem. When a
+thread T1 executes put! and enters a critical section, and is later
+killed or throws a lethal exception at _any point_ after mutex-lock!,
+the mutex becomes abandoned. Therefore, a thread T2 that wishes to
+manipulate the mailbox will have to deal with a &quot;abandoned mutex
+exception&quot;. At least T2 will be alerted to the fact the mailbox is
+stale and has to be avoided. In the original example, if thread T1 is
+killed at an unfortunate moment, T2 will just block forever. T2 will
+never find out that the data structure, mailbox, became
+inconsistent. It appears one can even claim that in the latter
+example, the mutex is not-abandoned if and _only_ if the mailbox is
+consistent and will not cause a deadlock for any thread that wishes to
+use it.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00066" href="msg00066.html">Re: non critical-section uses of mutexes</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00064.html">Re: non critical-section uses of mutexes</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00066.html">Re: non critical-section uses of mutexes</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00064.html">Re: non critical-section uses of mutexes</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00066.html">Re: non critical-section uses of mutexes</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00065"><strong>Date</strong></a></li>
+<li><a href="threads.html#00065"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

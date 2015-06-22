@@ -1,0 +1,142 @@
+<!-- MHonArc v2.6.16 -->
+<!--X-Subject: Bug in string&#45;index&#45;right and string&#45;skip&#45;right -->
+<!--X-From-R13: Rnivq Hna Vbea <qinaubeaNoenaqrvf.rqh> -->
+<!--X-Date: Wed,  1 Nov 2006 07:53:45 +0100 (MET) -->
+<!--X-Message-Id: y9lzmbbves1.fsf@valmont.local -->
+<!--X-Content-Type: multipart/mixed -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Bug in string-index-right and string-skip-right</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00006.html">Date Prev</a>][<a href="msg00008.html">Date Next</a>][<a href="msg00006.html">Thread Prev</a>][<a href="msg00008.html">Thread Next</a>][<a href="maillist.html#00007">Date Index</a>][<a href="threads.html#00007">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Bug in string-index-right and string-skip-right</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-13@DOMAIN.HIDDEN">srfi-13@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Bug in string-index-right and string-skip-right</li>
+<li><em>From</em>: David Van Horn &lt;<a href="mailto:dvanhorn@DOMAIN.HIDDEN">dvanhorn@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 01 Nov 2006 07:53:34 +0100</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-13@DOMAIN.HIDDEN">srfi-13@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Thunderbird 1.5.0.7 (Macintosh/20060909)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<tt>Both string-index-right and string-skip-right will continue to search 
+</tt><tt>left past a given start index.
+</tt><pre style="margin: 0em;">
+
+   (string-index-right &quot;abbb&quot; #\a 1) ;; =&gt; 0, but should be #f
+   (string-skip-right  &quot;abbb&quot; #\b 1) ;; =&gt; 0, but should be #f
+
+</pre><tt>This also causes incorrect results for string-trim-right, 
+</tt><tt>string-trim-both and string-tokenize when given a non-zero start argument.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>The attached patch should solve the problem.  I will apply it to the 
+</tt><tt>reference implementation unless anyone objects.
+</tt><pre style="margin: 0em;">
+
+David
+</pre><pre>Index: srfi-13.scm
+===================================================================
+RCS file: /afs/informatik.uni-tuebingen.de/home/srfi/srfi-cvs/srfi/srfi-13/srfi-13.scm,v
+retrieving revision 1.4
+diff -u -r1.4 srfi-13.scm
+--- srfi-13.scm	11 Oct 2005 06:59:49 -0000	1.4
++++ srfi-13.scm	1 Nov 2006 03:23:50 -0000
+@@ -1159,17 +1159,17 @@
+   (let-string-start+end (start end) string-index-right str maybe-start+end
+     (cond ((char? criterion)
+ 	   (let lp ((i (- end 1)))
+-	     (and (&gt;= i 0)
++	     (and (&gt;= i start)
+ 		  (if (char=? criterion (string-ref str i)) i
+ 		      (lp (- i 1))))))
+ 	  ((char-set? criterion)
+ 	   (let lp ((i (- end 1)))
+-	     (and (&gt;= i 0)
++	     (and (&gt;= i start)
+ 		  (if (char-set-contains? criterion (string-ref str i)) i
+ 		      (lp (- i 1))))))
+ 	  ((procedure? criterion)
+ 	   (let lp ((i (- end 1)))
+-	     (and (&gt;= i 0)
++	     (and (&gt;= i start)
+ 		  (if (criterion (string-ref str i)) i
+ 		      (lp (- i 1))))))
+ 	  (else (error &quot;Second param is neither char-set, char, or predicate procedure.&quot;
+@@ -1201,19 +1201,19 @@
+   (let-string-start+end (start end) string-skip-right str maybe-start+end
+     (cond ((char? criterion)
+ 	   (let lp ((i (- end 1)))
+-	     (and (&gt;= i 0)
++	     (and (&gt;= i start)
+ 		  (if (char=? criterion (string-ref str i))
+ 		      (lp (- i 1))
+ 		      i))))
+ 	  ((char-set? criterion)
+ 	   (let lp ((i (- end 1)))
+-	     (and (&gt;= i 0)
++	     (and (&gt;= i start)
+ 		  (if (char-set-contains? criterion (string-ref str i))
+ 		      (lp (- i 1))
+ 		      i))))
+ 	  ((procedure? criterion)
+ 	   (let lp ((i (- end 1)))
+-	     (and (&gt;= i 0)
++	     (and (&gt;= i start)
+ 		  (if (criterion (string-ref str i)) (lp (- i 1))
+ 		      i))))
+ 	  (else (error &quot;CRITERION param is neither char-set or char.&quot;
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00006.html">string comparison predicates return non-boolean values</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00008.html">two bugs in reference implementation of SRFI 13</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00006.html">string comparison predicates return non-boolean values</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00008.html">two bugs in reference implementation of SRFI 13</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00007"><strong>Date</strong></a></li>
+<li><a href="threads.html#00007"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

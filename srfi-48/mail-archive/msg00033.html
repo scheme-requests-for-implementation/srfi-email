@@ -1,0 +1,138 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Format strings are wrong -->
+<!--X-From-R13: Bnhy Epuyvr <fpuyvrNpbzpnfg.arg> -->
+<!--X-Date: Fri, 26 Dec 2003 19:36:34 +0100 (NFT) -->
+<!--X-Message-Id: y9l8ykz77f2.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: BC110ED2.9C39%schlie@comcast.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Format strings are wrong</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00032.html">Date Prev</a>][<a href="msg00034.html">Date Next</a>][<a href="msg00032.html">Thread Prev</a>][<a href="msg00034.html">Thread Next</a>][<a href="maillist.html#00033">Date Index</a>][<a href="threads.html#00033">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Format strings are wrong</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &lt;<a href="mailto:srfi-48@DOMAIN.HIDDEN">srfi-48@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Format strings are wrong</li>
+<li><em>From</em>: Paul Schlie &lt;<a href="mailto:schlie@DOMAIN.HIDDEN">schlie@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 26 Dec 2003 19:36:33 +0100</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-48@DOMAIN.HIDDEN">srfi-48@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:BC110ED2.9C39%25schlie@DOMAIN.HIDDEN">BC110ED2.9C39%schlie@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Old-date</em>: Thu, 25 Dec 2003 22:37:44 -0500</li>
+<li><em>User-agent</em>: Microsoft-Entourage/10.1.4.030702.0</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Sorry, now with expected basic list format behavior:
+
+(module string mzscheme
+  (provide (rename new-string string))
+  (define (new-string . params)
+    (letrec ((loop (lambda (val rest space)
+            (string-append
+             (if space &quot; &quot; &quot;&quot;)
+             (cond
+               ((string? val) val)
+               ((number? val) (number-&gt;string val))
+               ((symbol? val) (symbol-&gt;string val))
+               ((list? val) (string-append
+                              &quot;(&quot; (loop (car val) '() #f)
+                              (if (pair? (cdr val))
+                                  (loop (cadr val) (cddr val) #t) &quot;&quot;) &quot;)&quot; ))
+               ((char? val) (string val))
+               (else (begin (error 'string) &quot;&quot;)))
+             (if (pair? rest) (loop (car rest) (cdr rest) space) &quot;&quot;)))))
+      (loop (car params) (cdr params) #f))))
+
+&gt; From: Paul Schlie &lt;schlie@xxxxxxxxxxx&gt;
+&gt; Date: Thu, 25 Dec 2003 22:01:54 -0500
+&gt; To: &lt;srfi-48@xxxxxxxxxxxxxxxxx&gt;
+&gt; Subject: Re: Format strings are wrong
+&gt; 
+&gt; Where a basic implementation of an extend (string ...) function using
+&gt; mzscheme's module system could alleviate the necessity for the most
+&gt; common historical uses of (format ...) for basic string formatting:
+&gt; 
+&gt; (module string mzscheme
+&gt; (provide (rename new-string string))
+&gt; (define (new-string . params)
+&gt;   (letrec ((loop (lambda (val rest space)
+&gt;         (string-append
+&gt;          (if space &quot; &quot; &quot;&quot;)
+&gt;          (cond
+&gt;            ((string? val) val)
+&gt;            ((number? val) (number-&gt;string val))
+&gt;            ((symbol? val) (symbol-&gt;string val))
+&gt;            ((list? val) (string-append
+&gt;                           &quot;(&quot; (loop (car val) '() #f)
+&gt;                           (loop (cadr val) (cddr val) #t) &quot;)&quot;))
+&gt;            ((char? val) (string val))
+&gt;            (else (begin (error'string) &quot;&quot;)))
+&gt;          (if (pair? rest) (loop (car rest) (cdr rest) space) &quot;&quot;)))))
+&gt;     (loop (car params) (cdr params) #f))))
+&gt; 
+&gt; (require string)
+&gt; 
+&gt; (define size 3)
+&gt; (define what 'apples)
+&gt; 
+&gt; (string &quot;I have &quot; size &quot; &quot; what &quot;, a character: &quot; #\c
+&gt;       &quot;, and a list: &quot; '(a 3.12 1/2 (f) symbol) &quot;.&quot;)
+&gt; 
+&gt; -&gt; &quot;I have 3 apples, a character: c, and a list: (a 3.12 1/2 (f) symbol).&quot;
+&gt; 
+&gt; -paul-
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00032.html">Re: Format strings are wrong</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00034.html">Re: Format strings are wrong</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00032.html">Re: Format strings are wrong</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00034.html">Re: Format strings are wrong</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00033"><strong>Date</strong></a></li>
+<li><a href="threads.html#00033"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

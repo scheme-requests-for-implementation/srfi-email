@@ -1,0 +1,184 @@
+<!-- MHonArc v2.6.18 -->
+<!--X-Subject: integrating PCREs -->
+<!--X-From-R13: [vpunry [bagnthr <zvxrzbaNtznvy.pbz> -->
+<!--X-Date: Tue, 26 Nov 2013 04:30:18 +0100 (MET) -->
+<!--X-Message-Id: 529415C7.7010706@gmail.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>integrating PCREs</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00070.html">Date Prev</a>][<a href="msg00072.html">Date Next</a>][<a href="msg00126.html">Thread Prev</a>][<a href="msg00073.html">Thread Next</a>][<a href="maillist.html#00071">Date Index</a>][<a href="threads.html#00071">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>integrating PCREs</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: SRFI-115 discussion list &lt;<a href="mailto:srfi-115@DOMAIN.HIDDEN">srfi-115@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: integrating PCREs</li>
+<li><em>From</em>: Michael Montague &lt;<a href="mailto:mikemon@DOMAIN.HIDDEN">mikemon@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 25 Nov 2013 19:30:15 -0800</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-115@DOMAIN.HIDDEN">srfi-115@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Dkim-signature</em>: v=1; a=rsa-sha256; c=relaxed/relaxed;        d=gmail.com; s=20120113;        h=message-id:date:from:user-agent:mime-version:to:subject         :content-type:content-transfer-encoding;        bh=a/thUcF5CWAZP0dv7tMIpZuz+aQoz7UOldrpJ8H6yFQ=;        b=arAyKZjyw0lch9uFDvFqOgZOGf4q//Tfq0DjlXpibUhUyqeGujbtyLoQ4PcKqQd8pD         srI9zRL8SsCR9dzpPnT/BwWjeDyeB/idUNjPmXfoeny1dRSTsmasLIEPdhs8k1Gv1H06         m1irnDjNUW5hoTRWXceiEemS1lfufopBGVF+syK7B/gWCAQshgXiK3PFoOiYfyGWpiuy         BH2GuLKFUPHXg/prijF1QiAbNVd8N0inV8UGCgZxHQGYYM5Nq3vuaq90sbHV62IuUYdX         6atEL8IhghC7HMSa+EkfSwuhxGsc9CAYhIvyqMT8UVo1xAw3S1iOA+B8s6XngYX8XBf2         H+tA==</li>
+<li><em>User-agent</em>: Mozilla/5.0 (Windows NT 6.3; WOW64; rv:24.0) Gecko/20100101 Thunderbird/24.1.1</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<tt>I propose to integrate PCREs by having the same API work for both. The 
+</tt><tt>grammer for SREs would be changed to require that they are lists. This 
+</tt><tt>would remove the ambiguity: strings are PCREs and lists are SREs.
+</tt><pre style="margin: 0em;">
+
+&lt;sre&gt; ::=
+     | &lt;cset-sre&gt;                  ; A character set match.
+     | &lt;outer-sre&gt;
+
+&lt;outer-sre&gt; ::=
+     | (* &lt;inner-sre&gt; ...)               ; 0 or more matches.
+     | (+ &lt;inner-sre&gt; ...)               ; 1 or more matches.
+     | (? &lt;inner-sre&gt; ...)               ; 0 or 1 matches.
+     | (= &lt;n&gt; &lt;inner-sre&gt; ...)           ; &lt;n&gt; matches.
+     | (&gt;= &lt;n&gt; &lt;inner-sre&gt; ...)          ; &lt;n&gt; or more matches.
+     | (** &lt;n&gt; &lt;m&gt; &lt;inner-sre&gt; ...)      ; &lt;n&gt; to &lt;m&gt; matches.
+
+     | (|  &lt;inner-sre&gt; ...)              ; Alternation.
+     | (or &lt;inner-sre&gt; ...)
+
+     | (:   &lt;inner-sre&gt; ...)             ; Sequence.
+     | (seq &lt;inner-sre&gt; ...)
+     | ($ &lt;inner-sre&gt; ...)               ; Numbered submatch.
+     | (submatch &lt;inner-sre&gt; ...)
+</pre><tt>     | (=&gt; &lt;name&gt; &lt;inner-sre&gt; ...)               ; Named submatch.  
+</tt><tt>&lt;name&gt; is
+</tt><pre style="margin: 0em;">
+     | (submatch-named &lt;name&gt; &lt;inner-sre&gt; ...)   ;  a symbol.
+
+</pre><tt>     | (w/case   &lt;inner-sre&gt; ...)        ; Introduce a case-sensitive 
+</tt><tt>context.
+</tt><tt>     | (w/nocase &lt;inner-sre&gt; ...)        ; Introduce a case-insensitive 
+</tt><tt>context.
+</tt><pre style="margin: 0em;">
+
+     | (w/unicode   &lt;inner-sre&gt; ...)     ; Introduce a unicode context.
+     | (w/ascii &lt;inner-sre&gt; ...)         ; Introduce an ascii context.
+</pre><tt>     | (word &lt;inner-sre&gt; ...)            ; A sre wrapped in word 
+</tt><tt>boundaries.
+</tt><tt>     | (word+ &lt;inner-cset-sre&gt; ...)      ; A single word restricted to 
+</tt><tt>a cset.
+</tt><pre style="margin: 0em;">
+     | word                        ; A single word.
+
+</pre><tt>     | (?? &lt;inner-sre&gt; ...)                ; A non-greedy pattern, 0 or 
+</tt><tt>1 match.
+</tt><pre style="margin: 0em;">
+     | (*? &lt;inner-sre&gt; ...)                ; Non-greedy 0 or more matches.
+     | (**? m n &lt;inner-sre&gt; ...)           ; Non-greedy &lt;m&gt; to &lt;n&gt; matches.
+</pre><tt>     | (look-ahead &lt;inner-sre&gt; ...)        ; Zero-width look-ahead 
+</tt><tt>assertion.
+</tt><tt>     | (look-behind &lt;inner-sre&gt; ...)       ; Zero-width look-behind 
+</tt><tt>assertion.
+</tt><tt>     | (neg-look-ahead &lt;inner-sre&gt; ...)    ; Zero-width negative 
+</tt><tt>look-ahead assertion.
+</tt><tt>     | (neg-look-behind &lt;inner-sre&gt; ...)   ; Zero-width negative 
+</tt><tt>look-behind assertion.
+</tt><pre style="margin: 0em;">
+
+&lt;inner-sre&gt; ::=
+     | &lt;outer-sre&gt;
+     | &lt;inner-cset-sre&gt;
+     | &lt;string&gt;                    ; A literal string match.
+     | bos                         ; Beginning of string.
+     | eos                         ; End of string.
+
+     | bol                         ; Beginning of line.
+     | eol                         ; End of line.
+
+     | bog                         ; Beginning of grapheme cluster.
+     | eog                         ; End of grapheme cluster.
+     | graheme                     ; A single grapheme cluster.
+
+     | bow                         ; Beginning of word.
+     | eow                         ; End of word.
+     | nwb                         ; A non-word boundary.
+
+&lt;cset-sre&gt; ::=
+     | (&lt;string&gt;)                  ; literal char set
+     | (/ &lt;range-spec&gt; ...)        ; ranges
+     | (or &lt;inner-cset-sre&gt; ...)         ; union
+     | (and &lt;inner-cset-sre&gt; ...)        ; intersection
+     | (- &lt;inner-cset-sre&gt; ...)          ; difference
+     | (~ &lt;inner-cset-sre&gt; ...)          ; complement of union
+     | (w/case &lt;inner-cset-sre&gt; ...)     ; case and unicode toggling
+     | (w/nocase &lt;inner-cset-sre&gt; ...)
+     | (w/ascii &lt;inner-cset-sre&gt; ...)
+     | (w/unicode &lt;inner-cset-sre&gt; ...)
+
+&lt;inner-cset-sre&gt; ::=
+     | &lt;cset-sre&gt;
+     | &lt;char&gt;                      ; literal char
+     | &quot;&lt;char&gt;&quot;                    ; string of one char
+     | &lt;char-set&gt;                  ; embedded SRFI 14 char set
+     | any | nonl | ascii | lower-case | lower
+     | upper-case | upper | alphabetic | alpha
+     | numeric | num | alphanumeric | alphanum | alnum
+     | punctuation | punct | symbol | graphic | graph
+     | whitespace | white | space | printing | print
+     | control | cntrl | hex-digit | xdigit
+
+&lt;range-spec&gt; ::= &lt;string&gt; | &lt;char&gt;
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00073" href="msg00073.html">Re: integrating PCREs</a></strong>
+<ul><li><em>From:</em> Alex Shinn</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00070.html">Re: updated draft</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00072.html">regexp and valid-sre?</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00126.html">Re: updated draft</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00073.html">Re: integrating PCREs</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00071"><strong>Date</strong></a></li>
+<li><a href="threads.html#00071"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

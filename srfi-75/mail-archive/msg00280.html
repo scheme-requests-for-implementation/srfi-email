@@ -1,0 +1,141 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Surrogates and character representation -->
+<!--X-From-R13: Oyrk Euvaa <nyrkfuvaaNtznvy.pbz> -->
+<!--X-Date: Fri, 29 Jul 2005 16:09:47 +0200 (DFT) -->
+<!--X-Message-Id: 5fb7e087050729070943120f58@mail.gmail.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: y9lek9i2n8j.fsf@sams.informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: 42E9C517.7010808@bothner.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Surrogates and character representation</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00279.html">Date Prev</a>][<a href="msg00281.html">Date Next</a>][<a href="msg00278.html">Thread Prev</a>][<a href="msg00262.html">Thread Next</a>][<a href="maillist.html#00280">Date Index</a>][<a href="threads.html#00280">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Surrogates and character representation</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-75@DOMAIN.HIDDEN">srfi-75@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Surrogates and character representation</li>
+<li><em>From</em>: Alex Shinn &lt;<a href="mailto:alexshinn@DOMAIN.HIDDEN">alexshinn@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 29 Jul 2005 23:09:44 +0900</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-75@DOMAIN.HIDDEN">srfi-75@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Domainkey-signature</em>: a=rsa-sha1; q=dns; c=nofws;        s=beta; d=gmail.com;        h=received:message-id:date:from:reply-to:to:subject:in-reply-to:mime-version:content-type:content-transfer-encoding:content-disposition:references;        b=Eo25roB3On1BLW0bjNkaE137YqhVWToIWWM+7HGFWNtjDAFsLuvut5yi81LCTHr7ZJp65Y8vM2pGGoGcW3SbVMIlp2DbUzHXzimEtdVGf1g+dVjcy2qt/EtNPJMJWL/p+0muBEV7YClKbX23vsaJ6qPrqq93HVH5RQKGJRZRnCw=</li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:42E9C517.7010808@DOMAIN.HIDDEN">42E9C517.7010808@xxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:y9lek9i2n8j.fsf@DOMAIN.HIDDEN">y9lek9i2n8j.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	 &lt;<a href="mailto:42E9C517.7010808@DOMAIN.HIDDEN">42E9C517.7010808@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Reply-to</em>: Alex Shinn &lt;<a href="mailto:alexshinn@DOMAIN.HIDDEN">alexshinn@xxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>I found FLBM buried in my repository and thought it might
+be illustrative to describe it in terms of current Schemes,
+since I wasn't doing a good job of explaining previously.
+It's written in R5RS + STRING-FOLD.
+
+(define (simple-boyer-mooyer-search pat s)
+  (define (max-char s)
+    (string-fold (lambda (c hi) (max (char-&gt;integer c) hi)) 0 pat))
+  (let* ((pat-len (string-length pat))
+         (str-len (string-length s))
+         (high (max (max-char pat) (max-char s)))
+         (shift (make-vector (+ high 1) pat-len)))
+    (do ((i 0 (+ i 1)))  ; fill shift table
+        ((= i pat-len))
+      (vector-set! shift (char-&gt;integer (string-ref pat i)) (- pat-len i 1)))
+    (let check-from-index ((i (- pat-len 1)))
+      (if (&gt;= i str-len) ; failure
+        #f
+        (let scan-back ((j (- pat-len 1)) (k i))
+          (cond
+            ((negative? j)  ; success
+             (+ k 1))
+            ((eqv? (string-ref pat j) (string-ref s k))
+             (scan-back (- j 1) (- k 1)))
+            (else           ; jump to next potential index
+             (check-from-index
+              (+ i (vector-ref shift (char-&gt;integer (string-ref s i))))))))))))
+
+This works with whatever string representation you choose.
+
+Now, if you use this in the latest MzScheme which uses UCS4
+internally, it will correctly work with the vanilla BM running times,
+including a potentially huge sigma (it makes some effort to reduce
+this and can be further improved).
+
+If you use this with Gauche Scheme, which can use a number of
+variable width encodings internally such as UTF-8, it will perform
+absolutely horribly, with the runtimes William Clinger gave earlier
+for the naive UTF-8 search.
+
+If you use this with MIT-Scheme it will work on MIT-Scheme strings,
+which use Latin-1 internally.  It will have the vanilla BM running
+times with a small sigma of 256.  However, if you treat your
+strings as though they were UTF-8 encoded, the algorithm will
+continue to work properly with the same running times (modified
+by the fact that n and m are now byte length, not codepoint lengths).
+This is because if you find a UTF-8 string within a UTF-8 string,
+it's guaranteed to be on a correct character boundary and therefore
+a valid match.  You do have to keep in mind the returned result is
+a byte offset, not a codepoint offset.
+
+-- 
+Alex
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00268" href="msg00268.html">Re: Surrogates and character representation</a></strong>
+<ul><li><em>From:</em> William D Clinger</li></ul></li>
+<li><strong><a name="00272" href="msg00272.html">Re: Surrogates and character representation</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00279.html">Re: freshman-level Boyer-Moore fast string search</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00281.html">Re: freshman-level Boyer-Moore fast string search</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00278.html">Re: Surrogates and character representation</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00262.html">Allowing ASCII only, string escapes, and normalization</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00280"><strong>Date</strong></a></li>
+<li><a href="threads.html#00280"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

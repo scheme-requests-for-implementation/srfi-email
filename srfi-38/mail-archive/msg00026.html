@@ -1,0 +1,158 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: new function or modify read -->
+<!--X-From-R13: [nep Trryrl <srryrlNWDA.G[bagerny.QO> -->
+<!--X-Date: Wed, 18 Dec 2002 18:53:14 +0100 (NFT) -->
+<!--X-Message-Id: 200212181752.gBIHqnK07769@baro.iro.umontreal.ca -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200212171523.gBHFNGv07391@dino00.iro.umontreal.ca -->
+<!--X-Reference: okfr8cgwld7.fsf@bellsouth.net -->
+<!--X-Reference: 200212171908.gBHJ8Cn02137@dino00.iro.umontreal.ca -->
+<!--X-Reference: y9lu1hbvfvu.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: 200212181634.gBIGYOL07686@baro.iro.umontreal.ca -->
+<!--X-Reference: y9lfzsvqnhg.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: new function or modify read</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00025.html">Date Prev</a>][<a href="msg00027.html">Date Next</a>][<a href="msg00025.html">Thread Prev</a>][<a href="msg00027.html">Thread Next</a>][<a href="maillist.html#00026">Date Index</a>][<a href="threads.html#00026">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: new function or modify read</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: new function or modify read</li>
+<li><em>From</em>: Marc Feeley &lt;<a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 18 Dec 2002 12:52:49 -0500</li>
+<li><em>Cc</em>: <a href="mailto:kumo@DOMAIN.HIDDEN">kumo@xxxxxxxxxxxxx</a>, <a href="mailto:srfi-38@DOMAIN.HIDDEN">srfi-38@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-38@DOMAIN.HIDDEN">srfi-38@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:y9lfzsvqnhg.fsf@DOMAIN.HIDDEN">y9lfzsvqnhg.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	(<a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>)</li>
+<li><em>References</em>: &lt;<a href="mailto:200212171523.gBHFNGv07391@DOMAIN.HIDDEN">200212171523.gBHFNGv07391@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:okfr8cgwld7.fsf@DOMAIN.HIDDEN">okfr8cgwld7.fsf@xxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:200212171908.gBHJ8Cn02137@DOMAIN.HIDDEN">200212171908.gBHJ8Cn02137@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:y9lu1hbvfvu.fsf@DOMAIN.HIDDEN">y9lu1hbvfvu.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:200212181634.gBIGYOL07686@DOMAIN.HIDDEN">200212181634.gBIGYOL07686@xxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:y9lfzsvqnhg.fsf@DOMAIN.HIDDEN">y9lfzsvqnhg.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; Marc&gt;   (parameterize ((write-shared #t)
+&gt; Marc&gt;                  (write-radix 16)
+&gt; Marc&gt;                  (write-prettily #t))
+&gt; Marc&gt;     (write X))
+&gt; &gt;&gt; 
+&gt; &gt;&gt; Except your old code doesn't know anything about the presence of all
+&gt; &gt;&gt; these flags.  In fact, every new feature controlled via these
+&gt; &gt;&gt; parameters might break the old code.
+&gt; 
+&gt; Marc&gt; Could you explain why?  I explicitly said: &quot;But this will not happen
+&gt; Marc&gt; if you code your calls to write in this style: ...&quot;, meaning that only
+&gt; Marc&gt; &quot;write&quot; is in the scope of the parameterize.  There is no old code
+&gt; Marc&gt; affected by the parameterize!
+&gt; 
+&gt; Yes, there is, namely if you have this in new code ...
+&gt; 
+&gt; (parameterize ((write-symbols-all-lower-case #t))
+&gt;   (old-code-procedure))
+&gt; 
+&gt; ... and this in old code:
+&gt; 
+&gt; (define (old-code-procedure)
+&gt;   (write (string-&gt;symbol &quot;FooBarBaz&quot;)))
+&gt; 
+&gt; So PARAMETERIZE has the wrong semantics to enforce what you're
+&gt; suggesting, and there's too much potential for foot-shooting.
+
+Please read what I wrote.  Only &quot;write&quot; is in the scope of
+&quot;parameterize&quot; in new code.
+
+Of course you can shoot yourself in the foot if your new code does
+(parameterize (...) (some-other-function-than-write)).  This is a
+problem with your new code.  Your old code is still &quot;correct&quot;.  The
+same issue exists with &quot;with-output-to-file&quot;.  If your old code was
+sending some output to the current output port to interact with the
+user, then a
+
+   (with-output-to-file &quot;foo&quot; (lambda () (old-code-procedure)))
+
+will suddenly malfunction (the user interaction output will go to the
+file).
+
+Dynamic scoping is powerful, just like recursion, continuations,
+threads, exceptions, etc.  You have to use them with care.  In this
+particular case, use the style (parameterize (...)
+(some-other-function-than-write)) carefully.
+
+The chances of shooting yourself in the foot is greatly minimized
+when you use my last suggestion (using readtables and port specific
+readtable parameter objects).
+
+Marc
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00027" href="msg00027.html">Re: new function or modify read</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr.  Preprocessor]</li></ul></li>
+<li><strong><a name="00031" href="msg00031.html">Re: new function or modify read</a></strong>
+<ul><li><em>From:</em> David Rush</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00011" href="msg00011.html">Re: new function or modify read</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+<li><strong><a name="00014" href="msg00014.html">Re: new function or modify read</a></strong>
+<ul><li><em>From:</em> David Rush</li></ul></li>
+<li><strong><a name="00015" href="msg00015.html">Re: new function or modify read</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+<li><strong><a name="00019" href="msg00019.html">Re: new function or modify read</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr. Preprocessor]</li></ul></li>
+<li><strong><a name="00024" href="msg00024.html">Re: new function or modify read</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+<li><strong><a name="00025" href="msg00025.html">Re: new function or modify read</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr. Preprocessor]</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00025.html">Re: new function or modify read</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00027.html">Re: new function or modify read</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00025.html">Re: new function or modify read</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00027.html">Re: new function or modify read</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00026"><strong>Date</strong></a></li>
+<li><a href="threads.html#00026"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

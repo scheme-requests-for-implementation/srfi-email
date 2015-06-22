@@ -1,0 +1,159 @@
+<!-- MHonArc v2.6.16 -->
+<!--X-Subject: Re: updated SRFI&#45;108 -->
+<!--X-From-R13: Bre Pbguare <creNobguare.pbz> -->
+<!--X-Date: Mon,  4 Feb 2013 20:29:55 +0000 (UTC) -->
+<!--X-Message-Id: 51101A32.9040702@bothner.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 510EFF03.7050204@bothner.com -->
+<!--X-Reference: 20130204081653.GD28747@mercury.ccil.org -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: updated SRFI-108</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00035.html">Date Prev</a>][<a href="msg00037.html">Date Next</a>][<a href="msg00035.html">Thread Prev</a>][<a href="msg00037.html">Thread Next</a>][<a href="maillist.html#00036">Date Index</a>][<a href="threads.html#00036">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: updated SRFI-108</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: John Cowan &lt;<a href="mailto:cowan@DOMAIN.HIDDEN">cowan@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: updated SRFI-108</li>
+<li><em>From</em>: Per Bothner &lt;<a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 04 Feb 2013 12:29:38 -0800</li>
+<li><em>Cc</em>: <a href="mailto:srfi-108@DOMAIN.HIDDEN">srfi-108@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-108@DOMAIN.HIDDEN">srfi-108@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20130204081653.GD28747@DOMAIN.HIDDEN">20130204081653.GD28747@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:510EFF03.7050204@DOMAIN.HIDDEN">510EFF03.7050204@xxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20130204081653.GD28747@DOMAIN.HIDDEN">20130204081653.GD28747@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mozilla/5.0 (X11; Linux x86_64; rv:17.0) Gecko/20130110 Thunderbird/17.0.2</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+On 02/04/2013 12:16 AM, John Cowan wrote:
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Per Bothner scripsit:
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+I've settled on the &amp;name[initial-exp]{text} syntax, which
+is a hybrid of the XML syntax (in using &amp; rather than @)
+and the Scribble syntax (in using a single prefix character
+rather than #&amp;, and in the use of brackets/braces).
+</pre></blockquote><pre style="margin: 0em;">
+
+It continues to disturb me that &quot;&amp;name[initial-exp]&quot; already has a meaning
+in R6RS, such that this is not an upward compatible extension.  I still
+strongly prefer #&amp; to plain &amp;, especially as identifiers beginning with &amp;
+are actually in use in R6RS.
+</pre></blockquote><pre style="margin: 0em;">
+
+First, a question: Do you have any objection to plain &amp; for SRFI-109
+strings:
+  &amp;{text}
+That does not conflict with R6RS, nor (as far as I know) with
+any common extension.  I think the argument for plain &amp; is strong
+for strings, since the following is rather ugly and easy to mistype:
+  #&amp;{text}
+
+A possible solution/compromise is to *require* that &quot;&amp;name[initial-exp]&quot;
+be followed by a braced-delimited literal part, if necessary empty:
+  &amp;name[initial-exp]{}
+This avoids the incompatibility.  It makes parsing slightly more
+complex, but the extra code and state needed is small.
+This only one character longer than:
+  #&amp;name[initial-exp]
+plus of course being shorter in the case of a non-empty named-literal-part.
+
+One can still make the braces optional inside for an enclosed
+extended-datum-body inside a named-literal-part, since there is no
+conflict in that case.
+
+Some implementations (e.g. Kawa, most likely) may make the empty
+braces optional when named-literal-part is empty.
+
+Given a trade-off between 100% backwards compatibility vs a more
+elegant forwards-looking syntax there is no general right answer.
+But in this case I lean towards preferring the nicer syntax,
+given that it may be hard to find actual programs that would break.
+
+Beyond preferring a shorter and less &quot;line-noise-like&quot; syntax,
+a major reason for not requiring the initial &quot;&amp;&quot; is have the
+same syntax for top-level extended-datum-literal as for nested
+extended-datum-body.  And for the latter we can't use &quot;#&amp;&quot;
+without making &quot;#&quot; special in a literal-part.  (Well, we could
+make &quot;#&quot;-only-if-followed-&quot;&amp;&quot; special, but that seems silly.)
+
+It is also good to avoid the issue of &quot;#&amp;&quot; vs &quot;&amp;#&quot; (character
+reference), which is another reason I want to avoid &quot;#&amp;&quot;.
+
+For XML literals I think we're stuck with &quot;#&lt;TAG...&quot; rather than
+&quot;&lt;TAG...&quot; since the latter conflict with existing code an
+standards is much more difficult.  For example some Schemes
+have &quot;&lt;type-name&gt;&quot; which is obviously a pretty nasty conflict.
+--
+	--Per Bothner
+per@xxxxxxxxxxx   <a  rel="nofollow" href="http://per.bothner.com/">http://per.bothner.com/</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00037" href="msg00037.html">Re: updated SRFI-108</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+<li><strong><a name="00038" href="msg00038.html">Re: updated SRFI-108</a></strong>
+<ul><li><em>From:</em> John Cowan</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00034" href="msg00034.html">updated SRFI-108</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+<li><strong><a name="00035" href="msg00035.html">Re: updated SRFI-108</a></strong>
+<ul><li><em>From:</em> John Cowan</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00035.html">Re: updated SRFI-108</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00037.html">Re: updated SRFI-108</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00035.html">Re: updated SRFI-108</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00037.html">Re: updated SRFI-108</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00036"><strong>Date</strong></a></li>
+<li><a href="threads.html#00036"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

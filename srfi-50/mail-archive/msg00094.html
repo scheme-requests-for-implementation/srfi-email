@@ -1,0 +1,244 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: non&#45;local exits are icky -->
+<!--X-From-R13: Fbz Zbeq <ybeqNrzs.arg> -->
+<!--X-Date: Sat, 27 Dec 2003 19:38:42 +0100 (NFT) -->
+<!--X-Message-Id: 200312271903.LAA16941@morrowfield.regexps.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200312232331.PAA19112@morrowfield.regexps.com -->
+<!--X-Reference: y9l3cb7a8n0.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: 200312261838.KAA27859@morrowfield.regexps.com -->
+<!--X-Reference: y9lwu8j77pb.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: 200312261943.LAA28146@morrowfield.regexps.com -->
+<!--X-Reference: y9l65g22q4b.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: non-local exits are icky</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00093.html">Date Prev</a>][<a href="msg00095.html">Date Next</a>][<a href="msg00090.html">Thread Prev</a>][<a href="msg00095.html">Thread Next</a>][<a href="maillist.html#00094">Date Index</a>][<a href="threads.html#00094">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: non-local exits are icky</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: non-local exits are icky</li>
+<li><em>From</em>: Tom Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 27 Dec 2003 11:03:03 -0800 (PST)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:y9l65g22q4b.fsf@DOMAIN.HIDDEN">y9l65g22q4b.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt; (message from	Michael Sperber on Sat, 27 Dec 2003 17:16:04 +0100)</li>
+<li><em>References</em>: &lt;<a href="mailto:200312232331.PAA19112@DOMAIN.HIDDEN">200312232331.PAA19112@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:y9l3cb7a8n0.fsf@DOMAIN.HIDDEN">y9l3cb7a8n0.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:200312261838.KAA27859@DOMAIN.HIDDEN">200312261838.KAA27859@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:y9lwu8j77pb.fsf@DOMAIN.HIDDEN">y9lwu8j77pb.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:200312261943.LAA28146@DOMAIN.HIDDEN">200312261943.LAA28146@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:y9l65g22q4b.fsf@DOMAIN.HIDDEN">y9l65g22q4b.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+    T&gt;&gt;&gt; [The FFI lacks unwind-protection for C code which is a
+    T&gt;&gt;&gt;  serious problem since the FFI also uses non-local exits past
+    T&gt;&gt;&gt;  C code.  I see a choice in the design space: either add
+    T&gt;&gt;&gt;  unwind protection for C, or user error-codes rather than
+    T&gt;&gt;&gt;  than non-local exits.  I think the latter is cleaner.]
+
+I'll also add that they're equivalently expressive: given an
+error-code-using FFI I can write a layered FFI that uses
+non-local-exits-past-C and provides unwind-protection for C;
+conversely, given non-local exits and unwind-protection for C, I can
+write a layered FFI that uses error codes.
+
+Scheme's dynamic-wind (your proposed answer) plus the proposed FFI
+comes _close_ to providing unwind protection for C, but falls short.
+I can not layer on top of it either an error-code based interface, or
+an interface that provides sufficient unwind protection from C.
+
+In general, let's say we want to write a C function which is
+_conceptually_:
+
+  fn ()
+  {
+    declare_my_local_state;
+
+    init_my_local_state;  /* cleanups required after this */
+
+    do_some_scheme_stuff;  /* might trigger a non-local exit */
+
+    cleanup_my_local_state;
+  }
+
+You're saying, let's write that conceptual function as four actual C
+functions:
+
+  fn_prolog ()
+  {
+    allocate_my_local_state_on_the_scheme_heap;
+    init_my_local_state_part_1;
+  }
+
+  fn_postlog ()
+  {
+    cleanup_my_local_state_part_2;
+  }
+
+  fn_body ()
+  {
+    init_my_local_state_part_2;
+    do_some_scheme_stuff;
+    cleanup_my_local_state_part_1;
+  }
+
+  fn ()
+  {
+    arrange_to_scheme_eval (dynamic-wind fn_prolog fn_body fn_postlog);
+  }
+
+The biggest problem with that solution is that it can not be adapted
+for use with libaries not written in anticipation of it.  Here's an
+illustration:
+
+A common C idiom, one you can likely find in just about any GUI
+toolkit for example, is the &quot;callback&quot; idiom.  A library exports entry
+points like:
+
+	add_callback_fn (event_type_t event_type, int (*)(fn));
+
+        handle_event (event_t event);
+
+where calling handle_event can result in calls to a bunch of functions
+registered with add_callback_fn.  A callback mechanism can reasonably
+make provisions for errors: a callback function may return an error
+code causing the callback run to be aborted or to otherwise change its
+course.
+
+An FFI should be able to handle a situation where:
+
+	Scheme calls out to C, eventually to handle_event.
+
+        handle_event calls to C, to my_hook_fn.
+
+        my_hook_fn calls out to Scheme
+
+Unless the GUI library I'm using has made it safe to longjmp past
+handle_event, I can not implement this using the proposed FFI.  A
+Scheme error underneat my_hook_fn will want to exit all the way past
+handle_event.   There is no way, upon such an error, to return flow
+control back to handle_event.
+
+Another problem concerns the awkwardness of protecting against
+asynchronous interrupts.  While we can reasonably expect interrupts to
+be implicitly masked during the prolog and postlog, they are possible
+from the time the prolog returns to the time the postlog is entered.
+Meanwhile, the body is required to manage the local state in such a
+way that the postlog can always clean up reliably -- which means it
+will sometimes have to make complex atomic updates to that state.
+
+In the general case, then, one will have to write
+SCHEME_CALL_SANS_INTERRUPTS essentially as a call to 
+
+  (dynamic-wind noop noop atomic-step)
+
+and use that in fn_body for every update to the local state -- you'll
+need not just the four functions above, but a bunch of additional
+helper functions for those updates.  I despair of many programmers
+either wanting to write such code or of getting it right.
+
+Another very minor problem is that the FFI provides no reliable means
+by which to apply a version of DYNAMIC-WIND.  Either a C function,
+SCHEME_DYNAMIC_WIND is needed, or it should be defined as a mandatory
+shared binding.
+
+
+
+    &gt; ... and handle the non-local control flow from Scheme.  C just
+    &gt; isn't powerful enough to play these games gracefully.
+
+Well, yes, that's my point.
+
+As I see it, the FFI design-space has a bifurcation wrt to non-local
+exits from Scheme past C code:
+
+1) You can not use them -- use error values instead.  C is quite
+   powerful enough to handle those.  They're easy to understand and,
+   most importantly, they &quot;play nicely&quot; with more C libraries.
+   They tend to be lower-overhead in the common case where errors
+   don't occur.   As I recall, Tcl (which has a notoriously clean and
+   easy to use FFI) goes this route.
+
+
+2) You can try to design an unwind-protect mechanism for C and add
+   that to the FFI.  This is what Guile and Systas have done
+   internally for years and if you look at recent guile-dev list
+   traffic, you can see that they're working on adding a similar
+   facility to their &quot;simpler, easier to use&quot; FFI layer (the gh_
+   layer).
+
+-t
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00095" href="msg00095.html">Re: non-local exits are icky</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00041" href="msg00041.html">non-local exits are icky</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00073" href="msg00073.html">Re: non-local exits are icky</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+<li><strong><a name="00078" href="msg00078.html">Re: non-local exits are icky</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00079" href="msg00079.html">Re: non-local exits are icky</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+<li><strong><a name="00084" href="msg00084.html">Re: non-local exits are icky</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00090" href="msg00090.html">Re: non-local exits are icky</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00093.html">Re: passing C data to Scheme world</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00095.html">Re: non-local exits are icky</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00090.html">Re: non-local exits are icky</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00095.html">Re: non-local exits are icky</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00094"><strong>Date</strong></a></li>
+<li><a href="threads.html#00094"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

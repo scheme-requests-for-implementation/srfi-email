@@ -1,0 +1,164 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Much simpler leak&#45;free implementation possible? -->
+<!--X-From-R13: Oaqer ina Fbaqre <naqerNurg.oebja.rqh> -->
+<!--X-Date: Thu, 28 Aug 2003 03:09:14 +0200 (DFT) -->
+<!--X-Message-Id: Pine.sola.4.10.10308272106490.29885&#45;100000@now.het.brown.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Much simpler leak-free implementation possible?</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00059.html">Date Prev</a>][<a href="msg00061.html">Date Next</a>][<a href="msg00058.html">Thread Prev</a>][<a href="msg00061.html">Thread Next</a>][<a href="maillist.html#00060">Date Index</a>][<a href="threads.html#00060">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Much simpler leak-free implementation possible?</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-40@DOMAIN.HIDDEN">srfi-40@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Much simpler leak-free implementation possible?</li>
+<li><em>From</em>: Andre van Tonder &lt;<a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 27 Aug 2003 21:09:08 -0400 (EDT)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-40@DOMAIN.HIDDEN">srfi-40@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>For what it's worth, I have adapted the CPS-style solution to a direct-style
+delay and force (below), that has the correct tail call behavior and should
+work well in Schemes with an efficient implementation of call/cc (I have
+tested in Petite Chez, where it runs very efficiently).  On other Schemes
+I do not expect it to work well (e.g. MzScheme, where it works on simple
+examples but otherwise call/cc creates garbage too fast for the GC to keep
+up without explicit GC management in the code).
+
+What's nice about this solution is that it has the correct reentrancy
+semantics.  In other words, the canonical example
+
+(define f
+        (let ((first? #t))
+          (delay
+            (if first?
+                (begin
+                  (set! first? #f)
+                  (force f))
+                'second))))
+
+&gt; (force f)
+
+gives 'second.
+
+With the definitions of delay and force below, the naive definition of
+stream-filter:
+
+(define (stream-filter p? s)
+  (delay (force
+          (match (force s)
+            [()      (delay '())]
+            [(h . t) (if (p? h)
+                         (delay (cons h (stream-filter p? t)))
+                         (stream-filter1 p? t))]))))
+
+runs the times3 example very efficiently in absolutely constant space in
+Petite.
+
+I have posted a related message to comp.lang.scheme, describing the problem
+from a slightly different angle.  
+
+Regards
+Andre
+
+
+Code below:
+
+; Definition of delay and force:
+
+(define-syntax delay
+  (syntax-rules ()
+    [(delay exp)
+     (memoize (lambda (k) exp))]))
+
+(define (force p)
+  (call/cc p))
+
+(define (memoize p)
+  (let ([memo-pair (cons #f #f)])
+    (lambda (k)
+      (if (car memo-pair)
+          (k (cdr memo-pair))
+          (p (make-memoizer memo-pair k))))))
+
+(define (make-memoizer memo-pair k)
+  (lambda (x)
+    (set-car! memo-pair #t)
+    (set-cdr! memo-pair x)
+    (k x)))
+
+;=========================================================================
+; list deconstructor used above:
+
+(define-syntax match
+  (syntax-rules ()
+    [(match exp
+       [()      exp1]
+       [(h . t) exp2])
+     (let ([lst exp])
+       (cond [(null? lst) exp1]
+                 [(pair? lst) (let ([h (car lst)]
+                                           [t (cdr lst)])
+                                       exp2)]
+           [else 'match-error]))]))
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00061" href="msg00061.html">Re: Much simpler leak-free implementation possible?</a></strong>
+<ul><li><em>From:</em> Andre van Tonder</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00059.html">Monad for lazy evaluation</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00061.html">Re: Much simpler leak-free implementation possible?</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00058.html">Re: Much simpler leak-free implementation possible?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00061.html">Re: Much simpler leak-free implementation possible?</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00060"><strong>Date</strong></a></li>
+<li><a href="threads.html#00060"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,169 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Finally clauses -->
+<!--X-From-R13: orne <orneNfbavp.arg> -->
+<!--X-Date: Sun,  1 Sep 2002 22:55:05 +0200 (DFT) -->
+<!--X-Message-Id: Pine.LNX.4.40.0209011313010.24964&#45;100000@newbolt.sonic.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: y9llm6q5bp9.fsf@sams.informatik.uni&#45;tuebingen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Finally clauses</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00030.html">Date Prev</a>][<a href="msg00032.html">Date Next</a>][<a href="msg00029.html">Thread Prev</a>][<a href="msg00032.html">Thread Next</a>][<a href="maillist.html#00031">Date Index</a>][<a href="threads.html#00031">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Finally clauses</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &quot;Michael Sperber [Mr.  Preprocessor]&quot; &lt;<a href="mailto:sperber@DOMAIN.HIDDEN">sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Finally clauses</li>
+<li><em>From</em>: bear &lt;<a href="mailto:bear@DOMAIN.HIDDEN">bear@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 1 Sep 2002 13:55:02 -0700 (PDT)</li>
+<li><em>Cc</em>: Tony Garnock-Jones &lt;<a href="mailto:tonyg@DOMAIN.HIDDEN">tonyg@xxxxxxxxxxxxxxx</a>&gt;,	Richard Kelsey &lt;<a href="mailto:kelsey@DOMAIN.HIDDEN">kelsey@xxxxxxx</a>&gt;, &lt;<a href="mailto:srfi-34@DOMAIN.HIDDEN">srfi-34@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-34@DOMAIN.HIDDEN">srfi-34@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:y9llm6q5bp9.fsf@DOMAIN.HIDDEN">y9llm6q5bp9.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+On Thu, 29 Aug 2002, Michael Sperber [Mr.  Preprocessor] wrote:
+
+&gt;
+&gt;Bear&gt; They could capture continuations or call captured continuations
+&gt;Bear&gt; the same as any other procedure.  No critical resources or
+&gt;Bear&gt; global variables are implied or required, nothing that creates
+&gt;Bear&gt; a race condition in multiprocessing is entangled, and the
+&gt;Bear&gt; semantics becomes clean and provable again.
+&gt;
+&gt;What precisely are the semantic issues with SRFI 34 you're worried
+&gt;about?  I sure don't see any that would create race conditions or
+&gt;interact unpleasantly with multiprocessing.
+
+I am concerned that the &quot;current exception handler&quot; seems to be
+global -- a property of the program rather than an individual
+thread.
+
+In a situation where I want to have different threads doing
+different things, it makes sense to have different exception
+handlers for them.  For example, I may have one thread that's
+trying to compute a regression average; if it attempts to
+divide by zero because there are no data, I want its exception
+handler to return zero as a result.  At the same time, a
+different thread is attempting to open a file read-write and
+seek to its end preparatory to writing our regression average
+into a log. If the second thread throws an exception due to
+file-not-found I want its exception handler to create a file
+and open it for writing. And if that (the first exception
+handler) itself throws another exception then I want to call
+another exception handler that signals application-halt to
+all the other threads and complains about &quot;unable to open a
+file&quot; to the user.
+
+My reading of SRFI 34 is that the *PROGRAM* has a current
+exception handler;  This is fine, I suppose, if you intend any
+exception to mean halt and report the exception.  But if I want
+to recover in some intelligent way from exceptions, then each
+*thread* has to have its own current exception handler, because
+each thread has a different &quot;and if that doesn't work then try
+this&quot; action to do.  And also exception handlers will have to
+have a clean way to be defined so that they can themselves
+result in calling other exception handlers.
+
+In my use of exceptions, the thread that causes the exception has
+little to contribute to its recovery; the exception handler needs
+to be set on a per-routine basis, as an alternate method of doing
+the job that routine was intended to do.  So, my programming model
+would be something like this: routine A calls B with the exception
+handler Bprime, then B calls C and C calls D and D runs into an
+exception.  At this point, the stack frames for B, C, and D are
+thrown away, an exception code is written into a reserved space in
+A's call frame, and a call is made to Bprime, with the same
+arguments and continuation as the original call to B.  Bprime
+returns to A and processing continues normally. A never has to know
+whether the procedure that returned to its post-B continuation was
+B or Bprime.
+
+If Bprime cares what caused the exception that B ran into, there's
+a function for reading the exception code from the parent frame
+that it can use to access that information.  But I don't usually
+find it useful for the exception handler to have to care which
+exception the errant call ran into; I'd prefer to throw away all
+the information from the errant call-frame and treat the rest of
+the computation as though the handler had been called *instead*.
+
+The business of passing around thunks and continuations as objects
+as in SRFI 34 seems to me to get in my way and complicate things,
+and I don't think it actually provides more generality or
+functionality.
+
+
+
+
+
+
+
+
+
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00032" href="msg00032.html">Re: Finally clauses</a></strong>
+<ul><li><em>From:</em> Richard Kelsey</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00029" href="msg00029.html">Re: Finally clauses</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr.  Preprocessor]</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00030.html">Re: Please rename TRY to something else</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00032.html">Re: Finally clauses</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00029.html">Re: Finally clauses</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00032.html">Re: Finally clauses</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00031"><strong>Date</strong></a></li>
+<li><a href="threads.html#00031"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

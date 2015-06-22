@@ -1,0 +1,162 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: strings draft -->
+<!--X-From-R13: Euveb Ynjnv <fuvebNynin.arg> -->
+<!--X-Date: Thu, 22 Jan 2004 10:46:18 +0100 (MET) -->
+<!--X-Message-Id: 20040121.234610.468711249.shiro@lava.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200401220511.VAA18432@morrowfield.regexps.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: strings draft</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00342.html">Date Prev</a>][<a href="msg00344.html">Date Next</a>][<a href="msg00342.html">Thread Prev</a>][<a href="msg00344.html">Thread Next</a>][<a href="maillist.html#00343">Date Index</a>][<a href="threads.html#00343">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: strings draft</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a></li>
+<li><em>Subject</em>: Re: strings draft</li>
+<li><em>From</em>: Shiro Kawai &lt;<a href="mailto:shiro@DOMAIN.HIDDEN">shiro@xxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 21 Jan 2004 23:46:10 -1000 (HST)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:200401220511.VAA18432@DOMAIN.HIDDEN">200401220511.VAA18432@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:200401220511.VAA18432@DOMAIN.HIDDEN">200401220511.VAA18432@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>I think the goal of the document is a bit ambiguous.  Specifically,
+I feel there are three issues intermixed; they are related each
+other, but it'll be clearer to separate the discussion as much
+as possible.
+
+1. Defining unicode API: &quot;If a Scheme implementation supports
+   API that explicitly deals with Unicode, it should be so and so&quot;.
+
+   This goal tries to define a common API to interface the outer
+   Unicode world, while allowing the implemenation to choose their
+   internal representations.
+
+2. Addressing unicode-specific issues: &quot;If a Scheme implementation
+   uses Unicode as its native character representation, it should be
+   so and so&quot;.
+
+   Some issues raised in the document are based on the assumption
+   that the implementation uses Unicode or iso-8859-* CCS (coded
+   character set) in its native representation.
+
+   If the document limit its scope to &quot;the implementations that uses
+   Unicode/iso8859-* internally&quot;, it's fine.  Is that the intention
+   of the document?
+
+    * If the implementation uses EUCJP as its internal CES, it
+      will face difficulty for the recommendation of INTEGER-&gt;CHAR
+      to support [0,255], since EUCJP does not have full mappings
+      in this range, although it has much more characters than 256.
+      I think it's possible that (integer-&gt;char #xa1) on such
+      implementations returns a &quot;pseudo character&quot;, which doesn't
+      corresponds to any character in EUCJP CES but is guaranteed
+      that to produce #xa1 when passed to char-&gt;integer.  But the
+      effects would be undefined if such a character is used within
+      a string.  (An implementation can also choose different
+      integers than the codepoint value to fulfill this &quot;256 character&quot;
+      requirements, but it wouldn't be intuitive).
+
+    * &quot;What _is_ a Character&quot; section doesn't refer to an
+      implementation where a CHAR? value corresponts to a
+      codepoint of non-Unocde, non-iso8859-* CCS/CES.
+
+    * In the portable FFI section, some APIs state the encoding
+      must be one of utf-8, iso8859-* or ascii, and I don't see
+      the reason of such restrictions.
+
+3. Determining the least common set of assumptions about characters
+   and strings the language/FFI spec should define.
+
+   Mostly in &quot;R6RS recommendation&quot; section.  Some of them seem
+   try to be codeset-independent, while some of them seem to
+   assume Unicode/iso8859-* codeset implicitly.  So I wonder
+   which is the intention of the document.
+
+
+Another issue: is there a rationale about &quot;strong encouragement&quot;
+of O(1) access of string-ref and string-set!?   There are
+alrogithms that truly need random access, but in many cases,
+index is used just to mark certain location of the string;
+e.g. if you want (string-ref str 3), it's rare that you know
+'3' is significant before you know about str---it's more likely
+that somebody (string search function, regexp matcher, or suffix
+database...) told you that the 3rd character of a particular
+string in str is significant.  In such cases, the reason you
+use index is not because the algorithm requires it, but just
+one of the possible means to have a reference within a string.
+I feel that accessing strings by index is a kind of premature
+optimization, which came from the history when strings were
+simply an array of bytes.    Some algorithms may still require
+random access, but we already have a primitive datatype that
+guarantee O(1) access---a vector.   I don't think we should
+make a string just a vector with a restricted element type.
+
+--shiro
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00344" href="msg00344.html">Re: strings draft</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00342" href="msg00342.html">strings draft</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00342.html">strings draft</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00344.html">Re: strings draft</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00342.html">strings draft</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00344.html">Re: strings draft</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00343"><strong>Date</strong></a></li>
+<li><a href="threads.html#00343"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

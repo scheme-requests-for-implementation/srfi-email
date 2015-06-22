@@ -1,0 +1,143 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: more on finalization issue, and reference implementation -->
+<!--X-From-R13: Euveb Ynjnv <fuvebNynin.arg> -->
+<!--X-Date: Sat, 27 Aug 2005 13:53:04 +0200 (MST) -->
+<!--X-Message-Id: 20050827.015352.371671504.shiro@lava.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20050824.164043.970559322.shiro@lava.net -->
+<!--X-Reference: y9l3boyc5rh.fsf@sams.informatik.uni&#45;tuebingen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: more on finalization issue, and reference implementation</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00101.html">Date Prev</a>][<a href="msg00103.html">Date Next</a>][<a href="msg00114.html">Thread Prev</a>][<a href="msg00105.html">Thread Next</a>][<a href="maillist.html#00102">Date Index</a>][<a href="threads.html#00102">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: more on finalization issue, and reference implementation</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-68@DOMAIN.HIDDEN">srfi-68@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: more on finalization issue, and reference implementation</li>
+<li><em>From</em>: Shiro Kawai &lt;<a href="mailto:shiro@DOMAIN.HIDDEN">shiro@xxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 27 Aug 2005 01:53:52 -1000 (HST)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-68@DOMAIN.HIDDEN">srfi-68@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:y9l3boyc5rh.fsf@DOMAIN.HIDDEN">y9l3boyc5rh.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:20050824.164043.970559322.shiro@DOMAIN.HIDDEN">20050824.164043.970559322.shiro@xxxxxxxx</a>&gt;	&lt;<a href="mailto:y9l3boyc5rh.fsf@DOMAIN.HIDDEN">y9l3boyc5rh.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>From: Michael Sperber &lt;sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx&gt;
+Subject: Re: more on finalization issue, and reference implementation
+Date: Thu, 25 Aug 2005 18:58:58 +0200
+
+&gt; Shiro Kawai &lt;shiro@xxxxxxxx&gt; writes:
+&gt; 
+&gt; &gt; The srfi-68 author has suggested the reference implementation
+&gt; &gt; to be a drop-in replacement for existing implementations, but
+&gt; &gt; it is not obvious how such implementations guarantee the
+&gt; &gt; &quot;flush-on-exit&quot; behavior.
+&gt; 
+&gt; You took my statement out of context: The &quot;drop in&quot; referred to a
+&gt; system where ports are already implemented.
+
+I see.  I retract the word &quot;replacement&quot;.
+
+Still my concern isn't resolved.   An existing implementation has
+this &quot;flush-on-exit&quot; behavior, MT safety, and async-finalization
+support in its native port.  If I use the reference implementation
+to build srfi-68 layer on top of it, I need to implement above
+features _again_ in the srfi-68 port layer.  It can't be used
+as is, and adapting it may not be trivial.
+
+What I had in my mind is to make 'hooks' in the native port layer
+so that the native port could call streams and/or reader/writer
+layer if the user desired.  I can't be sure whether I can do it
+efficiently enough until I actually write it up.  Although I don't
+see any show-stoppers now, it would be nice if the srfi is
+splitted up to the high-level port API and low-level stream/reader/writer
+API, and the high-level port API is designed to work without
+assuming low-level stuff.  Then I would implement the high-level
+API first on top of native ports, and consider low-level stuff later.
+But it's just my personal opinion.  I just wanted to raise a
+concern that, in this srfi, any reference implementation can't
+be a 'drop-in', unlike other srfis like srfi-1 etc.
+
+&gt; &gt; (Object finalization on the program termination may or may not
+&gt; &gt; save this.  If finalizers run with considering dependencies, the
+&gt; &gt; port can be finalized before underlying streams and writes,
+&gt; &gt; so it's OK.  However, it is generally difficult to run
+&gt; &gt; finalizers strictly observing dependencies (e.g. there can
+&gt; &gt; be a circular reference) and the implementation may choose
+&gt; &gt; to run finalizers without ordering.)
+&gt; 
+&gt; Another approach is to iterate flushing until you get no more
+&gt; output, which is what Scheme 48 does.
+
+Does the runtime system do it automatically upon program
+termination?  In such a case, I guess you should have a weak
+table to keep a set of opened ports, right?
+
+--shiro
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00105" href="msg00105.html">Re: more on finalization issue, and reference implementation</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00086" href="msg00086.html">more on finalization issue, and reference implementation</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+<li><strong><a name="00093" href="msg00093.html">Re: more on finalization issue, and reference implementation</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00101.html">Re: a few questions about file-options</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00103.html">Re: Specification vs. Implementation</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00114.html">Re: more on finalization issue, and reference implementation</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00105.html">Re: more on finalization issue, and reference implementation</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00102"><strong>Date</strong></a></li>
+<li><a href="threads.html#00102"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

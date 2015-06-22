@@ -1,0 +1,125 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: New revisions -->
+<!--X-From-R13: [nep Trryrl <srryrlNWDA.G[bagerny.QO> -->
+<!--X-Date: Thu, 4 Jan 2001 21:32:29 &#45;0600 (CST) -->
+<!--X-Message-Id: 200101050332.f053WSh28513@trex.IRO.UMontreal.CA -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>New revisions</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00075.html">Date Prev</a>][<a href="msg00077.html">Date Next</a>][<a href="msg00077.html">Thread Prev</a>][<a href="msg00078.html">Thread Next</a>][<a href="maillist.html#00076">Date Index</a>][<a href="threads.html#00076">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>New revisions</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-18@DOMAIN.HIDDEN">srfi-18@xxxxxxxxxxxxxxxxx</a>, <a href="mailto:srfi-21@DOMAIN.HIDDEN">srfi-21@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: New revisions</li>
+<li><em>From</em>: Marc Feeley &lt;<a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 4 Jan 2001 22:32:28 -0500</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>The time has come to move closer to a final spec for SRFI-21.  Michael
+has put my latest version of the spec on the web.  Please take a look
+and give me your comments.  I would like to finalize in a week or two.
+Below is a summary of the changes.
+
+Marc
+
+- There is now an explicit description of the thread states (new,
+  runnable, blocked, and terminated).  This makes the spec clearer.
+
+- A &quot;specific&quot; field has been added to mutexes and condition
+  variables, which is analogous to the &quot;specific&quot; field of threads.
+  It can be used by the application to attach any data to a mutex or
+  condition variable.  In particular this is useful to implement
+  recursive mutexes (an example is provided in the spec).
+
+- The specification of fairness, priority, and priority boosts has
+  been improved.
+
+- Applying the thread priority boost at thread creation is a bad idea
+  because it can lead to unexpected thread creation delays.  For
+  example, consider a monoprocessor system with round-robin scheduling
+  of threads of the same priority, and a thread T0 that tries to
+  create and start N threads T1 to TN that are CPU intensive (no I/O).
+  If T0 has a nonzero thread boost, and it hasn't blocked recently,
+  then as soon as T0 starts T1, T1 will start running and T0 won't get
+  to start T2 until T1's quantum is up.  But as soon as T0 starts T2,
+  T2 will start running until its quantum is over and then T1 will run
+  until its quantum is over.  So it takes O(N*N) quantums before TN
+  starts running.  For this reason the specification was changed so
+  that the thread boost only applies when a thread blocks.
+
+- The scheduler's &quot;grace period&quot; to take into account a change in
+  priority (in thread-base-priority-set!, thread-priority-boost-set!,
+  thread-quantum-set!, etc) has been removed.  It is just too
+  difficult to specify a useful semantics correctly.
+
+- I have removed the restriction on invoking continuations created by
+  other threads, and clarified the interaction with dynamic-wind and
+  the dynamic environment.
+
+- The &quot;started thread exception&quot; has been removed.  It is an error to
+  start a thread that is not new (i.e. runnable, blocked, or
+  terminated) but there is no good reason for SRFI-21 to say how this
+  error should be reported by the implementation.
+
+- (thread-start! t) now returns the thread t.  This is convenient to
+  immediately start the thread being created:
+
+      (let ((t (thread-start! (make-thread (lambda () ...)))))
+        ... do something with t ...)
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00075.html">Exception handlers</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00077.html">Re: Exception handlers</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00077.html">Re: Exception handlers</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00078.html">spurious wakeup from waiting on a condition variable</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00076"><strong>Date</strong></a></li>
+<li><a href="threads.html#00076"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

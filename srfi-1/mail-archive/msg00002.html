@@ -1,0 +1,176 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Comments on SRFI&#45;1. -->
+<!--X-From-R13: Euevenz Yevfuanzheguv <fuevenzNpf.evpr.rqh> -->
+<!--X-Date: Mon, 4 Jan 1999 09:41:42 &#45;0600 (CST) -->
+<!--X-Message-Id: 199901041541.JAA01511@southamerica.cs.rice.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 199901041035.MAA25478@blinky.bfr.co.il -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Comments on SRFI-1.</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00001.html">Date Prev</a>][<a href="msg00003.html">Date Next</a>][<a href="msg00001.html">Thread Prev</a>][<a href="msg00003.html">Thread Next</a>][<a href="maillist.html#00002">Date Index</a>][<a href="threads.html#00002">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Comments on SRFI-1.</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &quot;Harvey J. Stein&quot; &lt;<a href="mailto:hjstein@DOMAIN.HIDDEN">hjstein@xxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Comments on SRFI-1.</li>
+<li><em>From</em>: Shriram Krishnamurthi &lt;<a href="mailto:shriram@DOMAIN.HIDDEN">shriram@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 4 Jan 1999 09:41:40 -0600 (CST)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-1@DOMAIN.HIDDEN">srfi-1@xxxxxxxxxxxxxxxxx</a>, <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:199901041035.MAA25478@DOMAIN.HIDDEN">199901041035.MAA25478@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:199901041035.MAA25478@DOMAIN.HIDDEN">199901041035.MAA25478@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Reply-to</em>: <a href="mailto:shriram@DOMAIN.HIDDEN">shriram@xxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Harvey J. Stein wrote:
+
+&gt; I. Function addition - list-length&gt;=?
+&gt; 
+&gt; First of all, I'd like to suggest adding a function.  I often find
+&gt; myself having to write code like:
+&gt; 
+&gt;    (if (&gt;= (length l) 3)
+&gt;        (do something with (list-ref l 2)))
+&gt; 
+&gt; I guess this sometimes comes from processing the rest variable in
+&gt; funtions defined like (lambda (x y . rest) ...), but it also arises in
+&gt; other contexts.
+&gt; 
+&gt; This has the ugly performance of hit that it takes O((length l))
+&gt; instead of O(position being tested).
+&gt; 
+&gt; So, may I suggest adding:
+&gt; 
+&gt;    list-length&gt;=? l n -&gt; #t/#f
+&gt; 
+&gt;    Returns #t iff (&gt;= (length l) n)
+&gt; 
+&gt; This has the obvious implementation:
+&gt; 
+&gt;    (define (list-length&gt;=? l n)
+&gt;       (if (&lt;= n 0)
+&gt;           0
+&gt;           (list-length&gt;=? (cdr l) (- n 1))))
+
+1. The &quot;obvious implementation&quot; doesn't at all seem to correspond with
+the functionality you want.  But that's easy enough to fix.
+
+2. This seems like exactly the sort of thing exceptions are designed
+to get around.  You should be able to write
+
+  (let ((name (list-ref argument-list 3)))
+    ...)
+
+expecting that there are four values in `argument-list'; if there
+aren't, you can handle the ensuing exception as you deem appropriate
+(eg, locally if you want to provide a default value, or globally if
+you want to signal an error and exit).  That's probably what you
+_mean_ to say, anyway.
+
+3. This procedure is anyway &quot;inefficient&quot; in that its client will
+almost certainly traverse the same n elements again.  (Dan Friedman
+would say that it &quot;leaks computation&quot;.)  So it would be better off
+taking a one-argument procedure that takes the remainder of the list
+and uses it appropriately.  Better still, then, take two arguments,
+the second being the failure continuation (which would be invoked in
+tail position wrt the original calling context).  Or, you could
+generalize this to
+
+  list-split: int x list x (list -&gt; beta) x (list -&gt; gamma) x
+              (() -&gt; delta) -&gt; (beta + gamma)
+
+This is similar to, but not identical to, `partition'.  To be closer
+to the spirit of partition, we could define
+
+  list-split: int x list -&gt; [list list]
+
+(for which I don't see an equivalent in the proposal).
+
+Here's a (lightly-tested) implementation:
+
+(define (list-split n l)
+  (define (helper index before after)
+    (cond
+      ((null? after) (error 'list-split
+		       &quot;list ~s too small to be split at position ~s&quot;
+		       l n))
+      ((= index 0) (values (reverse before) after))
+      (else (helper (sub1 index) (cons (car after) before) (cdr after)))))
+  (cond
+    ((&lt; n 0) (error 'list-split &quot;index ~s must be &gt;= 0&quot; n))
+    (else (helper n '() l))))
+
+(A better name might be list-split-at-nth or some such.)
+
+If you want just the tail and not the head, then `list-tail' already
+does exactly what you want (and returns the rest of the list to boot,
+so you can just take the car of the result to get the n'th value).
+
+'shriram
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00003" href="msg00003.html">Comments on SRFI-1.</a></strong>
+<ul><li><em>From:</em> Shriram Krishnamurthi</li></ul></li>
+<li><strong><a name="00004" href="msg00004.html">Re: Comments on SRFI-1.</a></strong>
+<ul><li><em>From:</em> Harvey J. Stein</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00001" href="msg00001.html">Comments on SRFI-1.</a></strong>
+<ul><li><em>From:</em> Harvey J. Stein</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00001.html">Comments on SRFI-1.</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00003.html">Comments on SRFI-1.</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00001.html">Comments on SRFI-1.</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00003.html">Comments on SRFI-1.</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00002"><strong>Date</strong></a></li>
+<li><a href="threads.html#00002"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

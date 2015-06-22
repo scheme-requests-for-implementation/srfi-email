@@ -1,0 +1,117 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: string hash function in SRFI&#45;13 -->
+<!--X-From-R13: fuvirefNpp.tngrpu.rqh -->
+<!--X-Date: Fri, 15 Dec 2000 21:03:40 &#45;0600 (CST) -->
+<!--X-Message-Id: 200012160303.WAA27423@mongkok.cc.gt.atl.ga.us -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>string hash function in SRFI-13</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00114.html">Date Prev</a>][<a href="msg00116.html">Date Next</a>][<a href="msg00118.html">Thread Prev</a>][<a href="msg00119.html">Thread Next</a>][<a href="maillist.html#00115">Date Index</a>][<a href="threads.html#00115">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>string hash function in SRFI-13</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-13@DOMAIN.HIDDEN">srfi-13@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: string hash function in SRFI-13</li>
+<li><em>From</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxxxxx</a></li>
+<li><em>Date</em>: Fri, 15 Dec 2000 22:03:39 -0500</li>
+<li><em>Reply-to</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Brad Lucier pointed out that my reference implementation of string-hash
+(and char-set-hash) doesn't match the comments above it. Here's an
+explanation of the issue.
+
+The basic idea for the string-hash function (this is not part of the spec;
+it's just the particular implementation chosen for the reference
+implementation) is taken from Java. We treat the string cn...c0 as
+a radix-37 numeral (albeit one where the individual digits can be
+larger then 36), and use that for the hash value:
+
+    h = (c0 + c1*37 + c2*37^2 + ...) mod bound
+
+where BOUND is the desired range of the hash function. Now, the expression
+in parens is going to be a a really big number for a long string; we'd like
+to compute H without using a bignum package. We *could* do this:
+
+    h := 0
+    for i = n to 0 do
+      h := (c[i] + h*37) mod bound
+
+That's a lot of mod operations, however. Instead, why not define MASK
+to be a string of 1-bits long enough to &quot;cover&quot; BOUND, that is
+   mask := 2^(ceiling(lg bound)) - 1
+and then just keep these low bits in the intermediate computation, finishing
+up with a final mod op:
+
+    h := 0
+    for i = n to 0 do
+      h := (c[i] + h*37) and mask
+    h := h mod bound
+
+Great -- that's much more efficient. But it ain't what we originally set out
+to compute -- it isn't computing the h value I originally wrote down. That
+is what Brad spotted (which I had missed).
+
+The question is: does it matter? Is this more-quickly-computed value
+any less good as a hash value?
+
+I don't think so. I have not thought it through carefully, however.
+
+Anybody else have anything else to say?
+    -Olin
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00114.html">Re: Comments on SRFI-13 reference implementation</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00116.html">Re: Comments on SRFI-13 reference implementation</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00118.html">list of alphas</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00119.html">New drafts of SRFIs 13 &amp; 14 available</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00115"><strong>Date</strong></a></li>
+<li><a href="threads.html#00115"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

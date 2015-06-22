@@ -1,0 +1,180 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Command&#45;line&#45;parameter access -->
+<!--X-From-R13: Xbua Rnivq Egbar <fgbarNpf.tevaaryy.rqh> -->
+<!--X-Date: Fri, 9 Mar 2001 10:47:18 &#45;0600 (CST) -->
+<!--X-Message-Id: 200103091646.KAA32503@post.math.grin.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Command-line-parameter access</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00007.html">Date Prev</a>][<a href="msg00009.html">Date Next</a>][<a href="msg00028.html">Thread Prev</a>][<a href="msg00029.html">Thread Next</a>][<a href="maillist.html#00008">Date Index</a>][<a href="threads.html#00008">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Command-line-parameter access</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-22@DOMAIN.HIDDEN">srfi-22@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Command-line-parameter access</li>
+<li><em>From</em>: John David Stone &lt;<a href="mailto:stone@DOMAIN.HIDDEN">stone@xxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 9 Mar 2001 10:46:55 -0600</li>
+<li><em>Reply-to</em>: <a href="mailto:stone@DOMAIN.HIDDEN">stone@xxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>        I'd like to suggest a change in the semantics section, replacing
+the sentence
+
+    scheme-script calls this procedure with one argument, a list of the
+    remaining Unix command-line arguments.
+
+with
+
+    scheme-script calls this procedure with the remaining Unix command-line
+    arguments, each passed to the procedure as a string value.
+
+        For instance, if the file foo.ss contains the code
+
+            (define (foo arg)
+              (write arg)
+              (newline))
+
+I'd like the command `scheme-script --r5rs foo.ss --call foo bar' to
+produce the output
+
+            &quot;bar&quot;
+
+rather than
+
+            (&quot;bar&quot;)
+
+and if the file baz.ss contains the code
+
+            (define (baz . arguments)
+              (for-each display arguments)
+              (newline))
+
+I'd like the command `scheme-script --r5rs baz.ss --call baz quux' to
+produce the output
+
+            quux
+
+and the command `scheme-script --r5rs baz.ss --call baz 5e1 car \&quot;foo\&quot;'
+to produce the output
+
+            5e1car&quot;foo&quot;
+
+and not something like
+
+            50.0#&lt;procedure car&gt;foo
+
+        The key features of this design are:
+
+        (1) The Scheme programmer can choose to accept any number of
+command-line arguments (by using variable arity in the entry-point
+procedure), or she can choose to impose a restriction.  Under the original
+design, the entry-point procedure has to accept all of the command-line
+arguments and has to accept them bundled as a list.
+
+        (2) Most Unix shells impose constraints on the syntax of
+command-line arguments that are difficult or impossible to reconcile with
+the full syntax of Scheme literals, let alone Scheme expressions.  Passing
+all command-line arguments to the entry-point procedure as strings
+minimizes the number and complexity of the conflicts, allocating to the
+shell the responsibility for performing or preventing wild-card expansion,
+recognizing escapes for the shell comment character, and so on, and
+allocating to the Scheme program the responsibility for parsing strings to
+recover non-string values (for instance, in the most common case, invoking
+string-&gt;number).
+
+        I have not addressed the problem of collisions between shell syntax
+and the syntax of the Scheme identifier for the entry-point procedure.
+It seems to me that the identifier should be the result of shell
+pre-processing rather than literally what appears in the command line, in
+cases where these differ, but I don't know how to say this without making a
+lot of possibly unwarranted assumptions about what shells can and can't do.
+
+        In the Example section, the Unix cat utility would look like this
+if my suggestion is adopted:
+
+            #!/bin/sh
+            IFS=&quot; &quot;
+            exec scheme-script -r5rs &quot;$0&quot; -call cat &quot;$@&quot;
+            !#
+            (define (cat . arguments)
+              (for-each display-file arguments))
+
+            (define (display-file filename)
+              (call-with-input-file filename
+                (lambda (port)
+                  (let loop ()
+                    (let ((thing (read-char port)))
+                      (if (not (eof-object? thing))
+                          (begin
+                            (write-char thing)
+                            (loop))))))))
+
+Incidentally, `argument' in the sixth line of the example in the draft SRFI
+should be changed to `arguments' whether or not my suggestion is adopted.
+
+-- 
+   John David Stone - Lecturer in Computer Science and Philosophy
+           Manager of the Mathematics Local-Area Network
+           Grinnell College - Grinnell, Iowa 50112 - USA
+     stone@xxxxxxxxxxxxxxx - <a  rel="nofollow" href="http://www.cs.grinnell.edu/~stone/">http://www.cs.grinnell.edu/~stone/</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00029" href="msg00029.html">Re: Command-line-parameter access</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr. Preprocessor]</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00007.html">Re: single line alternative</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00009.html">--srfi0 --&gt; --srfi-0</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00028.html">Re: single line alternative</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00029.html">Re: Command-line-parameter access</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00008"><strong>Date</strong></a></li>
+<li><a href="threads.html#00008"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

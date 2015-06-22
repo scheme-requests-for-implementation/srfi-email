@@ -1,0 +1,222 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Initial comments &#38; questions -->
+<!--X-From-R13: Oyrk Euvaa <sbbsNflagupbqr.pbz> -->
+<!--X-Date: Wed, 31 Mar 2004 09:30:12 +0200 (DFT) -->
+<!--X-Message-Id: 87smfpa2zw.wl@strelka.synthcode.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: Pine.sola.4.10.10403192018560.10086&#45;100000@now.het.brown.edu -->
+<!--X-Reference: Pine.LNX.4.44.0403192146070.15122&#45;100000@autodrip.bloodandcoffee.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Initial comments &amp; questions</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00032.html">Date Prev</a>][<a href="msg00034.html">Date Next</a>][<a href="msg00025.html">Thread Prev</a>][<a href="msg00034.html">Thread Next</a>][<a href="maillist.html#00033">Date Index</a>][<a href="threads.html#00033">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Initial comments &amp; questions</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-53@DOMAIN.HIDDEN">srfi-53@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Initial comments &amp; questions</li>
+<li><em>From</em>: Alex Shinn &lt;<a href="mailto:foof@DOMAIN.HIDDEN">foof@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 31 Mar 2004 16:29:23 +0900</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-53@DOMAIN.HIDDEN">srfi-53@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:Pine.LNX.4.44.0403192146070.15122-100000@DOMAIN.HIDDEN">Pine.LNX.4.44.0403192146070.15122-100000@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:Pine.sola.4.10.10403192018560.10086-100000@DOMAIN.HIDDEN">Pine.sola.4.10.10403192018560.10086-100000@xxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:Pine.LNX.4.44.0403192146070.15122-100000@DOMAIN.HIDDEN">Pine.LNX.4.44.0403192146070.15122-100000@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Wanderlust/2.10.1 (Watching The Wheels) Emacs/21.3 Mule/5.0 (SAKAKI)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>At Tue, 23 Mar 2004 10:00:18 -0800 (PST), campbell@xxxxxxxxxxxxxxxxxxxxxxxxxxx wrote:
+&gt; 
+&gt; &gt; &gt;   - Very little is mentioned about hygiene, which I'm worried about.
+&gt; &gt; &gt;   - Very little is mentioned about shadowing.
+&gt; &gt; 
+&gt; &gt; I'll see if I can come up with something intelligent to say about this.
+&gt; 
+&gt; I expect the reason you're avoiding those mentions is that you're
+&gt; assuming the underlying SYNTAX-RULES implementation deals with them,
+&gt; but I think this is a dangerous assumption that could potentially cause
+&gt; _very_ unportable code.
+
+But syntax-rules hygiene can already be broken, and computation-rules
+just gives you more ways to do so.  What more can be said?
+
+As an example, suppose we want to implement with-slots from CLOS:
+
+  (with-slots (name1 name2 ...) obj
+     ...)
+
+where name1 is bound to (slot-ref obj 'name1) in the body of the form.
+
+For the sake of those not using a CLOS-like system we'll use the
+following for our examples:
+
+  (define (slot-ref obj slot)
+    (vector-ref obj (case slot ((a) 0) ((b) 1) ((c 2)) ((d 3)))))
+
+  (define my-obj #(1 10 100 1000))
+
+First we want a syntax-replace macro:
+
+(define-syntax-computation syntax-equal?
+  (computation-rules ()
+    ((syntax-equal? (h1 . t1) (h2 . t2))
+     (syntax-if (syntax-equal? h1 h2)
+       (syntax-equal? t1 t2)
+       (syntax-return #f)))
+    ((syntax-equal? #(h1 t1 ...) #(h2 t2 ...))
+     (syntax-if (syntax-equal? h1 h2)
+       (syntax-equal? (t1 ...) (t2 ...))
+       (syntax-return #f)))
+    ((syntax-equal? x y)
+     (syntax-eq? x y))))
+
+(define-syntax-computation syntax-list-&gt;vector
+  (computation-rules ()
+    ((syntax-list-&gt;vector ls)
+     (syntax-do (rev &lt;- (syntax-reverse ls))
+       (syntax-list-&gt;vector rev #())))
+    ((syntax-list-&gt;vector () #(v1 ...))
+     (syntax-return #(v1 ...)))
+    ((syntax-list-&gt;vector (h . t) #(v1 ...))
+     (syntax-list-&gt;vector t #(h v1 ...)))
+    ))
+
+(define-syntax-computation syntax-replace
+  (computation-rules ()
+    ((syntax-replace from to (h . t))
+     (syntax-if (syntax-equal? (h . t) from)
+       (syntax-return to)
+       (syntax-do (h1 &lt;- (syntax-replace from to h))
+                  (t1 &lt;- (syntax-replace from to t))
+         (syntax-return (h1 . t1)))))
+    ((syntax-replace from to #(h t ...))
+     (syntax-if (syntax-equal? #(h t ...) from)
+       (syntax-return to)
+       (syntax-do (h1 &lt;- (syntax-replace from to h))
+                  (t1 &lt;- (syntax-replace from to (t ...)))
+         (syntax-return (syntax-list-&gt;vector (h1 . t1))))))
+    ((syntax-replace from to s)
+     (syntax-if (syntax-equal? s from) (syntax-return to) (syntax-return s)))
+    ))
+
+Then the implementation is straightforward:
+
+(define-syntax-computation with-slots-computation
+  (computation-rules ()
+    ((with-slots-computation () obj . body)
+     (syntax-return (begin . body)))
+    ((with-slots-computation (slot1 slot2 ...) obj . body)
+     (syntax-do (inner1 &lt;- (with-slots-computation (slot2 ...) obj . body))
+                (inner2 &lt;- (syntax-replace slot1 tmp inner1))
+       (syntax-return (let ((tmp (slot-ref obj 'slot1))) inner2))))))
+
+(define-syntax with-slots
+  (syntax-rules ()
+    ((with-slots slots obj . body)
+     (syntax-run (with-slots-computation slots obj . body)))))
+
+And our example works as expected:
+
+(syntax-inspect (with-slots-computation (a b c) my-obj (+ a b c)))
+=&gt; (let ((tmp (slot-ref my-obj 'a)))
+     (let ((tmp (slot-ref my-obj 'b)))
+       (let ((tmp (slot-ref my-obj 'c)))
+          (begin (+ tmp tmp tmp)))))
+
+(with-slots (a b c) my-obj (+ a b c))
+=&gt; 111
+
+The nested tmp bindings don't interfere with each other as expected.  If
+we bind tmp in the body we're safe as well:
+
+(with-slots (a b c) my-obj (let ((tmp 5)) (+ a b c)))
+=&gt; 111
+
+Macros inside the body may safely expand into forms using tmp or any of
+the replaced symbols:
+
+(define-syntax add
+  (syntax-rules ()
+    ((add) 0)
+    ((add x) x)
+    ((add x y z ...) (let ((a (+ x y))) (add a z ...)))))
+
+(with-slots (a b c) my-obj (let ((tmp 5)) (add a b c)))
+=&gt; 111
+
+Also rebinding the slot names in the body works as you would expect:
+
+(with-slots (a b c) my-obj (let ((a 5)) (add a b c)))
+=&gt; 115
+
+The bad news?  The above computations take about 10 _minutes_ each on
+Petite Chez.  I would not want to try this on MzScheme if it was &quot;very
+slow&quot; in comparison to Chez!
+
+-- 
+Alex
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00034" href="msg00034.html">Re: Initial comments &amp; questions</a></strong>
+<ul><li><em>From:</em> Alex Shinn</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00002" href="msg00002.html">Re: Initial comments &amp; questions</a></strong>
+<ul><li><em>From:</em> Andre van Tonder</li></ul></li>
+<li><strong><a name="00013" href="msg00013.html">Re: Initial comments &amp; questions</a></strong>
+<ul><li><em>From:</em> campbell</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00032.html">Re: isn't computation-rules redundant?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00034.html">Re: Initial comments &amp; questions</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00025.html">Re: Initial comments &amp; questions</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00034.html">Re: Initial comments &amp; questions</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00033"><strong>Date</strong></a></li>
+<li><a href="threads.html#00033"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

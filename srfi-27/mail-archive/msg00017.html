@@ -1,0 +1,133 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: your implementation of L'Ecuyer's MRG32k3a generator -->
+<!--X-From-R13: Penq Zhpvre <yhpvreNzngu.cheqhr.rqh> -->
+<!--X-Date: Thu, 21 Feb 2002 18:41:31 +0100 (NFT) -->
+<!--X-Message-Id: 200202211741.g1LHfNV20179@banach.math.purdue.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: OF5936692E.B24D138C&#45;ONC1256B67.004C19F4@diamond.philips.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: your implementation of L'Ecuyer's MRG32k3a generator</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00016.html">Date Prev</a>][<a href="msg00018.html">Date Next</a>][<a href="msg00016.html">Thread Prev</a>][<a href="msg00023.html">Thread Next</a>][<a href="maillist.html#00017">Date Index</a>][<a href="threads.html#00017">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: your implementation of L'Ecuyer's MRG32k3a generator</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:sebastian.egner@DOMAIN.HIDDEN">sebastian.egner@xxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: your implementation of L'Ecuyer's MRG32k3a generator</li>
+<li><em>From</em>: Brad Lucier &lt;<a href="mailto:lucier@DOMAIN.HIDDEN">lucier@xxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 21 Feb 2002 12:41:23 -0500 (EST)</li>
+<li><em>Cc</em>: <a href="mailto:lucier@DOMAIN.HIDDEN">lucier@xxxxxxxxxxxxxxx</a>,	<a href="mailto:srfi-27@DOMAIN.HIDDEN">srfi-27@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-27@DOMAIN.HIDDEN">srfi-27@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:OF5936692E.B24D138C-ONC1256B67.004C19F4@DOMAIN.HIDDEN">OF5936692E.B24D138C-ONC1256B67.004C19F4@xxxxxxxxxxxxxxxxxxx</a>&gt; from &quot;<a href="mailto:sebastian.egner@DOMAIN.HIDDEN">sebastian.egner@xxxxxxxxxxx</a>&quot; at Feb 21, 2002 03:15:31 PM</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; * Why do you use an f64vector for the seed? Is this more efficient than
+&gt; creating six different variables? (for example because flonums are
+&gt; allocated rather than immediate)
+
+Yes.  Gambit-C boxes flonums except in basic blocks.  So accessing an element
+of an f64vector takes as long as unboxing a flonum, but storing a flonum
+into an existing f64vector is faster than boxing it, and eliminates the need for
+allocating the storage for the boxed flonum.
+
+&gt; * Why does the fixnum/flonum implementation need flonums at all?
+&gt; Wouldn't it be more efficient to use 54-bit fixnums throughout? (Which
+&gt; should be there in a Scheme running on a DEC Alpha)
+
+That may work fine; I wanted to have an implementation that worked well
+both on sparcs and alphas, so the seed is of the same form on both.
+Flonum arithmetic is often faster than fixnum arithmetic on machines, too,
+especially for multiplication and division.  But L'Ecuyer has some timings
+in his paper that shows that an integer implementation works well on the
+alpha.
+
+&gt; * What does (declare (flonum)) actually mean here?
+
+It's a Gambit-C extension that says that within that lexical scope, all
+arithmetic operations will be on flonum values.  This is faster than using
+the generic arithmetic operations.
+
+&gt; * Why have you chosen to write a nested let expression instead of a let*?
+&gt; Is this a special style recognized by the compiler to get better code?
+
+I don't think so.  I just saw that several operations could be done in
+parallel at each step, and wanted to write the code to allow this if
+possible.
+
+&gt; * I have installed GAMBIT here at a HP system. The definition 
+&gt; flonum-m-bits-plus-1 in the 'header.scm' file shows that the actual
+&gt; mantissa width of FLONUMs are just 53 bits; which is exactly one bit short
+&gt; of what is needed for MRG32k3a theoretically. Do you have the same
+&gt; problem on your platform? If not, what platform (HW/SW) are you using?
+
+Gambit-C uses the system's underlying floating-point arithmetic.  I believe
+that L'Ecuyer's method requires the representation of all integer between
+2^{53} and -2^{53} (exclusive) exactly, and this is possible with IEEE
+double precision arithmetic.  I don't think there's a problem.
+
+One thing to take into account is that this RNG returns values, before
+normalization, between 1 and 4294967087, i.e., not the range
+0..2^{32}-1=0..4294967295.  This may require some care in using these
+RNGs.
+
+Brad
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00016" href="msg00016.html">your implementation of L'Ecuyer's MRG32k3a generator</a></strong>
+<ul><li><em>From:</em> sebastian . egner</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00016.html">your implementation of L'Ecuyer's MRG32k3a generator</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00018.html">Re: your implementation of L'Ecuyer's MRG32k3a generator</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00016.html">your implementation of L'Ecuyer's MRG32k3a generator</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00023.html">Re: your implementation of L'Ecuyer's MRG32k3a generator</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00017"><strong>Date</strong></a></li>
+<li><a href="threads.html#00017"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

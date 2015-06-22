@@ -1,0 +1,753 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Round 3 discussion &#38; open issues -->
+<!--X-From-R13: fuvirefNnv.zvg.rqh -->
+<!--X-Date: Sun, 21 Nov 1999 20:10:05 &#45;0600 (CST) -->
+<!--X-Message-Id: 199911220210.VAA04597@mongkok.ai.mit.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Round 3 discussion &amp; open issues</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00023.html">Date Prev</a>][<a href="msg00025.html">Date Next</a>][<a href="msg00023.html">Thread Prev</a>][<a href="msg00028.html">Thread Next</a>][<a href="maillist.html#00024">Date Index</a>][<a href="threads.html#00024">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Round 3 discussion &amp; open issues</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-13@DOMAIN.HIDDEN">srfi-13@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Round 3 discussion &amp; open issues</li>
+<li><em>From</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxx</a></li>
+<li><em>Date</em>: Sun, 21 Nov 1999 21:10:04 -0500</li>
+<li><em>Reply-to</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Here is a list of current issues &amp; changes &amp; requests for comments for the
+SRFI as it now stands. I've quoted relevant email from others that has raised
+particular issues. All changes I've made since I put out the &quot;round 2&quot;
+messages are described herein, but you can refer to the latest SRFI draft
+for the specifics of any given proc.
+
+I am *very* appreciative of all the valuable reviews people have provided.
+Thanks for taking the time and thought; I think the current draft has been
+significantly improved from my initial proposal. I welcome further comments
+on the current draft as it now stands.
+
+Here's a very brief summary of recent changes; read the body of this msg
+for details:
+    - JOIN-STRINGS -&gt; STRING-JOIN
+
+    - CAPITALIZE-STRING[!] -&gt; STRING-CAPITALIZE[!]
+
+    - CAPITALIZE-WORDS dumped.
+
+    - Twenty-two SUBSTRING-... procs killed; companion STRING-... procs
+      generalised to handle double start/end optional indices.
+      This is the single biggest change, I'd say. Please review.
+
+    - SUBSTRING? replaced by STRING-CONTAINS for complex reasons pertaining
+      to the previous change.
+
+    - right-to-left search procs (STRING-{INDEX,SKIP}-RIGHT) now take
+      their start/end indices just like everyone else.
+
+    - SUBSTRING is gone. STRING-COPY &amp; SUBSTRING/SHARED exist.
+      SRFI-13 now has *no* backwards incompatibilities with R5RS bindings.
+
+    - STRING-FOR-EACH guaranteed left-to-right.
+      STRING-ITERATE gone; STRING-DO-EACH is order-unspecified.
+
+    - STRING-JOIN now accepts 'prefix grammar.
+
+    - I'm looking for someone to send me Boyer-Moore search code. C'mon; get
+      your name into the acknowledgments section...
+
+    - I might add a too-complex STRING-SPLIT proc if people push for it.
+
+    - CHECK-SUBSTRING-SPEC (which raises an error) now accompanied
+      by predicate SUBSTRING-SPEC-OK?.
+
+    - STRING-PARSE-START+END proc s args -&gt; [rest start end]
+      Now returns the rest value as the first return value. No one
+      cares. Don't worry about it.
+
+Long-suffering Mike &quot;Judean People's Front&quot; Sperber will very quickly move my
+latest draft from
+    <a  rel="nofollow" href="ftp://ftp.ai.mit.edu/people/shivers/srfi/13/srfi-13.txt">ftp://ftp.ai.mit.edu/people/shivers/srfi/13/srfi-13.txt</a>
+to the official SRFI-13 site at
+    <a  rel="nofollow" href="http://srfi.schemers.org/srfi-13/">http://srfi.schemers.org/srfi-13/</a>
+...so no one should go looking at the former URL.
+
+Or was that the People's Judean Front?
+    -Olin
+
+-------------------------------------------------------------------------------
+    From: erik hilsdale &lt;ehilsdal@xxxxxxxxxxxxxx&gt;
+
+    The procedure-names in the library obey a very nice naming convention:
+    [sub]string-&lt;verb/noun&gt;[-ci][!] for the most part.
+
+Yep, that is by design.
+
+    This is why I was surprised to see some breaking of these rules.  For
+    consistency, I would strongly support renaming the following procedure:
+
+	join-strings       ==&gt; string-join
+
+Hmm... the stick-with-the-convention-dammit rule is a powerful one.
+I would counter by saying that the lexeme isn't &quot;string&quot;, it's &quot;strings&quot;,
+hence the convention doesn't really apply; you mutated the name to get it
+into the ballpark.
+
+I'm a little uncomfortable with the shift, but I guess it's the right thing.
+I'm changing over to Eric's STRING-JOIN. If people hate this, please lobby
+me and get me to change it back.
+
+-------------------------------------------------------------------------------
+    From: erik hilsdale &lt;ehilsdal@xxxxxxxxxxxxxx&gt;
+    I would also support renaming these two
+
+	    capitalize-string  ==&gt; string-capitalize
+	    capitalize-string! ==&gt; string-capitalize
+
+    except that would cause a strange discontinuity with
+    capitalize-words[!].  So I probably wouldn't rename these two unless I
+    could convince everybody to drop capitalize-words[!] entirely, which
+    I'll try to do below when I get to individual procedures. 
+
+    ---- capitalize-string[!], capitalize-words[!]
+
+    I just don't see a reason for having these procedures in this library,
+    _especially_ capitalize-words.  They seem much more suited for a
+    'natural language' sublibrary or the like.  I'm not sure I can argue
+    cogently why they don't belong, but they stick out a bit to me, where
+    string-upcase and string-downcase don't.  Capitalize-string[!] I can
+    see as somewhat useful, but capitalize-words[!], for me, opens the
+    same kind of bag of worms that string-split does.
+
+On reflection, I can't think of cases where people are really going to
+be dying to use CAPITALIZE-STRING[!]. Should I bag it? Eric says yes.
+I am leaning that way. Further opinions?
+
+Unless I'm subsequently persuaded otherwise, I'm punting CAPITALIZE-WORDS,
+which means I can go ahead and rename CAPITALIZE-STRING to STRING-CAPITALIZE.
+
+I'm going to leave the code in the reference implementation, commented out.
+I mean, I wrote it &amp; debugged it... someday someone will want it.
+-------------------------------------------------------------------------------
+    From: erik hilsdale &lt;ehilsdal@xxxxxxxxxxxxxx&gt;
+    The rule that is almost always followed is that if there is a _single_
+    string argument to a function, there will be optional start/end
+    arguments for that string.  [...]
+
+    However, although adding the optionals to string-&lt;take/drop&gt;[-right]
+    seems goofy, I'll ask for it anyway.  
+
+    Because my Scheme doesn't have shared substrings, when I start passing
+    around start/end pairs to my functions, I do so for efficiency, and I
+    really do treat the three arguments 's start end' as one:
+
+      (define foo 
+	(lambda (s start end) ;; one conceptual argument
+	  ...stuff...))
+
+Right! That's one of the stated design goals -- to allow you to get the
+effect of shared-text string hacking with consistent start/end indices.
+
+In my opinion, your design heuristic -- &quot;I don't want to think&quot; -- is an
+extremely good guideline.
+
+On the other hand, if you *are* going to be coding with start/end indices,
+then forget TAKE &amp; DROP. Just use SUBSTRING. It's really just as convenient.
+Why write
+   (string-take s n start end)
+when 
+   (substring s start (+ start n))
+is equivalent, modulo the fact that the bounded-take operation would
+raise an error in some cases where the explicit SUBSTRING would not.
+
+The TAKE and DROP ops are convenience functions, for certain patterns of
+SUBSTRING calls. As soon as you go to substring indices, their convenience
+worth goes away.
+
+-------------------------------------------------------------------------------
+    From: erik hilsdale &lt;ehilsdal@xxxxxxxxxxxxxx&gt;
+    ---- Mandatory 'start2 end2' arguments for multi-string procedures
+
+    All procedures that take more than one string, if they accept
+    start/end pairs for those strings, _require_ all start/end pairs.
+    That is, none of them is optional.  
+
+    Except for string-replace, where [start2 end2] is optional. .  This is
+    a bit strange.  Certainly, substring-compare[-ci] can't have optional
+    [start2 end2] arguments, since the continuation arguments come last.
+    But what would be wrong with
+
+    (substring= mystr mystr-start mystr-end &quot;foo&quot;)
+
+    So it seems to me that the domains of 
+       substring[-ci]=
+       substring[-ci]&lt;&gt;
+       substring[-ci]&lt;
+       substring[-ci]&gt;
+       substring[-ci]&lt;=
+       substring[-ci]&gt;=
+       substring-&lt;prefix/suffix&gt;-length[-ci]
+       substring-&lt;prefix/suffix&gt;[-ci]?
+    should be changed from
+       s1 start1 end1 s2 start2 end2
+    to
+       s1 start1 end1 s2 [start2 end2]
+
+I have taken a more radical step. I've shifted both pairs of start/end indices
+for all two-string procs to the end of the list. This has a *big* effect:
+no more substring-variants! Kills many, many procedures from the library.
+For example, instead of both
+    string= s1 s2
+    substring= s1 start1 end2 s2 start2 end2
+we now have only
+    string= s1 s2 [start1 end1 start2 end2]
+
+Here are the procedures that get killed
+    substring-compare	substring-compare-ci
+
+    substring= 		substring-ci= 
+    substring&lt;&gt;		substring-ci&lt;&gt;
+    substring&lt; 		substring-ci&lt; 
+    substring&gt; 		substring-ci&gt; 
+    substring&lt;=		substring-ci&lt;=
+    substring&gt;=		substring-ci&gt;=
+
+    substring-prefix-length	substring-prefix-length-ci
+    substring-suffix-length	substring-suffix-length-ci
+
+    substring-prefix?	substring-prefix-ci? 
+    substring-suffix?   substring-suffix-ci? 
+
+Here are the procedures that get correspondingly extended:
+    string-compare    s1 s2 proc&lt; proc= proc&gt; [start1 end1 start2 end2] -&gt; values
+    string-compare-ci s1 s2 proc&lt; proc= proc&gt; [start1 end1 start2 end2] -&gt; values
+
+    string=  s1 s2 [start1 end1 start2 end2] -&gt; boolean
+    string&lt;&gt; s1 s2 [start1 end1 start2 end2] -&gt; boolean
+    string&lt;  s1 s2 [start1 end1 start2 end2] -&gt; boolean
+    string&gt;  s1 s2 [start1 end1 start2 end2] -&gt; boolean
+    string&lt;= s1 s2 [start1 end1 start2 end2] -&gt; boolean
+    string&gt;= s1 s2 [start1 end1 start2 end2] -&gt; boolean
+
+    string-prefix-length    s1 s2 [start1 end1 start2 end2] -&gt; integer
+    string-suffix-length    s1 s2 [start1 end1 start2 end2] -&gt; integer
+    string-prefix-length-ci s1 s2 [start1 end1 start2 end2] -&gt; integer
+    string-suffix-length-ci s1 s2 [start1 end1 start2 end2] -&gt; integer
+
+    string-prefix?    s1 s2 [start1 end1 start2 end2] -&gt; boolean
+    string-suffix?    s1 s2 [start1 end1 start2 end2] -&gt; boolean
+    string-prefix-ci? s1 s2 [start1 end1 start2 end2] -&gt; boolean
+    string-suffix-ci? s1 s2 [start1 end1 start2 end2] -&gt; boolean
+
+The argument order in
+    string-replace s1 s2 [start1 end1 start2 end2] -&gt; string
+also has to be altered to the new way of things.
+
+Something is lost -- there is a clarity benefit in putting the indices
+right next to the string to which they refer -- but some things are
+gained:
+    - We eliminate 22 procedures from the library! Fantastic.
+    - Generality in calling conventions.
+The clarity issue is something to consider, because if you write
+    (foo s1 s2 start end)
+in the new world, the START/END parameters apply *not* to S2 (where they
+appear), but to S1.
+
+Another negative of this shift is that SUBSTRING? has to have its
+arguments altered to take both s1 *and* s2 start/end indices -- the old
+version only took s2 (target) indices. Here is the new version:
+    substring?    s1 s2 [start1 end1 start2 end2] -&gt; integer or false
+    substring-ci? s1 s2 [start1 end1 start2 end2] -&gt; integer or false
+Unfortunately, I think it's much more common to search for the occurrence of
+a complete string within some substring than vice-versa, so you have to
+write the 0/(string-length s1) args down to be able to specify the selected
+search span in S2:
+     (substring? &quot;foo&quot; s2 
+                 0 3		; Redundant,
+		 start2 end2)	; so we can specify these.
+So I am going to punt this procedure in favor of
+    (string-contains s1 s2 [start1 end1 start2 end2]) -&gt; integer or boolean
+This flips the parameters -- searches for an occurrence of S2 in S1. So the
+common case becomes
+    (string-contains s1 &quot;foo&quot; start1 end1)
+Finally, there's a not-so-obvious advantage to this shift: SUBSTRING? is
+a misnomer, because it returns an integer for its true value. The usual
+convention is that these sorts of procedures don't end in &quot;?&quot;. But we
+*can't* observe this convention in this particular case -- SUBSTRING is
+already in use. We *can* implement this convention with STRING-CONTAINS.
+
+-------------------------------------------------------------------------------
+    From: Jonathan Sobel &lt;jsobel@xxxxxxxxxxxxxx&gt;
+
+    * [end start] versus [start end]: I definitely vote for keeping the
+      same order as everywhere else.  I know there are reasons to reverse
+      it, but I won't remember them while I'm programming.
+
+    From: erik hilsdale &lt;ehilsdal@xxxxxxxxxxxxxx&gt;
+    ---- Optional [end start] arguments for index and skip
+
+    Because the optional [start end] convention is so firmly established
+    in the library, it hurts me dearly to see [end start] in the
+    index-right and skip-right procedures.  Olin's defense that the start
+    argument is almost never specified for these doesn't sway me, and the
+    fact that I'll get a runtime error when I try it just irritates me.
+
+    When I'm using the 's start end' convention to represent my strings,
+    I'm not going to remember that these two arguments need to be reversed
+    for these two procedures, and if I do I'll curse the fact that I've
+    devoted brain cells to the exception.  
+
+    When I'm not using this convention and just using the optional
+    arguments 'casually', I at least would be happy to always write a zero
+    for my start point whenever I want to specify my end point.
+
+OK, OK. Done. See the SRFI.
+
+At least the redundant thing is a short constant (0), instead of
+a (string-length s) argument.
+
+-------------------------------------------------------------------------------
+    From: erik hilsdale &lt;ehilsdal@xxxxxxxxxxxxxx&gt;
+    ---- Overflows
+
+    Questions about some overflow cases:
+
+    (string-take &quot;foo&quot; 5) ==&gt; &quot;foo&quot; or error?
+    (string-drop &quot;foo&quot; 5) ==&gt; &quot;&quot; or error?
+
+    (string-copy! &quot;xx&quot; 0 &quot;yyy&quot;) ==&gt; I assume an error, but am worried by
+				    the language 
+				    'the copy is guaranteed to work'.  
+
+In these cases, we freeze your assets, delete your home directory &amp; shoot your
+dog. All errors. I have added text to this effect to the SRFI.
+
+-------------------------------------------------------------------------------
+    From: erik hilsdale &lt;ehilsdal@xxxxxxxxxxxxxx&gt;
+    ---- Sharing
+
+    I'll cast my vote for the liberal camp.  However, I feel obligated to
+    get a little wacky about it and ask why we're providing
+
+	    string-append/shared
+	    string-concatenate/shared
+	    reverse-string-concatenate/shared
+
+    If we're breaking R5RS's substring, I see no reason not to also break
+    R5RS's string-append.  That is, by voting 'liberal' I believe that
+
+	    (eq? foo (string-append &quot;&quot; foo))
+	    (eq? foo (string-concatenate (list &quot;&quot; foo)))
+	    (eq? foo (reverse-string-concatenate (list &quot;&quot; foo)))
+
+    should all be allowed to be true.  The problem with my firm stance is
+    that I have no idea what the 'non-shared' versions should be named.
+    string-append/copy?  string-append/fresh?
+
+    From: Jonathan Sobel &lt;jsobel@xxxxxxxxxxxxxx&gt;
+
+    * I vote liberal on the copying issue.  In fact, I go along with Erik
+      and say we ought to be able to assume sharing unless a specific copy
+      is requested.  I'd be willing to drop the multiple versions of the
+      procedures with &quot;/shared&quot; or &quot;/fresh&quot; or whatever and do an explicit
+      &quot;string-copy&quot; if I want something new.  If my compiler has already
+      made a copy, it can optimize my request away.
+
+OK, I wimped out &amp; went conservative. This library does *not* contain any
+binding of SUBSTRING. Use either STRING-COPY or SUBSTRING/SHARED, as
+appropriate.  SRFI-13 now has *no* backwards incompatibilities with R5RS *at
+all*.
+
+For summary, here is a list of the procedures that are allowed to return
+values that share storage with their parameters. As the comments indicate,
+it should be straightforward to program in either a style that permits
+sharing or requires fresh copies:
+
+    string-take string-take-right
+    string-drop string-drop-right
+    substring/shared
+        (For fresh-copy semantics, use STRING-COPY instead of these procs.)
+
+    string-append/shared string-concatenate/shared 
+    reverse-string-concatenate/shared
+	(Fresh-copy variants all exist.)
+
+    string-pad   string-pad-right
+    string-trim  string-pad-right string-pad-both
+    string-filter string-delete
+        (No equivalent guaranteeing fresh copy; not deemed worth it.
+	 For fresh copies, wrap a call to STRING-COPY around the application.)
+
+-------------------------------------------------------------------------------
+    From: erik hilsdale &lt;ehilsdal@xxxxxxxxxxxxxx&gt;
+    ---- string-for-each, string-iterate
+
+    I'm definitely with Lars Arvestad on this one.  String-for-each should
+    require a left-to-right ordering.  I mainly argue this because I've
+    now sent approximately five years-worth of undergraduates out into the
+    world with the factoid that they should use 'for-each' when they care
+    about evaluation order.  I'm willing to pay the price of an extra
+    register-register comparison for that clarity.
+
+    Well, I think I'm willing to do that, anyway.  I'd be happier if there
+    were a good, non-'for-each' identifier that would connote
+    unorderdness.  Sigh.
+
+    From: Jonathan Sobel &lt;jsobel@xxxxxxxxxxxxxx&gt;
+    * &quot;for-each&quot; means left-to-right.  What about &quot;string-apply&quot; for the
+      thing that just applies the given procedure to all the characters,
+      in no particular order and with no particular result?
+
+    From: d96-mst@xxxxxxxx (Mikael St&#xE5;ldal)
+    * I think that string-for-each should work form left to right and that
+    no other string-iter[are] procedure should be included.
+
+OK, backwards compatibility takes this round. STRING-FOR-EACH is
+left-to-right.  How about STRING-DO-EACH for the variant that doesn't specify
+order?  You're going to see this lexeme again in vector, set, etc. SRFIs, so
+let's figure one out with which we can live, eh?
+
+Got a better name for unordered application than -do-each? Send it in.
+The T guys tended to use &quot;-walk&quot;, as in
+    string-walk
+    hash-table-walk
+    vector-walk
+    etc.
+But their -walk procedures frequently take key *and* value parameters (e.g.,
+the hash-table one), so perhaps we should save this lexeme for that purpose.
+
+-------------------------------------------------------------------------------
+    From: erik hilsdale &lt;ehilsdal@xxxxxxxxxxxxxx&gt;
+    ---- string-null?
+
+    I worry (probably needlessly) about people confusing the 'null' lexeme
+    with the character with ascii value 0 that C programmers use to
+    terminate their strings.  
+
+    Or even worse, someone confusing it with the terminal value of a
+    recursive datatype (grin).
+
+    I was going to argue for 'empty-string?', but that would conflict with
+    the 'string-first' naming convention.  How about 'string-empty?'?
+
+    From: Jonathan Sobel &lt;jsobel@xxxxxxxxxxxxxx&gt;
+    * I vote for &quot;string-empty?&quot; instead of &quot;string-null?&quot;.
+
+I could go with STRING-EMPTY? or STRING-NULL?. I'll stay with STRING-NULL?
+for the tiny tie-breaker reason that it's one column shorter. If I get more
+support for STRING-EMPTY?, I'll make the change. For now, I'll leave things
+as-is.
+
+-------------------------------------------------------------------------------
+    From: erik hilsdale &lt;ehilsdal@xxxxxxxxxxxxxx&gt;
+    ---- join-strings
+
+    Why no 'prefix grammar?
+
+I've never seen anyone use one. But what the heck; why not. It's a *trivial*
+addition to the code, and it gives generality without adding to the size of
+the API. Of marginal utility, but free. And someone, sometime will want it.
+
+-------------------------------------------------------------------------------
+    From: d96-mst@xxxxxxxx (Mikael St&#xE5;ldal)
+    * I don't see the point in [sub]string-compare[-ci]. Can anybody give a
+    sensible example of their use?
+
+Sure, here's the first one that came to mind: there's an optimisation of
+quicksort wherein you partition the vector not into *two* regions (the &lt;=pivot
+left region, and the &gt;=pivot right region), but *three*: a &lt;pivot left region,
+an =pivot middle, and a &gt;pivot right region. Then you only recurse on the left
+&amp; right regions. You need a non-boolean comparison function for this variant
+of quicksort -- it has to return &lt;,=,&gt; on a given comparison.
+
+(I leave the coding of this three-way partition as an exercise; it's kind of
+cute.)
+
+    From: d96-mst@xxxxxxxx (Mikael St&#xE5;ldal)
+    * I think that the string-trim and string-pad procedures should be
+    named string-trim-left and string-pad-left. I don't think that left is
+    an obvious default for trimming and padding (as it is for string-index,
+    string-skip etc).
+
+I agree -- left is *not* the obvious default. But it doesn't matter.
+Got to stick to the convention we established with much anguish and
+sweat in SRFI-1: the default direction is left-to-right, and gets the base name
+with no further directional lexeme; right-to-left directional variants are
+given names with a -RIGHT suffix. Simple rules so Eric won't have to think.
+
+-------------------------------------------------------------------------------
+    From: d96-mst@xxxxxxxx (Mikael St&#xE5;ldal)
+    * I think that the let-string-start+end macro should be left out of the
+    standard. It's easily enough to do it anyway with the
+    string-parse-start+end procedure. And it might create problems to
+    include a macro.
+
+Lots of SRFIs define macros. No sweat.
+
+-------------------------------------------------------------------------------
+    From: d96-mst@xxxxxxxx (Mikael St&#xE5;ldal)
+    I think that the KMP searching procedures should be generalized to
+    allow for other algorithms than KMP. But only to algorithms that have
+    the same properties as KMP, i.e. scanning a stream without
+    backtracking. This excludes Boyer-Moore, but allows for some recent
+    algorithms that are said to be faster than KMP[1].
+
+Here's the price of admission. Someone has to
+       - Send me working B-M Scheme code, under public domain, GPL,
+         Berkeley-style license, something along these lines.
+       - Explain in the comments or the email how B-M works, so I
+         can understand the code.
+Then I'll do it. I'll humbly admit: I originally considered what you propose,
+but really don't know beans about string-search algorithms, besides KMP. So I
+didn't do it.
+
+    The interface could be something like this:
+
+    make-search-object c= s [start end] -&gt; opaque &quot;search object&quot;
+	Returns an opaque &quot;search object&quot; that can be used to search
+	for S in a stream/string. The search object includes S itself
+	if nessesary (nessesary for KMP, but not for [1]).
+
+    search-step search-object c= c search-state -&gt; bool or opaque &quot;search state&quot;
+	Performs a step in the search, taking an opaque &quot;search state&quot;
+	object and returns a new &quot;search state&quot; object. Use '() as search state
+	for the first time.
+
+    Or why not like this:
+
+    make-search-proc c= s [start end] -&gt; search procedure
+	Returns a search procedure that can be used to search
+	for S in a stream/string.
+
+    &lt;search-proc&gt; c -&gt; bool 
+	Performs a step in the search, updating an internal search state.
+
+    &lt;search-proc&gt; '() -&gt; '()
+	    Reset the internal state of the search procedure.
+
+    [1] Sun Wu, Udi Manber: &quot;Fast text searching allowing errors&quot;,
+    Communications of the ACM, October 1992.
+
+There are some problems with this spec. The search-step function is an
+inner-loop kind of utility. That's why I made people pass in the string
+explicitly with KMP-STEP -- you don't have to unpack it from some record
+structure, and you can win better if you integrate/beta-substitute KMP-STEP.
+Also, KMP-STEP doesn't have to allocate heap storage on every call, to
+make a new search state. That's just not acceptable for quickly searching
+a string.
+
+The MAKE-SEARCH-PROC spec has other problems.  For one, it's fundamentally
+side-effecting. This way does not lie efficiency. Nor thread safety, which
+is a really big flaw.
+
+In spite of these tactical issues, your larger point is an excellent one.  So
+I'll tackle this generalisation, if I can -- but not until I see Boyer-Moore.
+
+-------------------------------------------------------------------------------
+    From: oleg@xxxxxxxxx
+
+    Suppose we have a string 'str' consisting of tokens separated
+    by a #\: character. We can extract the tokens using either
+
+	(string-tokenize str 
+		(char-set-difference char-set:full (char-set #\:)))
+    or
+	(string-split str (char-set #\:))
+
+    the two procedure calls above are indeed roughly equivalent;
+    therefore, a String library should define only one of them. Let's
+    assume however that the string 'str' in question is in Unicode. It's
+    not that far-fetched; Gambit and Kawa for example support Unicode. It
+    appears that the two above procedures would not be equivalent as far
+    as computing resources and efficiency are concerned. Gambit, for
+    example, implements char-sets internally to parse input. Low-ascii
+    characters are marked in a vector, while other characters are in a
+    list. In this implementation, char-set:full, or char-set:full without
+    one character are quite large (given the full Unicode). It may take
+    quite a while to do a membership test in such a set. In contrast,
+    (char-set #\:) is far smaller and more efficient. It indeed appears
+    that some problems lend themselves to delimiter-based parsing while
+    the others do to the inclusion semantics.
+
+Unicode is important! But... one possible reply is that Gambit's char-set
+implementation needs to be improved. For example, if the char-set
+implementation was a bit-vector for Latin-1 and a run-length-encoded vector
+(or tree) of spans for the high chars, we would crush this particular
+split-at-colons task, right? You'd have the high chars all included in one
+span.
+
+You're *still* right in your larger point that I could split at colons more
+easily with a string-split. But even after reading your comments, when I sit
+down to try and design a procedure or two that does the basics, I still go
+helplessly sliding down a slippery feature slope. You *have* to allow control
+of the delimiter grammar -- separator, terminator, prefix. START/END indices?
+If we are going to quit early (via MAXSPLIT), we need a way to tell the client
+how far into the string we got. I'm uncomfortable with functions that return
+one value sometimes, and two values other times (though I've done it on
+occasion).  On the other hand, I'm not happy with returning the rest of the
+string as a final element of the return list. One of these things is not like
+the other... Not to mention that it requires copying the data.
+
+The particular functionality encapsulated in the STRING-SPLIT &amp;
+STRING-SPLIT-WS seems arbitrary. But I'm not smart enough to do 
+better. 
+
+Note that white-space splitting is already easily handled: 
+     (string-tokenize s char-set:graphic)
+This doesn't handle your MAXSPLIT feature, but otherwise gives
+you STRING-SPLIT-WS. 
+
+MAXSPLIT is the most useful thing about your proposal; there's no analog
+in STRING-TOKENIZE, and it's a handy bit of functionality. But I'm going
+to let this drop because I just can figure out how to design this properly.
+
+Well, OK, here's my best shot (which is not too good):
+    (string-split s [cset/char/predicate grammar elide-delims 
+                     max-tokens start end]) -&gt; [string-list i]
+- CSET/CHAR/PREDICATE defaults to char-set:white-space
+- GRAMMAR is 'infix, 'suffix, 'prefix, or 'strict-infix
+  Defaults to 'infix.
+- ELIDE-DELIMS is boolean, meaning runs of delimiters count as
+  single delimiter. Defaults to #t.
+- MAX-TOKENS is an integer saying &quot;quit after this many tokens&quot;; #F means
+  infinity. Defaults to #f.
+- I is where to resume parsing if we quit early.
+...so the default parse is tokens separated by runs of white-space.
+
+This is powerful. It's good to have an inverse for STRING-JOIN. It's
+a heck of a lot of parameters. Does anyone besides Oleg want to push for it?
+I'll put it in if there's support; the inverse-pairing-with-STRING-JOIN
+argument is a good one.
+
+-------------------------------------------------------------------------------
+    From: oleg@xxxxxxxxx
+	    BTW, the same approach -- define the most generic and a few
+    most common procedures -- applies equally to string-&gt;integer.
+
+    &gt; This is a can of worms. string-&gt;integer is undoubtedly useful. But so
+    &gt; is string-&gt;floating-point. What about base? Return #f or raise an
+    &gt; error on bad syntax?
+
+    Well, if someone wants to get a floating-point number, or deal with
+    base, bitstrings etc., he should use string-&gt;number. string-&gt;integer
+    is only to parse a string of digits. Period. It's a one-trick
+    pony. string-&gt;integer never raises any error: if it does not like
+    something it returns #f.
+
+    Speaking of string-&gt;number, do you want to make it accept (start, end)
+    arguments? This could be quite convenient...
+
+Right you are! It drives me crazy when I'm parsing numbers out of strings
+to have to copy storage just to do a numeric parse. But I'm going to leave
+string-&gt;number alone; see below.
+
+	    Why is string-&gt;integer singled out, of all the possible
+    string-&gt;xxx-number? 
+	    - Because, IMHO, dealing with a sequence of digits
+    is quite common; 
+	    - Because this conversion can be made rather efficient
+    (base 10 can be hardwired; multiplication by 10 can be done with two
+    shifts and an addition).
+	    - Because it keeps one from surprises. For example, I had to deal
+    with forms made of groups of digits. Occasionally some other characters
+    may crop up; in which case I had to report an error intelligently.
+    I wrote
+	    (let ((val (string-&gt;number token)))
+	      (and (integer? val) (do-deal-with val)))
+    Imagine my surprise when the token happened to be &quot;1S2&quot; yet the val passed
+    the integer? test. Eventually the faulty token triggered another check
+    and the error got reported, but recovery became more complex. Also,
+    imagine what happens given the token &quot;1/0&quot;. You're either at the mercy
+    of your implementation's exception system, or you have to prescan the
+    token to make sure it is indeed made of digits.
+
+Wrong tool for the job. In this situation, I'd suggest doing a syntax
+check *before* attempting conversion. I.e.
+      (if (string-every char-set:digit token) 
+          (string-&gt;number token)
+          (deal-with-bogus-token token))
+...or using a regexp matcher to check out the token, if you want to admit a 
+more complex grammar.
+
+Hmm. I *do* think an atoi() analog is a handy thing. But perhaps this
+should be left to a whole little parser package, or to a numeric package --
+datatype operation sets should include parser/unparsers, right? I am not
+satisfied with R5RS's numerics, either (I'd like to see ++, --, &lt;&gt;, 
+two-value divmod, and two-argument floor, ceiling &amp; truncate -- so perhaps
+a numeric SRFI with numeric parser/unparsers is in order). Can we table
+atoi, itoa, atof, ftoa to that day? Then we could really tackle the issues
+of base, start/end indices, zero/blank padding/field-width, and error
+handling. 
+
+-------------------------------------------------------------------------------
+Richard Kelsey has proposed the lexeme &quot;replication&quot; for the xsubstring
+and string-xcopy! procs. So here are some choices:
+
+    xsubstring		replication-substring		substring/replication
+    string-xcopy!	replication-string-copy!	string-copy!/replication
+
+I dunno. These are complex procs; there's not going to be a clear, simple name
+like &quot;append&quot; or &quot;reverse&quot; that covers them, so that issue is not really on
+the table. I'm going to leave them as is.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00028" href="msg00028.html">Re: Round 3 discussion &amp; open issues</a></strong>
+<ul><li><em>From:</em> Mikael Ståldal</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00023.html">String library</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00025.html">string-escaper</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00023.html">String library</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00028.html">Re: Round 3 discussion &amp; open issues</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00024"><strong>Date</strong></a></li>
+<li><a href="threads.html#00024"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,190 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: nested comments (please correct lexical scope) -->
+<!--X-From-R13: Bnhy Epuyvr <fpuyvrNpbzpnfg.arg> -->
+<!--X-Date: Sun,  9 Jan 2005 23:35:10 +0100 (NFT) -->
+<!--X-Message-Id: BE071BC0.88E5%schlie@comcast.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: nested comments (please correct lexical scope)</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00014.html">Date Prev</a>][<a href="msg00016.html">Date Next</a>][<a href="msg00046.html">Thread Prev</a>][<a href="msg00016.html">Thread Next</a>][<a href="maillist.html#00015">Date Index</a>][<a href="threads.html#00015">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: nested comments (please correct lexical scope)</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &lt;<a href="mailto:srfi-62@DOMAIN.HIDDEN">srfi-62@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: nested comments (please correct lexical scope)</li>
+<li><em>From</em>: Paul Schlie &lt;<a href="mailto:schlie@DOMAIN.HIDDEN">schlie@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 09 Jan 2005 17:34:56 -0500</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-62@DOMAIN.HIDDEN">srfi-62@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Microsoft-Entourage/11.1.0.040913</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; Robby Findler writes:
+&gt;&gt; David Van Horn writes:
+&gt;&gt; What does the following evaluate to?
+&gt;&gt; 
+&gt;&gt;    (list 'x #;#;'y 'z)
+&gt;
+&gt; FWIW, mzscheme and chez scheme do the same thing:
+&gt; ...
+&gt; &gt; (list 'x #;#;'y 'z)
+&gt; (x)
+&gt;
+&gt; Taylor Campbell writes:
+&gt; MzScheme &amp; Chez, as Robby Findler demonstrated, both give the list (X).
+&gt; This is correct.  (SISC &amp; Chicken do, too.)  The reason is that #;
+&gt; ignores the single next following S-expression and allows the reader to
+&gt; continue on after that.  In the string &quot;#;'y 'z&quot;, the #; comments out
+&gt; the 'Y part, leaving the 'Z part.  Since a #; precedes that string in
+&gt; your example, the 'Z part is ignored, too, so the whole thing is read
+&gt; as (LIST (QUOTE X)), which evaluates to the list (X).
+&gt; 
+&gt; This is an excellent &amp; possibly initially confusing example (though the
+&gt; explanation is simple &amp; straightforward), so I'll add it to the SRFI
+&gt; document.  I'll also add another example of nested comments, too:
+&gt; 
+&gt;   (list 'a #;(list 'b #;'c 'd) 'e)    ==&gt;  (LIST (QUOTE A) (QUOTE E))
+&gt; 
+&gt; The inner #; comments out the following 'C, but the list structure that
+&gt; lies a layer above it is still read as a complete S-expression -- in
+&gt; particular, (LIST (QUOTE B) (QUOTE D)) --.  Then the outer #; comments
+&gt; that out, leaving only (LIST (QUOTE A) (QUOTE E)), which evaluates to
+&gt; the list (A E).
+
+Personally I believe this is not a good idea, it's neither syntactically
+consistent with scheme, nor visually expected: more simply and consistently
+I would expect a #; comment to lexically remove the expression/token it's
+been lexically prepended to, nothing else. (including white-space). i.e.:
+
+#; =&gt; 
+
+#;#; =&gt;
+
+#;a =&gt;
+
+#;#;a =&gt;
+
+#;#; a =&gt; a
+
+#;(a b) =&gt; 
+
+#; (a b) =&gt; (a b)
+
+(#;a b) =&gt; (b)
+
+(#; a b) =&gt; (a b)
+
+(#;#; a b) =&gt; (a b)
+
+(#; #; a b) =&gt; (a b)
+
+(#; #;a b) =&gt; (b)
+
+(#;a #;b) =&gt; ()
+
+(a #; b #;c) =&gt; (a b)
+
+And just to be certain, as earlier comments make reference to strings,
+although suspect not intended, #; should defiantly not affect what's inside
+of strings, as strings are themselves an literal expression unto themselves:
+
+#; &quot;a b c&quot; =&gt; &quot;a b c&quot;
+
+#;&quot;a b c&quot; =&gt;
+
+&quot;#;a b c&quot; =&gt; &quot;#;a b c&quot;
+
+Let's at least try to make such a feature as consistent with similar
+syntactic abbreviations;
+
+As I don't suspect anyone would expect:
+
+''a b c =&gt; (quote a) (quote b) c ; would they?
+
+They'd expect:
+
+''a b c =&gt; (quote (quote a)) b c
+
+
+Where possibly with respect to:
+
+&gt; Aubrey Jaffer wrote:
+&gt; -- Function: comment string1 ...
+&gt;     Appends STRING1 ... to the strings given as arguments to previous
+&gt;     calls `comment'.
+&gt;
+&gt; -- Function: comment
+&gt;     Returns the (appended) strings given as arguments to previous calls
+&gt;     `comment' and empties the current string collection.
+&gt;
+&gt; -- Load syntax: #;text-till-end-of-line
+&gt;     Behaves as `(comment &quot;TEXT-TILL-END-OF-LINE&quot;)'.
+
+(comment ...) seems like a nice feature, but personally suspect it's just
+As convenient and feature preserving to utilize #; to lexically remove
+expressions it's been prepended to, while preserving the explicit use of
+(comment ...) within code. (but it's just an opinion).
+
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00016" href="msg00016.html">Re: nested comments (please correct lexical scope)</a></strong>
+<ul><li><em>From:</em> Robby Findler</li></ul></li>
+<li><strong><a name="00020" href="msg00020.html">Re: nested comments (please correct lexical scope)</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00014.html">Re: SRFI 62: S-expression comments (fwd)</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00016.html">Re: nested comments (please correct lexical scope)</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00046.html">Re: SRFI 62: S-expression comments (fwd)</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00016.html">Re: nested comments (please correct lexical scope)</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00015"><strong>Date</strong></a></li>
+<li><a href="threads.html#00015"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

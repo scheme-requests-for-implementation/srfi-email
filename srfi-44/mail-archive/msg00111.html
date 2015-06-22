@@ -1,0 +1,313 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Procedures (interfaces) -->
+<!--X-From-R13: "Penqq I. Embalr" <oenqq+fesvNfmbalr.pbz> -->
+<!--X-Date: Thu, 23 Oct 2003 00:15:59 +0200 (DFT) -->
+<!--X-Message-Id: 20031022221552.GC12113@ogre.szonye.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20031021072047.GB26398@loki.vpn.szonye.com -->
+<!--X-Reference: 592223A6&#45;04CF&#45;11D8&#45;96A9&#45;000A95CCCEE4@evdev.ath.cx -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Procedures (interfaces)</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00110.html">Date Prev</a>][<a href="msg00112.html">Date Next</a>][<a href="msg00110.html">Thread Prev</a>][<a href="msg00112.html">Thread Next</a>][<a href="maillist.html#00111">Date Index</a>][<a href="threads.html#00111">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Procedures (interfaces)</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Procedures (interfaces)</li>
+<li><em>From</em>: &quot;Bradd W. Szonye&quot; &lt;<a href="mailto:bradd%2Bsrfi@DOMAIN.HIDDEN">bradd+srfi@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 22 Oct 2003 15:15:52 -0700</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:592223A6-04CF-11D8-96A9-000A95CCCEE4@DOMAIN.HIDDEN">592223A6-04CF-11D8-96A9-000A95CCCEE4@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Mail-followup-to</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>References</em>: &lt;<a href="mailto:20031021072047.GB26398@DOMAIN.HIDDEN">20031021072047.GB26398@xxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:592223A6-04CF-11D8-96A9-000A95CCCEE4@DOMAIN.HIDDEN">592223A6-04CF-11D8-96A9-000A95CCCEE4@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mutt/1.4i</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; Bradd W. Szonye wrote:
+&gt;&gt; Set! compatible with R5RS - The original specification for *-set! was
+&gt;&gt; incompatible with R5RS vector-set!, which modifies the vector in-place
+&gt;&gt; and returns an unspecified value. I changed *-set! to match that, and I
+&gt;&gt; changed *-set (the functional version) to return the modified 
+&gt;&gt; collection
+&gt;&gt; and the previous value.
+
+Taylor Campbell wrote:
+&gt; This doesn't work at all, because *-SET! is _linear_update_, not
+&gt; purely mutable.  I am _adamantly_ against removing linear update
+&gt; procedures and replacing them with purely mutable ones ....
+
+OK, that's fine, but then the *-set! procedure needs a different name:
+
+1. In R5RS, *-set! is always purely mutable.
+2. Vector-set! already exists with pure-mutable semantics.
+
+&gt;&gt; *=? and &lt;=?: I added question marks for consistency with functions
+&gt;&gt; like string=?. I also removed the elt= argument and changed the
+&gt;&gt; definition so that it was no longer necessary. I was reluctant to
+&gt;&gt; make this change, but I felt that the original version just wasn't
+&gt;&gt; viable.
+
+&gt; I don't like this at all.  Removing ELT= is removing a _lot_ of
+&gt; functionality.  The reason the ? wasn't there was _because_ the
+&gt; procedures were not comparable to STRING=?, CHAR=?, et cetera.
+
+OK, I agree. How about this instead:
+
+1. Rename the procedure to *-equal? so that you don't end up with both
+   string= (SRFI-44) and string=? (R5RS). In general, it's best to avoid
+   identifiers that differ by only one character.
+
+2. For dictionaries, if elt=? is a procedure, use it to compare both
+   keys and values, and if elt=? is a pair of procedures, use (car
+   elt=?) to compare keys and (cdr elt=?) to compare values. For all
+   other collections, use elt=? or (cdr elt=?).
+
+(Using the dictionary's key-equivalence function wouldn't work --
+consider what happens when you try to compare two dictionaries with
+different KEFs.)
+
+By the way, one of the reasons I wanted to get rid of elt=? was to make
+this more convenient for higher-order functions. If somebody can come up
+with a reasonable default for elt=? and a syntax for omitting it, that'd
+be great. If not, we can always use (lambda a (apply *-equal? eqv? a)).
+
+&gt; I don't understand the rationale for having ordering functions on
+&gt; _collections_.  Can you explain this in more detail?  (or in any
+&gt; detail at all: I can't find any)
+
+Mainly because sets, sequences, and ordered collections all have
+well-defined total ordering functions (proper subsets and
+lexicographical comparisons). Also because it gives users a built-in
+ordering function for creating ordered collections of collections (which
+is fairly common in some programming styles).
+
+&gt;&gt; procedure: % {key&lt;? | key=?} {val&lt;? | val=?} value ... =&gt; %
+&gt;&gt; defined for: all collections
+
+&gt; The ordering functions here sort of make sense, I guess...but I don't
+&gt; like how they work with these two constructors.  It's ambiguous what
+&gt; argument corresponds to what; for example, is (list = 1 2 3) a list
+&gt; with = for a comparison function and (1 2 3) for contents, or a list
+&gt; (#{Procedure} 1 2 3)?  (where '#{Procedure}' indicates an abstract
+&gt; procedure value)
+
+Sorry, I didn't explain the syntax. The {opt} indicates an optional part
+of the interface, not an optional argument. For example:
+
+    procedure: bag val=? value ... =&gt; bag
+    procedure: dictionary key=? val=? pair ... =&gt; dictionary
+    procedure: ordered-dict key&lt;? val=? pair ... =&gt; ordered-dict
+
+The arguments aren't optional, but not all constructors use them.
+
+&gt;&gt; procedure: *-copy * =&gt; *
+&gt;&gt; defined for: all collections
+&gt;&gt; 
+&gt;&gt; Returns a new collection of the same type as the argument with the same
+&gt;&gt; contents but distinct storage. The copy is shallow; that is, it copies
+&gt;&gt; values in a way that preserves object identity.
+
+&gt; I should like a *-COPY for sequences that also accepts optional start
+&gt; and end arguments.
+
+Yes, that would be good. If provided, I'd prefer &quot;start to end-1&quot;
+semantics, like C arrays and C++ iterators.
+
+&gt;&gt; TYPE PREDICATES
+&gt;&gt; 
+&gt;&gt; procedure: collection? value =&gt; value
+&gt;&gt; procedure: %? value =&gt; value
+&gt;&gt; defined for: all collections
+&gt;&gt; 
+&gt;&gt; Returns a true value iff the provided value supports the interface for
+&gt;&gt; the type (%) named in the predicate.
+
+&gt; Why %? and not *??
+
+I didn't think it made a difference in this case. It's defined for all
+collections, and it has &quot;isa&quot; semantics. If you think * makes more
+sense, feel free to change it.
+
+&gt;&gt; CARDINALITY OPERATORS
+&gt;&gt; 
+&gt;&gt; procedure: *-empty? collection =&gt; boolean
+
+&gt; Don't forget the 'defined for: all collections' bit.
+
+Oops, thanks.
+
+&gt;&gt; procedure: *-size collection =&gt; exact integer
+&gt;&gt; defined for: all collections
+&gt;&gt; 
+&gt;&gt; If the collection has a concept of size, this function returns the
+&gt;&gt; number of values or mappings in the collection. If it does not, #f must
+&gt;&gt; be returned. If possible, this should return the number of times
+&gt;&gt; collection-fold will call the fold-function before halting.
+
+&gt; Have we decided on the issues of infiniteness and circularity yet?
+
+I think so, but I'm not certain. We did decide that *-size was a
+sufficient replacement for finite-collection?. I think we also agree
+that *-size should return the number of enumerations and that a circular
+data structure is not necessarily infinite, but I'm not sure.
+
+&gt;&gt; procedure: *-equivalence-function * =&gt; procedure
+&gt;&gt; defined for: bags, sets, and dictionaries
+&gt;&gt;
+&gt;&gt; procedure: *-ordering-function * =&gt; procedure
+&gt;&gt; defined for: ordered bags, sets, and dictionaries
+
+&gt; Where's the rationale for defining these _and_ [the keyed versions] on
+&gt; dictionaries?
+
+To support the &quot;simple&quot; version of *=. Therefore, you can drop
+dictionaries from the list if you stick with the original *= interface.
+
+However, it just occurred to me that there's some ambiguity for
+ordered-collection -- dictionaries are usually in key order, but other
+collections are in value order. I think we actually need to separate
+them into &quot;ordered-collection&quot; and &quot;key-ordered-collection.&quot; Otherwise,
+you'll have problems with polymorphism.
+
+&gt;&gt; procedure: *-update * position f [thunk] =&gt; *
+&gt;&gt; procedure: *-update! * position f [thunk] =&gt; unspecified
+&gt;&gt; defined for: sequences and ordered collections
+&gt;&gt; 
+&gt;&gt; procedure: *-update-key * key f [thunk] =&gt; *
+&gt;&gt; procedure: *-update-key! * key f [thunk] =&gt; unspecified
+&gt;&gt; defined for: sequences and ordered collections
+
+&gt; I don't understand why you're differentiating between these two, and
+&gt; why they aren't defined for dictionaries.
+
+First, there's a typo: *-update is for sequences, *-update-key is for
+dictionaries.
+
+The reason for having two different functions is because key lookup is
+*not* the same thing as indexing. I gave them similar names because
+they're similar, but I didn't merge them because they're orthogonal.
+
+Specifically, consider a dictionary that is also a sequence -- hash
+tables, binary search vectors, and alists are good examples. By having
+two functions, we can look up values by index or by key.
+
+&gt;&gt; procedure: *-add-key[!] * new-key mapped-value [thunk] =&gt; *
+&gt;&gt; defined for: dictionaries
+&gt;&gt; 
+&gt;&gt; Returns a collection of the same type with the new key mapped to the
+&gt;&gt; given value.
+
+&gt; Why have *-ADD with key/value pairs _and_ this?
+
+Syntactic sugar, mostly. Also for consistency with the other -key
+functions.
+
+&gt;&gt; procedure: *-remove-every[!] * value =&gt; * list
+&gt;&gt; procedure: *-remove-each-from[!] * source-collection [thunk] =&gt; % list
+&gt;&gt; procedure: *-remove-every-from[!] * source-collection [thunk] =&gt; % list
+&gt;&gt; procedure: *-remove-key[!] * key [thunk] =&gt; * pair
+
+&gt; Why differentiate between removing and removing keys?
+
+Because they're two different operations: *-remove takes a value out of
+a bag, and *-remove-key takes a key out of a dictionary. If you have a
+dictionary that is also a bag, those need to be two different methods.
+
+In other words, this is the same issue as update/update-key above.
+
+&gt;&gt; procedure: *-remove-every-key[!] * key [thunk] =&gt; * list
+&gt;&gt; procedure: *-remove-each-key-from[!] * source [thunk] =&gt; * list
+&gt;&gt; procedure: *-remove-every-key-from[!] * source [thunk] =&gt; * list
+
+&gt; Er, why all of the name changes?
+
+Hm, thought I already explained this. I couldn't get my head around
+&quot;all&quot; and &quot;any&quot; -- kept thinking that &quot;all&quot; was the one that got rid of
+all the copies. I dunno whether &quot;every&quot; and &quot;each&quot; is better, but I
+*strongly* dislike any &amp; all. I chose &quot;each&quot; to mimic &quot;for-each.&quot;
+
+&gt;&gt; procedure: *-insert-right * new-value [thunk] =&gt; *
+&gt;&gt; defined for: reversible sequences
+&gt;&gt;
+&gt;&gt; procedure: *-delete-right * [thunk] =&gt; *
+&gt;&gt; defined for: reversible sequences and reversible ordered collections
+
+&gt; Don't you mean 'reversible _flexible_ sequences?'
+
+The original version allowed insert-right (but not insert-left) even for
+non-flexible sequences. And the definition of non-flexible (limited)
+sequences does permit addition at the end for some sequences.
+
+My assumption here would be that fixed-size sequences (and others which
+do not support end-extension) would call thunk.
+-- 
+Bradd W. Szonye
+<a  rel="nofollow" href="http://www.szonye.com/bradd">http://www.szonye.com/bradd</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00112" href="msg00112.html">Orthogonality issues</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00105" href="msg00105.html">Re: Procedures (interfaces)</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+<li><strong><a name="00109" href="msg00109.html">Re: Procedures (interfaces)</a></strong>
+<ul><li><em>From:</em> Taylor Campbell</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00110.html">Re: Procedures (interfaces)</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00112.html">Orthogonality issues</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00110.html">Re: Procedures (interfaces)</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00112.html">Orthogonality issues</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00111"><strong>Date</strong></a></li>
+<li><a href="threads.html#00111"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,168 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: leap seconds -->
+<!--X-From-R13: [nep Trryrl <srryrlNWDA.G[bagerny.QO> -->
+<!--X-Date: Mon, 13 Mar 2000 11:24:24 &#45;0600 (CST) -->
+<!--X-Message-Id: 200003131724.MAA02614@trex.IRO.UMontreal.CA -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>leap seconds</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[Date Prev][<a href="msg00001.html">Date Next</a>][Thread Prev][<a href="msg00001.html">Thread Next</a>][<a href="maillist.html#00000">Date Index</a>][<a href="threads.html#00000">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>leap seconds</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-19@DOMAIN.HIDDEN">srfi-19@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: leap seconds</li>
+<li><em>From</em>: Marc Feeley &lt;<a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 13 Mar 2000 12:24:19 -0500</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>After a very quick look at SRFI-19 I have the following comments:
+
+1) The interface assumes that there are exactly 86400 seconds in a
+day.  This is not true.  There can be exactly 86399, 86400 and 86401
+seconds in a day, due to &quot;leap seconds&quot;.  Note that the point in time
+where the leap seconds are added (or removed) is under the control of
+a committee and there is no deterministic algorithm to determine in
+advance where they occur (it all depends on the speed of rotation of
+the earth which varies slightly, up and down, due to various factor).
+So the &quot;seconds&quot; component should be in the range 0-60 inclusive.
+According to &quot;man ctime&quot; under linux, the seconds field can go up to
+61, but I don't understand why that high.  You should probably
+research this a little more.  Here are some interesting sources of
+information:
+
+   <a  rel="nofollow" href="http://tycho.usno.navy.mil/leapsec.990505.html">http://tycho.usno.navy.mil/leapsec.990505.html</a>
+   <a  rel="nofollow" href="http://www.naggum.no/lugm-time.html">http://www.naggum.no/lugm-time.html</a>
+
+2) To be consistent with Scheme naming convention and practice, you
+should rename &quot;get-universal-time&quot; to &quot;current-time&quot;,
+&quot;current-universal-time&quot;, or &quot;current-date&quot;.
+
+3) Why limit the resolution of the time datatype to 1 second?
+The resolution should be implementation dependent, and if you insist,
+of at least 1 second resolution.  This is so that an implementation
+can use the time datatype for finer resolution timing (such
+as a &quot;(thread-sleep! wakeup-time)&quot; procedure I am considering for
+my thread SRFI).  Otherwise, to do finer resolution timing you need
+another time datatype, and this is rather clumsy.
+
+4) I don't like the fact that the &quot;year&quot; component has a special
+meaning between 0 and 99:
+
+    Year, an integer representing the year C.E. (i.e., A.D.). If the
+    integer is between 0 and 99, however, it represents the current
+    year + the year (if it is less than 50) or the current year - the
+    year (if it is greater than or equal to 50).
+
+This is because the meaning of a date created with
+encode-universal-time will depend on the time when that procedure was
+called, and since there is no way to know precisely at what time it
+was called there are (extreme) situations where the time meant is
+not clear (i.e. meaning of year 50 at the turn of the year 2000 plus
+or minus a few nanoseconds may be 1950 or 2050).
+
+5) Instead of the &quot;multiple value&quot; interface of decode-universal-time
+I prefer single-value accessors of the kind:
+
+  (universal-time-second ut)
+  (universal-time-minute ut)
+  ...
+
+and also (universal-time-second ut) would return a real, possibly
+inexact.
+
+6) Why use 1-1-1900 as a base, why not 1-1-1970 which is the norm
+under UNIX?  I know this is a convention, but a closer base date gives
+more implementation leaway... for example a 2 fixnum representation
+(32 bit words, 3 tag bits) counting nanoseconds since 1-1-1900 will
+wraparound in 1991 but if you count from 1-1-1970 it will wraparound
+in 2061, which is probably reasonable for many applications.  And if
+you insist on 1-1-1900, please consider 1-1-2000 at least.
+
+7) The time datatype should be abstract, i.e. it shouldn't be
+a number.  There should be conversion functions between time and
+seconds since the base time:
+
+  (universal-time-&gt;seconds ut)
+  (seconds-&gt;universal-time secs)
+
+Note again that the result of universal-time-&gt;seconds and the
+argument of seconds-&gt;universal-time should be a real, possibly
+inexact.
+
+
+For your information, Gambit-C represents the time datatype internally
+as a flonum, and counts the number of microseconds elapsed since the
+base date (so the value 15.0 means 15 microseconds since the turn
+of the year 1970).  The advantage of this representation is that
+
+1) computing with time (such as time comparison and difference)
+   can be done very fast (no bignum operation is required)
+
+2) time is represented with microsecond resolution exactly (by an
+   inexact integer) over the range: base date +/- 285 years (because
+   there are 53 bits of mantissa)
+
+3) the resolution degrades gradually as the point in time get further
+   from the base date (but frankly I don't expect Scheme to survive
+   for 285 years, although I am sure you'll still be able to buy Cobol
+   compilers!)
+
+Marc
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00001" href="msg00001.html">RE: leap seconds</a></strong>
+<ul><li><em>From:</em> Will Fitzgerald</li></ul></li>
+<li><strong><a name="00003" href="msg00003.html">Re: leap seconds</a></strong>
+<ul><li><em>From:</em> Matthias Felleisen</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Next by Date:
+<strong><a href="msg00001.html">RE: leap seconds</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00001.html">RE: leap seconds</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00000"><strong>Date</strong></a></li>
+<li><a href="threads.html#00000"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

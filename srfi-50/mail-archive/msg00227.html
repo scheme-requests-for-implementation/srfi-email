@@ -1,0 +1,142 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: when GC is permitted -->
+<!--X-From-R13: Xvz Pynaql <wvzoNerqung.pbz> -->
+<!--X-Date: Thu,  8 Jan 2004 09:40:51 +0100 (NFT) -->
+<!--X-Message-Id: vt2r7yahm8p.fsf@zenia.home -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: E1AeMEw&#45;0005uG&#45;00@mail.mumble.net -->
+<!--X-Reference: 200401072314.PAA05456@morrowfield.regexps.com -->
+<!--X-Reference: vt2vfnnrz9y.fsf@zenia.home -->
+<!--X-Reference: opr1f4lapl1ushe7@post.strato.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: when GC is permitted</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00226.html">Date Prev</a>][<a href="msg00228.html">Date Next</a>][<a href="msg00224.html">Thread Prev</a>][<a href="msg00228.html">Thread Next</a>][<a href="maillist.html#00227">Date Index</a>][<a href="threads.html#00227">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: when GC is permitted</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Felix Winkelmann &lt;<a href="mailto:felix@DOMAIN.HIDDEN">felix@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: when GC is permitted</li>
+<li><em>From</em>: Jim Blandy &lt;<a href="mailto:jimb@DOMAIN.HIDDEN">jimb@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: 08 Jan 2004 03:34:45 -0500</li>
+<li><em>Cc</em>: Tom Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>&gt;, <a href="mailto:kelsey@DOMAIN.HIDDEN">kelsey@xxxxxxx</a>,	<a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:opr1f4lapl1ushe7@DOMAIN.HIDDEN">opr1f4lapl1ushe7@xxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:E1AeMEw-0005uG-00@DOMAIN.HIDDEN">E1AeMEw-0005uG-00@xxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:200401072314.PAA05456@DOMAIN.HIDDEN">200401072314.PAA05456@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:vt2vfnnrz9y.fsf@DOMAIN.HIDDEN">vt2vfnnrz9y.fsf@xxxxxxxxxx</a>&gt; &lt;<a href="mailto:opr1f4lapl1ushe7@DOMAIN.HIDDEN">opr1f4lapl1ushe7@xxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Sender</em>: <a href="mailto:jimb@DOMAIN.HIDDEN">jimb@xxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Gnus/5.09 (Gnus v5.9.0) Emacs/21.3</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+Felix Winkelmann &lt;felix@xxxxxxxxxxxxx&gt; writes:
+&gt; &gt; What he wrote seems clear enough.  If SRFI-50 provided a begin/end
+&gt; &gt; pair of functions that indicated that the calling thread was holding
+&gt; &gt; no references to heap objects, then collection wouldn't need to wait
+&gt; &gt; for threads in that state.  One could call the 'begin' function when
+&gt; &gt; beginning use of SRFI-50 functions, and the 'end' function when
+&gt; &gt; leaving the module.
+&gt; &gt;
+&gt; 
+&gt; I don't understand this. If the C code does not hold direct references
+&gt; to the data (i.e. if you add an extra indirection), and if you access
+&gt; the data only over a designated interface, GC can certainly run
+&gt; whenever it wants, even during the execution of the C code. That's
+&gt; the whole point of the abstraction exercise.
+
+I'm sorry.  I shouldn't be trying to write so late at night.
+
+In code using this SRFI's interface, there are two classes of Scheme
+values:
+
+- Values that reside in GCPRO'd variables.
+
+- Values that reside anywhere else: in other variables,
+  compiler-generated temporaries, and so on.
+
+Values in the first class the GC can update when it relocates objects;
+those in the second class it cannot, because it can't find them.
+Values in the second class are unavoidable if you're actually
+operating on the values, since you can't control the code the compiler
+generates.
+
+By using the 'begin / end' pair of functions, you'd promise the
+SRFI-50 implementation that, outside such pairs, no values of the
+second class exist, and it is free to collect at any time.  When any
+thread is within such a pair, there exist object references the
+collector can't find or update, so collection has to wait until the
+thread reaches a &quot;may gc&quot; function.
+
+Is that better?  Or worse?  :)
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00228" href="msg00228.html">Re: when GC is permitted</a></strong>
+<ul><li><em>From:</em> Felix Winkelmann</li></ul></li>
+<li><strong><a name="00231" href="msg00231.html">Re: when GC is permitted</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00219" href="msg00219.html">Re: when GC is permitted</a></strong>
+<ul><li><em>From:</em> Richard Kelsey</li></ul></li>
+<li><strong><a name="00220" href="msg00220.html">Re: when GC is permitted</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00222" href="msg00222.html">Re: when GC is permitted</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+<li><strong><a name="00224" href="msg00224.html">Re: when GC is permitted</a></strong>
+<ul><li><em>From:</em> Felix Winkelmann</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00226.html">Re: Couple things...</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00228.html">Re: when GC is permitted</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00224.html">Re: when GC is permitted</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00228.html">Re: when GC is permitted</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00227"><strong>Date</strong></a></li>
+<li><a href="threads.html#00227"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

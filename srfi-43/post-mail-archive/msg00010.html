@@ -1,0 +1,941 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Srfi&#45;43 typo, patch &#38; tests -->
+<!--X-From-R13: Euveb Ynjnv <fuvebNynin.arg> -->
+<!--X-Date: Wed,  5 Oct 2005 14:09:41 +0200 (MST) -->
+<!--X-Message-Id: 20051005.021113.109704823.shiro@lava.net -->
+<!--X-Content-Type: multipart/mixed -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Srfi-43 typo, patch &amp; tests</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00009.html">Date Prev</a>][<a href="msg00011.html">Date Next</a>][<a href="msg00009.html">Thread Prev</a>][<a href="msg00011.html">Thread Next</a>][<a href="maillist.html#00010">Date Index</a>][<a href="threads.html#00010">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Srfi-43 typo, patch &amp; tests</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-43@DOMAIN.HIDDEN">srfi-43@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Srfi-43 typo, patch &amp; tests</li>
+<li><em>From</em>: Shiro Kawai &lt;<a href="mailto:shiro@DOMAIN.HIDDEN">shiro@xxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 05 Oct 2005 02:11:13 -1000 (HST)</li>
+<li><em>Cc</em>: <a href="mailto:shiro@DOMAIN.HIDDEN">shiro@xxxxxxx</a>, <a href="mailto:campbell@DOMAIN.HIDDEN">campbell@xxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-43@DOMAIN.HIDDEN">srfi-43@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>While porting srfi-43 to Gauche, I found some bugs in the
+reference implementation.  A patch is attached (vector-lib.scm.diff), 
+along the tests (vector-lib-test.scm).  The test may benefit
+not only porters but also those who try to implement srfi-43
+from the document.
+
+Also there's a typo in the document.
+The first example of vector-unfold should yield
+   #(0 -1 -2 -3 -4 -5 -6 -7 -8 -9) 
+while the current document says
+   #(0 -1 -2 -3 -4 -5 -6 -7 -8 -8) 
+
+--shiro
+
+</pre><pre>--- vector-lib.scm.orig	2005-10-05 02:02:29.000000000 -1000
++++ vector-lib.scm	2005-10-05 01:56:30.000000000 -1000
+@@ -371,15 +371,13 @@
+ ;;;   Copy elements from SSTART to SEND from SOURCE to TARGET, in the
+ ;;;   reverse order.
+ (define %vector-reverse-copy!
+-  (letrec ((loop (lambda (kons knil len vectors i)
+-                   (if (= i len)
+-                       knil
+-                       (loop kons
+-                             (apply kons i knil
+-                                    (vectors-ref vectors i))
+-                             len vectors (+ i 1))))))
+-    (lambda (kons knil len vectors)
+-      (loop kons knil len vectors 0))))
++  (letrec ((loop (lambda (target source sstart i j)
++                   (cond ((&lt;= sstart i)
++                          (vector-set! target j
++                                       (vector-ref source i))
++                          (loop target source sstart (- i 1) (+ j 1)))))))
++    (lambda (target tstart source sstart send)
++      (loop target source sstart (- send 1) tstart))))
+ 
+ ;;; (%VECTOR-REVERSE! &lt;vector&gt;)
+ (define %vector-reverse!
+@@ -805,7 +803,7 @@
+                         knil
+                         (loop1 kons (kons i knil (vector-ref vec i))
+                                vec
+-                               (+ i 1)))))
++                               (- i 1)))))
+            (loop2+ (lambda (kons knil vectors i)
+                      (if (negative? i)
+                          knil
+@@ -813,7 +811,7 @@
+                                  (apply kons i knil
+                                         (vectors-ref vectors i))
+                                  vectors
+-                                 (+ i 1))))))
++                                 (- i 1))))))
+     (lambda (kons knil vec . vectors)
+       (let ((kons (check-type procedure? kons vector-fold-right))
+             (vec  (check-type vector?    vec  vector-fold-right)))
+@@ -1013,17 +1011,19 @@
+   (let ((cmp (check-type procedure? cmp vector-binary-search)))
+     (let-vector-start+end vector-binary-search vec maybe-start+end
+                           (start end)
+-      (let loop ((start start) (end end) (j #f))
+-        (let ((i (quotient (+ start end) 2)))
+-          (if (and j (= i j))
+-              #f
+-              (let ((comparison
+-                     (check-type integer?
+-                                 (cmp (vector-ref vec i) value)
+-                                 `(,cmp for ,vector-binary-search))))
+-                (cond ((zero?     comparison) i)
+-                      ((positive? comparison) (loop start i i))
+-                      (else                   (loop i end i))))))))))
++      (if (= start end)
++          #f
++          (let loop ((start start) (end end) (j #f))
++            (let ((i (quotient (+ start end) 2)))
++              (if (and j (= i j))
++                #f
++                (let ((comparison
++                       (check-type integer?
++                                   (cmp (vector-ref vec i) value)
++                                   `(,cmp for ,vector-binary-search))))
++                  (cond ((zero?     comparison) i)
++                        ((positive? comparison) (loop start i i))
++                        (else                   (loop i end i)))))))))))
+ 
+ ;;; (VECTOR-ANY &lt;pred?&gt; &lt;vector&gt; ...) -&gt; value
+ ;;;   Apply PRED? to each parallel element in each VECTOR ...; if PRED?
+@@ -1285,8 +1285,8 @@
+             (let ((start (check-type nonneg-int? start list-&gt;vector))
+                   (end   (check-type nonneg-int? end   list-&gt;vector)))
+               ((lambda (f)
+-                 (vector-unfold f (- end start) lst))
+-               (lambda (l)
++                 (vector-unfold f (- end start) (list-tail lst start)))
++               (lambda (i l)
+                  (cond ((null? l)
+                         (error &quot;List was too short&quot;
+                                `(list was ,lst)
+@@ -1323,7 +1323,7 @@
+     (let ((start (check-type nonneg-int? start reverse-list-&gt;vector))
+           (end   (check-type nonneg-int? end   reverse-list-&gt;vector)))
+       ((lambda (f)
+-         (vector-unfold-right f (- end start) lst))
++         (vector-unfold-right f (- end start) (list-tail lst start)))
+        (lambda (index l)
+          (cond ((null? l)
+                 (error &quot;List too short&quot;
+</pre><pre>;;;
+;;; Tests for vector-lib
+;;;
+;;; Written by Shiro Kawai.  10/5/2005.  Public Domain.
+;;;
+
+;;; Notes:
+;;;
+;;;  - There are tests that expect the expression raise an error.
+;;;    An implementation may extend srfi-34 to handle the cases which
+;;;    srfi-34 states error.  You may want to omit assert-error's for
+;;;    those cases.
+;;;
+;;;  - There are 3 procedures in the reference implementation that take
+;;;    optional start and end arguments, although the srfi-34 document
+;;;    does not specify them.  To test the extended versions, define
+;;;    *extended-test* #t.
+(define *extended-test* #t)
+
+;;;
+;;; Load the reference implementation
+;;;
+
+(load &quot;vector-lib.scm&quot;)
+
+;;;
+;;; Test harness
+;;; requires srfi-34 (guard)
+;;;
+
+(define *test-count* 0)
+(define *failed-tests* '())
+
+(define-syntax assert-equal
+  (syntax-rules ()
+    ((assert-equal comment expr expected)
+     (let ((result expr))
+       (set! *test-count* (+ *test-count* 1))
+       (if (not (equal? result expected))
+         (set! *failed-tests*
+               (cons (list comment result expected) *failed-tests*)))))))
+
+(define-syntax assert-error
+  (syntax-rules ()
+    ((assert-error comment expr)
+     (guard (e (else #t))
+       (set! *test-count* (+ *test-count* 1))
+       (let ((result expr))
+         (set! *failed-tests*
+               (cons (list comment result 'error) *failed-tests*)))))))
+
+(define (report-test-results)
+  (let ((fail-count (length *failed-tests*)))
+    (display *test-count*)
+    (display &quot; test(s), &quot;)
+    (display (- *test-count* fail-count))
+    (display &quot; passed, &quot;)
+    (display fail-count)
+    (display &quot; failed.&quot;)
+    (newline)
+    (if (positive? fail-count)
+      (begin
+        (display &quot;Failures:&quot;) (newline)
+        (for-each (lambda (f)
+                    (display (car f))
+                    (display &quot; expects &quot;)
+                    (write (caddr f))
+                    (display &quot; but got &quot;)
+                    (write (cadr f))
+                    (newline))
+                  (reverse *failed-tests*))))
+    ))
+
+;;;
+;;; Constructors
+;;;
+
+(assert-equal &quot;make-vector 0&quot;
+              (vector-length (make-vector 5))
+              5)
+(assert-equal &quot;make-vector 1&quot;
+              (make-vector 0)
+              '#())
+(assert-error &quot;make-vector 2&quot;
+              (make-vector -4))
+
+(assert-equal &quot;make-vector 3&quot;
+              (make-vector 5 3)
+              '#(3 3 3 3 3))
+(assert-equal &quot;make-vector 4&quot;
+              (make-vector 0 3)
+              '#())
+(assert-error &quot;make-vector 5&quot;
+              (make-vector -1 3))
+
+(assert-equal &quot;vector 0&quot;
+              (vector)
+              '#())
+(assert-equal &quot;vector 1&quot;
+              (vector 1 2 3 4 5)
+              '#(1 2 3 4 5))
+
+(assert-equal &quot;vector-unfold 0&quot;
+              (vector-unfold (lambda (i x) (values x (- x 1)))
+                             10 0)
+              '#(0 -1 -2 -3 -4 -5 -6 -7 -8 -9))
+(assert-equal &quot;vector-unfold 1&quot;
+              (vector-unfold values 10)
+              '#(0 1 2 3 4 5 6 7 8 9))
+(assert-equal &quot;vector-unfold 2&quot;
+              (vector-unfold values 0)
+              '#())
+(assert-error &quot;vector-unfold 3&quot;
+              (vector-unfold values -1))
+
+(assert-equal &quot;vector-unfold-right 0&quot;
+              (vector-unfold-right (lambda (i x) (values x (+ x 1))) 10 0)
+              '#(9 8 7 6 5 4 3 2 1 0))
+(assert-equal &quot;vector-unfold-right 1&quot;
+              (let ((vector '#(a b c d e)))
+                (vector-unfold-right
+                 (lambda (i x) (values (vector-ref vector x) (+ x 1)))
+                 (vector-length vector)
+                 0))
+              '#(e d c b a))
+(assert-equal &quot;vector-unfold-right 2&quot;
+              (vector-unfold-right values 0)
+              '#())
+(assert-error &quot;vector-unfold-right 3&quot;
+              (vector-unfold-right values -1))
+
+(assert-equal &quot;vector-copy 0&quot;
+              (vector-copy '#(a b c d e f g h i))
+              '#(a b c d e f g h i))
+(assert-equal &quot;vector-copy 1&quot;
+              (vector-copy '#(a b c d e f g h i) 6)
+              '#(g h i))
+(assert-equal &quot;vector-copy 2&quot;
+              (vector-copy '#(a b c d e f g h i) 3 6)
+              '#(d e f))
+(assert-equal &quot;vector-copy 3&quot;
+              (vector-copy '#(a b c d e f g h i) 6 12 'x)
+              '#(g h i x x x))
+(assert-equal &quot;vector-copy 4&quot;
+              (vector-copy '#(a b c d e f g h i) 6 6)
+              '#())
+(assert-error &quot;vector-copy 5&quot;
+              (vector-copy '#(a b c d e f g h i) 4 2))
+
+(assert-equal &quot;vector-reverse-copy 0&quot;
+              (vector-reverse-copy '#(a b c d e))
+              '#(e d c b a))
+(assert-equal &quot;vector-reverse-copy 1&quot;
+              (vector-reverse-copy '#(a b c d e) 1 4)
+              '#(d c b))
+(assert-equal &quot;vector-reverse-copy 2&quot;
+              (vector-reverse-copy '#(a b c d e) 1 1)
+              '#())
+(assert-error &quot;vector-reverse-copy 3&quot;
+              (vector-reverse-copy '#(a b c d e) 2 1))
+
+
+(assert-equal &quot;vector-append 0&quot; 
+              (vector-append '#(x) '#(y))
+              '#(x y))
+(assert-equal &quot;vector-append 1&quot;
+              (let ((v '#(x y)))
+                (vector-append v v v))
+              '#(x y x y x y))
+(assert-equal &quot;vector-append 2&quot;
+              (vector-append '#(x) '#() '#(y))
+              '#(x y))
+(assert-equal &quot;vector-append 3&quot;
+              (vector-append)
+              '#())
+(assert-error &quot;vector-append 4&quot;
+              (vector-append '#() 'b 'c))
+
+(assert-equal &quot;vector-concatenate 0&quot;
+              (vector-concatenate '(#(a b) #(c d)))
+              '#(a b c d))
+(assert-equal &quot;vector-concatenate 1&quot;
+              (vector-concatenate '())
+              '#())
+(assert-error &quot;vector-concatenate 2&quot;
+              (vector-concatenate '(#(a b) c)))
+
+;;;
+;;; Predicates
+;;;
+
+(assert-equal &quot;vector? 0&quot; (vector? '#()) #t)
+(assert-equal &quot;vector? 1&quot; (vector? '#(a b)) #t)
+(assert-equal &quot;vector? 2&quot; (vector? '(a b)) #f)
+(assert-equal &quot;vector? 3&quot; (vector? 'a) #f)
+
+(assert-equal &quot;vector-empty? 0&quot; (vector-empty? '#()) #t)
+(assert-equal &quot;vector-empty? 1&quot; (vector-empty? '#(a)) #f)
+
+(assert-equal &quot;vector= 0&quot; 
+              (vector= eq? '#(a b c d) '#(a b c d))
+              #t)
+(assert-equal &quot;vector= 1&quot; 
+              (vector= eq? '#(a b c d) '#(a b c d) '#(a b c d))
+              #t)
+(assert-equal &quot;vector= 2&quot; 
+              (vector= eq? '#() '#())
+              #t)
+(assert-equal &quot;vector= 3&quot; 
+              (vector= eq?)
+              #t)
+(assert-equal &quot;vector= 4&quot; 
+              (vector= eq? '#(a))
+              #t)
+(assert-equal &quot;vector= 5&quot; 
+              (vector= eq? '#(a b c d) '#(a b d c))
+              #f)
+(assert-equal &quot;vector= 6&quot; 
+              (vector= eq? '#(a b c d) '#(a b c d) '#(a b d c))
+              #f)
+(assert-equal &quot;vector= 7&quot; 
+              (vector= eq? '#(a b c) '#(a b d c))
+              #f)
+(assert-equal &quot;vector= 8&quot; 
+              (vector= eq? '#() '#(a b d c))
+              #f)
+(assert-equal &quot;vector= 9&quot; 
+              (vector= eq? '#(a b d c) '#())
+              #f)
+(assert-equal &quot;vector= 10&quot; 
+              (vector= equal? '#(&quot;a&quot; &quot;b&quot; &quot;c&quot;) '#(&quot;a&quot; &quot;b&quot; &quot;c&quot;))
+              #t)
+(assert-error &quot;vector= 11&quot; 
+              (vector= equal? '#(&quot;a&quot; &quot;b&quot; &quot;c&quot;) '(&quot;a&quot; &quot;b&quot; &quot;c&quot;)))
+
+;;;
+;;; Selectors
+;;;
+
+(assert-equal &quot;vector-ref 0&quot; (vector-ref '#(a b c) 0) 'a)
+(assert-equal &quot;vector-ref 1&quot; (vector-ref '#(a b c) 1) 'b)
+(assert-equal &quot;vector-ref 2&quot; (vector-ref '#(a b c) 2) 'c)
+(assert-error &quot;vector-ref 3&quot; (vector-ref '#(a b c) -1))
+(assert-error &quot;vector-ref 4&quot; (vector-ref '#(a b c) 3))
+(assert-error &quot;vector-ref 5&quot; (vector-ref '#() 0))
+
+(assert-equal &quot;vector-length 0&quot; (vector-length '#()) 0)
+(assert-equal &quot;vector-length 1&quot; (vector-length '#(a b c)) 3)
+(assert-error &quot;vector-length 2&quot; (vector-length '(a b c)))
+
+;;;
+;;; Iteration
+;;;
+
+(assert-equal &quot;vector-fold 0&quot;
+              (vector-fold (lambda (i seed val) (+ seed val))
+                           0
+                           '#(0 1 2 3 4))
+              10)
+(assert-equal &quot;vector-fold 1&quot;
+              (vector-fold (lambda (i seed val) (+ seed val))
+                           'a
+                           '#())
+              'a)
+(assert-equal &quot;vector-fold 2&quot;
+              (vector-fold (lambda (i seed val) (+ seed (* i val)))
+                           0
+                           '#(0 1 2 3 4))
+              30)
+(assert-equal &quot;vector-fold 3&quot;
+              (vector-fold (lambda (i seed x y) (cons (- x y) seed))
+                           '()
+                           '#(6 1 2 3 4) '#(7 0 9 2))
+              '(1 -7 1 -1))
+
+(assert-equal &quot;vector-fold-right 0&quot;
+              (vector-fold-right (lambda (i seed val) (cons (cons i val) seed))
+                                 '()
+                                 '#(a b c d e))
+              '((0 . a) (1 . b) (2 . c) (3 . d) (4 . e)))
+(assert-equal &quot;vector-fold-right 1&quot;
+              (vector-fold-right (lambda (i seed x y) (cons (- x y) seed))
+                                 '()
+                                 '#(6 1 2 3 7) '#(7 0 9 2))
+              '(-1 1 -7 1))
+
+(assert-equal &quot;vector-map 0&quot;
+              (vector-map cons '#(a b c d e))
+              '#((0 . a) (1 . b) (2 . c) (3 . d) (4 . e)))
+(assert-equal &quot;vector-map 1&quot;
+              (vector-map cons '#())
+              '#())
+(assert-equal &quot;vector-map 2&quot;
+              (vector-map + '#(0 1 2 3 4) '#(5 6 7 8))
+              '#(5 8 11 14))
+
+(assert-equal &quot;vector-map! 0&quot;
+              (let ((v (vector 0 1 2 3 4)))
+                (vector-map! * v)
+                v)
+              '#(0 1 4 9 16))
+(assert-equal &quot;vector-map! 1&quot;
+              (let ((v (vector)))
+                (vector-map! * v)
+                v)
+              '#())
+(assert-equal &quot;vector-map! 2&quot;
+              (let ((v (vector 0 1 2 3 4)))
+                (vector-map! + v '#(5 6 7 8))
+                v)
+              '#(5 8 11 14 4))
+
+(assert-equal &quot;vector-for-each 0&quot;
+              (let ((sum 0))
+                (vector-for-each (lambda (i x)
+                                   (set! sum (+ sum (* i x))))
+                                 '#(0 1 2 3 4))
+                sum)
+              30)
+(assert-equal &quot;vector-for-each 1&quot;
+              (let ((sum 0))
+                (vector-for-each (lambda (i x)
+                                   (set! sum (+ sum (* i x))))
+                                 '#())
+                sum)
+              0)
+
+(assert-equal &quot;vector-count 0&quot;
+              (vector-count (lambda (i x) (even? x)) '#(0 1 2 3 4 5 6))
+              4)
+(assert-equal &quot;vector-count 1&quot;
+              (vector-count values '#())
+              0)
+(assert-equal &quot;vector-count 2&quot;
+              (vector-count (lambda (i x y) (&lt; x y))
+                            '#(8 2 7 4 9 1 0)
+                            '#(7 6 8 3 1 1 9))
+              3)
+
+;;;
+;;; Searching
+;;;
+
+(assert-equal &quot;vector-index 0&quot;
+              (vector-index even? '#(3 1 4 1 5 9))
+              2)
+(assert-equal &quot;vector-index 1&quot;
+              (vector-index &lt; '#(3 1 4 1 5 9 2 5 6) '#(2 7 1 8 2))
+              1)
+(assert-equal &quot;vector-index 2&quot;
+              (vector-index = '#(3 1 4 1 5 9 2 5 6) '#(2 7 1 8 2))
+              #f)
+(assert-equal &quot;vector-index 3&quot;
+              (vector-index &lt; '#() '#(2 7 1 8 2))
+              #f)
+
+(assert-equal &quot;vector-index-right 0&quot;
+              (vector-index-right even? '#(3 1 4 1 5 9 2))
+              6)
+(assert-equal &quot;vector-index-right 1&quot;
+              (vector-index-right &lt; '#(3 1 4 1 5) '#(2 7 1 8 2))
+              3)
+(assert-equal &quot;vector-index-right 2&quot;
+              (vector-index-right = '#(3 1 4 1 5) '#(2 7 1 8 2))
+              #f)
+(assert-equal &quot;vector-index-right 3&quot;
+              (vector-index-right even? #())
+              #f)
+
+(assert-equal &quot;vector-skip 0&quot;
+              (vector-skip odd? '#(3 1 4 1 5 9))
+              2)
+(assert-equal &quot;vector-skip 1&quot;
+              (vector-skip &lt; '#(3 1 4 1 5 9 2 5 6) '#(4 9 5 0 2 4))
+              3)
+(assert-equal &quot;vector-skip 2&quot;
+              (vector-skip &lt; '#(3 1 4 1 5 2 5 6) '#(4 9 5 9 9 9))
+              #f)
+(assert-equal &quot;vector-skip 3&quot;
+              (vector-skip &lt; '#() '#(4 9 5 9 9 9))
+              #f)
+
+(assert-equal &quot;vector-skip-right 0&quot;
+              (vector-skip-right odd? '#(3 1 4 1 5 9 2 6 5 3))
+              7)
+(assert-equal &quot;vector-skip-right 1&quot;
+              (vector-skip-right &lt; '#(8 3 7 3 1 0) '#(4 9 5 0 2 4))
+              3)
+(assert-equal &quot;vector-skip-right 2&quot;
+              (vector-skip-right &lt; '#() '#(4 9 5 0 2 4))
+              #f)
+
+(define (char-cmp c1 c2)
+  (cond ((char&lt;? c1 c2) -1)
+        ((char=? c1 c2) 0)
+        (else 1)))
+
+(assert-equal &quot;vector-binary-search 0&quot;
+              (vector-binary-search
+               '#(#\a #\b #\c #\d #\e #\f #\g #\h)
+               #\g
+               char-cmp)
+              6)
+(assert-equal &quot;vector-binary-search 1&quot;
+              (vector-binary-search
+               '#(#\a #\b #\c #\d #\e #\f #\g)
+               #\q
+               char-cmp)
+              #f)
+(assert-equal &quot;vector-binary-search 2&quot;
+              (vector-binary-search
+               '#(#\a)
+               #\a
+               char-cmp)
+              0)
+(assert-equal &quot;vector-binary-search 3&quot;
+              (vector-binary-search
+               '#()
+               #\a
+               char-cmp)
+              #f)
+(assert-error &quot;vector-binary-search 4&quot;
+              (vector-binary-search
+               '(#\a #\b #\c)
+               #\a
+               char-cmp))
+
+(cond
+ (*extended-test*
+  (assert-equal &quot;vector-binary-search 5&quot;
+                (vector-binary-search
+                 '#(#\a #\b #\c #\d #\e #\f #\g #\h)
+                 #\d
+                 char-cmp
+                 2 6)
+                3)
+  (assert-equal &quot;vector-binary-search 6&quot;
+                (vector-binary-search
+                 '#(#\a #\b #\c #\d #\e #\f #\g #\h)
+                 #\g
+                 char-cmp
+                 2 6)
+                #f)
+  ))
+
+(assert-equal &quot;vector-any 0&quot;
+              (vector-any even? '#(3 1 4 1 5 9 2))
+              #t)
+(assert-equal &quot;vector-any 1&quot;
+              (vector-any even? '#(3 1 5 1 5 9 1))
+              #f)
+(assert-equal &quot;vector-any 2&quot;
+              (vector-any even? '#(3 1 4 1 5 #f 2))
+              #t)
+(assert-equal &quot;vector-any 3&quot;
+              (vector-any even? '#())
+              #f)
+(assert-equal &quot;vector-any 4&quot;
+              (vector-any &lt; '#(3 1 4 1 5 #f) '#(1 0 1 2 3))
+              #t)
+(assert-equal &quot;vector-any 5&quot;
+              (vector-any &lt; '#(3 1 4 1 5 #f) '#(1 0 1 0 3))
+              #f)
+
+(assert-equal &quot;vector-every 0&quot;
+              (vector-every odd? '#(3 1 4 1 5 9 2))
+              #f)
+(assert-equal &quot;vector-every 1&quot;
+              (vector-every odd? '#(3 1 5 1 5 9 1))
+              #t)
+(assert-equal &quot;vector-every 2&quot;
+              (vector-every odd? '#(3 1 4 1 5 #f 2))
+              #f)
+(assert-equal &quot;vector-every 3&quot;
+              (vector-every even? '#())
+              #t)
+(assert-equal &quot;vector-every 4&quot;
+              (vector-every &gt;= '#(3 1 4 1 5) '#(1 0 1 2 3 #f))
+              #f)
+(assert-equal &quot;vector-every 5&quot;
+              (vector-every &gt;= '#(3 1 4 1 5) '#(1 0 1 0 3 #f))
+              #t)
+
+;;;
+;;; Mutators
+;;;
+
+(assert-equal &quot;vector-set! 0&quot;
+              (let ((v (vector 0 1 2)))
+                (vector-set! v 1 'a)
+                v)
+              '#(0 a 2))
+(assert-error &quot;vector-set! 1&quot; (vector-set! (vector 0 1 2) 3 'a))
+(assert-error &quot;vector-set! 2&quot; (vector-set! (vector 0 1 2) -1 'a))
+(assert-error &quot;vector-set! 3&quot; (vector-set! (vector) 0 'a))
+
+(assert-equal &quot;vector-swap! 0&quot;
+              (let ((v (vector 'a 'b 'c)))
+                (vector-swap! v 0 1)
+                v)
+              '#(b a c))
+(assert-equal &quot;vector-swap! 1&quot;
+              (let ((v (vector 'a 'b 'c)))
+                (vector-swap! v 1 1)
+                v)
+              '#(a b c))
+(assert-error &quot;vector-swap! e0&quot; (vector-swap! (vector 'a 'b 'c) 0 3))
+(assert-error &quot;vector-swap! e1&quot; (vector-swap! (vector 'a 'b 'c) -1 1))
+(assert-error &quot;vector-swap! e2&quot; (vector-swap! (vector) 0 0))
+
+(assert-equal &quot;vector-fill! 0&quot;
+              (let ((v (vector 'a 'b 'c 'd 'e)))
+                (vector-fill! v 'z)
+                v)
+              '#(z z z z z))
+(assert-equal &quot;vector-fill! 1&quot;
+              (let ((v (vector 'a 'b 'c 'd 'e)))
+                (vector-fill! v 'z 2)
+                v)
+              '#(a b z z z))
+(assert-equal &quot;vector-fill! 2&quot;
+              (let ((v (vector 'a 'b 'c 'd 'e)))
+                (vector-fill! v 'z 1 3)
+                v)
+              '#(a z z d e))
+(assert-equal &quot;vector-fill! 3&quot;
+              (let ((v (vector 'a 'b 'c 'd 'e)))
+                (vector-fill! v 'z 0 5)
+                v)
+              '#(z z z z z))
+(assert-equal &quot;vector-fill! 4&quot;
+              (let ((v (vector 'a 'b 'c 'd 'e)))
+                (vector-fill! v 'z 2 2)
+                v)
+              '#(a b c d e))
+(assert-error &quot;vector-fill! e0&quot; (vector-fill! (vector 'a 'b 'c) 'z 0 4))
+(assert-error &quot;vector-fill! e1&quot; (vector-fill! (vector 'a 'b 'c) 'z 2 1))
+(assert-error &quot;vector-fill! e2&quot; (vector-fill! (vector 'a 'b 'c) 'z -1 1))
+(assert-error &quot;vector-fill! e3&quot; (vector-fill! (vector) 'z 0 0))
+
+(assert-equal &quot;vector-reverse! 0&quot;
+              (let ((v (vector 'a 'b 'c 'd 'e)))
+                (vector-reverse! v)
+                v)
+              '#(e d c b a))
+(assert-equal &quot;vector-reverse! 1&quot;
+              (let ((v (vector 'a 'b 'c 'd 'e 'f)))
+                (vector-reverse! v 1 4)
+                v)
+              '#(a d c b e f))
+(assert-equal &quot;vector-reverse! 2&quot;
+              (let ((v (vector 'a 'b 'c 'd 'e 'f)))
+                (vector-reverse! v 3 3)
+                v)
+              '#(a b c d e f))
+(assert-equal &quot;vector-reverse! 3&quot;
+              (let ((v (vector 'a 'b 'c 'd 'e 'f)))
+                (vector-reverse! v 3 4)
+                v)
+              '#(a b c d e f))
+(assert-equal &quot;vector-reverse! 4&quot;
+              (let ((v (vector)))
+                (vector-reverse! v)
+                v)
+              '#())
+(assert-error &quot;vector-reverse! e0&quot; (vector-reverse! (vector 'a 'b) 0 3))
+(assert-error &quot;vector-reverse! e1&quot; (vector-reverse! (vector 'a 'b) 2 1))
+(assert-error &quot;vector-reverse! e2&quot; (vector-reverse! (vector 'a 'b) -1 1))
+(assert-error &quot;vector-reverse! e3&quot; (vector-reverse! (vector) 0 0))
+
+(assert-equal &quot;vector-copy! 0&quot;
+              (let ((v (vector 'a 'b 'c 'd 'e)))
+                (vector-copy! v 0 '#(1 2 3))
+                v)
+              '#(1 2 3 d e))
+(assert-equal &quot;vector-copy! 1&quot;
+              (let ((v (vector 'a 'b 'c 'd 'e)))
+                (vector-copy! v 2 '#(1 2 3))
+                v)
+              '#(a b 1 2 3))
+(assert-equal &quot;vector-copy! 2&quot;
+              (let ((v (vector 'a 'b 'c 'd 'e)))
+                (vector-copy! v 2 '#(1 2 3) 1)
+                v)
+              '#(a b 2 3 e))
+(assert-equal &quot;vector-copy! 3&quot;
+              (let ((v (vector 'a 'b 'c 'd 'e)))
+                (vector-copy! v 2 '#(1 2 3 4 5) 2 5)
+                v)
+              '#(a b 3 4 5))
+(assert-equal &quot;vector-copy! 4&quot;
+              (let ((v (vector 'a 'b 'c 'd 'e)))
+                (vector-copy! v 2 '#(1 2 3) 1 1)
+                v)
+              '#(a b c d e))
+(assert-equal &quot;vector-copy! self0&quot;
+              (let ((v (vector 'a 'b 'c 'd 'e)))
+                (vector-copy! v 0 v 1 3)
+                v)
+              '#(b c c d e))
+(assert-equal &quot;vector-copy! self1&quot;
+              (let ((v (vector 'a 'b 'c 'd 'e)))
+                (vector-copy! v 2 v 1 4)
+                v)
+              '#(a b b c d))
+(assert-equal &quot;vector-copy! self2&quot;
+              (let ((v (vector 'a 'b 'c 'd 'e)))
+                (vector-copy! v 0 v 0)
+                v)
+              '#(a b c d e))
+(assert-error &quot;vector-copy! e0&quot; (vector-copy! (vector 1 2) 3 '#(1 2 3)))
+(assert-error &quot;vector-copy! e1&quot; (vector-copy! (vector 1 2) 0 '#(1 2 3)))
+(assert-error &quot;vector-copy! e2&quot; (vector-copy! (vector 1 2) 1 '#(1 2 3) 1))
+
+(assert-equal &quot;vector-reverse-copy! 0&quot;
+              (let ((v (vector 'a 'b 'c 'd 'e)))
+                (vector-reverse-copy! v 0 '#(1 2 3))
+                v)
+              '#(3 2 1 d e))
+(assert-equal &quot;vector-reverse-copy! 1&quot;
+              (let ((v (vector 'a 'b 'c 'd 'e)))
+                (vector-reverse-copy! v 2 '#(1 2 3))
+                v)
+              '#(a b 3 2 1))
+(assert-equal &quot;vector-reverse-copy! 2&quot;
+              (let ((v (vector 'a 'b 'c 'd 'e)))
+                (vector-reverse-copy! v 2 '#(1 2 3) 1)
+                v)
+              '#(a b 3 2 e))
+(assert-equal &quot;vector-reverse-copy! 3&quot;
+              (let ((v (vector 'a 'b 'c 'd 'e)))
+                (vector-reverse-copy! v 2 '#(1 2 3 4 5) 1 4)
+                v)
+              '#(a b 4 3 2))
+(assert-equal &quot;vector-reverse-copy! 4&quot;
+              (let ((v (vector 'a 'b 'c 'd 'e)))
+                (vector-reverse-copy! v 2 '#(1 2 3 4 5) 2 2)
+                v)
+              '#(a b c d e))
+(assert-equal &quot;vector-reverse-copy! self0&quot;
+              (let ((v (vector 'a 'b 'c 'd 'e)))
+                (vector-reverse-copy! v 0 v)
+                v)
+              '#(e d c b a))
+(assert-equal &quot;vector-reverse-copy! self1&quot;
+              (let ((v (vector 'a 'b 'c 'd 'e)))
+                (vector-reverse-copy! v 0 v 0 2)
+                v)
+              '#(b a c d e))
+(assert-error &quot;vector-reverse-copy! e0&quot;
+              (vector-reverse-copy! (vector 'a 'b) 2 '#(a b)))
+(assert-error &quot;vector-reverse-copy! e1&quot;
+              (vector-reverse-copy! (vector 'a 'b) -1 '#(a b)))
+(assert-error &quot;vector-reverse-copy! e2&quot;
+              (vector-reverse-copy! (vector 'a 'b) 0 '#(a b c)))
+(assert-error &quot;vector-reverse-copy! e3&quot;
+              (vector-reverse-copy! (vector 'a 'b) 0 '#(a b c) 1 4))
+(assert-error &quot;vector-reverse-copy! e4&quot;
+              (vector-reverse-copy! (vector 'a 'b) 0 '#(a b c) -1 2))
+(assert-error &quot;vector-reverse-copy! e5&quot;
+              (vector-reverse-copy! (vector 'a 'b) 0 '#(a b c) 2 1))
+
+;;;
+;;; Conversion
+;;;
+
+(assert-equal &quot;vector-&gt;list 0&quot;
+              (vector-&gt;list '#(a b c))
+              '(a b c))
+(assert-equal &quot;vector-&gt;list 1&quot;
+              (vector-&gt;list '#(a b c) 1)
+              '(b c))
+(assert-equal &quot;vector-&gt;list 2&quot;
+              (vector-&gt;list '#(a b c d e) 1 4)
+              '(b c d))
+(assert-equal &quot;vector-&gt;list 3&quot;
+              (vector-&gt;list '#(a b c d e) 1 1)
+              '())
+(assert-equal &quot;vector-&gt;list 4&quot;
+              (vector-&gt;list '#())
+              '())
+(assert-error &quot;vector-&gt;list e0&quot; (vector-&gt;list '#(a b c) 1 6))
+(assert-error &quot;vector-&gt;list e1&quot; (vector-&gt;list '#(a b c) -1 1))
+(assert-error &quot;vector-&gt;list e2&quot; (vector-&gt;list '#(a b c) 2 1))
+
+(assert-equal &quot;reverse-vector-&gt;list 0&quot;
+              (reverse-vector-&gt;list '#(a b c))
+              '(c b a))
+(assert-equal &quot;reverse-vector-&gt;list 1&quot;
+              (reverse-vector-&gt;list '#(a b c) 1)
+              '(c b))
+(assert-equal &quot;reverse-vector-&gt;list 2&quot;
+              (reverse-vector-&gt;list '#(a b c d e) 1 4)
+              '(d c b))
+(assert-equal &quot;reverse-vector-&gt;list 3&quot;
+              (reverse-vector-&gt;list '#(a b c d e) 1 1)
+              '())
+(assert-equal &quot;reverse-vector-&gt;list 4&quot;
+              (reverse-vector-&gt;list '#())
+              '())
+(assert-error &quot;reverse-vector-&gt;list e0&quot; (reverse-vector-&gt;list '#(a b c) 1 6))
+(assert-error &quot;reverse-vector-&gt;list e1&quot; (reverse-vector-&gt;list '#(a b c) -1 1))
+(assert-error &quot;reverse-vector-&gt;list e2&quot; (reverse-vector-&gt;list '#(a b c) 2 1))
+
+(assert-equal &quot;list-&gt;vector 0&quot;
+              (list-&gt;vector '(a b c))
+              '#(a b c))
+(assert-equal &quot;list-&gt;vector 1&quot;
+              (list-&gt;vector '())
+              '#())
+(cond
+ (*extended-test*
+  (assert-equal &quot;list-&gt;vector 2&quot;
+                (list-&gt;vector '(0 1 2 3) 2)
+                '#(2 3))
+  (assert-equal &quot;list-&gt;vector 3&quot;
+                (list-&gt;vector '(0 1 2 3) 0 2)
+                '#(0 1))
+  (assert-equal &quot;list-&gt;vector 4&quot;
+                (list-&gt;vector '(0 1 2 3) 2 2)
+                '#())
+  (assert-error &quot;list-&gt;vector e0&quot; (list-&gt;vector '(0 1 2 3) 0 5))
+  (assert-error &quot;list-&gt;vector e1&quot; (list-&gt;vector '(0 1 2 3) -1 1))
+  (assert-error &quot;list-&gt;vector e2&quot; (list-&gt;vector '(0 1 2 3) 2 1))
+  ))
+                
+(assert-equal &quot;reverse-list-&gt;vector 0&quot;
+              (reverse-list-&gt;vector '(a b c))
+              '#(c b a))
+(assert-equal &quot;reverse-list-&gt;vector 1&quot;
+              (reverse-list-&gt;vector '())
+              '#())
+(cond
+ (*extended-test*
+  (assert-equal &quot;reverse-list-&gt;vector 2&quot;
+                (reverse-list-&gt;vector '(0 1 2 3) 2)
+                '#(3 2))
+  (assert-equal &quot;reverse-list-&gt;vector 3&quot;
+                (reverse-list-&gt;vector '(0 1 2 3) 0 2)
+                '#(1 0))
+  (assert-equal &quot;reverse-list-&gt;vector 4&quot;
+                (reverse-list-&gt;vector '(0 1 2 3) 2 2)
+                '#())
+  (assert-error &quot;reverse-list-&gt;vector e0&quot;
+                (reverse-list-&gt;vector '(0 1 2 3) 0 5))
+  (assert-error &quot;reverse-list-&gt;vector e1&quot;
+                (reverse-list-&gt;vector '(0 1 2 3) -1 1))
+  (assert-error &quot;reverse-list-&gt;vector e2&quot;
+                (reverse-list-&gt;vector '(0 1 2 3) 2 1))
+  ))
+
+(report-test-results)
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00011" href="msg00011.html">Re: Srfi-43 typo, patch &amp; tests</a></strong>
+<ul><li><em>From:</em> Taylor Campbell</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00009.html">Updated reference implementation</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00011.html">Re: Srfi-43 typo, patch &amp; tests</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00009.html">Updated reference implementation</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00011.html">Re: Srfi-43 typo, patch &amp; tests</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00010"><strong>Date</strong></a></li>
+<li><a href="threads.html#00010"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

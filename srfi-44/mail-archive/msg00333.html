@@ -1,0 +1,494 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Fundamental design flaws -->
+<!--X-From-R13: Fbz Zbeq <ybeqNrzs.arg> -->
+<!--X-Date: Thu, 30 Oct 2003 17:33:16 +0100 (NFT) -->
+<!--X-Message-Id: 200310301645.IAA01323@morrowfield.regexps.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: DCE9B6E9&#45;0A7B&#45;11D8&#45;8E6E&#45;000A95CCCEE4@evdev.ath.cx -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Fundamental design flaws</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00332.html">Date Prev</a>][<a href="msg00334.html">Date Next</a>][<a href="msg00341.html">Thread Prev</a>][<a href="msg00335.html">Thread Next</a>][<a href="maillist.html#00333">Date Index</a>][<a href="threads.html#00333">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Fundamental design flaws</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:campbell@DOMAIN.HIDDEN">campbell@xxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Fundamental design flaws</li>
+<li><em>From</em>: Tom Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 30 Oct 2003 08:45:49 -0800 (PST)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:DCE9B6E9-0A7B-11D8-8E6E-000A95CCCEE4@DOMAIN.HIDDEN">DCE9B6E9-0A7B-11D8-8E6E-000A95CCCEE4@xxxxxxxxxxxx</a>&gt; (message from	Taylor Campbell on Wed, 29 Oct 2003 20:53:31 -0500)</li>
+<li><em>References</em>: &lt;<a href="mailto:DCE9B6E9-0A7B-11D8-8E6E-000A95CCCEE4@DOMAIN.HIDDEN">DCE9B6E9-0A7B-11D8-8E6E-000A95CCCEE4@xxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+    &gt; From: Taylor Campbell &lt;campbell@xxxxxxxxxxxx&gt;
+
+Slight out-of-sequence reply order here:
+
+    &gt; &gt; 4) absense of reasonable support for [cursors]
+
+    &gt; Please stop saying 'iterator.'  [...] If you mean 'cursor,'
+    &gt; _say_ 'cursor,'
+
+Cursor it is, then.   (I guess I picked up iterator from C++, back in
+the day.)
+
+    [...]
+
+    &gt;&gt;   The -FOLD- procedures permit me to do this but only by one of a few
+    &gt;&gt;   means all of which seem to be horribly inefficient compared to what
+    &gt;&gt;   is achievable:  I can convert the collections to lists or some other
+    &gt;&gt;   type;   I can use call/cc.
+
+    &gt; There, you've just stated how you can perfectly easily convert a fold
+    &gt; operation into a cursor.  Horribly inefficient?  There are plenty of
+    &gt; implementations of CALL/CC that are quite efficient.
+
+It doesn't matter how fast simple uses of call/cc are.  Using call/cc
+to emulate cursors has at least three huge drawbacks, two of which
+pertain to efficiency, all three of which pertain to semantics:
+
+1) The space consumption of the cursor is in general bound by the size
+   of the (entire) continuation of the call to the enumerator.
+   A call/cc cursor is going to gc-protect way, way, more than it
+   needs to.   (Sure, fairly aggressive optimization can do better
+   in some special cases but I think systems which do that will always
+   be exceptions rather than the rule.  Optimization of this sort will
+   only be possible when the compiler can do global flow analysis that
+   includes the implementation of the collection type.)
+
+   The interaction of this with other possible extensions like weak 
+   references or first-class environments are scary to contemplate.
+
+
+2) call/cc+enumerator cursors capture the dynamic scope of the call
+   to the procedure passed to the enumerator, which in turn includes
+   the dynamic scope of the all to the enumerator.
+
+   If I want to pass one of these cursors to an entirely new dynamic
+   scope before using it, then each step of the iteration involves 
+   an unbounded number dynamic-wind guard-procedure invocations.
+
+   That gives rise to a semantic problem:
+
+
+3) call/cc cursors interact awkwardly with srfi-34 exceptions, which
+   points to a larger problem
+
+   Try to write a call/cc cursor implementation that handles
+   exceptions correctly.   You can do it but, do you see those
+   contortions you have to go through with WITH-EXCEPTION-HANDLER?
+
+   That's a symptom of the dynamic scope issue -- that the cursor is
+   doing its work in a different dynamic scope than the one in which 
+   each iteration step is invoked.   A dynamically bound variable,
+   like the one implicit in WITH-EXCEPTION-HANDLER can't be counted on
+   to have the right value.
+
+   You can hack around that for exceptions, sure -- but are you also
+   going to hack around for the current input and output ports?   What 
+   about all the dynamic variables you don't know about at the time 
+   you write the cursor?   Is the *-ref procedure of a collection type
+   simply not allowed to use any dynamically scoped bindings?
+
+In short, call/cc-cursors and ordinary cursors are very different
+things.  They aren't interchangeable alternatives.
+
+
+
+
+
+    &gt; &gt;    Collection type constructors are a prerequisite for allowing people
+    &gt; &gt;    to write portable implementations of collection types.   While a
+    &gt; &gt;    portable implementation may or may not be less efficient than
+    &gt; &gt;    a native one, many useful collection types would perform quite
+    &gt; &gt;    reasonably using just about any reasonable implementation of
+    &gt; &gt;    srfi-9, a srfi which I would hope that any non-trivial Scheme
+    &gt; &gt;    implementation seeks to implement well.
+
+    &gt; I fail to see why we would include MAKE-* instead of MAKE-%.  As it
+    &gt; has been stated before, if you like saying MAKE-DICTIONARY instead of
+    &gt; some way to make a hash table that compares with EQ?, write:
+
+Another vocabulary issue.  By &quot;type constructor&quot; I mean a form that
+creates a new _type_.  As in &quot;DEFINE-RECORD-TYPE is a type
+constructor.&quot;
+
+I'm not griping that MAKE-DICTIONARY isn't in there (I agree with your
+reasons why it shouldn't be).
+
+I'm griping that, given just R5RS + SRFI-44 I can't write my own value
+constructor like MAKE-BTREE-DICTIONARY where:
+
+	(dictionary? (make-btree-dictionary [...])) =&gt; #t
+
+Suppose that I changed my mind about 44 or 44 changed or whatever and
+its finalized and I decide I like it.  Well, then I'd like to (at
+least be able to) make some libraries, portable to all R5RS + SRFI-44
+systems, defining new collection types (please, _without_ having to
+redefine many of the procedures from 44).
+
+Scott mentioned concern that this would lead to unacceptably
+inefficient collections.  I disagree, though.  Even a reference
+implemenation that &quot;fell back&quot; (for new types of collection at least)
+to srfi-9 records with some kind of vtable would be &quot;fast enough&quot; for
+many purposes.
+
+Meanwhile, if the spec of the type constructor doesn't explicitly rely
+on 9, then implementations are free to optimize the heck out of it.
+
+
+
+
+    &gt; &gt; 2) unusable procedures
+
+    &gt; &gt;    44 defines procedures which client programs have no use for.
+    &gt; &gt;    For example, all of the SET functions could be correctly
+    &gt; &gt;    implemented as:
+
+    &gt; &gt; 	(define (set-fn . ignored)
+    &gt; &gt;           (error &quot;there is no such thing as a set&quot;))
+
+    &gt; What a useful implementation _that_ would be!
+
+That's my point -- the specs are too weak.
+
+Let's suppose that _no_ other detail of 44 changed accept this:  all
+the stuff about sets were removed.   It would make exactly as much
+sense and wouldn't have that flaw.   A later SRFI, one that provided
+at least one set type (and hopefully more than one) could add that
+stuff back in.
+
+
+
+    &gt; &gt; 3) unfortunate class hierarchy
+
+    &gt; &gt;   I recognize that there are, for example, operations which apply
+    &gt; &gt;   generically to sequences and dictionaries.
+
+    &gt; &gt;   It is a fine idea to provide an abstract interface to such
+    &gt; &gt;   operations, much as Common Lisp does for sequences.
+
+    &gt; &gt;   However, this srfi goes much further than that.  In particular, it
+    &gt; &gt;   requires that, in these abstract interfaces, a list or a vector is
+    &gt; &gt;   always a sequence and never a dictionary.
+
+    &gt; Where would a vector be used and exposed to be used as a dictionary?
+
+    &gt; (the 'exposed to be used' bit is important: yes, I'm aware that hash
+    &gt; tables use vectors _internally_; _you_, however, are arguing that we
+    &gt; should be using SRFI 9 a lot more; you would probably then advocate
+    &gt; using SRFI 9 to abstract away hash tables or whatever other type, and
+    &gt; then we wouldn't have this problem)
+
+I'm arguing that the interfaces in a collections srfi should not
+provide genericity in a way that precludes traditional lisp idioms.
+
+Using plain old vectors as a hash table is one example.   Using
+ordinary lists as  either sequences, sets, or associative tables is
+another.  
+
+I think it would be cleaner to have, for example, a set of dictionary
+generics that are able to act on (normal) associative lists and a
+set separate set of sequence generics that are able to act on (normal)
+lists.    But 44 can't do that because it really wants to have
+procedures that operate on all &quot;collections&quot; -- and that operate
+differently depending on the type of the collection arguments,
+differently in the case of sequences and dictionaries (but lists and
+association lists are not disjoint types).
+
+One way to fix that is to drop the collections procedures entirely.
+Another way is to reduce the collections procedures to those which
+operate identically on all collection types.   Another way is to add
+extra parameters (or similar glue) to them to disambiguate whether a
+given list is (intended as) a sequence or associative list.
+
+    &gt; &gt;   Let me put this a little differently: supposing I really like the
+    &gt; &gt;   abstract parts of the collections interface of 44 but I'm writing a
+    &gt; &gt;   program that wants to use ordinary lists (plus some other
+    &gt; &gt;   implementation-specific types) as _dictionaries_ not sequences.
+
+    &gt; Why would you do this, and not abstract their interface away?
+
+Well, why should the procedures in 44 work directly on vectors, lists,
+and strings rather than abstract _those_ away.    They don't abstract
+them: they use standard procedures (like MAKE-VECTOR) as part of the
+interface to collections.
+
+It seems to me completely arbitrary (and unecessary) to say &quot;because
+we want to give you various generic procedures for collection-like
+data structures, we're going to declare that a list is always an
+EQV?-based flexible sequence -- never any other kind of collection&quot;.
+
+I'm saying: either don't try to operate on the Scheme types at all, or
+design 44 in such a way that the collections procedures work on (at
+least):
+
+	ordinary lists as sequences (with any equivalence predicate)
+	ordinary lists as sets (with any equivalence predicate)
+	ordinary lists as ordered sequences 
+          (with any equivalence /ordering predicate)
+	ordinary associative lists as dictionaries (with any equivalence predicate)
+
+(and probably other things I'm forgetting.)
+
+I wouldn't be too disappointed to see ordinary vectors as hash tables
+but I admit that that's probably just my Emacs Lisp quirks showing.
+
+
+    &gt; &gt;   Compared to, say, incrementing an index integer or taking the CDR of
+    &gt; &gt;   a pair, those techniques for iteration over multiple collections are
+    &gt; &gt;   horrible.
+
+    &gt; What prevents you from using those two methods of iteration?  For
+    &gt; list-like structures, use *-DELETE-LEFT, which returns the left-most
+    &gt; value and the rest of the collection (this is like SRFI 1's CAR+CDR).
+    &gt; For vector-like structures, use *-REF.  What's so difficult about
+    &gt; this?
+
+I'm just given a sequence.  I don't know whether it is &quot;list like&quot; or
+&quot;vector like&quot;.  I thought that was a large part of the reason to have
+an interface to sequences.
+
+    &gt; &gt;              It is a serious weakness of 44 that it does not define
+    &gt; &gt;   generic interfaces to iterators which would not require those
+    &gt; &gt;   techniques.
+
+    &gt; There are compelling reasons to specify folding enumerators instead of
+    &gt; cursors, and there are easy implementations of cursors in terms of
+    &gt; folding enumerators.  It is therefore rather pointless to specify both
+    &gt; folding enumerators _and_ cursors.
+
+I think that the sematic (dynamic scope foo) and performance (amount
+of data likely to be gc protected) differences between cursors and
+enumerator-based cursors provide a pretty good reason to have both.
+
+
+
+
+    &gt; &gt; 6) buggy and incomplete implementation with unreasonable
+    &gt; &gt;    dependencies. 
+
+    &gt; &gt;   Bugs and missing things can be fixed, of course, but in its current
+    &gt; &gt;   state, the srfi truly ought to be rejected by the editors on this
+    &gt; &gt;   basis.
+
+    &gt; &gt;   Tiny-Clos is, in my opinion, a quite unreasonable dependency.   At
+    &gt; &gt;   the _very_ least it should be included in the reference
+    &gt; &gt;   implementation so that the proposal is self contained.
+
+    &gt; I was going to do this when I first rewrote the implementation with
+    &gt; Tiny-CLOS, but then I realized it would be kind of silly, given how
+    &gt; many various modifications/reimplementations of Tiny-CLOS there
+    &gt; are.
+
+    &gt; I therefore left it at a list of notes about Tiny-CLOS, what
+    &gt; needs to be changed in the standard Tiny-CLOS distribution, et
+    &gt; cetera; this is plenty to easily modify the standard Tiny-CLOS
+    &gt; distribution to your liking, and to make implementors of
+    &gt; variants of Tiny-CLOS easily modify their implementations to
+    &gt; make it work with SRFI 44.
+
+I understand but I think you made the wrong choice and maybe two wrong
+choices.
+
+Nothing really requires (or could reasonably require) that the
+entirely library of SRFI's be &quot;self contained&quot; -- that it give you a 
+set of specs that refer to nothing but earlier srfis and standard
+scheme, and a set of reference implementations that you could just
+load up and go.
+
+Some srfis, (4, 9, and 34 come quickly to mind) are example of &quot;low
+level&quot; functionality that we can't even expect the reference
+implementation to be all that useful except in rather tightly
+constrained situations.
+
+And, if someone were to make, say, a GTk-bindings srfi:  I wouldn't
+expect the reference implementation to include GTk.
+
+But I think that such exceptions can and should be rare.  It isn't
+something srfi can enforce but it is something that authors and
+reviewers can try to promote as The Right Thing.
+
+So, minimally, TinyCLOS ought to have been included.   (It's tiny,
+right? :-)
+
+But really, I think the total code-size of the reference
+implementation would be smaller and the reference implementation would
+be directly useful to more people if it were based on SRFI-9 rather
+than Tiny-CLOS.   (See 35 for an example of a srfi that builds its own
+little mini-object-system on top of 9.)
+
+    &gt; &gt;                                                           Personally,
+    &gt; &gt;   I would much prefer to see a reference implementation based on
+    &gt; &gt;   srfi-9 rather than one that defines lots of complicated new
+    &gt; &gt;   functionality well outside the scope of the srfi.
+
+    &gt; SRFI 9 doesn't define any sort of dispatching mechanism.  How would it
+    &gt; help here?
+
+The &quot;stuff&quot; in 44, even if it were extended with type constructors,
+doesn't require a very complicated dispatching mechanism.   Wouldn't
+it be, perhaps, a page of code on top of 9?
+
+    &gt; I fail to see why 'dragging in' Tiny-CLOS is a bad idea.  I
+    &gt; chose Tiny-CLOS because it provides a simple mechanism for
+    &gt; dispatching on collection types and it works with existing
+    &gt; collection types.  SRFI 9 is for something entirely different:
+    &gt; opaque record types.
+
+Hmm.   It's a bit agnostic about whether or not records are opaque.
+It certainly doesn't provide any access to them other than the
+predicate and field functions created by DEFINE-RECORD-TYPE.
+
+On the other hand, it's very clear about creating new disjoint types.  
+
+I think part of the problem here is that the reference implementation
+of 44 sets out to dispatch on a few standard scheme types, plus
+(44-style) alists -- and aside from the alists, 9 wouldn't help much
+here.
+
+But there's a few things:
+
+1) As I said, I think you really want type constructors in 44 and 
+   9 would give you a mechanism for that.
+
+2) 44 is a little fuzzy about disjointness.   The reference
+   implementation gets into trouble with that regarding alists
+   but even if that were fixed, are we sure that (44-style) alists
+   shouldn't be a new disjoint type?
+
+3) I'm not sure I see how TinyCLOS is providing _that_ much help here.
+
+   A reference implementation that says:
+
+	(define (some-sequence-generic collection [...])
+          (cond
+            ((vector? collection)	[...])
+            ((pair? collection)		[...])
+            ((string? collection)	[...])
+            [...]
+            (#t				
+              ((lookup-some-generic collection) [...]))))
+
+   looks pretty clean and clear to me and, operationally, is pretty
+   close to what TinyCLOS is actually doing.
+
+
+
+
+    &gt; But anyways, if you notice the organization of the reference
+    &gt; implementation, you'll see that it looks like it was deliberately
+    &gt; designed to fit several implementations.  A utilities.scm file exists
+    &gt; for utilities that aren't specific to one implementation, or don't
+    &gt; depend on the mechanism that that implementation uses.  Then there is
+    &gt; utilities_tiny-clos.scm, a file of utilities that depend on Tiny-CLOS.
+    &gt; Finally, there is srfi-44_tiny-clos.scm, a file that defines SRFI 44
+    &gt; in terms of Tiny-CLOS.  A srfi-44_yasos.scm might later be put in the
+    &gt; archive of the implementation; perhaps also a srfi-44_meroon.scm.  I
+    &gt; merely chose Tiny-CLOS because it has a portable implementation and
+    &gt; defines a simple dispatching mechanism; it was useful at the time I
+    &gt; chose it.  (YASOS was used previously, but it required lots of CONDs
+    &gt; in the generic operations, and I didn't like that; that's why I moved
+    &gt; to Tiny-CLOS)
+
+It's an aweful lot of code to drag in for just the functionality in
+44.
+
+So I think we have took towards the future:  let's assume there's 6 or
+12 later srfis giving us new handy collection types.
+
+My fear here is that, since 44 doesn't have type constructors, they'll
+have reference implementations that further depend on large parts of
+the reference implementation of 44 that aren't backed by any srfi.
+
+It seems like there's a longer term plan by the contributors to 44 to
+give us a library of data structures -- very nice.
+
+But since such a library can be built, quite easily I think, with
+relatively little new code, using srfi-9, and since 9 is more likely
+to be well supported by srfi-using implementations than any of the
+object systems you mention, I think it would be the better choice.
+
+There's a more subtle issue, too, which is that if you stick to a
+simpler implementation, its less likely the sum total of the data
+structure specs will quietly drift into (in essense) _requiring_ some
+quirky aspect of what Tiny-CLOS does.
+
+It's just a bummer to think that if I'm going to want to use these
+data structure libraries I have to put up with Tiny-CLOS being &quot;snuck
+in the back door&quot; when it sure looks completely unecessary at this
+stage.
+
+
+-t
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00335" href="msg00335.html">RE: Fundamental design flaws</a></strong>
+<ul><li><em>From:</em> Anton van Straaten</li></ul></li>
+<li><strong><a name="00339" href="msg00339.html">Re: Fundamental design flaws</a></strong>
+<ul><li><em>From:</em> scgmille</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00296" href="msg00296.html">Re: Fundamental design flaws</a></strong>
+<ul><li><em>From:</em> Taylor Campbell</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00332.html">Re: Reasons for withdrawal</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00334.html">Re: Reasons for withdrawal</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00341.html">Re: Fundamental design flaws</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00335.html">RE: Fundamental design flaws</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00333"><strong>Date</strong></a></li>
+<li><a href="threads.html#00333"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,226 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: SRFI withdrawn; comments on the possible future -->
+<!--X-From-R13: [nggurj Tyngg <zsynggNpf.hgnu.rqh> -->
+<!--X-Date: Thu, 25 May 2006 18:37:28 +0200 (MST) -->
+<!--X-Message-Id: 20060525163717.E1EBE65007A@mail&#45;svr1.cs.utah.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>SRFI withdrawn; comments on the possible future</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00311.html">Date Prev</a>][<a href="msg00313.html">Date Next</a>][<a href="msg00311.html">Thread Prev</a>][<a href="msg00313.html">Thread Next</a>][<a href="maillist.html#00312">Date Index</a>][<a href="threads.html#00312">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>SRFI withdrawn; comments on the possible future</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-75@DOMAIN.HIDDEN">srfi-75@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: SRFI withdrawn; comments on the possible future</li>
+<li><em>From</em>: Matthew Flatt &lt;<a href="mailto:mflatt@DOMAIN.HIDDEN">mflatt@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 25 May 2006 10:37:33 -0600</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-75@DOMAIN.HIDDEN">srfi-75@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>If it isn't already by the time you read this message, SRFI-75 will be
+withdrawn. We would like to thank everyone once again for the feedback,
+and we note that discussion can continue on the list even after the
+SRFI is withdrawn.
+
+Your feedback pointed out several places where the R6RS editors needed
+to work harder, so R6RS will certainly not match the SRFI exactly. Due
+to organizational changes within the editors group, we can't update the
+SRFI under the banner of the R6RS process. We can, however, comment on
+the things that will likely change, and we can offer our (combined)
+opinion on likely changes. Those comments appear below.
+
+If you have any opinion on these changes please speak up ASAP so that
+the R6RS editors can take your comments into account.
+
+Matthew and Marc
+
+----------------------------------------
+
+Straightforward additions
+-------------------------
+
+    * `char-general-category', which accepts a character and returns one
+       of 'lu, 'li, ...
+
+    * `string-normalize-nfd', `string-normalize-nfkd,
+      `string-normalize-nfc', and `string-normalize-nfkc', which each
+      accept a string and produce its normalization according to normal
+      form D, KD, C, or KC, respectively.
+
+The #\newline character
+-----------------------
+
+It is likely that #\newline will be removed from Scheme leaving only
+#\linefeed. Since R6RS will pin down characters to Unicode scalar
+values, the right name for the character is #\linefeed.
+
+This change will break compatibility with some R5RS code that might
+have worked otherwise. One view is that removing #\newline will be
+healthier in the long run. Another view is that #\newline can serve as
+an abstaction of the end-of-line character sequence which is returned
+by read-char when the end-of-line character sequence is read (be it
+#\linefeed, or #\return, or # \return followed by #\linefeed). So even
+though #\newline and #\linefeed are the same characters, Scheme
+programs might use #\newline to highlight that the character is being
+used to denote the end-of-line sequence. The name #\newline would also
+reinforce the link with the escape sequence &quot;\n&quot; in strings.
+
+Escape sequences
+----------------
+
+The \x, \u, and \U variations for hexadecimal escapes are compatible
+(to various degrees) with other languages, including C and Java, but
+the feedback on this list pointed to a single escape with a terminator.
+
+For characters, since R6RS requires each character literal to be
+followed by a delimiter, we could just allow any number of hexadecimal
+characters after #\x (perhaps limiting the number of characters to six):
+
+    #\xX...X
+
+The use of a terminator within a string is probably clearer although
+it often requires more typing.  One possible terminator is semi-colon:
+
+   with semi-colon terminator          without terminator
+
+   &quot;A\x42;C&quot; = &quot;ABC&quot;                   &quot;A\x42\x43&quot; = &quot;ABC&quot;
+   &quot;\x41;\x42;\x43;&quot; = &quot;ABC&quot;           &quot;\x41\x42\x43&quot; = &quot;ABC&quot;
+   &quot;\x03BB;x.x&quot; = &quot;&#x3BB;x.x&quot;               &quot;\x03BBx.x&quot; = &quot;&#x3BB;x.x&quot;
+
+An alternate possibility is to use some form of brackets around the
+hexadecimal digits. However, since parentheses and brackets tend to be
+delimiters, this choice interacts somewhat badly with the character
+syntax:
+
+    #\x(03BB) = #\x followed by a list, or #\&#x3BB; ?
+
+Using less-than and greater-than characters, which are not actual
+brackets, avoids this problem:
+
+    #\x&lt;03BB&gt; = #\&#x3BB;
+
+However, they become somewhat more difficult to read when multiple
+escape appear in a string:
+
+   &quot;\x&lt;41&gt;\x&lt;42&gt;\x&lt;43&gt;&quot; = &quot;ABC&quot;
+
+Also, this is arguably an abuse of less-than and greater-than (as
+opposed to angle-bracket characters).
+
+In either case, the trade-off is that Scheme strings are unlikely to be
+compatible with any other language's string syntax. A consequence is
+that there is additional burden on the programmer which must learn yet
+another string and character syntax.
+
+Symbol characters
+-----------------
+
+To ensure that every symbol has an external representation while also
+enabling a 1-to-1 correspondence between symbols and immutable strings,
+the SRFI specified a syntax for symbols based on quoting vertical bars.
+At the same time, the SRFI was very liberal in the set of characters
+allowed in unquoted symbols.
+
+To tighten up the set of characters allowed in a symbol, those with
+Unicode general category Ps, Pe, Pi, Pf, Zs, Zp, Zl, Cc, or Cf will be
+disallowed in a symbol's external unquoted representation. That is,
+paired punctuation, whitespace, controls, and format characters will be
+disallowed.
+
+Moreover it is likely that the vertical-bar notation will be dropped.
+To achieve the same functionality, hexadecimal escapes will be allowed
+in symbols using the same notation as for characters and strings. A
+backslash not followed by x is an error (i.e. only hexadecimal escapes
+are allowed). In that case,
+
+  with the new hexadecimal escapes     with the old vertical bar  
+  notation
+
+  'a\x20;b = (string-&gt;symbol &quot;a b&quot;)    '|a b| = (string-&gt;symbol &quot;a b&quot;)
+  'a\x0a;b = (string-&gt;symbol &quot;a\nb&quot;)   '|a\nb| = (string-&gt;symbol &quot;a\nb&quot;)
+  \x03BB; = &#x3BB;                          |\u03BB| = &#x3BB;
+
+On the one hand, the vertical-bar notation supports a symbol syntax
+that is analogous to strings, it is easy to remember, and it has a
+clear precedent in existing Lisps and Schemes.
+
+On the other hand, the analogy to strings doesn't entirely hold, in
+that the vertical bar is optional with symbols and quotes are not
+optional for strings; the alternative of just allowing hexadecimal
+escapes is arguably more consistent with Scheme's current symbol
+syntax, and it avoids the potential abuse (arguably) of whitespace
+within program identifiers using the vertical bar notation.
+
+Meanwhile, the symbol escapes are similar yet not identical to the
+escapes in strings and characters, so there is a potential for mistakes
+if the programmer is not careful. For example one might expect a\nb to
+be a valid symbol, but it is an error. Also, #\x03BB; without the
+leading hash may surprise a programmer by reading as a symbol, rather
+than producing a lexical error. Finally, syntax-highlighting and cursor
+motion commands (such as M-C-b in emacs) may be difficult to arrange in
+some editors, due to the semicolon escape terminator.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00313" href="msg00313.html">Re: SRFI withdrawn; comments on the possible future</a></strong>
+<ul><li><em>From:</em> Alex Shinn</li></ul></li>
+<li><strong><a name="00314" href="msg00314.html">Re: SRFI withdrawn; comments on the possible future</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+<li><strong><a name="00315" href="msg00315.html">Re: SRFI withdrawn; comments on the possible future</a></strong>
+<ul><li><em>From:</em> Jorgen Schaefer</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00311.html">Re: Why are byte ports &quot;ports&quot; as such?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00313.html">Re: SRFI withdrawn; comments on the possible future</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00311.html">Re: Why are byte ports &quot;ports&quot; as such?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00313.html">Re: SRFI withdrawn; comments on the possible future</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00312"><strong>Date</strong></a></li>
+<li><a href="threads.html#00312"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

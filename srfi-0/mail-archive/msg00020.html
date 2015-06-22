@@ -1,0 +1,197 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: a separate configuration language -->
+<!--X-From-R13: Dvpuneq Yryfrl <xryfrlNerfrnepu.aw.arp.pbz> -->
+<!--X-Date: Mon, 22 Feb 1999 19:31:54 &#45;0600 (CST) -->
+<!--X-Message-Id: 199902230131.UAA30938@kima.nj.nec.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>a separate configuration language</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00019.html">Date Prev</a>][<a href="msg00021.html">Date Next</a>][<a href="msg00019.html">Thread Prev</a>][<a href="msg00021.html">Thread Next</a>][<a href="maillist.html#00020">Date Index</a>][<a href="threads.html#00020">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>a separate configuration language</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-0@DOMAIN.HIDDEN">srfi-0@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: a separate configuration language</li>
+<li><em>From</em>: Richard Kelsey &lt;<a href="mailto:kelsey@DOMAIN.HIDDEN">kelsey@xxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 22 Feb 1999 20:31:38 -0500</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+In both Marc Feeley's original SRFI 0 and in the SRFI editors'
+revised version, programs and their configuration (e.g. what
+SRFI's they use) are intermixed.  I think that this is a mistake
+for a number of reasons:
+
+ - I have found that more than minimal use of C's #ifdef construct,
+   which is similar to IF-IMPLEMENTS and COND-IMPLEMENTS, makes code
+   extremely hard to read.
+
+ - Both people and programs need to read the entire source to see
+   which SRFI's might be needed.  In the revised SRFI 0, ambiguities
+   can arise if an identifier appears before the IMPORT-IMPLEMENTATION
+   form that defines it.  Does the entire source have to be read
+   before evaluating the first form?  Does it all have to be macro
+   expanded before evaluating the first form?
+   
+ - It may be difficult to implement either version of SRFI 0 in the
+   presence of a module system.  This is certainly the case with
+   Scheme 48.
+
+I would like to propose that we have a separate configuration
+language, one that is not embedded in Scheme.  Below is a suggestion
+for such a language.  It is not quite as flexible as either version
+of SRFI 0, in that features can be tested only at top level, and not
+in nested expressions.  I doubt that this would matter much in
+practice, given the ease of writing both procedural and syntactic
+abstractions in Scheme.  In return we get a very simple and portable
+configuration language that avoids any confusing interaction with the
+underlying Scheme's syntax and semantics.
+
+                                    -Richard Kelsey
+
+----------------
+Configuration language syntax:
+
+ &lt;program&gt; --&gt; (program &lt;program clause&gt;+)
+
+ &lt;program clause&gt;
+   --&gt; (requires &lt;feature-identifier&gt;+)
+   --&gt; (reader-syntax &lt;feature-identifier&gt;+)
+   --&gt; (files &lt;filename&gt;*)
+   --&gt; (code &lt;body&gt;)
+   --&gt; (feature-cond &lt;feature-cond clause&gt;+)
+
+  &lt;feature-cond clause&gt;
+   --&gt; (&lt;implementation requirement&gt;
+        &lt;program clause&gt;+)
+
+  &lt;implementation requirement&gt;
+   --&gt; as in the SRFI editor's version of SRFI 0
+
+  &lt;feature identifier&gt;
+   --&gt; as in the SRFI editor's version of SRFI 0
+
+----------------
+Semantics:
+
+Given a set of available features and a configurable reader,
+a &lt;program&gt; can be read in as a list of S-expressions to be
+evaluated.  No macro expansion is required to read a &lt;program&gt;.
+
+Each implementation would provide some way for loading a program.
+For example, it might have a (LOAD-PROGRAM &lt;filename&gt;) function
+or a compiler that compiled a program into an executable file.
+
+The meanings of the different clauses are given below.  The
+ordering of the clauses in a &lt;program&gt; is significant.  It
+determines both the order of the forms in the final program
+and which reader is used to read different sections of the
+program.
+
+(requires &lt;feature-identifier&gt;+)
+  The listed features are required by the program.  If one or
+more is not provided by the implementation the program cannot
+be run.
+
+(reader-syntax &lt;feature-identifier&gt;+)
+  The listed features determine the lexical syntax of the program
+from this point on.  If one or more of the features is not provided
+by the implementation the program cannot be read.  [Personally, I
+do not think changes to the lexical syntax are a good idea.  At a
+minimum they should be restricted to the #... syntax.  Scheme
+programs should have something in common.]
+
+(files &lt;filename&gt;*)
+  The listed files are read, using the current lexical syntax,
+and the forms they contain added to the program.
+
+(code &lt;body&gt;)
+  The forms in &lt;body&gt; are read, again using the current lexical
+syntax, and added to the program.  (This requires that the syntax
+of `)' not be changed by any SRFI).
+
+(feature-cond &lt;feature-cond clause&gt;+)
+  The meaning of a FEATURE-COND clause is that of the
+&lt;program-clause&gt;s in the first &lt;feature-cond clause&gt; whose
+&lt;implementation-requirement&gt; is satisfied by the implementation.
+Unlike the proposed COND-IMPLEMENTS, the implementation has no
+leeway in choosing which clause to use (down with ambiguity!).
+
+----------------
+Implementation:
+
+Available on request.
+
+The portable part of the implementation would be a READ-PROGRAM
+function that took three arguments: an input port, a list of
+symbols indicating the features available in the current
+implementation, and a make-reader function that took a list
+of symbols representing features and returned a READ-like
+function that supported those features.
+
+READ-PROGRAM would return two values: the forms of the program
+as a list of S-expressions and a list of the features used by the
+program.  Both this list and any lists passed to the make-reader
+function would be subsets of the features list passed to
+READ-PROGRAM.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00021" href="msg00021.html">Re: a separate configuration language</a></strong>
+<ul><li><em>From:</em> Michael Sperber [Mr. Preprocessor]</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00019.html">Re: Semantics of IMPORT-IMPLEMENTATION</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00021.html">Re: a separate configuration language</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00019.html">Re: Semantics of IMPORT-IMPLEMENTATION</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00021.html">Re: a separate configuration language</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00020"><strong>Date</strong></a></li>
+<li><a href="threads.html#00020"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

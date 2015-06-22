@@ -1,0 +1,134 @@
+<!-- MHonArc v2.6.16 -->
+<!--X-Subject: Re: SRFI 105: Curly&#45;infix&#45;expressions -->
+<!--X-From-R13: "Rnivq O. Iurryre" <qjurryreNqjurryre.pbz> -->
+<!--X-Date: Mon, 27 Aug 2012 12:27:17 +0000 (UTC) -->
+<!--X-Message-Id: E1T5yPU&#45;0002vK&#45;HK@fenris.runbox.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: E1T5nSK&#45;00084G&#45;6i@fenris.runbox.com -->
+<!--X-Reference: 20120826.182304.931495076416921545.shiro@lava.net -->
+<!--X-Reference: CAF+kUQWBRMkf48gjQdp9GoEhiv9t209=f_t=iWtxCd5m_Zv5zw@mail.gmail.com -->
+<!--X-Reference: 20120826.213139.1108322852317673718.shiro@lava.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: SRFI 105: Curly-infix-expressions</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00020.html">Date Prev</a>][<a href="msg00022.html">Date Next</a>][<a href="msg00024.html">Thread Prev</a>][<a href="msg00022.html">Thread Next</a>][<a href="maillist.html#00021">Date Index</a>][<a href="threads.html#00021">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: SRFI 105: Curly-infix-expressions</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:shiro@DOMAIN.HIDDEN">shiro@xxxxxxxx</a></li>
+<li><em>Subject</em>: Re: SRFI 105: Curly-infix-expressions</li>
+<li><em>From</em>: &quot;David A. Wheeler&quot; &lt;<a href="mailto:dwheeler@DOMAIN.HIDDEN">dwheeler@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 27 Aug 2012 08:27:16 -0400 (EDT)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-105@DOMAIN.HIDDEN">srfi-105@xxxxxxxxxxxxxxxxx</a>, <a href="mailto:almkglor@DOMAIN.HIDDEN">almkglor@xxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-105@DOMAIN.HIDDEN">srfi-105@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20120826.213139.1108322852317673718.shiro@DOMAIN.HIDDEN">20120826.213139.1108322852317673718.shiro@xxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:E1T5nSK-00084G-6i@DOMAIN.HIDDEN">E1T5nSK-00084G-6i@xxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20120826.182304.931495076416921545.shiro@DOMAIN.HIDDEN">20120826.182304.931495076416921545.shiro@xxxxxxxx</a>&gt; &lt;<a href="mailto:CAF%2BkUQWBRMkf48gjQdp9GoEhiv9t209%3Df_t%3DiWtxCd5m_Zv5zw@DOMAIN.HIDDEN">CAF+kUQWBRMkf48gjQdp9GoEhiv9t209=f_t=iWtxCd5m_Zv5zw@xxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20120826.213139.1108322852317673718.shiro@DOMAIN.HIDDEN">20120826.213139.1108322852317673718.shiro@xxxxxxxx</a>&gt;</li>
+<li><em>Reply-to</em>: <a href="mailto:dwheeler@DOMAIN.HIDDEN">dwheeler@xxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Shiro Kawai:
+&gt; - I think whether the following C-expr is 'simple' or not
+&gt;   depends on implementation, correct?
+&gt;     `{x ,op y ,op z}
+
+Correct.  We could *require* support for this.  The &quot;easy&quot; way would be to require use of &quot;equal?&quot;.
+
+&gt;   Having reader to recognize simple C-exprs might introduce
+&gt;   nasty edge cases.  If macro handles transformation, the
+&gt;   behavior would be more predictable.
+
+No, that'd be horrible.  I don't care if the underlying reader uses macros to implement itself, that's fine.  But when (read) is done, it is *critically* important that {+ a b} produce the list (+ a b).  There are lots of &quot;infix&quot; systems today that generate FUNNY_SYMBOL as the first position.  That's not what an infix system is about; the point is to put the OPERATOR into the operator position, not FUNNY_SYMBOL.
+
+&gt; - Scope of reader extension isn't well defined.  If an
+&gt;   implementation provides multiple extensions of C-exprs
+&gt;   (either through nfx or transform-mixed-infix), when and
+&gt;   how those are used?  Each implementation would have its
+&gt;   own rules; it'd be pretty wild.  On the other hand, the
+&gt;   scope of macros (in terms of module systems) is pretty
+&gt;   well defined.
+
+The reader scope is easy: ALWAYS.  EVERYWHERE.  ALL the time.  It affects read, load, REPL, and even get-datum if you have it.  If there's some other case that should be mentioned, please let us know so we can add it.
+
+Regarding &quot;nfx&quot;: The reader returns a list with the &quot;nfx&quot; symbol in the front.  The user then decides what to do.  There's *NO* requirement that the result *EVER* be passed to eval, by the way; the user might have a completely different process for handling the result from read.  This adds flexibility at little cost.
+
+The &quot;transform-mixed-infix&quot; should NEVER be changed by the user, as documented in the SRFI.  That is intended as a trapdoor for future SRFIs.  Note that &quot;transform-mixed-infix&quot; is NOT a requirement, it's just that an implementation MAY define it.
+
+
+&gt; The reason why you didn't take this approach may be possible
+&gt; interferences with n-expressions.  If so, I'd like to see
+&gt; the reasoning noted in the srfi, or (I prefer) modifying
+&gt; the way n-expressions work so that it can work with
+&gt; &quot;macro-transfers-all&quot; approach.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00022" href="msg00022.html">Re: SRFI 105: Curly-infix-expressions</a></strong>
+<ul><li><em>From:</em> John Cowan</li></ul></li>
+<li><strong><a name="00027" href="msg00027.html">Re: SRFI 105: Curly-infix-expressions</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00011" href="msg00011.html">Re: SRFI 105: Curly-infix-expressions</a></strong>
+<ul><li><em>From:</em> David A. Wheeler</li></ul></li>
+<li><strong><a name="00016" href="msg00016.html">Re: SRFI 105: Curly-infix-expressions</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+<li><strong><a name="00017" href="msg00017.html">Re: SRFI 105: Curly-infix-expressions</a></strong>
+<ul><li><em>From:</em> Alan Manuel Gloria</li></ul></li>
+<li><strong><a name="00018" href="msg00018.html">Re: SRFI 105: Curly-infix-expressions</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00020.html">Re: SRFI 105: Curly-infix-expressions</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00022.html">Re: SRFI 105: Curly-infix-expressions</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00024.html">Re: SRFI 105: Curly-infix-expressions</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00022.html">Re: SRFI 105: Curly-infix-expressions</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00021"><strong>Date</strong></a></li>
+<li><a href="threads.html#00021"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

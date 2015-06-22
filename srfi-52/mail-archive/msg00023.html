@@ -1,0 +1,169 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Encodings. -->
+<!--X-From-R13: orne <orneNfbavp.arg> -->
+<!--X-Date: Thu, 12 Feb 2004 18:45:20 +0100 (NFT) -->
+<!--X-Message-Id: Pine.LNX.4.58.0402120908270.15544@bolt.sonic.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200402102106.NAA13325@morrowfield.regexps.com -->
+<!--X-Reference: 20040212024256.GA7434@ogre.szonye.com -->
+<!--X-Reference: Pine.LNX.4.58.0402112331390.11073@bolt.sonic.net -->
+<!--X-Reference: 200402120741.07973.Ken.Dickey@allvantage.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Encodings.</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00022.html">Date Prev</a>][<a href="msg00024.html">Date Next</a>][<a href="msg00022.html">Thread Prev</a>][<a href="msg00025.html">Thread Next</a>][<a href="maillist.html#00023">Date Index</a>][<a href="threads.html#00023">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Encodings.</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Ken Dickey &lt;<a href="mailto:Ken.Dickey@DOMAIN.HIDDEN">Ken.Dickey@xxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Encodings.</li>
+<li><em>From</em>: bear &lt;<a href="mailto:bear@DOMAIN.HIDDEN">bear@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 12 Feb 2004 09:45:12 -0800 (PST)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-52@DOMAIN.HIDDEN">srfi-52@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-52@DOMAIN.HIDDEN">srfi-52@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:200402120741.07973.Ken.Dickey@DOMAIN.HIDDEN">200402120741.07973.Ken.Dickey@xxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:200402102106.NAA13325@DOMAIN.HIDDEN">200402102106.NAA13325@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20040212024256.GA7434@DOMAIN.HIDDEN">20040212024256.GA7434@xxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:Pine.LNX.4.58.0402112331390.11073@DOMAIN.HIDDEN">Pine.LNX.4.58.0402112331390.11073@xxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:200402120741.07973.Ken.Dickey@DOMAIN.HIDDEN">200402120741.07973.Ken.Dickey@xxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+On Thu, 12 Feb 2004, Ken Dickey wrote:
+
+&gt; I assume that it is useful to distinguish the two goals of
+&gt;	extending programming language identifiers
+&gt; and	processing Unicode data.
+
+For temporary solutions and bandaids, yes.  But scheme is a lisp, and
+our code is data and our data is code.  Our identifier-naming rules,
+ultimately, *can* affect our program behavior, where with C and similar
+languages, it cannot.
+
+Every implementation that deals with Unicode at all seriously is going
+to have to create rules for distinguishing Unicode identifiers, and to
+the extent that they adopt *different* rules, there will be enduring
+and sometimes very subtle portability problems, and bugs where code
+works slightly differently on one system than it does on another
+
+&gt; So w.r.t. identifiers, why is normalization needed at all? To my
+&gt; mind, normalization is a library procedure (set of procedures) for
+&gt; dealing with Unicode data/codepoints.
+
+Normalization is needed because unicode provides many different ways
+to represent what is intended to be _EXACTLY_ the same string.  When
+you see a string containing, say, a lowercase 'a' with an accent grave,
+you don't know whether that's one codepoint (what unicode calls a
+'precombined character') or two codepoints (what unicode calls a 'base
+character' plus a 'combining mark').
+
+Furthermore, unicode editors are not required to distinguish these forms,
+and may convert one to the other, and back, arbitrarily and without your
+knowledge.
+
+In fact, for most operations where it might matter, they are required
+to *not* distinguish such forms, so that if you 'text search' for one
+you should also find all instances of the other. Editors and compilers
+typically convert all unicode text to a preferred normalized encoding
+instantly when it is read.
+
+There are four sanctioned choices; NFC, NFD, NFKC, and NFKD.  The
+first two and the last two may be converted to and from each other
+without loss; they are truly equivalent.  However, NFC/NFD allow much
+finer-grained distinctions between similar strings than
+NFKC/NFKD. Identifiers that are distinct in the first two forms may
+become identical in the latter two forms, and once converted to one of
+the latter two forms do not contain sufficient information to convert
+them back.
+
+
+&gt; Defining valid identifier syntax such that case folding of
+&gt; (unnormalized) identifier literals should be sufficient.
+
+&gt; What am I missing?
+
+You're missing all the tools and utilities out there that are
+programmed with the expectation and requirement that they can
+arbitrarily impose or change normalization forms without changing the
+text of the documents they handle.  There is no escaping this; even
+Emacs and Notepad do it.
+
+&gt; Another note.  Characters are currently dealt with in a fairly abstract
+&gt; manner.  It would seem that in dealing with Unicode data as binary data
+&gt; (codepoints), R6RS/SRFI/... must define a binary IO API.
+
+I think that's true.  While programmers should never have to care
+about the internal representation of characters, they have to care
+about writing them in a format acceptable to other systems and reading
+different forms of them that are written by other systems.
+
+				Bear
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00025" href="msg00025.html">Re: Encodings.</a></strong>
+<ul><li><em>From:</em> Ken Dickey</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00007" href="msg00007.html">terminology</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00017" href="msg00017.html">Re: terminology</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+<li><strong><a name="00019" href="msg00019.html">Encodings.</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+<li><strong><a name="00021" href="msg00021.html">Re: Encodings.</a></strong>
+<ul><li><em>From:</em> Ken Dickey</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00022.html">Re: Encodings.</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00024.html">Re: Encodings.</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00022.html">Re: Encodings.</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00025.html">Re: Encodings.</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00023"><strong>Date</strong></a></li>
+<li><a href="threads.html#00023"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

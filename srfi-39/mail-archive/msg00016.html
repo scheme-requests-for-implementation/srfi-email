@@ -1,0 +1,197 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Some comments -->
+<!--X-From-R13: sryvk <sryvkhaqqhavNserrarg.qr> -->
+<!--X-Date: Mon,  6 Jan 2003 00:09:04 +0100 (NFT) -->
+<!--X-Message-Id: 3E18B6C7.8070205@freenet.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 3E050560.6090507@freenet.de -->
+<!--X-Reference: 200212220251.gBM2p2Y14110@dino00.iro.umontreal.ca -->
+<!--X-Reference: 3E077CA2.2040703@freenet.de -->
+<!--X-Reference: 200212301429.gBUETMm28219@dino00.iro.umontreal.ca -->
+<!--X-Reference: 3E1701FF.20100@freenet.de -->
+<!--X-Reference: 200301041900.h04J09k08622@dino00.iro.umontreal.ca -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Some comments</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00015.html">Date Prev</a>][<a href="msg00017.html">Date Next</a>][<a href="msg00015.html">Thread Prev</a>][<a href="msg00017.html">Thread Next</a>][<a href="maillist.html#00016">Date Index</a>][<a href="threads.html#00016">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Some comments</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Marc Feeley &lt;<a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Some comments</li>
+<li><em>From</em>: felix &lt;<a href="mailto:felixundduni@DOMAIN.HIDDEN">felixundduni@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 05 Jan 2003 23:50:47 +0100</li>
+<li><em>Cc</em>: <a href="mailto:srfi-39@DOMAIN.HIDDEN">srfi-39@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-39@DOMAIN.HIDDEN">srfi-39@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>References</em>: &lt;<a href="mailto:3E050560.6090507@DOMAIN.HIDDEN">3E050560.6090507@xxxxxxxxxx</a>&gt; &lt;<a href="mailto:200212220251.gBM2p2Y14110@DOMAIN.HIDDEN">200212220251.gBM2p2Y14110@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:3E077CA2.2040703@DOMAIN.HIDDEN">3E077CA2.2040703@xxxxxxxxxx</a>&gt; &lt;<a href="mailto:200212301429.gBUETMm28219@DOMAIN.HIDDEN">200212301429.gBUETMm28219@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:3E1701FF.20100@DOMAIN.HIDDEN">3E1701FF.20100@xxxxxxxxxx</a>&gt; &lt;<a href="mailto:200301041900.h04J09k08622@DOMAIN.HIDDEN">200301041900.h04J09k08622@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.0.0) Gecko/20020529</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+Marc Feeley wrote:
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+
+It is the &quot;fully&quot; that I don't like.  With the semantics I propose
+a user can decide what is shared and what is not shared (i.e. fully
+thread-local).  For example, if I want to create a thread that has
+a fully thread-local binding for the parameter current-input-port
+then you can simply say:
+[...]
+
+This way the user can choose what is shared and not on a
+per thread basis.
+
+</pre></blockquote><pre style="margin: 0em;">
+
+Right. But there are other ways to have non thread-local storage
+(simple toplevel variables for example).
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+
+That's not true. I'm probably expressing myself not clearly enough.
+`make-parameter' creates a parameter in a global environment (not attached)
+to any thread. Thread-creation copies the parent's parameter-env,
+*but* this env will be empty if the parent has not yet changed it's
+parameter-env (i.e. it is equivalent to the global env).
+</pre></blockquote><pre style="margin: 0em;">
+
+
+But can the global env be mutated by the main thread?  In other words
+if the main thread does (current-output-port stderr) and (parameterize
+((current-output-port stderr)) ...) does it mutate the global env?  My
+understanding was that it did (thus thread creation would have to copy
+the global env to get a consistent &quot;snapshot&quot; of the dynamic
+environment).  If the global env is immutable, then parameter-env
+could be as big (or bigger depending on your implementation) as the
+global env.  So scalability is an issue.
+</pre></blockquote><pre style="margin: 0em;">
+
+The global env is never mutated by any thread besides that the values
+of parameters introduced freshly are put into it (the default or
+initial value).
+Scalability is definitely an issue, but I don't think that it is too expensive to prevent
+it from being adapted as the default behaviour, which I find more useful.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+
+The &quot;swapping semantics&quot; hides a (potentially expensive) copying
+operation from the user.  I prefer when expensive operations are
+explicit so the user has some control over them.
+
+</pre></blockquote><pre style="margin: 0em;">
+
+Understood.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+
+I don't believe it would confuse users... there are few users that
+combine threads and parameters and mutation, and those that do can
+easily understand the semantics I propose (or indeed they are perhaps
+incorrectly assuming the semantics I propose which is simpler and more
+in line with the R5RS semantics!).  I am not changing the semantics of
+a well-established construct...
+</pre></blockquote><pre style="margin: 0em;">
+
+Well, I think you are. I assume many PLT users are using threads and
+parameters, but I may be wrong, of course...
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+(BTW, there is a simple way out of this dilemma: use different
+names - `make-dynamic' and `let-dynamic' come to mind, for example...)
+</pre></blockquote><pre style="margin: 0em;">
+
+
+This is why I added &quot;make-mutable-parameter&quot;.  Once again:
+make-parameter is compatible with existing systems that support
+parameters, even those supporting threads.
+</pre></blockquote><pre style="margin: 0em;">
+
+By heavily restricting the usefulness of `make-parameter'.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+
+Alternatively, someone (perhaps you?) could propose a SRFI giving a
+different semantics for &quot;make-parameter&quot; and mutation in the presence
+of threads.  I think my proposal is the &quot;right&quot; way, but I don't have
+a monopoly on &quot;rightfulness&quot;!
+
+</pre></blockquote><pre style="margin: 0em;">
+
+I already proposed what I think is the better solution (which of course
+is not necessarily &quot;righter&quot; - yet more practical).
+
+
+cheers,
+felix
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00001" href="msg00001.html">Some comments</a></strong>
+<ul><li><em>From:</em> felix</li></ul></li>
+<li><strong><a name="00003" href="msg00003.html">Re: Some comments</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+<li><strong><a name="00008" href="msg00008.html">Re: Some comments</a></strong>
+<ul><li><em>From:</em> felix</li></ul></li>
+<li><strong><a name="00009" href="msg00009.html">Re: Some comments</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+<li><strong><a name="00013" href="msg00013.html">Re: Some comments</a></strong>
+<ul><li><em>From:</em> felix</li></ul></li>
+<li><strong><a name="00015" href="msg00015.html">Re: Some comments</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00015.html">Re: Some comments</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00017.html">Purpose of SRFI 39</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00015.html">Re: Some comments</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00017.html">Purpose of SRFI 39</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00016"><strong>Date</strong></a></li>
+<li><a href="threads.html#00016"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

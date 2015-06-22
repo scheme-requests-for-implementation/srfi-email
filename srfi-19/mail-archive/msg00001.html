@@ -1,0 +1,218 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: RE: leap seconds -->
+<!--X-From-R13: "Ivyy Tvgmtrenyq" <svgmtrenyqNarbqrfvp.pbz> -->
+<!--X-Date: Tue, 14 Mar 2000 08:13:31 &#45;0600 (CST) -->
+<!--X-Message-Id: 000901bf8dbf$724c82b0$11969fd0@fitzgerald_nt -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200003131724.MAA02614@trex.IRO.UMontreal.CA -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>RE: leap seconds</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00000.html">Date Prev</a>][<a href="msg00002.html">Date Next</a>][<a href="msg00000.html">Thread Prev</a>][<a href="msg00002.html">Thread Next</a>][<a href="maillist.html#00001">Date Index</a>][<a href="threads.html#00001">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>RE: leap seconds</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &quot;Marc Feeley&quot; &lt;<a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>&gt;, &lt;<a href="mailto:srfi-19@DOMAIN.HIDDEN">srfi-19@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: RE: leap seconds</li>
+<li><em>From</em>: &quot;Will Fitzgerald&quot; &lt;<a href="mailto:fitzgerald@DOMAIN.HIDDEN">fitzgerald@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 14 Mar 2000 09:13:18 -0500</li>
+<li><em>Importance</em>: Normal</li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:200003131724.MAA02614@DOMAIN.HIDDEN">200003131724.MAA02614@xxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Reply-to</em>: &lt;<a href="mailto:fitzgerald@DOMAIN.HIDDEN">fitzgerald@xxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Some quick responses to quick comments.
+
+&gt; -----Original Message-----
+&gt; From: Marc Feeley [<a  rel="nofollow" href="mailto:feeley@xxxxxxxxxxxxxxxx">mailto:feeley@xxxxxxxxxxxxxxxx</a>]
+&gt; Sent: Monday, March 13, 2000 12:24 PM
+&gt; To: srfi-19@xxxxxxxxxxxxxxxxx
+&gt; Subject: leap seconds
+&gt;
+&gt;
+&gt; After a very quick look at SRFI-19 I have the following comments:
+&gt;
+&gt; 1) The interface assumes that there are exactly 86400 seconds in a
+&gt; day.  This is not true.  There can be exactly 86399, 86400 and 86401
+&gt; seconds in a day, due to &quot;leap seconds&quot;.  Note that the point in time
+&gt; where the leap seconds are added (or removed) is under the control of
+&gt; a committee and there is no deterministic algorithm to determine in
+&gt; advance where they occur (it all depends on the speed of rotation of
+&gt; the earth which varies slightly, up and down, due to various factor).
+&gt; So the &quot;seconds&quot; component should be in the range 0-60 inclusive.
+&gt; According to &quot;man ctime&quot; under linux, the seconds field can go up to
+&gt; 61, but I don't understand why that high.  You should probably
+&gt; research this a little more.  Here are some interesting sources of
+&gt; information:
+&gt;
+&gt;    <a  rel="nofollow" href="http://tycho.usno.navy.mil/leapsec.990505.html">http://tycho.usno.navy.mil/leapsec.990505.html</a>
+&gt;    <a  rel="nofollow" href="http://www.naggum.no/lugm-time.html">http://www.naggum.no/lugm-time.html</a>
+&gt;
+
+It doesn't assume this many seconds in a year; it defines this many
+seconds in a year. One advantage is that you get a deterministic
+algorithm (as you say). Another important advantage is that you can
+treat time as a number, and use standard mathematical operators. The
+disadvantage is that drift from UTC, as you say.
+
+&gt; 2) To be consistent with Scheme naming convention and practice, you
+&gt; should rename &quot;get-universal-time&quot; to &quot;current-time&quot;,
+&gt; &quot;current-universal-time&quot;, or &quot;current-date&quot;.
+&gt;
+
+
+Sorry, I missed the last Scheme Naming Convention--when was it held?
+Seriously, I don't have a problem changing the names, but perhaps you
+could point out a &quot;here's how to name Scheme procedures&quot; document; I'd
+appreciate it.
+
+&gt; 3) Why limit the resolution of the time datatype to 1 second?
+&gt; The resolution should be implementation dependent, and if you insist,
+&gt; of at least 1 second resolution.  This is so that an implementation
+&gt; can use the time datatype for finer resolution timing (such
+&gt; as a &quot;(thread-sleep! wakeup-time)&quot; procedure I am considering for
+&gt; my thread SRFI).  Otherwise, to do finer resolution timing you need
+&gt; another time datatype, and this is rather clumsy.
+&gt;
+
+The main reason is just that bug-a-boo of mine to be consistent with
+Common Lisp; I'll reconsider this. I've found the CL approach clumsy in
+just this way.
+
+
+&gt; 4) I don't like the fact that the &quot;year&quot; component has a special
+&gt; meaning between 0 and 99:
+&gt;
+&gt;     Year, an integer representing the year C.E. (i.e., A.D.). If the
+&gt;     integer is between 0 and 99, however, it represents the current
+&gt;     year + the year (if it is less than 50) or the current year - the
+&gt;     year (if it is greater than or equal to 50).
+&gt;
+&gt; This is because the meaning of a date created with
+&gt; encode-universal-time will depend on the time when that procedure was
+&gt; called, and since there is no way to know precisely at what time it
+&gt; was called there are (extreme) situations where the time meant is
+&gt; not clear (i.e. meaning of year 50 at the turn of the year 2000 plus
+&gt; or minus a few nanoseconds may be 1950 or 2050).
+&gt;
+
+More Consistency With Common Lisp (CWCL). Still, I'm willing to drop
+this.
+
+&gt; 5) Instead of the &quot;multiple value&quot; interface of decode-universal-time
+&gt; I prefer single-value accessors of the kind:
+&gt;
+&gt;   (universal-time-second ut)
+&gt;   (universal-time-minute ut)
+&gt;   ...
+&gt;
+&gt; and also (universal-time-second ut) would return a real, possibly
+&gt; inexact.
+&gt;
+
+Maybe. Perhaps you could give me reason beyond 'I prefer'?
+
+&gt; 6) Why use 1-1-1900 as a base, why not 1-1-1970 which is the norm
+&gt; under UNIX?  I know this is a convention, but a closer base date gives
+&gt; more implementation leaway... for example a 2 fixnum representation
+&gt; (32 bit words, 3 tag bits) counting nanoseconds since 1-1-1900 will
+&gt; wraparound in 1991 but if you count from 1-1-1970 it will wraparound
+&gt; in 2061, which is probably reasonable for many applications.  And if
+&gt; you insist on 1-1-1900, please consider 1-1-2000 at least.
+&gt;
+
+Again, CWCL. 1-1-2000 seems like a poor choice because time isn't
+defined before this number. 1-1-1970 might be fine.
+
+&gt; 7) The time datatype should be abstract, i.e. it shouldn't be
+&gt; a number.  There should be conversion functions between time and
+&gt; seconds since the base time:
+&gt;
+&gt;   (universal-time-&gt;seconds ut)
+&gt;   (seconds-&gt;universal-time secs)
+&gt;
+&gt; Note again that the result of universal-time-&gt;seconds and the
+&gt; argument of seconds-&gt;universal-time should be a real, possibly
+&gt; inexact.
+&gt;
+
+The main reason is insist that it be a number is one can use standard
+mathematical operators on them, without converting. You don't need a
+special time&gt;, etc.
+
+
+&gt;
+&gt; [Useful implementation notes snipped]
+&gt;
+&gt; Marc
+&gt;
+
+I think the most crucial question Marc's note raises is whether time
+(especially 'universal time') should be an abstract data type or a
+number; and, if a number, whether it should be a real or an integer. I'd
+be glad to hear others' ideas.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00002" href="msg00002.html">Re: leap seconds</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00000" href="msg00000.html">leap seconds</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00000.html">leap seconds</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00002.html">Re: leap seconds</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00000.html">leap seconds</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00002.html">Re: leap seconds</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00001"><strong>Date</strong></a></li>
+<li><a href="threads.html#00001"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

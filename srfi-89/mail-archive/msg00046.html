@@ -1,0 +1,229 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: highly parametric interfaces -->
+<!--X-From-R13: "Oyrk Euvaa" <nyrkfuvaaNtznvy.pbz> -->
+<!--X-Date: Fri, 14 Apr 2006 05:42:29 +0200 (MST) -->
+<!--X-Message-Id: 5fb7e0870604132041u2860ababu73ce0f93172adb52@mail.gmail.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>highly parametric interfaces</title>
+<link rev="made" href="mailto:alexshinn@gmail.com">
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00045.html">Date Prev</a>][<a href="msg00047.html">Date Next</a>][<a href="msg00045.html">Thread Prev</a>][<a href="msg00047.html">Thread Next</a>][<a href="maillist.html#00046">Date Index</a>][<a href="threads.html#00046">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>highly parametric interfaces</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-89%40srfi.schemers.org">srfi-89@srfi.schemers.org</a></li>
+<li><em>Subject</em>: highly parametric interfaces</li>
+<li><em>From</em>: &quot;Alex Shinn&quot; &lt;<a href="mailto:alexshinn%40gmail.com">alexshinn@gmail.com</a>&gt;</li>
+<li><em>Date</em>: Fri, 14 Apr 2006 12:41:52 +0900</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-89%40srfi.schemers.org">srfi-89@srfi.schemers.org</a></li>
+<li><em>Domainkey-signature</em>: a=rsa-sha1; q=dns; c=nofws;        s=beta; d=gmail.com;        h=received:message-id:date:from:to:subject:mime-version:content-type:content-transfer-encoding:content-disposition;        b=cX1mfb9FbVyD+MjxSOmxlxGz77cn67Q3cq3bAscohxBDK6+RO8DdvWdf3ny6JVCsQrfNOLDJgKRe74OQItjs+y9OwVgZ/5cTsacpWXixj0iY1uiTYHQDcxAD2Hw2JdXkRMFPeOH9/B0um2zviDdcLyKIK+hNQy5rmn/7XY0WQ0M=</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Felix raised a good point, which is that many Schemers, including
+those that regularly use keywords, feel at some level that they're a
+bit of a hack.  Keywords are purely syntactic sugar, and add
+complexity to the language core.
+
+Yet we use them.
+
+Even if not in the literal sense of a self-evaluating literal with a
+colon stuck on one end, sooner or later most people come across a
+procedure with too many parameters to simply be tacked on as
+optional arguments.  Currently there are many ways to handle this:
+
+* Functional purist - &quot;Your design is wrong, there's no excuse ever
+  to write a function with such varied behavior.&quot;  This person may
+  in fact be correct.  Using combinators and monads, any
+  parametrized function can be broken into smaller, more manageable
+  components.  However, finding the appropriate breakdown can be
+  time-consuming and difficult.  Moreover, some interfaces genuinely
+  are more naturally expressed with parameters.  Anyone who would
+  argue this is probably already using Haskell, or at any rate
+  should just ignore this SRFI and never use it :)
+
+* OOP purist - &quot;Just wrap any parametric behaviour into one or more
+  configuration objects.&quot;  This is very flexible, and convenient for
+  chaining and passing on the same (or slightly modified)
+  configuration to other functions.  Early discussions on the RRRS
+  authors list included an interesting variation of the
+  NUMBER-&gt;STRING procedure:
+
+    (number-&gt;string &lt;number&gt; &lt;format&gt;)
+
+  Formats included (FIX n), (SCI n m), and more complicated
+  compositions such as
+
+    (number-&gt;string n (polar (flo 2 (radix 8)) (flo (radix 10)))
+
+  The performance minded individual would make the configuration
+  object constructors integrable.  [The original discussion wasn't
+  clear but it seemed to imply they were syntax, which destroys
+  compositionality and loses much of the flexibility you've gained.]
+
+  The disadvantages of this are that either 1) for every parametric
+  procedure you need to define a new class and keep it in sync as
+  the API changes, or 2) you use a single extensible configuration
+  class, perhaps a hash-table or closure, which suffers from poor
+  performance.  Perl effectively uses the latter, passing
+  hash-tables as arguments to complex functions, but Perl's
+  hash-table syntax makes this feel more like a keyword interface,
+  discussed below.
+
+* Efficiency-oriented OOP - &quot;Just set the parameters in the calling
+  object.&quot;  This person of course assumes there are no functions,
+  only methods, and only for a single calling object.  This is where
+  you get:
+
+    (define fmt (make-number-formatter))
+    (number-formatter-set-complex-behavior! fmt O_POLAR)
+    (number-formatter-set-magnitude-style! fmt O_FLOAT)
+    (number-formatter-set-magnitude-places! fmt 2)
+    (number-formatter-set-magnitude-radix! fmt 8)
+    (number-formatter-set-angle-style! fmt O_FLOAT)
+    (number-formatter-set-angle-radix! fmt 10)
+    (number-formatter-format fmt n)
+
+  for the equivalent to the above NUMBER-&gt;STRING example.  These
+  people are all coding C++ or Java, so we can ignore this and not
+  even discuss what's wrong with it.
+
+* Lisp minimalist - &quot;Why does everyone keep introducing new types
+  when a simple alist will suffice?&quot;  Again, this is true, you can
+  easily represent everything with an alist:
+
+    (number-&gt;string n '((radix . 10)))
+
+  This is fully general, and can express nested formats like the
+  polar example naturally.  Unfortunately, for more typical examples
+  this is usually going to involve backquotes and commas
+
+    (button `((text . ,(gettext &quot;OK&quot;)) (action . ,quit)))
+
+* Syntactic sweet tooth - &quot;Lists are fine, but let's clean up the
+  appearance a little.&quot;  Rather than an alist, a simple plist is
+  just as efficient and can look much nicer:
+
+    (button 'text (gettext &quot;OK&quot;) 'action quit)
+
+  Moreover, if we use a common convention for the keyword symbols we
+  can visually distinguish (and have our editors automatically
+  highlight) keyword usage:
+
+    (button 'text: (gettext &quot;OK&quot;) 'action: quit)
+
+------------------------------------------------------------
+
+The last example is what the Lisp community overwhelmingly turns to
+in these situations, but there is sufficient variation that is seems
+worthwhile standardizing.  Some of the current practices are:
+
+  :keyword  - prefix, self-evaluating symbol as in CL
+  :keyword  - prefix, distinct type as in many Schemes
+  keyword:  - suffix, distinct type as in many other Schemes
+  #:keyword - non-conflicting prefix, distinct type
+  keyword   - syntactic keyword as in SSAX
+
+The last is really disturbing.  Here the author was faced with an
+SSAX:MAKE-PARSER procedure accepting up to 7 optional callback
+arguments, trying to write a portable library, and wanting to keep
+the interface simple.  Because there is no portable keyword
+interface, SSAX:MAKE-PARSER became a macro, automatically quoting
+the keyword symbols.  This means SSAX:MAKE-PARSER isn't composable,
+which has been a source of frustration to me.
+
+For this reason alone there should be a keyword SRFI!
+
+[I'm personally leaning towards
+
+  'keyword:
+
+i.e. just using symbols, with a : suffix as a convention.  No need
+to add new types, and we can have a portable OPT-LAMBDA or
+LET-KEYWORDS* form.  On the other hand, a separate type can help
+catch errors.  Either way I'd probably just go with the masses
+here.]
+
+At the same time, Felix's concern is very valid.  We shouldn't use
+keywords everywhere just because we can.  Many of CL's functions
+take only one or two keyword arguments which could just as well be
+passed as an optional argument.  And I think most Schemers would
+prefer
+
+  (assoc elt ls my-equal?)
+
+to
+
+  (assoc elt ls test: my-equal?)
+
+At the other extreme, SSAX and GUI interfaces clearly demand keyword
+API's.  In the middle are interfaces like hash-tables and ports,
+which could be argued either way.  We'll just have to fight those
+out :)
+
+--
+Alex
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00047" href="msg00047.html">Re: highly parametric interfaces</a></strong>
+<ul><li><em>From:</em> John Cowan &lt;cowan@ccil.org&gt;</li></ul></li>
+<li><strong><a name="00048" href="msg00048.html">Re: highly parametric interfaces</a></strong>
+<ul><li><em>From:</em> Per Bothner &lt;per@bothner.com&gt;</li></ul></li>
+<li><strong><a name="00051" href="msg00051.html">Re: highly parametric interfaces</a></strong>
+<ul><li><em>From:</em> Marc Feeley &lt;feeley@iro.umontreal.ca&gt;</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00045.html">An alternative simulating keyword optional argument</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00047.html">Re: highly parametric interfaces</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00045.html">An alternative simulating keyword optional argument</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00047.html">Re: highly parametric interfaces</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00046"><strong>Date</strong></a></li>
+<li><a href="threads.html#00046"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

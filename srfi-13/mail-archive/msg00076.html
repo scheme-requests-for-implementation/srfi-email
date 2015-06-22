@@ -1,0 +1,172 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: String comparison under Latin&#45;1 and Unicode -->
+<!--X-From-R13: "Eretrv Stbebi" <rfyNvasbeznkvap.pbz> -->
+<!--X-Date: Fri, 10 Mar 2000 13:40:31 &#45;0600 (CST) -->
+<!--X-Message-Id: 01ab01bf8ac8$dab34fe0$7a01a8c0@intranet -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 85C24C92B614D111B1BC00C04FBF8D25084468@shubniggurath.angrygraycat.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: String comparison under Latin-1 and Unicode</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00075.html">Date Prev</a>][<a href="msg00077.html">Date Next</a>][<a href="msg00075.html">Thread Prev</a>][<a href="msg00077.html">Thread Next</a>][<a href="maillist.html#00076">Date Index</a>][<a href="threads.html#00076">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: String comparison under Latin-1 and Unicode</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &lt;<a href="mailto:srfi-13@DOMAIN.HIDDEN">srfi-13@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: String comparison under Latin-1 and Unicode</li>
+<li><em>From</em>: &quot;Sergei Egorov&quot; &lt;<a href="mailto:esl@DOMAIN.HIDDEN">esl@xxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 10 Mar 2000 14:43:05 -0500</li>
+<li><em>References</em>: &lt;<a href="mailto:85C24C92B614D111B1BC00C04FBF8D25084468@DOMAIN.HIDDEN">85C24C92B614D111B1BC00C04FBF8D25084468@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+I don't agree with this proposal: it seems to me that STRING&lt;? and
+others are better left for trivial tasks like sorting strings of digits;
+they have simple definition based on CHAR&lt;? that, in its turn,
+is based on internal encoding (ASCII or UNICODE). It is still
+very useful as ordering predicate with no language-dependent
+meaning; for example, if you want to implement string sets as
+sorted lists, it's much better to use fast ordering predicate,
+even if the induced ordering doesn't make any sense. From
+the other hand, some Schemes have already implemented
+extended versions of these predicates accepting more than
+two arguments to make them similar to &lt; and others
+(arguments are in monotonically decreasing order).
+
+I would suggest using new names for collation predicates,
+especially because collation is actually a complex process
+involving generation of &quot;collation keys&quot; which can be reused:
+
+(string-&gt;collation-key str language-specifier) =&gt; c-key
+(collation-key&lt;? c-key1 c-key2) =&gt; bool
+(collation-key&lt;=? c-key1 c-key2) =&gt; bool
+...
+and then you can define your own collation predicates:
+
+(define (esperanto-string&lt;? s1 s2)
+   (collation-key&lt;?
+      (string-&gt;collation-key s1 esperanto)
+      (string-&gt;collation-key s1 esperanto)))
+
+or make a macro to define them all at once:
+
+(define-collation-predicates esperanto)
+is expanded into
+(begin
+   (define esperanto-string&lt;? ...)
+   ...)
+
+-- Sergei
+
+----- Original Message -----
+From: Ben Goetter &lt;goetter@xxxxxxxxxxxxxxxx&gt;
+To: &lt;srfi-13@xxxxxxxxxxxxxxxxx&gt;
+Sent: Friday, March 10, 2000 1:26 PM
+Subject: String comparison under Latin-1 and Unicode
+
+
+&gt; &gt;... collation and string
+&gt; &gt; comparison in the wide Unicode world today. If I can't come up with
+&gt; something
+&gt; &gt; reasonable that works in ASCII, Latin-1 *and* a Unicode setting
+&gt;
+&gt; The STRING&gt;? problem under Unicode differs from the problem under Latin-1
+&gt; only in degree.  (Finns and Swedes use a different collation sequence from
+&gt; Danes and Norwegians.  &quot;AE&quot; is a ligated character in English, but not in
+&gt; Danish.  Spanish vs. French vs Traditional Spanish.  And much, much more.)
+&gt; Hence even under Latin-1, STRING&gt;? must take the domain language into
+&gt; account.  Unicode merely makes more scripts - and so more languages -
+&gt; convenient.
+&gt;
+&gt; Proposal:
+&gt;
+&gt; The string comparators take an optional final argument that is not of type
+&gt; string, but a new type, language-specifier (abbrev. langid), which
+specifies
+&gt; the language of a block of text.  The procedure CURRENT-LANGUAGE returns
+the
+&gt; langid for whatever language Scheme uses for string comparators lacking
+this
+&gt; optional final argument.  Scheme initially uses some default langid that
+it
+&gt; inherits from its host environment; the procedure DEFAULT-LANGUAGE returns
+&gt; the langid for this default.  The procedures CALL-WITH-LANGUAGE &lt;i&gt;langid
+&gt; proc&lt;/i&gt; and WITH-LANGUAGE &lt;i&gt;langid thunk&lt;/i&gt; change the value returned
+by
+&gt; CURRENT-LANGUAGE.  Finally, the procedure LANGUAGE takes the ISO 639
+&gt; language code, specified as a string, and returns the correct langid.
+&gt; LANGUAGE may be extended to take other values (perhaps a numeric language
+&gt; code from the host OS).
+&gt;
+&gt; This would allow correct collation of text using the current Scheme notion
+&gt; of &quot;string.&quot;  Building a higher-level &quot;text&quot; abstraction from this is
+purely
+&gt; mechanical.
+&gt;
+&gt; Ben
+&gt;
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00077" href="msg00077.html">Re: String comparison under Latin-1 and Unicode</a></strong>
+<ul><li><em>From:</em> Dave Mason</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00075" href="msg00075.html">String comparison under Latin-1 and Unicode</a></strong>
+<ul><li><em>From:</em> Ben Goetter</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00075.html">String comparison under Latin-1 and Unicode</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00077.html">Re: String comparison under Latin-1 and Unicode</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00075.html">String comparison under Latin-1 and Unicode</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00077.html">Re: String comparison under Latin-1 and Unicode</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00076"><strong>Date</strong></a></li>
+<li><a href="threads.html#00076"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

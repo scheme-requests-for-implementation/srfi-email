@@ -1,0 +1,260 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: #\a octothorpe syntax vs SRFI 10 -->
+<!--X-From-R13: Ohoerl Xnssre <ntwNnyhz.zvg.rqh> -->
+<!--X-Date: Wed, 29 Dec 2004 05:42:00 +0100 (NFT) -->
+<!--X-Message-Id: 20041229044152.397161B7710@voluntocracy.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: Pine.LNX.4.44.0412262207080.10074&#45;100000@autodrip.bloodandcoffee.net -->
+<!--X-Reference: Pine.LNX.4.58.0412270956290.31229@bolt.sonic.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: #\a octothorpe syntax vs SRFI 10</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00003.html">Date Prev</a>][<a href="msg00005.html">Date Next</a>][<a href="msg00003.html">Thread Prev</a>][<a href="msg00005.html">Thread Next</a>][<a href="maillist.html#00004">Date Index</a>][<a href="threads.html#00004">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: #\a octothorpe syntax vs SRFI 10</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:bear@DOMAIN.HIDDEN">bear@xxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: #\a octothorpe syntax vs SRFI 10</li>
+<li><em>From</em>: Aubrey Jaffer &lt;<a href="mailto:agj@DOMAIN.HIDDEN">agj@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 28 Dec 2004 23:41:52 -0500 (EST)</li>
+<li><em>Cc</em>: <a href="mailto:campbell@DOMAIN.HIDDEN">campbell@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>, <a href="mailto:srfi-58@DOMAIN.HIDDEN">srfi-58@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-58@DOMAIN.HIDDEN">srfi-58@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:Pine.LNX.4.58.0412270956290.31229@DOMAIN.HIDDEN">Pine.LNX.4.58.0412270956290.31229@xxxxxxxxxxxxxx</a>&gt; (message from	bear on Mon, 27 Dec 2004 10:24:38 -0800 (PST))</li>
+<li><em>References</em>: &lt;<a href="mailto:Pine.LNX.4.44.0412262207080.10074-100000@DOMAIN.HIDDEN">Pine.LNX.4.44.0412262207080.10074-100000@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:Pine.LNX.4.58.0412270956290.31229@DOMAIN.HIDDEN">Pine.LNX.4.58.0412270956290.31229@xxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre> | Date: Mon, 27 Dec 2004 10:24:38 -0800 (PST)
+ | From: bear &lt;bear@xxxxxxxxx&gt;
+ | 
+ | For what it's worth, I think that it may be time to look at
+ | using the square bracket characters [] which R5RS reserves.
+ | 
+ | I realize that lots of people are using them for things that
+ | aren't arrays and that this will break code which uses them
+ | in that wise; but I think that arrays are the natural and
+ | obvious use for these characters.
+
+#2Au32[[0 1 2][3 4 5]] looks good.  #2A[[#f () #t][#f (a b c) #f]]
+gives visual distinction between list elements and array structure.
+This has no conflict with other syntax because the #2A... prefix would
+be new.
+
+ | I dislike srfi-58 (and several earlier srfi's) for being
+ | incompletely specified w/r/t machines of architectures where
+ | the given &quot;hardware types&quot; make no sense.
+ | 
+ | For example, if I'm running scheme on a PDP-11 which has
+
+PDP-11 was 16-bit; PDP-10 was 36 bit.
+
+ | 18-bit halfwords and 36-bit words, and which uses a float
+ | representation that has no simple mapping to IEEE1178 32-bit
+ | floats, how am I supposed to implement this?  Conversely, if
+ | a new CPU becomes popular in 10 years that uses 56-bit floats
+ | and integers in a tagged architecture with 8 bits of a 64-bit
+ | word reserved for tags, how will this srfi be meaningful?
+
+SRFI-47 specifies minimum precisions for uniform-array types.  It is
+quite specific for exact integers:
+
+Function: as64
+    Returns an exact signed integer uniform-array prototype with at
+    least 64 bits of precision.
+
+Function: as32
+    Returns an exact signed integer uniform-array prototype with at
+    least 32 bits of precision.
+
+Function: as16
+    Returns an exact signed integer uniform-array prototype with at
+    least 16 bits of precision.
+
+Function: as8
+    Returns an exact signed integer uniform-array prototype with at
+    least 8 bits of precision.
+
+Function: au64
+    Returns an exact non-negative integer uniform-array prototype with
+    at least 64 bits of precision.
+
+Function: au32
+    Returns an exact non-negative integer uniform-array prototype with
+    at least 32 bits of precision.
+
+Function: au16
+    Returns an exact non-negative integer uniform-array prototype with
+    at least 16 bits of precision.
+
+Function: au8
+    Returns an exact non-negative integer uniform-array prototype with
+    at least 8 bits of precision.
+
+The restriction to power-of-two number of bits could be lifted by
+having two procedures, one for signed, one for unsigned, which take
+the minimum number-of-bits as an argument.
+
+ | Many recent RISC processors have no 8-bit operations.  Some
+ | in the fairly near future will probably also lack 16-bit
+ | operations.  It would be far more efficient for these
+ | systems to allocate 16 bits where an 'au8' is requested;
+
+No, it won't.  Modern CPUs are almost always (I/O-bound or) limited by
+their memory bandwidth through the cache.  If you double or quadruple
+the data movement necessary, you will execute at half or quarter the
+speed.
+
+ | is it legal for them to do so?  Was 'au8' a minimum number
+ | of bits to be provided, or must it be *exactly* 8 for purposes
+ | of this SRFI?
+
+Function: au8
+    Returns an exact non-negative integer uniform-array prototype with
+    at least 8 bits of precision.
+
+ | IOW, are we looking at these things for internal use (in which
+ | case a minimum bit count is appropriate) or is this aiming at
+ | FFI on 32-bit Intel processors (in which case an exact bit count
+ | is appropriate and we may as well specify the endianness)?
+
+For exact integers it is the minimum.  For inexact complexes and
+reals, there is more to numerical quality than just a single length.
+My intent was for these precisions to be minimums; as expressed by the
+text of R5RS:
+
+ ... the IEEE 32-bit and 64-bit floating point standards be followed
+ by implementations that use flonum representations, and that
+ implementations using other representations should match or exceed
+ the precision achievable using these floating point standards.
+
+ | Are we specifically giving scheme developers quasi-numeric
+ | binary types in which they can *RELY* on getting round-off and
+ | wraparaound phenomena of particular kinds at particular thresholds?
+ | And if so do we require any scheme systems to simulate exactly
+ | those roundoffs and those wraparounds regardless of the
+ | underlying hardware architecture?
+
+No.  And SRFI-47 specifically removes the possibility of exposing
+wraparound:
+
+  Conversions
+
+    * All the elements of arrays of type au8, au16, au32, au64, as8,
+      as16, as32, or as64 are exact.
+
+    * The value retrieved from an exact array element will equal (=)
+      the value stored in that element.
+
+    * Assigning a non-integer to array-type au8, au16, au32, au64,
+      as8, as16, as32, or as64 is an error.
+
+    * Assigning a number larger than can be represented in array-type
+      au8, au16, au32, au64, as8, as16, as32, or as64 is an error.
+
+    * Assigning a negative number to array-type au8, au16, au32, or
+      au64 is an error.
+
+    * Assigning an inexact number to array-type au8, au16, au32, au64,
+      as8, as16, as32, or as64 is an error.
+
+
+    * All the elements of arrays of type ar32, ar64, ac32, or ac64 are
+      inexact.
+
+    * When assigning an exact number to array-type ar32, ar64, ac32,
+      or ac64, the procedure may report a violation of an
+      implementation restriction.
+
+    * Assigning a non-real number (eg. real? returns #f) to an ar64 or
+      ar32 array is an error.
+
+    * An implementation may reduce the precision of a number assigned
+      to an inexact array.
+
+Code can be written which detects the precision of the elements of
+inexact arrays; but code can also be written which detects the
+precision of inexacts generally.  So not-screwing-yourself with flonum
+precision requires some forethought, as it always has.
+
+ | I think that would be a preposterous thing to do.
+
+SRFI-47 does not do that.
+
+ | Scheme, IMO, needs ways to handle array rank and multi-index
+ | array reference; but the mapping of hardware types to scheme
+ | types is best left for a declaration syntax that can be given
+ | a syntax-rules definition that makes it simply &quot;disappear&quot; on
+ | systems where the SRFI isn't implemented.
+
+In procedures which operate in parallel on all the elements of arrays,
+the time to dispatch on the array type is negligible compared to the
+time spent on the operations.  Using uniform-arrays, APL interpreters
+can apply highly optimized array primitives with great effect.  This
+doesn't work if type dispatch must be done on each element of arrays.
+Thus uniform-arrays provide more than just storage efficiency.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00005" href="msg00005.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00002" href="msg00002.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+<ul><li><em>From:</em> campbell</li></ul></li>
+<li><strong><a name="00003" href="msg00003.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00003.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00005.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00003.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00005.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00004"><strong>Date</strong></a></li>
+<li><a href="threads.html#00004"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

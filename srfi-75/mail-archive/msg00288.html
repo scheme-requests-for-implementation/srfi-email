@@ -1,0 +1,217 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: String lexical syntax -->
+<!--X-From-R13: Pra Ubrggre <tbrggreNznmnzn.arg> -->
+<!--X-Date: Sat, 20 Aug 2005 22:49:36 +0200 (DFT) -->
+<!--X-Message-Id: 43079749.5050303@mazama.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>String lexical syntax</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00287.html">Date Prev</a>][<a href="msg00289.html">Date Next</a>][<a href="msg00287.html">Thread Prev</a>][<a href="msg00289.html">Thread Next</a>][<a href="maillist.html#00288">Date Index</a>][<a href="threads.html#00288">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>String lexical syntax</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-75@DOMAIN.HIDDEN">srfi-75@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: String lexical syntax</li>
+<li><em>From</em>: Ben Goetter &lt;<a href="mailto:goetter@DOMAIN.HIDDEN">goetter@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 20 Aug 2005 13:49:13 -0700</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-75@DOMAIN.HIDDEN">srfi-75@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Mozilla Thunderbird 1.0.2 (Windows/20050317)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<tt>(I apologize if I'm rehashing an already closed topic.  I'm late to the 
+</tt><tt>party,
+</tt><pre style="margin: 0em;">
+and have not read every message in the archives.)
+
+I am very, very happy to see this much attention lavished on Unicode
+data representation.  However, I strongly regret the extended string
+lexical syntax in this proposal, and so would like to propose an
+alternative solution.
+
+RECITATIONS
+
+1. CL compatibility
+R5RS lexical strings are very close to CL lexical strings, though the
+wording of th Scheme spec leaves an out for extended string syntaxes.
+I would love to preserve consistency with CL here.
+
+2. Simplicity
+In a CL string's external syntax, a backslash (&quot;single escape
+character&quot;) does not change the meaning of the next character; rather,
+it removes any meta-meaning, forcing the next character as (READ) to
+be taken literally.  This makes string literal parsing and
+construction very simple: in any place where you're assembling a
+literal string and for some reason don't know for certain what the
+next character you're appending is, you can prepend a backslash and
+thus ensure safety.  And any parsing likewise doesn't need to take
+into account differences in various implementations' backslash
+escapes.
+
+3. Archaic C escape sequences
+Do we need literal string codes for alarm, tab, linefeed, vertical
+tab?  How many Scheme programs nowadays drive lineprinters with data
+embedded in static strings?
+
+4. Non-extensibility of extended lexical syntax
+Escape sequences cannot be altered by the program, since they take
+effect at read time: by the time that the program receives the program
+text, the string has already been lexed, with escapes interpreted and
+meta information discarded.  Having a bevy of magic sequences
+certainly suggests that a client could change or at least amend to
+those sequences (&quot;Hey! backslash-q is free - let's use it to flag
+internationalization data&quot; &quot;Hey! this implementation doesn't support
+baclslash-a - let's add that&quot;), perhaps adding compile-time or run-time
+information (e.g. field width specifiers in C printf).  CL solves this
+by moving everything into the library.
+
+5. Redundancy with character lexical syntax
+Finally, we have two separate ways to denote non-program-plaintext
+characters: one in character lexical syntax, and one in string syntax.
+Reducing this would be good for both implementation and user.
+
+PROPOSAL
+
+SRFI 75 could adopt a two-layered literal string syntax.
+
+The basic string literal syntax would be that of CL, or R5RS without
+the &quot;behavior is unspecified&quot; escape clause.  A string datum is a
+sequence of characters read from the program text, delimited by double
+quotes.  A backslash forces the next character in the sequence to be
+taken literally.  Since the only magic characters in this syntax are
+double-quote and backslash, backslash only changes their behavior.
+
+The second layer would be the extended string syntax, introduced by
+sharp-doublequote- leftparen and closed by rightparen.  Elements
+within the extended string delimiters are read like any token: they
+may include simple strings, or characters (including the extended
+syntax of SRFI 75), which become a single element in the string.  The
+elements in an extended string are concatenated in sequence, yielding
+a single string literal.  Including an element of other than simple
+string or character yields implementation-specific rsults.
+
+Examples:
+
+#&quot;(&quot;this&quot;) -&gt; &quot;this&quot;
+#&quot;(&quot;this&quot; &quot;that&quot;) -&gt; &quot;thisthat&quot;
+#&quot;(&quot;this&quot; #\a) -&gt; &quot;thisa&quot;
+#&quot;(&quot;this&quot; #\space &quot;that&quot;) -&gt; &quot;this that&quot;
+#&quot;(&quot;G&quot; #\u0246 &quot;del&quot;) -&gt; &quot;Goedel&quot;
+#&quot;(&quot;This is &quot;
+   &quot;the symphony &quot;
+   &quot;that Schubert wrote, but never finished&quot;)
+ -&gt; &quot;This is the symphony that Schubert wrote, but never finished&quot;
+</pre><tt>#&quot;(&quot;One fish.&quot; #\newline &quot;Two fish.&quot; #newline &quot;Red fish.&quot; #\newline 
+</tt><tt>&quot;Blue fish.&quot;)
+</tt><pre style="margin: 0em;">
+ -&gt; &quot;One fish.
+Two fish.
+Red fish.
+Blue fish.&quot;
+
+Two obvious extensions to extended strings are symbols, which are
+converted to strings per standard, and numbers, which represent a
+single Unicode codepoint and are subject to the same limitations as
+characters.
+
+#&quot;(&quot;this&quot; symbol) -&gt; &quot;thissymbol&quot;
+#&quot;(&quot;G&quot; 246 &quot;del&quot;) -&gt; &quot;Goedel&quot;
+#&quot;(&quot;G&quot; #xF6 &quot;del&quot;) -&gt; &quot;Goedel&quot;
+
+COUNTERARGUMENTS
+
+Per my recitations above
+Q1. Why carry on about CL compatibility, then?  There's no such
+extended string syntax in CL
+A1. Yes, but the part that looks like CL now behaves very much like
+CL.  Dual users can carry their expectations about backslash and
+doublequote back and forth between the two.
+
+Q2. Is that any simpler than backslashes?
+A2. It is for the purpose of emitting string literals in the
+double-quote syntax, which presumably will subsequently be consumed by
+another program.  Parsing-wise, any system that can read a vector can
+now read an extended string.
+
+Q3.  My popular and well-liked Scheme system already supports
+C-style string escapes.
+A3. [looks at feet, shuffles uncomfortably]
+
+Q4. This isn't extensible at runtime, either.
+A4. Right.  But since it doesn't embed characters inside literally
+typed strings, it doesn't /look/ extensible.  Any extensibility will
+have to take place through a real character in the string, such as the
+tilde used by FORMAT.
+
+And others
+Qa.  Man, #&quot;(&quot;G&quot; #\u0246 &quot;del&quot;) is ugly.  If my dog was that ugly....
+Aa.  Uglier than &quot;G\u0246del&quot;?  Neither is pretty.  One's easier to
+parse and IMO read, one's easier to type.  Extended gets better if you allow
+integers to represent codepoints ala #&quot;(&quot;G&quot; 246 &quot;del&quot;).
+Qb.  Doesn't the WRITE procedure become more complicated in the
+presence of extended strings?  Now the runtime must preprocess any written
+string to see if it requires the extended syntax before writing it.
+Ab.  That is correct.  Backslash syntax has the advantage of pushing this
+decision down to the per-character level.
+
+
+Anyway.
+
+For your consideration,
+Ben
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00287.html">thank you for the symbol extensions</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00289.html">Unicode surrogates</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00287.html">thank you for the symbol extensions</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00289.html">Unicode surrogates</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00288"><strong>Date</strong></a></li>
+<li><a href="threads.html#00288"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

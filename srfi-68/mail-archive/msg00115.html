@@ -1,0 +1,135 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Mixing characters and bytes -->
+<!--X-From-R13: Euveb Ynjnv <fuvebNynin.arg> -->
+<!--X-Date: Thu, 15 Sep 2005 05:50:24 +0200 (MST) -->
+<!--X-Message-Id: 20050914.175131.855645388.shiro@lava.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 430CBF89.1070500@bothner.com -->
+<!--X-Reference: y9lfysyc624.fsf@sams.informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: y9loe6xcg8o.fsf@sams.informatik.uni&#45;tuebingen.de -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Mixing characters and bytes</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00114.html">Date Prev</a>][<a href="msg00116.html">Date Next</a>][<a href="msg00113.html">Thread Prev</a>][<a href="msg00116.html">Thread Next</a>][<a href="maillist.html#00115">Date Index</a>][<a href="threads.html#00115">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Mixing characters and bytes</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-68@DOMAIN.HIDDEN">srfi-68@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Mixing characters and bytes</li>
+<li><em>From</em>: Shiro Kawai &lt;<a href="mailto:shiro@DOMAIN.HIDDEN">shiro@xxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 14 Sep 2005 17:51:31 -1000 (HST)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-68@DOMAIN.HIDDEN">srfi-68@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:y9loe6xcg8o.fsf@DOMAIN.HIDDEN">y9loe6xcg8o.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:430CBF89.1070500@DOMAIN.HIDDEN">430CBF89.1070500@xxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:y9lfysyc624.fsf@DOMAIN.HIDDEN">y9lfysyc624.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:y9loe6xcg8o.fsf@DOMAIN.HIDDEN">y9loe6xcg8o.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>From: Michael Sperber &lt;sperber@xxxxxxxxxxxxxxxxxxxxxxxxxxx&gt;
+Subject: Re: Mixing characters and bytes
+Date: Tue, 13 Sep 2005 14:19:19 +0200
+
+&gt; Turns out I was wrong.  Switching encodings in the middle of a
+&gt; buffered data stream (in the general sense) is, AFAICS, very costly:
+&gt; You generally want to transcode text in chunks for efficiency.  This
+&gt; means that you'll typically transcode ahead of what the program has
+&gt; actually requested.  Now, switching encodings means going back to the
+&gt; place where you actually stopped requesting data, which means
+&gt; retracing your steps from the beginning of the last transcoding step.
+&gt; This would complicate the interface for defining translators
+&gt; considerably, and still leaves some border cases uncovered. 
+
+I agree basically.
+In general, unless you switch from a basic encoding (binary
+or ASCII) to more elaborated one (utf-8, euc-jp, etc.), 
+you have to tell transcoder where to stop beforehand, otherwise
+the transcoder may read into the region that may contain
+illegal byte sequence and raise an error (maybe not in srfi-68,
+but the low-level routine such as iconv does).
+
+One practical example is reading MIME-encoded message.
+You may switch encodings, for example:
+ASCII -&gt; euc-jp -&gt; ASCII -&gt; binary -&gt; ASCII -&gt; utf-8.
+What I'm doing currently (in Gauche) is to layer ports; that is,
+I create a port that reads from the original port, but stops reading
+and returns EOF when it encounters a MIME boundary.  From that
+port I read the MIME header as ASCII, then layer the
+encoding-conversion port if I need one.  This is conceptually
+simple, but the drawback is that I need to buffer the data
+multiple times.
+
+I suppose, in srfi-68, I can do similar thing by layering streams.
+I don't think each stream should switch encoding in it.
+
+I haven't learned the stream layer API enough to tell if
+it'd be any simpler and more efficient than layering ports, though.
+
+--shiro
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00116" href="msg00116.html">Re: Mixing characters and bytes</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00079" href="msg00079.html">Re: Mixing characters and bytes</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+<li><strong><a name="00091" href="msg00091.html">Re: Mixing characters and bytes</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+<li><strong><a name="00113" href="msg00113.html">Re: Mixing characters and bytes</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00114.html">Re: more on finalization issue, and reference implementation</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00116.html">Re: Mixing characters and bytes</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00113.html">Re: Mixing characters and bytes</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00116.html">Re: Mixing characters and bytes</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00115"><strong>Date</strong></a></li>
+<li><a href="threads.html#00115"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

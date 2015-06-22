@@ -1,0 +1,145 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Comparing Pika&#45;syle and JNI&#45;style -->
+<!--X-From-R13: Bre Pbguare <creNobguare.pbz> -->
+<!--X-Date: Wed, 14 Jan 2004 19:30:03 +0100 (NFT) -->
+<!--X-Message-Id: 40058A9E.4010203@bothner.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: E1AfQRd&#45;0000Qa&#45;00@mail.mumble.net -->
+<!--X-Reference: vt2y8scua4h.fsf@zenia.home -->
+<!--X-Reference: 877jzwtzaz.fsf@becket.becket.net -->
+<!--X-Reference: vt2ptdn2bqq.fsf@zenia.home -->
+<!--X-Reference: vt2isje3nna.fsf_&#45;_@zenia.home -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Comparing Pika-syle and JNI-style</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00297.html">Date Prev</a>][<a href="msg00299.html">Date Next</a>][<a href="msg00300.html">Thread Prev</a>][<a href="msg00301.html">Thread Next</a>][<a href="maillist.html#00298">Date Index</a>][<a href="threads.html#00298">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Comparing Pika-syle and JNI-style</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Jim Blandy &lt;<a href="mailto:jimb@DOMAIN.HIDDEN">jimb@xxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: Comparing Pika-syle and JNI-style</li>
+<li><em>From</em>: Per Bothner &lt;<a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 14 Jan 2004 10:29:50 -0800</li>
+<li><em>Cc</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:vt2isje3nna.fsf_-_@DOMAIN.HIDDEN">vt2isje3nna.fsf_-_@xxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:E1AfQRd-0000Qa-00@DOMAIN.HIDDEN">E1AfQRd-0000Qa-00@xxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:vt2y8scua4h.fsf@DOMAIN.HIDDEN">vt2y8scua4h.fsf@xxxxxxxxxx</a>&gt;	&lt;<a href="mailto:877jzwtzaz.fsf@DOMAIN.HIDDEN">877jzwtzaz.fsf@xxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:vt2ptdn2bqq.fsf@DOMAIN.HIDDEN">vt2ptdn2bqq.fsf@xxxxxxxxxx</a>&gt; &lt;<a href="mailto:vt2isje3nna.fsf_-_@DOMAIN.HIDDEN">vt2isje3nna.fsf_-_@xxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mozilla/5.0 (Macintosh; U; PPC Mac OS X Mach-O; en-US; rv:1.5) Gecko/20031007</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+Jim Blandy wrote:
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+In Pika:
+- Forgetting an UNGCPRO corrupts the GC's data structures, and may
+  fail only intermittently.  Irregular exits (return; goto; break;
+  continue) require attention.  longjmp is even harder.
+- Functions may only return Scheme values by reference; they may not
+  provide them as their (syntactic) return values.  Instead of writing
+  &quot;f (g (x))&quot;, you must write:
+
+    g (&amp;frame.x, &amp;frame.temp);
+    f (&amp;frame.temp, &amp;frame.temp2);
+
+  In other words, you must write your code as linear series of
+  operations which work by side-effects.
+- Since the API functions all expect pointers to t_scm_word values,
+  this discourages people from passing them around directly, but it
+  can still be done --- e.g. &quot;frame.x = frame.y;&quot; --- and doing so
+  will usually work.  But doing so is a bug.
+- Variable declarations are cluttered with enclosing structs and GCPRO
+  / UNGCPRO calls.
+</pre></blockquote><pre style="margin: 0em;">
+
+This of course cries out for a C++ interface which can alleviate
+these problems:
+
+class ScmVal
+{
+  void *ref;
+  ~ScmVal() { UNGCPRO(ref); }
+  ... copy constructor etc ...;
+}
+
+Then f(g(x)) becomes:
+f(g(x))
+assuming:
+ScmVal g (ScmVal x) { ... }
+--
+	--Per Bothner
+per@xxxxxxxxxxx   <a  rel="nofollow" href="http://per.bothner.com/">http://per.bothner.com/</a>
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00301" href="msg00301.html">Re: Comparing Pika-syle and JNI-style</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00262" href="msg00262.html">Re: when GC is permitted</a></strong>
+<ul><li><em>From:</em> Richard Kelsey</li></ul></li>
+<li><strong><a name="00283" href="msg00283.html">temporarily withdrawing SRFI-50</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+<li><strong><a name="00287" href="msg00287.html">Re: temporarily withdrawing SRFI-50</a></strong>
+<ul><li><em>From:</em> Thomas Bushnell, BSG</li></ul></li>
+<li><strong><a name="00294" href="msg00294.html">Re: temporarily withdrawing SRFI-50</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+<li><strong><a name="00295" href="msg00295.html">Comparing Pika-syle and JNI-style</a></strong>
+<ul><li><em>From:</em> Jim Blandy</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00297.html">Re: Comparing Pika-syle and JNI-style</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00299.html">Re: Comparing Pika-syle and JNI-style</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00300.html">Re: Comparing Pika-syle and JNI-style</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00301.html">Re: Comparing Pika-syle and JNI-style</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00298"><strong>Date</strong></a></li>
+<li><a href="threads.html#00298"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

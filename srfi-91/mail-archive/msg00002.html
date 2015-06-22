@@ -1,0 +1,217 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Why are byte ports "ports" as such? -->
+<!--X-From-R13: [nep Trryrl <srryrlNveb.hzbagerny.pn> -->
+<!--X-Date: Thu, 13 Apr 2006 23:41:59 +0200 (MST) -->
+<!--X-Message-Id: DA54FC12&#45;A0C6&#45;438E&#45;A014&#45;95F73FD33D3D@iro.umontreal.ca -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 443E9048.8000804@mazama.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Why are byte ports &quot;ports&quot; as such?</title>
+<link rev="made" href="mailto:feeley@iro.umontreal.ca">
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00001.html">Date Prev</a>][<a href="msg00003.html">Date Next</a>][<a href="msg00001.html">Thread Prev</a>][<a href="msg00007.html">Thread Next</a>][<a href="maillist.html#00002">Date Index</a>][<a href="threads.html#00002">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Why are byte ports &quot;ports&quot; as such?</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Ben Goetter &lt;<a href="mailto:goetter%40mazama.net">goetter@mazama.net</a>&gt;</li>
+<li><em>Subject</em>: Re: Why are byte ports &quot;ports&quot; as such?</li>
+<li><em>From</em>: Marc Feeley &lt;<a href="mailto:feeley%40iro.umontreal.ca">feeley@iro.umontreal.ca</a>&gt;</li>
+<li><em>Date</em>: Thu, 13 Apr 2006 17:41:41 -0400</li>
+<li><em>Cc</em>: <a href="mailto:srfi-91%40srfi.schemers.org">srfi-91@srfi.schemers.org</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-91%40srfi.schemers.org">srfi-91@srfi.schemers.org</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:443E9048.8000804%40mazama.net"><a href="msg00000.html">443E9048.8000804@mazama.net</a></a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:443E9048.8000804%40mazama.net"><a href="msg00000.html">443E9048.8000804@mazama.net</a></a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+On 13-Apr-06, at 1:54 PM, Ben Goetter wrote:
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><tt>If you separate byte ports from character ports, and separate input  
+</tt><tt>ports from output ports (at least at the API level), you get an  
+</tt><tt>easily type-checked interface.  e.g.
+</tt><pre style="margin: 0em;">
+
+open-input-file string [encoding keywords] -&gt; input-character-port
+read-char input-char-port -&gt; character
+open-input-file-raw string -&gt; input-byte-port
+read-byte input-byte-port -&gt; integer
+
+</pre></blockquote><pre style="margin: 0em;">
+
+Did you read this section of the SRFI?
+
+</pre><tt>Byte ports support character I/O operations because with each byte  
+</tt><tt>port is attached a character encoding specifying how characters are  
+</tt><tt>encoded with bytes. It is incorrect to believe however that all ports  
+</tt><tt>are byte ports. For example the ``string ports'' of SRFI 6 (Basic  
+</tt><tt>String Ports) have no reason to be aware of the character to byte  
+</tt><tt>encoding because they only deal with sequences of characters. So they  
+</tt><tt>need not be byte ports. For this reason this SRFI views byte ports as  
+</tt><tt>a subtype of character ports. Character ports support character I/O  
+</tt><tt>operations and byte ports support character I/O operations and byte I/ 
+</tt><tt>O operations. All I/O operations which are valid on a character port  
+</tt><tt>are also valid on a byte port. [Although not specified in this SRFI a  
+</tt><tt>further generalization is ``object ports'' which are ports whose  
+</tt><tt>fundamental I/O unit is the Scheme object. Character ports are object  
+</tt><tt>ports because there is a standard encoding of (most) Scheme objects  
+</tt><tt>to characters.]
+</tt><pre style="margin: 0em;">
+
+</pre><tt>SRFI 91 allows character I/O and binary I/O on byte ports because  
+</tt><tt>often files use a format which mixes text and byte encoded data.   
+</tt><tt>Viewing byte ports as a subtype of character ports is consistent with  
+</tt><tt>current practice (i.e. &quot;text files&quot; are just binary files which  
+</tt><tt>encode the characters with a sequence of bytes that depend on the  
+</tt><tt>character encoding).
+</tt><pre style="margin: 0em;">
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+For your bidi ports, perhaps
+
+</pre><tt>open-input-output-file string [encoding keywords] -&gt; input-char- 
+</tt><tt>port output-char-port
+</tt><pre style="margin: 0em;">
+
+</pre><tt>with the two ports sharing common buffer structure in the  
+</tt><tt>implementation.
+</tt><pre style="margin: 0em;">
+
+</pre></blockquote><pre style="margin: 0em;">
+
+</pre><tt>It is a pain to carry those two ports around in the code when the  
+</tt><tt>program needs to communicate bidirectionally with some other entity  
+</tt><tt>(another process, a user at a terminal, a socket, etc).  Moreover the  
+</tt><tt>separation of a conceptually bidirectional channel into distinct  
+</tt><tt>ports (input and output) destroys the conceptual link that they  
+</tt><tt>have.  This hinders program understanding.  For example, with  
+</tt><tt>bidirectional ports (close-port port) will close both sides of the  
+</tt><tt>bidirectional port (i.e. the link between the input and output port  
+</tt><tt>is preserved).  With two unidirectional ports you have to duplicate  
+</tt><tt>some operations (closing ports, changing port settings, ...).
+</tt><pre style="margin: 0em;">
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><tt>Often one needs to open a file or a structure initially as a byte  
+</tt><tt>port, then decode subsequent sections of the sequence as characters  
+</tt><tt>of a particular encoding.  For that, a procedure like
+</tt><pre style="margin: 0em;">
+
+</pre><tt>cook-input-encoding integer input-byte-port [encoding keywords] -&gt;  
+</tt><tt>input-char-port
+</tt><pre style="margin: 0em;">
+
+</pre><tt>can return a port that promises to decode a certain number of  
+</tt><tt>octets from the backing byte port with your encoding.  It does't  
+</tt><tt>handle variable-length structures well, though.
+</tt><pre style="margin: 0em;">
+
+</pre></blockquote><pre style="margin: 0em;">
+
+</pre><tt>This is possible with SRFI 91.  Just open the file (in buffered or  
+</tt><tt>non-buffered mode) and read your bytes, then read your characters.   
+</tt><tt>If you need to read the characters first, then the file needs to be  
+</tt><tt>opened in non-buffered mode, read your characters, then read your  
+</tt><tt>bytes (after switching back to buffered mode if you wish).
+</tt><pre style="margin: 0em;">
+
+</pre><tt>By the way I'm tempted to add string ports to this SRFI (compatible  
+</tt><tt>with SRFI 6 of course), and the analog ports for u8vectors, i.e.  
+</tt><tt>u8vector ports.  String ports are character ports (but not byte  
+</tt><tt>ports) and u8vector ports are byte ports (and character ports).   
+</tt><tt>Something along these lines:
+</tt><pre style="margin: 0em;">
+
+(open-input-string string-or-settings)
+(open-output-string [string-or-settings])
+(open-string [string-or-settings])
+
+and
+
+(open-input-u8vector u8vector-or-settings)
+(open-output-u8vector [u8vector-or-settings])
+(open-u8vector [u8vector-or-settings])
+
+</pre><tt>These would allow a more complete set of procedures for encoding and  
+</tt><tt>decoding strings into u8vectors.  For example:
+</tt><pre style="margin: 0em;">
+
+&gt; (with-output-to-u8vector
+    (list char-encoding: 'UTF-8)
+    (lambda () (write-char (integer-&gt;char 1234))))
+#u8(211 146)
+
+</pre><tt>I'm currently holding back to keep the SRFI lean, but I may change my  
+</tt><tt>mind (or write a separate SRFI).
+</tt><pre style="margin: 0em;">
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+I like your read-substring and write-substring.
+</pre></blockquote><pre style="margin: 0em;">
+
+Great.
+
+Marc
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00007" href="msg00007.html">Re: Why are byte ports &quot;ports&quot; as such?</a></strong>
+<ul><li><em>From:</em> John Cowan &lt;cowan@ccil.org&gt;</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00000" href="msg00000.html">Why are byte ports &quot;ports&quot; as such?</a></strong>
+<ul><li><em>From:</em> Ben Goetter &lt;goetter@mazama.net&gt;</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00001.html">Re: Why are byte ports &quot;ports&quot; as such?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00003.html">Re: Why are byte ports &quot;ports&quot; as such?</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00001.html">Re: Why are byte ports &quot;ports&quot; as such?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00007.html">Re: Why are byte ports &quot;ports&quot; as such?</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00002"><strong>Date</strong></a></li>
+<li><a href="threads.html#00002"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,186 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: SRFI&#45;47 &#45;&#45; types and declarations. -->
+<!--X-From-R13: orne <orneNfbavp.arg> -->
+<!--X-Date: Wed, 12 Nov 2003 03:19:21 +0100 (NFT) -->
+<!--X-Message-Id: Pine.LNX.4.58.0311111741180.618@bolt.sonic.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20031112001059.GD20713@loki.vpn.szonye.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>SRFI-47 -- types and declarations.</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00001.html">Date Prev</a>][<a href="msg00003.html">Date Next</a>][<a href="msg00001.html">Thread Prev</a>][<a href="msg00006.html">Thread Next</a>][<a href="maillist.html#00002">Date Index</a>][<a href="threads.html#00002">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>SRFI-47 -- types and declarations.</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &quot;Bradd W. Szonye&quot; &lt;<a href="mailto:bradd%2Bsrfi@DOMAIN.HIDDEN">bradd+srfi@xxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: SRFI-47 -- types and declarations.</li>
+<li><em>From</em>: bear &lt;<a href="mailto:bear@DOMAIN.HIDDEN">bear@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 11 Nov 2003 18:19:13 -0800 (PST)</li>
+<li><em>Cc</em>: <a href="mailto:srfi-47@DOMAIN.HIDDEN">srfi-47@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-47@DOMAIN.HIDDEN">srfi-47@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20031112001059.GD20713@DOMAIN.HIDDEN">20031112001059.GD20713@xxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:20031112001059.GD20713@DOMAIN.HIDDEN">20031112001059.GD20713@xxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+SRFI-47:  Array
+
+I have one minor issue (syntax) and one major issue (design).
+
+The syntax issue is, can you clarify why you chose the argument
+order you did?  I seem to recall existing work that this is
+gratuitously incompatible with, as another poster has already
+pointed out.
+
+
+
+
+The design issue, though, is that I'm not entirely sure that
+the prototype idea is a clean one.
+
+The issue of types and representation types hasn't been well
+addressed in scheme yet.  This SRFI is building on a presumed
+infrastructure of type names and ranges that hasn't yet been
+discussed, and I think that it's dubious in its extensibility
+and generality.
+
+To start with, we're beginning to talk about representation
+types as distinct from values.  I'm going to make a case below
+that representation types should be separated from values and
+functions in a clean way using optional declarations rather than
+multiplying arbitrarily the number of functions and names in
+the language.
+
+Rather than introducing some kind of explicitly typed array, I
+think we should have multidimensional arrays (a la SRFI-25)
+enhanced with optional type declarations that allow compilers
+aware of them to produce optimized code -- but still have
+arrays be conceptually untyped.
+
+This means that someone can write the code and get it working,
+using untyped arrays -- and go back and add declarations, in
+an orthogonal way later, to increase its performance once the
+semantics are debugged.
+
+I think that declarations are a powerful idea, and should have
+their own syntax, not folded into the specification of vectors,
+arrays, and strings as such but capable of existing as an
+enclosing form with a lexical scope.
+
+So, rather than many different functions like ac64, I propose
+that it would be better to simply have arrays, and if/when
+performance is an issue, we can promise the compiler that
+we'll never store anything except numbers representable as
+ac64's in them by saying
+
+(declare (
+   (foo (array-of ac64))
+   (bar (array-of ac64)))
+
+   (define foo (make-array ...))
+   (define bar (make-array ...))
+
+....)
+
+instead of
+
+(define foo (make-array ...))
+(define bar (make-array ...))
+....
+
+
+This means that special forms for types don't get in user's
+faces until they're useful to users solving performance problems,
+which drastically reduces the cognitive load of learning the
+language and simplifies the job of teaching it.
+
+It also means that performance tweaks can be applied, easily, to
+code that's been already written without messing up its semantics;
+you're simply promising the compiler that something will always
+be the case; if your promise is true it harms nothing.
+
+It leaves implementors free to use the information to optimize,
+but requires them to do nothing other than provide a syntax-rules
+one-liner to ignore the declaration form if they don't.
+
+It provides a way to detect implementation problems; you can simply
+turn the declarations off and see if the problem recurs, or a
+debugging implementation could create debug builds that halt with
+appropriate errors the instant the promises made to the compiler are
+broken.
+
+And it makes heavily-optimized code portable, with semantics intact,
+across all implementations even if the optimizations themselves aren't
+portable across all implementations.
+
+				Bear
+
+
+
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00006" href="msg00006.html">Re: SRFI-47 -- types and declarations.</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00000" href="msg00000.html">First comments</a></strong>
+<ul><li><em>From:</em> Bradd W. Szonye</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00001.html">Re: First comments</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00003.html">octothorpe array syntax; other comments</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00001.html">Re: First comments</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00006.html">Re: SRFI-47 -- types and declarations.</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00002"><strong>Date</strong></a></li>
+<li><a href="threads.html#00002"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

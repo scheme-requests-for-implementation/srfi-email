@@ -1,0 +1,214 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Choose&#45;Your&#45;Own&#45;Ellipsis -->
+<!--X-From-R13: Fnlybe Qnzcoryy <pnzcoryyNriqri.ngu.pk> -->
+<!--X-Date: Fri, 17 Oct 2003 23:45:24 +0200 (DFT) -->
+<!--X-Message-Id: 2ED0E6BB&#45;00EB&#45;11D8&#45;96A9&#45;000A95CCCEE4@evdev.ath.cx -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200310152207.PAA20937@radish.petrofsky.org -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Choose-Your-Own-Ellipsis</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00015.html">Date Prev</a>][<a href="msg00017.html">Date Next</a>][<a href="msg00013.html">Thread Prev</a>][<a href="msg00019.html">Thread Next</a>][<a href="maillist.html#00016">Date Index</a>][<a href="threads.html#00016">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Choose-Your-Own-Ellipsis</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-46@DOMAIN.HIDDEN">srfi-46@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Choose-Your-Own-Ellipsis</li>
+<li><em>From</em>: Taylor Campbell &lt;<a href="mailto:campbell@DOMAIN.HIDDEN">campbell@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 17 Oct 2003 17:45:11 -0400</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-46@DOMAIN.HIDDEN">srfi-46@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:200310152207.PAA20937@DOMAIN.HIDDEN">200310152207.PAA20937@xxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+
+</pre><tt>On Wednesday, Oct 15, 2003, at 18:07 US/Eastern, Alabaster Petrofsky 
+</tt><tt>wrote:
+</tt><pre style="margin: 0em;">
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Your code is too fragmentary for me to understand what you're trying
+to do.  You talk about expanding into a SYNTAX-RULES form, but in
+r5rs, any macro use must ultimately expand into an expression,
+definition, or BEGIN form.
+</pre></blockquote><pre style="margin: 0em;">
+
+Hmm.  I can't find any mention of this in R5RS.  Perhaps you meant
+that because the RHS of a DEFINE-SYNTAX may only be a transformer,
+SYNTAX-RULES is the only kind of transformer, and transformers are
+disjoint from expressions -- which is what macro _uses_ fall under --.
+
+Nevertheless, I'm a little annoyed I can't do this.  (See the next
+section.)
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+                            I guess what you're trying to write is
+something like this:
+
+  (define-syntax define-msyntax-rules
+    (syntax-rules ()
+      ((define-msyntax-rules name ?ellipsis ?literals
+         ((?ignored . ?pattern)
+          (?macro . ?args))
+         ...)
+       (define-syntax name
+         (syntax-rules ?ellipsis ?literals
+           ((?ignored (k ?ellipsis) . ?pattern)
+            (?macro (k ?ellipsis) . ?args))
+           ...)))))
+</pre></blockquote><pre style="margin: 0em;">
+
+...which would make me have a need to define LET-MSYNTAX-RULES and
+LETREC-MSYNTAX-RULES as well, and anyone who wanted to use
+MSYNTAX-RULES anywhere else would need to write their own
+foo-MSYNTAX-RULES.  This is rather irritating, but I'm almost afraid
+to consider putting a fix of what I mentioned above in this SRFI -- do
+something about macro uses being used as transformers --, as it would
+undoubtedly generate a flame war somehow or other due to potential
+issues with phase separation and such.  But not changing this will
+_really_ impede some macros I've written (which I wrote when I didn't
+think of expressions not being allowed as transformers, and which I
+tested in implementations that _did_ allow expressions as the RHS
+of DEFINE-SYNTAX).
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Am I missing some macro magic here, is there a problem with choose-
+your-own-ellipsis, or should the implicit ... stuff be thrown away?
+The last option would break lots of macros, and it would look rather
+ugly to me, but I can't think of a better way to solve this.
+</pre></blockquote><pre style="margin: 0em;">
+
+If we specified that syntax-rules from now on requires an ellipsis
+argument, then that would of course break the entire existing body of
+syntax-rules macros.
+</pre></blockquote><pre style="margin: 0em;">
+
+Eh, only a minor inconvenience!
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+However, if you specify that define-msyntax-rules requires an ellipsis
+argument, I don't think there's any body of define-msyntax-rules code
+out there to be worried about breaking.
+
+Nevertheless, if you want define-msyntax-rules's ellipsis argument to
+be optional, with the implicit (and essentially non-hygienic) choice
+of &quot;...&quot; when it is missing, you could do this:
+
+  (define-syntax define-msyntax-rules
+    (syntax-rules ::: ()
+      ((define-msyntax-rules name (?literal :::)
+         ((?ignored . ?pattern)
+          (?macro . ?args))
+         :::)
+       (define-syntax name
+         (syntax-rules (?literal :::)
+           ((?ignored (k ...) . ?pattern)
+            (?macro (k ...) . ?args))
+           :::)))
+      ((define-msyntax-rules name ?ellipsis ?literals
+         ((?ignored . ?pattern)
+          (?macro . ?args))
+         :::)
+       (define-syntax name
+         (syntax-rules ?ellipsis ?literals
+           ((?ignored (k ?ellipsis) . ?pattern)
+            (?macro (k ?ellipsis) . ?args))
+           :::)))))
+</pre></blockquote><pre style="margin: 0em;">
+
+DUH!  I can't believe I didn't think of that.  (Although I'd have
+preferred not to have to rewrite the final expansion twice.)  But I
+guess it's a good thing I didn't, because it brings up the issue I
+mentioned in the first section of my response in this email.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+What are some thoughts on non-linear patterns and guards
+</pre></blockquote><pre style="margin: 0em;">
+
+I think they are probably incompatible with the title of the SRFI,
+&quot;Basic SYNTAX-RULES Extensions&quot;.
+</pre></blockquote><pre style="margin: 0em;">
+
+Well, the title has already changed once, when I added tail patterns
+a few minutes after I initially submitted the document.
+
+Of course, I don't think non-linear patterns are really that complex;
+since it's possible to write a SYNTAX=? that compares two syntax items
+(?) _without_ non-linear patterns,[*] which isn't _that_ complicated,
+and SYNTAX=? is all that you need _for_ non-linear patterns, it seems
+like a fairly basic extension.  Guards, of course, are much more
+complex, and I didn't think anyone would like them, but I decided to
+throw the idea out there nevertheless.
+
+[*] <a  rel="nofollow" href="http://www.bloodandcoffee.net/campbell/code/syntax-equal.scm">http://www.bloodandcoffee.net/campbell/code/syntax-equal.scm</a>
+  Part of the 'syntax-lib.scm' that I'm compiling (a very early and
+  incomplete version of which can be found by substituting 'lib' for
+  'equal' in that URI), which I shall rewrite soon to hide the CPS
+  details with monads (once I finish improving Andre's monadic CPS
+  macro stuff, and add some stuff further even than the DO# macro for
+  making CPS macros simpler and easier).
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00019" href="msg00019.html">macro uses, macro blocks, and bare keywords in syntax bindings</a></strong>
+<ul><li><em>From:</em> Also Petrofsky</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00013" href="msg00013.html">Re: Choose-Your-Own-Ellipsis</a></strong>
+<ul><li><em>From:</em> Alabaster Petrofsky</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00015.html">Re: Bidirectionality and other comments</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00017.html">Re: Nested syntax</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00013.html">Re: Choose-Your-Own-Ellipsis</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00019.html">macro uses, macro blocks, and bare keywords in syntax bindings</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00016"><strong>Date</strong></a></li>
+<li><a href="threads.html#00016"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

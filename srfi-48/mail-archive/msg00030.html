@@ -1,0 +1,330 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: floating point and other comments -->
+<!--X-From-R13: Oyrk Euvaa <sbbsNflagupbqr.pbz> -->
+<!--X-Date: Tue, 23 Dec 2003 06:26:13 +0100 (NFT) -->
+<!--X-Message-Id: 20031223052604.GD30397@synthcode.com -->
+<!--X-Content-Type: multipart/mixed -->
+<!--X-Reference: 877k0uzves.wl@strelka.synthcode.com -->
+<!--X-Reference: 200312211642.17209.Ken.Dickey@allvantage.com -->
+<!--X-Reference: 87isk95x8r.wl@strelka.synthcode.com -->
+<!--X-Reference: 200312220900.29786.Ken.Dickey@allvantage.com -->
+<!--X-Reference: 20031223052319.GC30397@synthcode.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: floating point and other comments</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00029.html">Date Prev</a>][<a href="msg00031.html">Date Next</a>][<a href="msg00029.html">Thread Prev</a>][<a href="msg00022.html">Thread Next</a>][<a href="maillist.html#00030">Date Index</a>][<a href="threads.html#00030">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: floating point and other comments</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-48@DOMAIN.HIDDEN">srfi-48@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: floating point and other comments</li>
+<li><em>From</em>: Alex Shinn &lt;<a href="mailto:foof@DOMAIN.HIDDEN">foof@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 22 Dec 2003 23:26:04 -0600</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-48@DOMAIN.HIDDEN">srfi-48@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20031223052319.GC30397@DOMAIN.HIDDEN">20031223052319.GC30397@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:877k0uzves.wl@DOMAIN.HIDDEN">877k0uzves.wl@xxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:200312211642.17209.Ken.Dickey@DOMAIN.HIDDEN">200312211642.17209.Ken.Dickey@xxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:87isk95x8r.wl@DOMAIN.HIDDEN">87isk95x8r.wl@xxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:200312220900.29786.Ken.Dickey@DOMAIN.HIDDEN">200312220900.29786.Ken.Dickey@xxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:20031223052319.GC30397@DOMAIN.HIDDEN">20031223052319.GC30397@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Sender</em>: Alex Shinn &lt;<a href="mailto:foof@DOMAIN.HIDDEN">foof@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mutt/1.5.4i</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>On Mon, Dec 22, 2003 at 11:23:19PM -0600, Alex Shinn wrote:
+
+&gt; Ugh, no it wasn't, it was a very sloppy rip-off of my previous code
+&gt; which introduced several bugs.  The ~A fix was also broken.  I
+&gt; apologize for the poor code and attach a new version.
+
+Attached for real this time.
+
+-- 
+Alex
+</pre><pre>;; IMPLEMENTATION DEPENDENT options
+
+(define ascii-tab   (integer-&gt;char  9))  ;; Assume ASCII encoding
+(define dont-print  (if (eq? #t #f) 1))  ;; Unspecified result
+;;(define DONT-PRINT (string-&gt;symbol &quot;&quot;))
+;;(define DONT-PRINT (void))
+(define pretty-print display)  ;; Ugly, but permitted
+
+;; FORMAT
+
+(define (format . args)
+  (cond
+    ((null? args)
+     (error &quot;FORMAT: required format-string argument is missing&quot;)
+     )
+    ((string? (car args))
+     (apply format (cons #f args)))
+    ((&lt; (length args) 2)
+     (error (format #f &quot;FORMAT: too few arguments ~a&quot; (cons 'format args)))
+     )
+    (else
+     (let ( (output-port   (car  args))
+            (format-string (cadr args))
+            (args          (cddr args))
+            )
+       (letrec ( (port
+                  (cond ((output-port? output-port) output-port)
+                        ((eq? output-port #t) (current-output-port))
+                        ((eq? output-port #f) (open-output-string))
+                        (else (error
+                               (format #f &quot;FORMAT: bad output-port argument: ~s&quot;
+                                       output-port)))
+                        ))
+                 (return-value
+                  (if (eq? output-port #f)    ;; if format into a string
+                    (lambda () (get-output-string port)) ;; then return the string
+                    (lambda () dont-print)) ;; else do something harmless
+                  )
+                 )
+
+         (define (round* n scale) ;; assume scale &lt; 0
+           (let ((one (expt 10 (- scale))))
+             (/ (round (* n one)) one)))
+
+         (define (string-index str c)
+           (let ((len (string-length str)))
+             (let loop ((i 0))
+               (cond ((= i len) #f)
+                     ((eqv? c (string-ref str i)) i)
+                     (else (loop (+ i 1)))))))
+
+         (define (string-grow str len char)
+           (let ((off (- len (string-length str))))
+             (if (positive? off)
+               (string-append (make-string off char) str)
+               str)))
+
+         (define (string-pad-right str len char)
+           (let ((slen (string-length str)))
+             (cond ((&lt; slen len)
+                    (string-append str (make-string (- len slen) char)))
+                   ((&gt; slen len)
+                    (substring str 0 len))
+                   (else str))))
+
+         (define (format-fixed num width digits)
+           ((if width (lambda (s) (string-grow s width #\space))
+                (lambda (s) s))
+            (let ((real (real-part num))
+                  (imag (imag-part num)))
+              (cond
+                ((not (zero? imag))
+                 (string-append (format-fixed real #f digits)
+                                (if (negative? imag) &quot;&quot; &quot;+&quot;)
+                                (format-fixed imag #f digits)
+                                &quot;i&quot;))
+                (digits
+                 (let* ((n1 (exact-&gt;inexact (round* real (- digits))))
+                        (s1 (number-&gt;string n1))
+                        (d1 (string-index s1 #\.))
+                        (s2 (if d1 s1 (string-append s1 &quot;.0&quot;)))
+                        (d2 (string-index s2 #\.))
+                        (l2 (string-length s2))
+                        (s3 (substring s2 (+ d2 1) l2)))
+                   (string-append (substring s2 0 (+ d2 1))
+                                  (string-pad-right s3 digits #\0))))
+                (else (number-&gt;string num))))))
+
+         (define (format-help format-strg arglist)
+
+           (letrec (
+
+                    (length-of-format-string (string-length format-strg))
+
+                    (anychar-dispatch
+                     (lambda (pos arglist last-was-newline)
+                       (if (&gt;= pos length-of-format-string)
+                         arglist ; used for ~? continuance
+                         (let ( (char (string-ref format-strg pos)) )
+                           (cond
+                             ((eq? char #\~)
+                              (tilde-dispatch (+ pos 1) arglist '() '() last-was-newline))
+                             (else
+                              (write-char char port)
+                              (anychar-dispatch (+ pos 1) arglist #f)
+                              ))
+                           ))
+                       )) ; end anychar-dispatch
+
+                    (collect-digits
+                     (lambda (digits)
+                       (and (pair? digits)
+                            (string-&gt;number (list-&gt;string (reverse digits))))))
+
+                    (tilde-dispatch
+                     (lambda (pos arglist params digits last-was-newline)
+                       (cond
+                         ((&gt;= pos length-of-format-string)
+                          (write-char #\~ port) ; tilde at end of string is just output
+                          arglist ; used for ~? continuance
+                          )
+                         (else
+                          (case (char-upcase (string-ref format-strg pos))
+                            ((#\A)       ; Any -- for humans
+                             (let* ((x (car arglist))
+                                    (nl? (if (string? x)
+                                           (if (string=? x &quot;&quot;) last-was-newline
+                                               (eqv? #\newline (string-ref x (- (string-length x) 1))))
+                                           (eqv? x #\newline))))
+                               (display x port)
+                               (anychar-dispatch (+ pos 1) (cdr arglist) nl?))
+                             )
+                            ((#\S)       ; Slashified -- for parsers
+                             (write (car arglist) port)
+                             (anychar-dispatch (+ pos 1) (cdr arglist) #f)
+                             )
+                            ((#\D)       ; Decimal
+                             (display (number-&gt;string (car arglist) 10) port)
+                             (anychar-dispatch (+ pos 1) (cdr arglist) #f)
+                             )
+                            ((#\X)       ; HeXadecimal
+                             (display (number-&gt;string (car arglist) 16) port)
+                             (anychar-dispatch (+ pos 1) (cdr arglist) #f)
+                             )
+                            ((#\O)       ; Octal
+                             (display (number-&gt;string (car arglist)  8) port)
+                             (anychar-dispatch (+ pos 1) (cdr arglist) #f)
+                             )
+                            ((#\B)       ; Binary
+                             (display (number-&gt;string (car arglist)  2) port)
+                             (anychar-dispatch (+ pos 1) (cdr arglist) #f)
+                             )
+                            ((#\C)       ; Character
+                             (write-char (car arglist) port)
+                             (anychar-dispatch (+ pos 1) (cdr arglist) (eq? (car arglist) #\newline))
+                             )
+                            ((#\P)       ; Plural
+                             (if (&lt;= (car arglist) 1)
+                               #f ; no action
+                               (write-char #\s port))
+                             (anychar-dispatch (+ pos 1) (cdr arglist) #f)
+                             )
+                            ((#\~)       ; Tilde
+                             (write-char #\~ port)
+                             (anychar-dispatch (+ pos 1) arglist #f)
+                             )
+                            ((#\%)       ; Newline
+                             (newline port)
+                             (anychar-dispatch (+ pos 1) arglist #t)
+                             )
+                            ((#\&amp;)      ; Freshline
+                             (if (not last-was-newline) ;; (unless last-was-newline ..
+                               (newline port))
+                             (anychar-dispatch (+ pos 1) arglist #t)
+                             )
+                            ((#\_)       ; Space
+                             (write-char #\space port)
+                             (anychar-dispatch (+ pos 1) arglist #f)
+                             )
+                            ((#\T)       ; Tab -- IMPLEMENTATION DEPENDENT ENCODING
+                             (write-char #\tab port)
+                             (anychar-dispatch (+ pos 1) arglist #f)
+                             )
+                            ((#\Y)       ; Pretty-print
+                             (pretty-print (car arglist) port)  ;; IMPLEMENTATION DEPENDENT
+                             (anychar-dispatch (+ pos 1) (cdr arglist) #f)
+                             )
+                            ;; {&quot;~?&quot; in Common Lisp is &quot;~K&quot; in T}
+                            ((#\? #\K)       ; indirection -- take next arg as format string
+                             (anychar-dispatch
+                              (+ pos 1)
+                              (format-help (car arglist) (cdr arglist)) ; Note: format-help returns unused args
+                              #f)
+                             )
+                            ((#\F)
+                             (let* ((plist (reverse (cons (collect-digits digits) params)))
+                                    (width (and (pair? plist) (car plist)))
+                                    (digits (and (pair? plist) (pair? (cdr plist)) (cadr plist))))
+                               (display (format-fixed (car arglist) width digits) port)
+                               (anychar-dispatch (+ pos 1) (cdr arglist) #f)))
+                            ((#\,)
+                             (tilde-dispatch (+ pos 1) arglist (cons (collect-digits digits) params)
+                                             '() last-was-newline))
+                            ((#\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9 #\0 #\+ #\-)
+                             (tilde-dispatch (+ pos 1) arglist params
+                                             (cons (string-ref format-strg pos) digits)
+                                             last-was-newline))
+                            (else
+                             (error (format &quot;FORMAT: unknown tilde escape: ~a&quot;
+                                            (string-ref format-strg pos))))
+                            )))
+                       )) ; end tilde-dispatch
+                    ) ; end letrec
+
+                                        ; format-help main
+             (anychar-dispatch 0 arglist #f)
+             )) ; end format-help
+
+                                        ; format main
+         (format-help format-string args)
+         (return-value)
+
+         )) ; end letrec, if
+     ))) ; end format
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00011" href="msg00011.html">floating point and other comments</a></strong>
+<ul><li><em>From:</em> Alex Shinn</li></ul></li>
+<li><strong><a name="00018" href="msg00018.html">Re: floating point and other comments</a></strong>
+<ul><li><em>From:</em> Ken Dickey</li></ul></li>
+<li><strong><a name="00021" href="msg00021.html">Re: floating point and other comments</a></strong>
+<ul><li><em>From:</em> Alex Shinn</li></ul></li>
+<li><strong><a name="00024" href="msg00024.html">Re: floating point and other comments</a></strong>
+<ul><li><em>From:</em> Ken Dickey</li></ul></li>
+<li><strong><a name="00029" href="msg00029.html">Re: floating point and other comments</a></strong>
+<ul><li><em>From:</em> Alex Shinn</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00029.html">Re: floating point and other comments</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00031.html">Re: Format strings are wrong</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00029.html">Re: floating point and other comments</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00022.html">pretty-print and ~C</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00030"><strong>Date</strong></a></li>
+<li><a href="threads.html#00030"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

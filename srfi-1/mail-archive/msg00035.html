@@ -1,0 +1,156 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Everything is a list (Or: When you've got a hammer...) -->
+<!--X-From-R13: Ayva Euviref <fuvirefNzbatxbx.nv.zvg.rqh> -->
+<!--X-Date: Wed, 17 Feb 1999 21:52:33 &#45;0600 (CST) -->
+<!--X-Message-Id: 199902180355.WAA17572@shivers.ne.mediaone.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Everything is a list (Or: When you've got a hammer...)</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00034.html">Date Prev</a>][<a href="msg00036.html">Date Next</a>][<a href="msg00039.html">Thread Prev</a>][<a href="msg00038.html">Thread Next</a>][<a href="maillist.html#00035">Date Index</a>][<a href="threads.html#00035">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Everything is a list (Or: When you've got a hammer...)</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-1@DOMAIN.HIDDEN">srfi-1@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Everything is a list (Or: When you've got a hammer...)</li>
+<li><em>From</em>: Olin Shivers &lt;<a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 17 Feb 1999 22:55:35 -0500</li>
+<li><em>Reply-to</em>: <a href="mailto:shivers@DOMAIN.HIDDEN">shivers@xxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>I have going over the discussions by Stone, Currie, and others, as to
+distinctions between proper lists, improper lists, circular lists, etc.
+This has led me to thinking about definitions, base cases, and so forth.
+The results of this thinking is partially reflected in some of the text
+in the recent &quot;issues&quot; msg I just sent to the SRFI-1 list. But I would
+like to set down the following bit of text stating the definitions used,
+and how they are derived. The rather unusual conclusion to which I have
+come is that *every* value in Scheme is a list, rather in the same spirit
+that every value in APL is an array, even scalar values. So my intent is
+to put the following definitional essay and the three predicates it introduces
+into the prologue of the list-lib spec.
+    -Olin
+
+-------------------------------------------------------------------------------
+I would like to set out some definitions for basic kinds of list
+structure in Scheme.
+
+The main problem derives from the fact that Scheme does not have a list type
+-- just as C does not have a string type. Scheme has a binary-tuple type, from
+which one can build binary trees. There is an *interpretation* of Scheme
+values that allows one to treat these trees as lists. Further complications
+ensue from the fact that Scheme allows side-effects to these tuples, raising
+the possibility of unbounded trees and lists. You can view these two
+properties as sleazy or fun, depending upon which direction you face when you
+kneel to pray. In fact, as we'll shortly discuss, a more generous comparison
+would be to state that lists in Scheme are pervasive -- everything is a list
+-- just as arrays in APL are pervasive.
+
+Let's consider the notion of lists from a fairly high and general level. A 
+Scheme list is described by enumerating its elements, and, if it is finite,
+specifying the list terminator. This description shows us we have, basically,
+three fundamental kinds of list in Scheme, depending on the termination:
+
+    - Infinite (circular) lists (no termination);
+
+    - nil-terminated lists (which are necessarily finite);
+      Examples: (a b) (a) ()
+
+    - finite non-nil-terminated lists.
+      Examples: (a b . c) (a . c) c
+
+Nil-terminated lists are the most standard kind of lists.  Note that any
+non-pair, non-nil Scheme value has an interpretation as a 0-element
+non-nil-terminated list.
+
+Hence, it is useful to define the following predicates:
+
+circular-list? x -&gt; boolean
+    True if X is a circular list. A circular list is a value such that
+    for every n &gt;= 0, cdr^n(x) is a pair.
+
+    The opposite of circular is finite.
+
+proper-list? x -&gt; boolean
+    A proper list is a nil-terminated list (necessarily finite).
+    If there exists an n &gt;= 0 such that cdr^n(X) = (), then X is a
+    nil-terminated list. Thus only zero-length proper list is ().
+
+    Nil-terminated lists are called &quot;proper&quot; lists by R5RS and Common Lisp.
+    The opposite of proper is improper.
+
+    R5RS binds this function to the variable LIST?, which is somewhat
+    confusing. 
+
+dotted-list? x -&gt; boolean
+    True if X is a finite, non-nil-terminated list. That is, there exists
+    an n &gt;= 0 such that cdr^n(x) is neither a pair nor (). This includes
+    non-pair, non-() values (e.g. symbols, numbers), which are considered to
+    be dotted lists of length 0.
+
+    Common Lisp has a similar definition of dotted lists, but Common Lisp's
+    excludes non-nil, non-pair values. This, I believe, is a bolted-on
+    exception; the &quot;grammar&quot; for dotted lists is most naturally and simply
+    defined to include these cases, as is recursive code that processes
+    them. While I am aware one can make an argument against 0-element dotted
+    lists on the grounds of error checking, I don't buy it. The natural
+    definition includes these values; you are fighting the structure to
+    exclude them. What one is doing with dotted lists, essentially, is
+    stating that *all* finite binary trees have an interpretation as a list,
+    not simply the ones whose right-spine terminates in (). Well, leaf nodes
+    are binary trees.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00034.html">Re: SRFI-1 round 2 discussion</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00036.html">SRFI-1 round 2 discussion</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00039.html">Re: SRFI-1 round 2 discussion</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00038.html">LIST-LENGTH &amp; circular lists</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00035"><strong>Date</strong></a></li>
+<li><a href="threads.html#00035"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

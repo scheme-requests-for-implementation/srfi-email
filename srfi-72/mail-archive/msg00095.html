@@ -1,0 +1,153 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Opaque thought experiment -->
+<!--X-From-R13: Oaqer ina Fbaqre <naqerNabj.urg.oebja.rqh> -->
+<!--X-Date: Mon, 22 Aug 2005 17:14:07 +0200 (DFT) -->
+<!--X-Message-Id: Pine.GSO.4.60.0508221030500.10856@now.het.brown.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Opaque thought experiment</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00094.html">Date Prev</a>][<a href="msg00096.html">Date Next</a>][<a href="msg00086.html">Thread Prev</a>][<a href="msg00101.html">Thread Next</a>][<a href="maillist.html#00095">Date Index</a>][<a href="threads.html#00095">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Opaque thought experiment</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-72@DOMAIN.HIDDEN">srfi-72@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Opaque thought experiment</li>
+<li><em>From</em>: Andre van Tonder &lt;<a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 22 Aug 2005 11:14:04 -0400 (EDT)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-72@DOMAIN.HIDDEN">srfi-72@xxxxxxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+&lt;pre&gt;
+</pre><tt>To give due consideration to all options, I would like to consider what changes 
+</tt><tt>would be required to the API if one were to make syntax objects opaque, with the 
+</tt><tt>constraint that procedural-style programming with syntax objects remain easy.
+</tt><pre style="margin: 0em;">
+
+First, an additional primitive a la R4RS appendix:
+
+|  unwrap-syntax : syntax-object -&gt; constant
+|                                   | identifier
+|                                   | pair-of syntax-objects
+|                                   | vector-of syntax-objects
+
+</pre><tt>This only exposes the top pair, say.  For example, syntax-&gt;list can be defined 
+</tt><tt>by applying unwrap-syntax recursively.
+</tt><pre style="margin: 0em;">
+
+Issue:  Is wrap-syntax necessary or can we make do with datum-&gt;syntax-object?
+
+</pre><tt>To make a procedural style of accessing syntax-objects easy, I would require 
+</tt><tt>syntax versions of all the R5RS list primitives that make sense
+</tt><pre style="margin: 0em;">
+
+  syntax-null?
+  syntax-list?
+  syntax-car
+  ...
+  syntax-cddddr
+  ....
+  syntax-map
+  syntax-for-each
+
+</pre><tt>Some of these could have been omitted in favour of just using syntax-&gt;list. 
+</tt><tt>However, I am not a big fan of the syntax-&gt;list style of programming - it 
+</tt><tt>incurs an extra code-walking step and it can expose too much if we use it to 
+</tt><tt>implement things like cadddr or member.
+</tt><pre style="margin: 0em;">
+
+</pre><tt>Issue: Should constructors syntax-cons, syntax-list, syntax-vector be specified 
+</tt><tt>and, if so, should they have an extra context argument like 
+</tt><tt>datum-&gt;syntax-object? or simply use an unspecified context?
+</tt><pre style="margin: 0em;">
+
+</pre><tt>Another issue is whether to follow the MzScheme and Psyntax practice of allowing 
+</tt><tt>constants, lists or vectors to stand for syntax in certain contexts, for 
+</tt><tt>example as an argument to syntax-case or with-syntax.  I think 
+</tt><tt>this is probably morally wrong and am inclined to disallow it.  For example,
+</tt><pre style="margin: 0em;">
+the following would be wrong if generate-temporaries returns a list
+
+|(define-syntax letrec0
+|    (lambda (x)
+|      (syntax-case x ()
+|        ((_ ((i v) ...) e1 e2 ...)
+|         (with-syntax (((t ...) (generate-temporaries (syntax (i ...)))))
+|           (syntax (let ((i #f) ...)
+|                     (let ((t v) ...)
+|                       (set! i t) ...
+|                       (let () e1 e2 ...)))))))))
+
+instead, it should be written to return a syntax object or the conversion
+(maybe using datum-&gt;syntax-object) should be explicitly written.
+
+Cheers
+Andre
+
+&lt;/pre&gt;
+
+
+
+
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00101" href="msg00101.html">Re: Opaque thought experiment</a></strong>
+<ul><li><em>From:</em> Matthias Neubauer</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00094.html">Re: The power of Lists</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00096.html">loss of abstraction</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00086.html">Re: question on the opaque syntax object debate</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00101.html">Re: Opaque thought experiment</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00095"><strong>Date</strong></a></li>
+<li><a href="threads.html#00095"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

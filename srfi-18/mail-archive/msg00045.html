@@ -1,0 +1,202 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: The Scheduler -->
+<!--X-From-R13: Rnivq Dhfu <xhzbNoryyfbhgu.arg> -->
+<!--X-Date: Fri, 14 Apr 2000 05:34:07 &#45;0500 (CDT) -->
+<!--X-Message-Id: okfog7dx993.fsf@bellsouth.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 004901bfa56d$c377a640$11969fd0@fitzgerald_nt -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: The Scheduler</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00044.html">Date Prev</a>][<a href="msg00046.html">Date Next</a>][<a href="msg00044.html">Thread Prev</a>][<a href="msg00046.html">Thread Next</a>][<a href="maillist.html#00045">Date Index</a>][<a href="threads.html#00045">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: The Scheduler</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &lt;<a href="mailto:fitzgerald@DOMAIN.HIDDEN">fitzgerald@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: The Scheduler</li>
+<li><em>From</em>: David Rush &lt;<a href="mailto:kumo@DOMAIN.HIDDEN">kumo@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: 14 Apr 2000 11:33:12 +0100</li>
+<li><em>Cc</em>: &quot;Marc Feeley&quot; &lt;<a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>&gt;, &lt;<a href="mailto:srfi-18@DOMAIN.HIDDEN">srfi-18@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>In-reply-to</em>: &quot;Will Fitzgerald&quot;'s message of &quot;Thu, 13 Apr 2000 13:29:03 -0400&quot;</li>
+<li><em>References</em>: &lt;<a href="mailto:004901bfa56d%24c377a640%2411969fd0@DOMAIN.HIDDEN"><a href="msg00044.html">004901bfa56d$c377a640$11969fd0@fitzgerald_nt</a></a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Caveat lector:
+
+I've just realized that SRFI-18 uses Unix style priorities where lower
+values get more CPU resource. I've (out of habit) used the opposite
+language, where higher priorities get more CPU resource.
+
+&quot;Will Fitzgerald&quot; &lt;fitzgerald@xxxxxxxxxxxx&gt; writes:
+&gt; Marc, thanks for the complete remarks. They were very helpful.
+
+Agreed.
+
+&gt; One alternative I suggested is something like the following:
+&gt; (1) The type of the value of the priority field of a thread is left
+&gt; undefined.
+&gt; (2) The 'user' defines a THREAD-PRIORITY&gt;? ordering procedure.
+&gt; (3) To change the priority, you need to use THREAD-PRIORITY-SET!
+&gt; 
+&gt; (1) and (2) could default to values as in the proposal.
+&gt; 
+&gt; But you say (2) can't be done, for the reasons you describe. 
+
+I didn't read it as *can't*, it sounded more like 'is a pain, and
+dangerous, too'. But there are some good reasons for finding a less
+painful and dangerous way to do the same things, of which
+
+&gt; Pity. (But
+&gt; I guess we can create an integer priority from anything I can dream up,
+&gt; including the mythical deadline).
+
+is a good reason. Actually, we are discussing the heart of the first
+bulleted open issue in the SRFI document. How shall dynamic priority
+changes be addressed in the SRFI and in the scheduler?
+
+Specifically, while I don't know precisely what you mean by scheduling
+to deadlines either, I'll take a guess (based on my limited RT
+experience) that you are meaning that you have some subset of the
+tasks in the system that need completion by a certain time, and that
+their priority should be dynamically raised each quanta that they are
+runnable but not actually running. Also that the priority of a
+deadlined task is never allowed to rise higher than that of a task
+with an earlier deadline.
+
+Now in a hypothetical system with deadlines, I've got to assume that
+you have tasks with and without deadlines (Non-deadline tasks being
+dedicated to various housekeeping functions: logging, monitoring,
+etc). Non-deadlined tasks would be scheduled by normal priority, but
+deadlined tasks get the per-quantum magic. Now if you try and map the
+scheduling of deadlined tasks into the priority scheme of
+non-deadlined tasks, you lose information in the scheduler,
+specifically the actual deadline (which serves as both a maximum
+priority limit and as strong heuristic of the needed priority).
+
+Another case where this kind of thing arises is in the implementation
+of priority inheritance mutexes. In this case each mutex has an
+associated priority, to which any acquiring thread gets promoted (if a
+thread already has higher priority than the mutex it retains its
+priority). So a thread's effective priority is the maximum of its
+'native' priority and the priorities of any mutexes it owns. Again,
+with a simple integer mapping you can make the right thing happen, but
+it becomes very difficult to get the right priority restored to a
+thread upon mutex release, especially without stopping the the
+scheduler entirely.
+
+Which was Marc's main complaint about the THREAD-PRIORITY&gt;?
+primitive. But the fundamental problem is that whenever you have a
+change in the priority levels of the tasks in a system the scheduler
+has to stop and get its head screwed back on straight. When all you
+have is a single integer affecting the task priority this doesn't seem
+to be much of a problem, but it is still the same problem.
+
+Which leads me to wonder if some form like
+
+	(without-scheduling &lt;thunk&gt;)
+
+which encapsulates Marc's:
+
+     (let ((eh (current-exception-handler)))
+       (with-exception-handler
+         (lambda (exc)
+           (thread-reorder-and-enable-scheduler! t)
+           (eh exc))
+         (lambda ()
+           &lt;thunk&gt;
+           (thread-reorder-and-enable-scheduler! t))))
+
+might be a useful adjunct to the SRFI. This is of course in addition
+to Will Fitzgerald's suggestions concerning THREAD-PRIORITY&gt;?. I think
+that with these you'l have a system that can be adapted to RT systems
+fairly easily, while ameliorating the difficulties in Marc's
+post. Admittedly, all the difficulties don't go away; you still must
+be careful in writing a custom THREAD-PRIORITY&gt;?, but you have to be
+really careful about anything relating to priorities in an RT
+system. There is nothing in Marc's objections which doesn't apply in
+the C world *and* which doesn't also apply to an attempt to map
+everything onto integer priorities. The only exception is not being
+able to make a procedure call, which  seems a harsh restriction, and
+one that you wouldn't encounter in a C based solution.
+
+As you can tell, I am actually in favor of THREAD-PRIORITY&gt;? (although
+I'm not implementing a scheduler around it at the moment). It nicely
+captures the essence of the variations in scheduling schemes. But
+regardless of that my experience in implementing priority-inheritance
+mutexes suggests that having the (without-scheduling &lt;thunk&gt;) form is
+going to be necessary for mapping complex priority schemes onto the
+integers anyway.
+
+david rush
+-- 
+C makes it easy to shoot yourself in the foot, C++ makes it harder,
+but when you do, it blows away your whole leg -- Bjarne Stroustrup
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00046" href="msg00046.html">RE: The Scheduler</a></strong>
+<ul><li><em>From:</em> Will Fitzgerald</li></ul></li>
+<li><strong><a name="00047" href="msg00047.html">Re: The Scheduler</a></strong>
+<ul><li><em>From:</em> Marc Feeley</li></ul></li>
+<li><strong><a name="00049" href="msg00049.html">Re: The Scheduler</a></strong>
+<ul><li><em>From:</em> Mark K. Gardner</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00044" href="msg00044.html">RE: The Scheduler</a></strong>
+<ul><li><em>From:</em> Will Fitzgerald</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00044.html">RE: The Scheduler</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00046.html">RE: The Scheduler</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00044.html">RE: The Scheduler</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00046.html">RE: The Scheduler</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00045"><strong>Date</strong></a></li>
+<li><a href="threads.html#00045"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,111 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: string&#45;replace! -->
+<!--X-From-R13: Rbanyq Iryfu <qjryfuNzryocp.bet.nh> -->
+<!--X-Date: Sun, 24 Oct 1999 09:44:35 &#45;0500 (CDT) -->
+<!--X-Message-Id: 4.0.1.19991024160839.00ddc760@popa.melbpc.org.au -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>string-replace!</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00005.html">Date Prev</a>][<a href="msg00007.html">Date Next</a>][<a href="msg00005.html">Thread Prev</a>][<a href="msg00007.html">Thread Next</a>][<a href="maillist.html#00006">Date Index</a>][<a href="threads.html#00006">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>string-replace!</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: String Library &lt;<a href="mailto:srfi-13@DOMAIN.HIDDEN">srfi-13@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: string-replace!</li>
+<li><em>From</em>: Donald Welsh &lt;<a href="mailto:dwelsh@DOMAIN.HIDDEN">dwelsh@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sun, 24 Oct 1999 16:12:24 +1000</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Should have specified string-replace!, the destructive counterpart to
+string-replace.  Also a minor change to string-copy!; my implementation now
+makes the endpoints optional.
+
+; replacement, destructive version
+; reuses storage of s1 if the result is not longer than s1
+; returns the new version of s1, whether storage is reused
+(define (string-replace! s1 start end s2)
+  (if (&gt; (string-length s2) (- end start))
+      (string-replace s1 start end s2)
+      (begin
+        ; copy s2 into s1 starting at start
+        (string-copy! s1 start s2 0 (string-length s2))
+        ; the next line depends on string-copy! copying chars in ascending
+order
+        (string-copy! s1 (+ start (string-length s2)) s1 end (string-length
+s1))
+        ; the return value:  if string length has changed, should return a
+        ; shared substring
+        (if (= (string-length s2) (- end start))
+            s1
+            (substring s1 0 (+ (string-length s1) (- start end)
+(string-length s2)))))))
+
+; string-copy!, needed for efficient version of replacement
+(define (string-copy! target tstart s . endpoints)
+  (let ((start 0)
+        (end (string-length s)))
+    (if (not (null? endpoints))
+        (begin
+          (set! start (car endpoints))
+          (set! end (cadr endpoints))))
+    (do ((i tstart (+ i 1))
+         (j start (+ j 1)))
+      ((= j end) 'ok)
+      (string-set! target i (string-ref s j)))))
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00005.html">Proposed amendments to SRFI-13</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00007.html">string-for-each, string-iter</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00005.html">Proposed amendments to SRFI-13</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00007.html">string-for-each, string-iter</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00006"><strong>Date</strong></a></li>
+<li><a href="threads.html#00006"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

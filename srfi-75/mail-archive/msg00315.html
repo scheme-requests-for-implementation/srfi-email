@@ -1,0 +1,200 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: SRFI withdrawn; comments on the possible future -->
+<!--X-From-R13: Xbetra Epunrsre <sbepreNsbepvk.pk> -->
+<!--X-Date: Fri, 26 May 2006 17:34:06 +0200 (MST) -->
+<!--X-Message-Id: 87slmwby1f.fsf@forcix.kollektiv&#45;hamburg.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 20060525163717.E1EBE65007A@mail&#45;svr1.cs.utah.edu -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: SRFI withdrawn; comments on the possible future</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00314.html">Date Prev</a>][<a href="msg00316.html">Date Next</a>][<a href="msg00314.html">Thread Prev</a>][<a href="msg00316.html">Thread Next</a>][<a href="maillist.html#00315">Date Index</a>][<a href="threads.html#00315">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: SRFI withdrawn; comments on the possible future</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-75@DOMAIN.HIDDEN">srfi-75@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: SRFI withdrawn; comments on the possible future</li>
+<li><em>From</em>: Jorgen Schaefer &lt;<a href="mailto:forcer@DOMAIN.HIDDEN">forcer@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 26 May 2006 17:34:04 +0200</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-75@DOMAIN.HIDDEN">srfi-75@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:20060525163717.E1EBE65007A@DOMAIN.HIDDEN">20060525163717.E1EBE65007A@xxxxxxxxxxxxxxxxxxxxx</a>&gt; (Matthew	Flatt's message of &quot;Thu, 25 May 2006 10:37:33 -0600&quot;)</li>
+<li><em>References</em>: &lt;<a href="mailto:20060525163717.E1EBE65007A@DOMAIN.HIDDEN">20060525163717.E1EBE65007A@xxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Gnus/5.110004 (No Gnus v0.4) Emacs/22.0.50 (gnu/linux)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Matthew Flatt &lt;mflatt@xxxxxxxxxxx&gt; writes:
+
+&gt;     * `string-normalize-nfd', `string-normalize-nfkd,
+&gt;       `string-normalize-nfc', and `string-normalize-nfkc', which each
+&gt;       accept a string and produce its normalization according to normal
+&gt;       form D, KD, C, or KC, respectively.
+
+If the basic concept of the SRFI - a string being a sequence of
+code points - does not change, I do think these procedures are
+useful (contrary to bear and Alex Shinn). An implementation can
+still normalize internally in the &quot;usual case&quot;, and if the
+programmer enforces a different normalization, that's eir problem.
+
+STRING=? and similar procedures need to define which kind of
+normalization they work on (or just &quot;the same normalization for
+all arguments&quot;).
+
+STRING-DOWNCASE, STRING-APPEND etc. need to define whether they
+may normalize their arguments, and if so, which normalization they
+return. If the normalization shouldn't be prescribed, another
+procedure, STRING-NORMALIZE (or similar), needs to be added to
+return the normalization the implementation prefers.
+
+A higher-level string API can (and should) be built on top of the
+strings defined in this SRFI.
+
+&gt; The #\newline character
+&gt; -----------------------
+&gt;
+&gt; It is likely that #\newline will be removed from Scheme leaving only
+&gt; #\linefeed. Since R6RS will pin down characters to Unicode scalar
+&gt; values, the right name for the character is #\linefeed.
+
+I'm always in favor of breaking stuff to get a clean result.
+
+&gt; Another view is that #\newline can serve as an abstaction of the
+&gt; end-of-line character sequence which is returned by read-char
+&gt; when the end-of-line character sequence is read (be it
+&gt; #\linefeed, or #\return, or # \return followed by #\linefeed).
+&gt; So even though #\newline and #\linefeed are the same characters,
+&gt; Scheme programs might use #\newline to highlight that the
+&gt; character is being used to denote the end-of-line sequence. The
+&gt; name #\newline would also reinforce the link with the escape
+&gt; sequence &quot;\n&quot; in strings.
+
+If #\newline is considered to be some kind of abstraction of the
+end-of-line character sequence, please remember that Unicode
+defines U+2028 LINE SEPARATOR and U+2029 PARAGRAPH SEPARATOR as
+canonical new line code points, to finally get rid of all these
+distinctions.
+
+&gt; Escape sequences
+&gt; ----------------
+
+&gt;    with semi-colon terminator          without terminator
+&gt;
+&gt;    &quot;A\x42;C&quot; = &quot;ABC&quot;                   &quot;A\x42\x43&quot; = &quot;ABC&quot;
+&gt;    &quot;\x41;\x42;\x43;&quot; = &quot;ABC&quot;           &quot;\x41\x42\x43&quot; = &quot;ABC&quot;
+&gt;    &quot;\x03BB;x.x&quot; = &quot;&#x3BB;x.x&quot;               &quot;\x03BBx.x&quot; = &quot;&#x3BB;x.x&quot;
+
+I agree with bear that the semicolon is a bad choice - why not use
+the colon?
+
+     &quot;\Ax42:C&quot;
+     &quot;\x41:\x42:\x43:&quot;
+     &quot;\x03BB:x.x&quot;
+
+&gt; Using less-than and greater-than characters, which are not actual
+&gt; brackets, avoids this problem:
+&gt;
+&gt;     #\x&lt;03BB&gt; = #\&#x3BB;
+
+Braces have been offered as an alternative:
+
+#\x{03BB}
+
+&gt; However, they become somewhat more difficult to read when multiple
+&gt; escape appear in a string:
+&gt;
+&gt;    &quot;\x&lt;41&gt;\x&lt;42&gt;\x&lt;43&gt;&quot; = &quot;ABC&quot;
+
+&quot;\x{41}\x{42}\x{43}&quot;
+
+&gt; In either case, the trade-off is that Scheme strings are unlikely to be
+&gt; compatible with any other language's string syntax. A consequence is
+&gt; that there is additional burden on the programmer which must learn yet
+&gt; another string and character syntax.
+
+I do think it's good that we don't go with bad decisions made by
+other languages just because the decision has been made by them.
+
+&gt; Symbol characters
+&gt; -----------------
+&gt; [...]
+&gt; Meanwhile, the symbol escapes are similar yet not identical to the
+&gt; escapes in strings and characters, so there is a potential for mistakes
+&gt; if the programmer is not careful. For example one might expect a\nb to
+&gt; be a valid symbol, but it is an error.
+
+Why not allow the same escapes in symbols and in strings?
+
+
+All in all I like the changes you propose (modulo the comments
+above). Thanks for the good work!
+
+Regards,
+        -- Jorgen
+
+-- 
+((email . &quot;forcer@xxxxxxxxx&quot;) (www . &quot;<a  rel="nofollow" href="http://www.forcix.cx/&quot">http://www.forcix.cx/&quot</a>;)
+ (gpg   . &quot;1024D/028AF63C&quot;)   (irc . &quot;nick forcer on IRCnet&quot;))
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00316" href="msg00316.html">Re: SRFI withdrawn; comments on the possible future</a></strong>
+<ul><li><em>From:</em> John Cowan</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00312" href="msg00312.html">SRFI withdrawn; comments on the possible future</a></strong>
+<ul><li><em>From:</em> Matthew Flatt</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00314.html">Re: SRFI withdrawn; comments on the possible future</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00316.html">Re: SRFI withdrawn; comments on the possible future</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00314.html">Re: SRFI withdrawn; comments on the possible future</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00316.html">Re: SRFI withdrawn; comments on the possible future</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00315"><strong>Date</strong></a></li>
+<li><a href="threads.html#00315"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

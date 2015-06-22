@@ -1,0 +1,183 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Overuse of strings -->
+<!--X-From-R13: Fbal Uneabpx&#45;Xbarf <gbaltNxpoof.tra.am> -->
+<!--X-Date: Thu,  1 Dec 2005 08:11:44 +0100 (CET) -->
+<!--X-Message-Id: 438EA227.9050506@kcbbs.gen.nz -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Overuse of strings</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00011.html">Date Prev</a>][<a href="msg00013.html">Date Next</a>][<a href="msg00037.html">Thread Prev</a>][<a href="msg00101.html">Thread Next</a>][<a href="maillist.html#00012">Date Index</a>][<a href="threads.html#00012">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Overuse of strings</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-83@DOMAIN.HIDDEN">srfi-83@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Overuse of strings</li>
+<li><em>From</em>: Tony Garnock-Jones &lt;<a href="mailto:tonyg@DOMAIN.HIDDEN">tonyg@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 01 Dec 2005 07:11:35 +0000</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-83@DOMAIN.HIDDEN">srfi-83@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Mozilla Thunderbird 1.0.6 (Macintosh/20050716)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>One mistake in the XML world is the overuse of strings to represent
+structured data. Scheme has tended to be able to avoid this with its
+relatively lightweight notation for lists, trees and symbols.
+
+I feel that this SRFI abuses strings in places: in the language name
+&quot;scheme://r6rs&quot;, and in the definition of &lt;lib-path&gt;. Instead, these
+two should be S-expressions.
+
+URIs are commonly written
+  <a  rel="nofollow" href="http://www.example.com/some/path?param=value">http://www.example.com/some/path?param=value</a>
+, requiring a sophisticated parser to recover the structure embedded
+in the string. A Scheme system might represent such a URI as
+  (http &quot;www.example.com&quot; &quot;some&quot; &quot;path&quot; (param &quot;value&quot;))
+or even
+  (http (www example com) some path (param value))
+requiring no specialised character-level parsing.
+
+As another example, the XPath language has a complicated grammar for
+expressions. XPath expressions are often embedded in attributes of XML
+documents (I'm thinking in particular of XSLT here). Quite aside from
+the ridiculous problems this causes relating to XML Namespaces,
+embedding structure in strings causes problems for code-processing
+tools, which again have to have heavy-duty parsers to extract the
+required information from its string encoding. Sometimes parsing
+technology simply isn't available, and baroque staged-evaluation-like
+solutions have to be put in place - all for the lack of consistent use
+of the facilities for representing structure offered by core XML.
+
+So here's an alternative suggestion for the definitions of &lt;lib-path&gt;
+and the language name:
+
+  [...]
+
+  A &lt;lib-path&gt; is therefore represented by a list of path components,
+  or a symbol shortcut (defined below). Each path component must be an
+  atom. The first path component (the primary component) is the most
+  significant. The primary component ``scheme'' should be used to
+  refer to libraries that are released by the Scheme community at
+  large, in much the same way that a Java package name is used. For
+  example, (scheme &quot;acme.com&quot; wiley quicksort) might refer to a
+  quicksort library that is distributed by Wiley at Acme. If Wiley's
+  quicksort library contains the &lt;lib-path&gt; &quot;utils&quot;, it can be
+  expanded as (scheme &quot;acme.com&quot; wiley utils).
+
+  The &lt;lib-path&gt; (scheme r6rs) must be supported by every
+  implementation, and it must export all bindings in R5RS, plus
+  import, export, and indirect-export. Lib-paths starting with (scheme
+  rNrs) and (scheme srfi-N) are reserved for definition by standards
+  processes.
+
+  The way that &lt;lib-path&gt;s are mapped to library declarations is
+  implementation-specific. Implementations might, for example,
+  interpret a lib-path with a ``uri'' primary component as a reference
+  to library within a UTF-8-encoded package on the web. [...]
+
+Actual references to HTTP-resident library bodies could perhaps be
+built from base URIs and path-component offsets, as in
+
+  (uri &lt;base-uri&gt; &lt;component&gt; ...)
+
+such that
+
+  (uri &quot;<a  rel="nofollow" href="http://example.com/&quot">http://example.com/&quot</a>; foo bar)
+
+might be interpreted as &quot;<a  rel="nofollow" href="http://example.com/foo/bar.scm&quot">http://example.com/foo/bar.scm&quot</a>;. Perhaps such
+interpretations of primary components are best left to later SRFIs,
+since otherwise we start down the slippery slope of pulling in the
+rest of the world's container- and transport-definitions.
+
+Questions and possible variations:
+
+ 1. should path components be restricted further to being only
+    symbols, or only strings? If we restrict ourselves to symbols
+    only, we end up with names like
+
+    (scheme com acme wiley quicksort) ;; more like Java
+
+    which seems fine and forces structure out into the open where it
+    belongs; on the other hand, if strings are disallowed as path
+    components, lib-paths like (uri &quot;<a  rel="nofollow" href="http://example.com/&quot">http://example.com/&quot</a>; library),
+    which contain structure that raw symbols cannot represent, are
+    disallowed. Perhaps this is a good thing, but probably not.
+
+ 2. should paths be big-endian, or little-endian? Compare
+
+    (scheme &quot;acme.com&quot; wiley quicksort)
+    (scheme &quot;acme.com&quot; wiley utils)
+
+    with
+
+    (quicksort wiley &quot;acme.com&quot; scheme)
+    (utils wiley &quot;acme.com&quot; scheme)
+
+ 3. should the &quot;scheme&quot; primary component be reserved only for language
+    definitions? It seems redundant to require it for normal libraries.
+
+    (com acme wiley quicksort)
+    (com acme wiley utils)
+
+ 4. is the mention of R5RS a typo in the &quot;Library References&quot; section?
+
+ 5. how might relative lib-paths be accommodated in an S-expression
+    alternative to URIs? Perhaps with &quot;(... utils)&quot;?
+
+
+Regards,
+  Tony
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00011.html">Re: put library &lt;body&gt; at top-level</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00013.html">Re: put library &lt;body&gt; at top-level</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00037.html">Re: put library &lt;body&gt; at top-level</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00101.html">Re: Overuse of strings</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00012"><strong>Date</strong></a></li>
+<li><a href="threads.html#00012"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

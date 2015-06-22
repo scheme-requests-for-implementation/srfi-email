@@ -1,0 +1,182 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: #\a octothorpe syntax vs SRFI 10 -->
+<!--X-From-R13: Ohoerl Xnssre <ntwNnyhz.zvg.rqh> -->
+<!--X-Date: Sat,  1 Jan 2005 05:17:53 +0100 (NFT) -->
+<!--X-Message-Id: 20050101041747.E9BA01B7711@voluntocracy.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: Pine.LNX.4.44.0412311032200.20579&#45;100000@autodrip.bloodandcoffee.net -->
+<!--X-Reference: 41D5A36E.30205@bothner.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: #\a octothorpe syntax vs SRFI 10</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00020.html">Date Prev</a>][<a href="msg00022.html">Date Next</a>][<a href="msg00015.html">Thread Prev</a>][<a href="msg00022.html">Thread Next</a>][<a href="maillist.html#00021">Date Index</a>][<a href="threads.html#00021">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: #\a octothorpe syntax vs SRFI 10</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: #\a octothorpe syntax vs SRFI 10</li>
+<li><em>From</em>: Aubrey Jaffer &lt;<a href="mailto:agj@DOMAIN.HIDDEN">agj@xxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 31 Dec 2004 23:17:47 -0500 (EST)</li>
+<li><em>Cc</em>: <a href="mailto:campbell@DOMAIN.HIDDEN">campbell@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>, <a href="mailto:srfi-58@DOMAIN.HIDDEN">srfi-58@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-58@DOMAIN.HIDDEN">srfi-58@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:41D5A36E.30205@DOMAIN.HIDDEN">41D5A36E.30205@xxxxxxxxxxx</a>&gt; (message from Per Bothner on Fri, 31	Dec 2004 11:07:26 -0800)</li>
+<li><em>References</em>: &lt;<a href="mailto:Pine.LNX.4.44.0412311032200.20579-100000@DOMAIN.HIDDEN">Pine.LNX.4.44.0412311032200.20579-100000@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:41D5A36E.30205@DOMAIN.HIDDEN">41D5A36E.30205@xxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre> | Date: Fri, 31 Dec 2004 11:07:26 -0800
+ | From: Per Bothner &lt;per@xxxxxxxxxxx&gt;
+ | 
+ | campbell@xxxxxxxxxxxxxxxxxxxxxxxxxxx wrote:
+ | 
+ | &gt; On Thu, 30 Dec 2004, Per Bothner wrote:
+ | &gt; 
+ | &gt;&gt;Array syntax should be compatible with Common Lisp's notation.
+ | &gt;&gt;Anything else requires a *really* strong justification.
+ | &gt; 
+ | &gt; Why doesn't Common Lisp's notation require just as strong of a
+ | &gt; justification?
+ | 
+ | Scheme's syntax is in general very close to Common Lisp's.  This
+ | includes the notation for vectors.  The Common Lisp vector and
+ | array notations are related, which makes sense since a vector is a
+ | special case of an array.  The Scheme vector notation is the same
+ | as the Common Lisp vector notation.  Having a completely different
+ | array notation would reduce interoperability and skill
+ | transferability for no good reason.
+
+Yes.
+
+ | I'm also concerned about stylistic compatibility within Scheme
+ | itself, regardless of Common Lisp.  Requiring SRFI-10 notation for
+ | arrays but not for vectors, is really ugly and makes arrays into
+ | second-class constructs, which is unfortunate given that vectors
+ | are just a special case of arrays.
+
+Amen!
+
+ | Some Scheme implementations may already support Common Lisp's #A syntax.
+ | (I thought Kawa did, but I guess I never got around to implementing it.)
+
+SCM does.  Guile does #&lt;n&gt;((...)); they lost the A.
+
+ | ...
+ | What I am requesting is that &quot;array type specifiers&quot; should be
+ | written to use &quot;element type names&quot;, not &quot;array type names&quot;, and
+ | that element type names should be identifiers that would make sense
+ | it somebody *does* do type specifiers.  I.e. instead of &quot;aint32&quot; or
+ | &quot;as32&quot; use &quot;int32&quot; or (for example) &quot;array:int32&quot; (depending on
+ | context).
+ | 
+ | Some Scheme implementations *do* support type specifiers, and of
+ | those specifiers some are also representation specifiers; please
+ | don't invent an array type syntax incompatible with type specifiers
+ | for declarations.
+
+Are there type specifiers in common between Scheme implementations?
+Which implementations?
+
+For Scheme type-specifiers, most of what Google found are for foreign
+datatypes.  The treatment of signed versus unsigned involves either
+the word &quot;unsigned&quot; and its absence; or the letters S and U.
+
+Having complex arrays and bit-arrays, SRFI-47 and SRFI-58 were not
+motivated by foreign-language interfaces.  I will replace the foreign
+numerical terminology.
+
+Here is a plan which, using the delimiter you suggested, indicates
+signed vs. unsigned with - versus +:
+
+exactness       element type                    prefix
+=========       ============                    ======
+                any (vector)                    #nA
+inexact         64.bit + 64.bit complex         #nA:complex-64
+inexact         32.bit + 32.bit complex         #nA:complex-32
+inexact         64.bit real                     #nA:real-64
+inexact         32.bit real                     #nA:real-32
+exact           64.bit integer                  #nA:integer-64
+exact           32.bit integer                  #nA:integer-32
+exact           16.bit integer                  #nA:integer-16
+exact           8.bit integer                   #nA:integer-8
+exact           64.bit nonnegative integer      #nA:integer+64
+exact           32.bit nonnegative integer      #nA:integer+32
+exact           16.bit nonnegative integer      #nA:integer+16
+exact           8.bit nonnegative integer       #nA:integer+8
+                char (string)                   #nA:char
+                boolean (bit-vector)            #nA:boolean
+
+Another possibility is to use the word &quot;natural&quot; for nonnegative
+integers:
+
+exact           64.bit natural-number           #nA:natural-64
+exact           32.bit natural-number           #nA:natural-32
+exact           16.bit natural-number           #nA:natural-16
+exact           8.bit natural-number            #nA:natural-8
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00022" href="msg00022.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+<li><strong><a name="00024" href="msg00024.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00013" href="msg00013.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+<ul><li><em>From:</em> campbell</li></ul></li>
+<li><strong><a name="00015" href="msg00015.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00020.html">Re: precision of signed integers</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00022.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00015.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00022.html">Re: #\a octothorpe syntax vs SRFI 10</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00021"><strong>Date</strong></a></li>
+<li><a href="threads.html#00021"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

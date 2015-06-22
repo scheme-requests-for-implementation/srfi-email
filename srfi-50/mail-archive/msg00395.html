@@ -1,0 +1,389 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Parsing Scheme [was Re: strings draft] -->
+<!--X-From-R13: Fbz Zbeq <ybeqNrzs.arg> -->
+<!--X-Date: Sat, 24 Jan 2004 19:41:47 +0100 (MET) -->
+<!--X-Message-Id: 200401241855.KAA03861@morrowfield.regexps.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200401220511.VAA18432@morrowfield.regexps.com -->
+<!--X-Reference: 200401230907.27619.Ken.Dickey@allvantage.com -->
+<!--X-Reference: 200401232020.MAA26771@morrowfield.regexps.com -->
+<!--X-Reference: 87hdymz7fk.fsf@becket.becket.net -->
+<!--X-Reference: 200401232252.OAA27834@morrowfield.regexps.com -->
+<!--X-Reference: 87zncdkfka.fsf@becket.becket.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Parsing Scheme [was Re: strings draft]</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00394.html">Date Prev</a>][<a href="msg00396.html">Date Next</a>][<a href="msg00394.html">Thread Prev</a>][<a href="msg00397.html">Thread Next</a>][<a href="maillist.html#00395">Date Index</a>][<a href="threads.html#00395">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Parsing Scheme [was Re: strings draft]</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:tb@DOMAIN.HIDDEN">tb@xxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Parsing Scheme [was Re: strings draft]</li>
+<li><em>From</em>: Tom Lord &lt;<a href="mailto:lord@DOMAIN.HIDDEN">lord@xxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Sat, 24 Jan 2004 10:55:00 -0800 (PST)</li>
+<li><em>Cc</em>: <a href="mailto:Ken.Dickey@DOMAIN.HIDDEN">Ken.Dickey@xxxxxxxxxxxxxx</a>, <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:87zncdkfka.fsf@DOMAIN.HIDDEN">87zncdkfka.fsf@xxxxxxxxxxxxxxxxx</a>&gt; (<a href="mailto:tb@DOMAIN.HIDDEN">tb@xxxxxxxxxx</a>)</li>
+<li><em>References</em>: &lt;<a href="mailto:200401220511.VAA18432@DOMAIN.HIDDEN">200401220511.VAA18432@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:200401230907.27619.Ken.Dickey@DOMAIN.HIDDEN">200401230907.27619.Ken.Dickey@xxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:200401232020.MAA26771@DOMAIN.HIDDEN">200401232020.MAA26771@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:87hdymz7fk.fsf@DOMAIN.HIDDEN">87hdymz7fk.fsf@xxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:200401232252.OAA27834@DOMAIN.HIDDEN">200401232252.OAA27834@xxxxxxxxxxxxxxxxxxxxxxx</a>&gt; &lt;<a href="mailto:87zncdkfka.fsf@DOMAIN.HIDDEN">87zncdkfka.fsf@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+
+
+    &gt; From: tb@xxxxxxxxxx (Thomas Bushnell, BSG)
+
+    &gt; There should be string-id=? (or some other name) which implements the
+    &gt; Scheme identifier matching rules, which should be specified for the
+    &gt; required character set, and left unspecified for all other
+    &gt; characters.  
+
+    &gt; None of this requires or even implicitly uses a case mapping function.
+
+    &gt;&gt; The standard would still need to specify CHAR-DOWNCASE.   
+
+    &gt; Why?  Is there some government bureau that will shut us down if the
+    &gt; next RnRS eleminates it?
+
+    &gt; I don't mind STRING-DOWNCASE, of course, which should have a locale
+    &gt; argument and be specified to permit the Correct Unicode Thing.
+
+Ok -- I think we can agree on some things.   You're roughly right, I
+think.
+
+We should also point readers in general to:
+
+  <a  rel="nofollow" href="http://www.unicode.org/reports/tr15/#Programming_Language_Identifiers">http://www.unicode.org/reports/tr15/#Programming_Language_Identifiers</a>
+
+which is Annex 7 (&quot;Programming Language Identifiers&quot;) of Unicode
+Technical Report 15 (&quot;Unicode Normalization Forms&quot;).
+
+Enclosed is a more fleshed-out and improved description of the
+approach you're advocating, plus its reconciliation with my
+suggestions for R6RS (which, frankly, don't need to change very much
+-- mostly this just involves adding new material).
+
+For SRFI-50 list relevence: let me point out that this doesn't change
+the proposed char/string FFI at all.   On the other hand, the fact the
+recommendations for R6RS continue to work out nicely is confirmation
+that the analysis that leads to those FFI recommendations is sound.
+So far we've more or less made peace with R5RS, my recommendations for
+R6RS, Thomas Bushnell's thoughts on supporting linguistically sane
+Scheme identifiers, Shiro's concerns about implementations using
+character sets other than Unicode and its subsets/extensions, Bear's
+work on infinite character sets, and the emerging design of Pika.
+
+I think what Thomas B. is suggesting is better provided by this:
+
+
+* (identifier? s) =&gt; &lt;bool&gt;
+
+    Return #f unless `s' is a legal identifier name.
+
+    It is required that:
+
+	(identifier? (symbol-&gt;string s)) =&gt; #t 
+
+    for all symbols s.
+
+
+* (fold-identifier name) =&gt; folded
+
+     Where NAME is a string containing an identifier
+     name and FOLDED is a string containing an equivalent
+     identifier name.
+
+     Two identifiers are equivalent if and only if:
+
+	(string=? (fold-identifier a)
+                  (fold-identifier b))
+
+     FOLD-IDENTIFIER is required to be idempotent:
+
+	(string=? (fold-identifier a)
+                  (fold-identifier (fold-identifier a)))
+        =&gt; #t   ; for all identifiers a
+
+     and, of course, IDENTIFIER? is closed under FOLD-IDENTIFIER:
+
+	(or (not (identifier? s))
+            (identifier? (fold-identifier s)))
+        =&gt; #t  ; for all strings s
+
+     The definition of FOLD-IDENTIFIER must be consistent with the
+     recommendations of Annex 7 (&quot;Programming Language Identifiers&quot; of
+     Unicode Technical Report 15 for identifier names comprised
+     entirely of Unicode characters.  For this purpose, the characters
+     of the portable Scheme character set are considered to be Unicode
+     characters.  (A short summary of the implications of this
+     requirement for portable identifiers is that given a portable
+     identifier, FOLD-IDENTIFIER must map #\A..#\Z to #\a..#\z.)
+
+     (FOLD-IDENTIFIER is preferable to STRING-ID=? because it 
+     produces a canonical form of each identifier explicitly 
+     rather than implicitly.   The canonical form is useful because
+     it can be hashed, stored in a trie, etc.   It would be
+     impractical to implement, for example, a symbol table in a
+     compiler given only STRING-ID=?.)
+
+
+
+
+* (concatenate-identifiers s0 s1 ...) =&gt; id
+
+     Return a string ID, containing an identifier name which
+     is the concatenation of the arguments which must themselves
+     be identifier names.
+
+     If all of the arguments are portable Scheme identifiers, then
+     this function must behave identically to STRING-APPEND
+
+     (As nearly as I can tell, CONCATENATE-IDENTIFIERS is needed
+     because IDENTIFIER? won't be closed under STRING-APPEND -- but
+     I could be mistake about that.  More research is needed.)
+
+
+
+Now, what becomes of the character class procedures such as
+CHAR-NUMERIC?  I think that these should be retained and corrected so
+that one can write a portable Scheme lexical analyzer which can accept
+as input programs using the character set extensions of its host
+implementation.  From what I can tell, that would require the new
+procedures:
+
+
+* (char-id-start? c) =&gt; &lt;bool&gt;
+
+  Return #t if C is a valid first character in an identifier.
+
+
+* (char-id-extend? c) =&gt; &lt;bool&gt;
+
+  Return #t if C is a valid non-first character in an identifier.
+
+
+* (canonicalize-identifier s) =&gt; ID | #f
+
+  Given a string S comprised of at least one CHAR-ID-START? character
+  followed by any number of CHAR-ID-EXTEND? characters, return a
+  valid identifier name (in the sense of IDENTIFIER?) corresponding 
+  to S or #f if no such identifier name can be constructed.
+
+  If S consists only of portable Scheme characters, the result must
+  be STRING=? to S and not EQ? to S.
+
+
+* (string-&gt;parsed-symbol s)
+
+  S must be an IDENTIFIER? string.  Return the symbol denoted by that
+  identifier if it were used in a quoted context in a Scheme expression.
+  (Note how this differs from STRING-&gt;SYMBOL.)
+
+
+* (string-&gt;parsed-character s) =&gt; &lt;char&gt; | #f
+
+  Given a string S whose contents are syntactically a character
+  constant, return the character that constant denotes or #f if
+  there is no such character.
+
+If we want to permit extended string syntaxes, at least this is
+needed:
+
+* (string-&gt;parsed-string s) =&gt; &lt;string&gt; | #f
+
+  S must be a string whose contents are syntactically a string
+  constant, return a string that constant denotes or #f if there
+  is no such string.
+
+Perhaps we'd also want similar procedures for other areas of syntactic
+extensibility.
+
+Now, what about the character ordering procedures (e.g. CHAR&lt;?,
+STRING&lt;? etc.)?   I think these should remain unchanged -- they should
+relate to the integer mappings of characters.  (Implementations or
+future standards are free to add locale parameters or introduce
+alternative procedures which are linguistically sensative.)
+
+What about case independent character ordering (e.g., CHAR-CI&lt;? and
+STRING-CI&lt;?)?  I see no compelling reason to eliminate them at this
+stage -- they're still useful.  I think they should be specified to be
+consistent with the single-character default case foldings of Unicode,
+where the portable character set is considered to consist of Unicode
+characters.  This will allow portable Scheme programs to use these
+procedures to write programs which accurately manipulate Scheme
+programs that use nothing but the portable character set.  It would,
+for example, allow a portable-character-set implementation of
+FOLD-IDENTIFIER.  It also reifies into Scheme a sanctioned (even if
+non-preferred) sense of Unicode character case -- while Scheme should
+_also_ evolve facilities for linguistically preferrable case handling,
+these facilities will be useful for Scheme programs communicating with
+other systems that use only the single-character case mappings.
+(Again, implementations and future standards are not precluded from
+adding additional parameters or new procedures for default or
+locale-specific case handling).
+
+What about case mappings (CHAR-UPCASE and CHAR-DOWNCASE).  Again:
+retain them;  specify them as using the Unicode single character
+mappings; permit implementations to add parameters are new procedures
+-- the result allows portable Scheme programs to handle portable
+Scheme program texts and captures a useful Unicode text process.
+
+In terms of my &quot;strings draft&quot; -- there is one R6RS recommendation
+that should change more substantially than the tweaks suggested above.
+
+I wanted to modify 6.3.4 to say:
+
+     These procedures [the character classes] return #t if their
+     arguments are alphabetic, numeric, whitespace, upper case, or
+     lower case characters, respectively, otherwise they return #f.
+     These procedures _must_ be consistent with the procedure READ
+     provided by the implementation.  For example, if a character is
+     CHAR-ALPHABETIC?, then it must also be suitable for use as the
+     first character of an identifier.
+
+     `a..z' and `A..Z' _must_ be alphabetic and _must_ be respectively
+     lower and upper case.  
+
+     #\space, #\tab, and #\formfeed _must_ be CHAR-WHITESPACE?.
+
+     `0..9' _must_ be CHAR-NUMERIC?.
+
+     No character may cause more than one the procedures
+     CHAR-ALPHABETIC?, CHAR-NUMERIC? and CHAR-WHITESPACE? to return
+     #t.
+
+     No character may cause more than one of the procedures
+     CHAR-UPPER-CASE? and CHAR-LOWER-CASE? to return #t.
+
+     Programmer's are advised that these procedures are unlikely to be
+     suitable for linguistic programming in portable code while
+     implementors are strongly encouraged to define them in ways that
+     make them a reasonable approximation of their linguistic
+     counterparts.  
+
+
+It should say:
+
+     These procedures [the character classes] return #t if their
+     arguments are valid identifier start characters, valid identifier
+     extension characters, alphabetic, numeric, whitespace, upper
+     case, or lower case characters, respectively, otherwise they
+     return #f.  These procedures _must_ be consistent with the
+     procedure READ provided by the implementation.  For example, if a
+     character is CHAR-ID-START?, then it must also be suitable for
+     use as the first character of an identifier.
+
+     `a..z' and `A..Z' _must_ be id-start and id-extend characters and
+     _must_ be respectively lower and upper case.
+
+     `a..z' and `A..Z' _must_ be alphabetic.  If the argument to 
+     CHAR-ALPHABETIC? is a Unicode character, the it must return #t
+     if and only-if the character is in one of the Unicode general
+     categories
+
+	Lu Ll Lt Lm Lo Nl
+
+
+     #\space, #\tab, and #\formfeed _must_ be CHAR-WHITESPACE?.
+
+     `0..9' _must_ be CHAR-NUMERIC?.
+
+     No character may cause more than one the procedures
+     CHAR-ID-START?, CHAR-NUMERIC? and CHAR-WHITESPACE? to return
+     #t.
+
+     No character may cause more than one of the procedures
+     CHAR-UPPER-CASE? and CHAR-LOWER-CASE? to return #t.
+
+     Programmer's are advised that these procedures are unlikely to be
+     suitable for linguistic programming in portable code while
+     implementors are strongly encouraged to define them in ways that
+     make them a reasonable approximation of their linguistic
+     counterparts.  
+
+
+A final note: the desirability of the -CI, -UPCASE, and -DOWNCASE
+procedures hinges on the assumption that the portable Scheme character
+set is a proper subset of Unicode.   One can imagine a Scheme standard
+that insisted on Unicode, and that requires a much larger set of valid
+identifier characters.    Though abstractly attractive, such
+requirements would preclude tiny implementations of Scheme.   Having a
+small and simply structured portable character set, and then adding on
+to that a level of _optional_ conformance for all of Unicode, is a far
+more practical idea.
+
+-t
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00397" href="msg00397.html">Re: Parsing Scheme [was Re: strings draft]</a></strong>
+<ul><li><em>From:</em> Thomas Bushnell, BSG</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00342" href="msg00342.html">strings draft</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00371" href="msg00371.html">Parsing Scheme [was Re: strings draft]</a></strong>
+<ul><li><em>From:</em> Ken Dickey</li></ul></li>
+<li><strong><a name="00378" href="msg00378.html">Re: Parsing Scheme [was Re: strings draft]</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00381" href="msg00381.html">Re: Parsing Scheme [was Re: strings draft]</a></strong>
+<ul><li><em>From:</em> Thomas Bushnell, BSG</li></ul></li>
+<li><strong><a name="00385" href="msg00385.html">Re: Parsing Scheme [was Re: strings draft]</a></strong>
+<ul><li><em>From:</em> Tom Lord</li></ul></li>
+<li><strong><a name="00394" href="msg00394.html">Re: Parsing Scheme [was Re: strings draft]</a></strong>
+<ul><li><em>From:</em> Thomas Bushnell, BSG</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00394.html">Re: Parsing Scheme [was Re: strings draft]</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00396.html">Re: strings draft</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00394.html">Re: Parsing Scheme [was Re: strings draft]</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00397.html">Re: Parsing Scheme [was Re: strings draft]</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00395"><strong>Date</strong></a></li>
+<li><a href="threads.html#00395"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

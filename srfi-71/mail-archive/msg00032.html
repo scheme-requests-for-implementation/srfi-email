@@ -1,0 +1,219 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: taking off a parenthesis -->
+<!--X-From-R13: "fbb" <vavgNvavFrez.pbz> -->
+<!--X-Date: Tue, 21 Jun 2005 06:52:46 +0200 (DFT) -->
+<!--X-Message-Id: 000101c5761d$0810e020$7a524cdc@INITERM -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>taking off a parenthesis</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00031.html">Date Prev</a>][<a href="msg00033.html">Date Next</a>][<a href="msg00031.html">Thread Prev</a>][<a href="msg00033.html">Thread Next</a>][<a href="maillist.html#00032">Date Index</a>][<a href="threads.html#00032">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>taking off a parenthesis</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: &lt;<a href="mailto:srfi-71@DOMAIN.HIDDEN">srfi-71@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: taking off a parenthesis</li>
+<li><em>From</em>: &quot;soo&quot; &lt;<a href="mailto:init@DOMAIN.HIDDEN">init@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Tue, 21 Jun 2005 13:52:30 +0900</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-71@DOMAIN.HIDDEN">srfi-71@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Importance</em>: Normal</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+Let me introduce a funny idea.
+
+If the outer-most parenthesis of the let-formal is taken off, We can use
+the
+lambda-formal without additional key-words and parenthesis complexity.
+However, it is swindling by a clever trick, because the taken-off
+parenthesis
+should be inserted later.  Of course, it becomes incompatible with
+r5rs-let*.
+
+Rough spec: (bare-let* (a1 a2 ...) ... () body1 body2 ...)
+
+(bare-let* ((a 10) (b 20))
+	   ((c d e) (values 30 40 50))
+	   ((f . g) (apply values '(60 70 80 90)))
+	   (h 100)
+	   ()			; a parenthesis taken off
+	   (list a b c d e f g h))
+=&gt; (10 20 30 40 50 60 (70 80 90) (100))
+
+(define-syntax bare-let*
+  (syntax-rules ()
+    ((bare-let* () clause ...)
+     ((lambda () clause ...)))
+    ((bare-let* ((name val) ...) clause ...)
+     (let* ((name val) ...)
+	(bare-let* clause ...)))
+    ((bare-let* (formal vals) clause ...)
+     (call-with-values (lambda () vals)
+       (lambda formal
+	 (bare-let* clause ...))))))
+
+	 
+It can be extended as followings.
+
+(bare-let* (_ (a 10) (b 20))		; let
+	   (* (c 30) (d 40))		; let*
+	   (% (e (lambda () 1)))	; letrec
+	   (&amp; (f 50) (g 60))		; and-let
+	   (&amp;* (h 70) (i 80) (j 90))	; and-let*
+	   (lp (k 100) (l 200))		; named let
+	   (loop (m n . o) (apply values '(300 400))) ; named let
+	   (() (display (list k l m n o)) (newline)) ; begin
+	   (~ '(500 600) (p 1 (number? p)) (q 2)) ; let-optional
+	   (~* '(700 800 900) (r 3) (s 4) t) ;let-optional*
+	   ()
+	   (display &quot;examxple:&quot;)
+	   (if (&lt; m 500)
+	       (loop 555 666 777 888)
+	       (list a b c d e f g h i j k l m n o p q r s t)))
+
+=&gt;
+(100 200 300 400 ())
+examxple:(100 200 555 666 (777 888))
+examxple:(10 20 30 40 #&lt;procedure:e&gt; 50 60 70 80 90 100 200 555 666 (777
+888) 500 600 700 800 (900))
+
+(define-syntax bare-let*
+  (syntax-rules (~ ~* ! !* % &amp; &amp;* * _) ; @ # $ ^ + |
+    ((bare-let* () clause ...)
+     ((lambda () clause ...)))
+    ((bare-let* ((name val) ...) clause ...)
+     ((lambda (name ...)
+	(bare-let* clause ...))
+      val ...))
+    ((bare-let* (_ (name val) ...) clause ...)
+     (let ((name val) ...)
+       (bare-let* clause ...)))
+    ((bare-let* (* (name val) ...) clause ...)
+     (let* ((name val) ...)
+       (bare-let* clause ...)))
+    ((bare-let* (% (name val) ...) clause ...)
+     (letrec ((name val) ...)
+       (bare-let* clause ...)))
+    ((bare-let* (&amp; (name val) ...) clause ...)
+     (and-let ((name val) ...)
+       (bare-let* clause ...)))
+    ((bare-let* (&amp;* (name val) ...) clause ...)
+     (and-let* ((name val) ...)
+       (bare-let* clause ...)))
+    ;; The order of followings are important.
+    ((bare-let* (~ rest p1 p2 ...) clause ...)
+     (let-opt rest (p1 p2 ...)
+	      (bare-let* clause ...)))
+    ((bare-let* (~* rest p1 p2 ...) clause ...)
+     (let-opt* rest (p1 p2 ...)
+	       (bare-let* clause ...)))
+    ((bare-let* (! rest p1 p2 ...) clause ...)
+     (let-cat rest (p1 p2 ...)
+	      (bare-let* clause ...)))
+    ((bare-let* (!* rest p1 p2 ...) clause ...)
+     (let-cat* rest (p1 p2 ...)
+	       (bare-let* clause ...)))
+    ((bare-let* (() expression ...) clause ...)
+     ((lambda ()
+	expression ... (bare-let* clause ...))))
+    ((bare-let* (loop (name val) ...) clause ...)
+     ((letrec ((loop (lambda (name ...)
+		       (bare-let* clause ...))))
+	loop)
+      val ...))
+    ((bare-let* (loop formal vals) clause ...)
+     (letrec ((loop (lambda formal
+		      (bare-let* clause ...))))
+       (call-with-values (lambda () vals)
+	 loop)))
+    ((bare-let* (formal vals) clause ...)
+     (call-with-values (lambda () vals)
+       (lambda formal
+	 (bare-let* clause ...))))))
+
+(define-syntax and-let
+  (syntax-rules ()
+    ((and-let ((name val) ...) body1 body2 ...)
+     (and val ...
+	  ((lambda (name ...) body1 body2 ...)
+	   val ...)))
+    ;; ((and-let tag ((name val) ...) body1 body2 ...)
+    ;;  (and val ...
+    ;; 	  ((letrec ((tag (lambda (name ...) body1 body2 ...)))
+    ;; 	    tag)
+    ;; 	   val ...)))
+    ))
+
+(define-syntax and-let*
+  (syntax-rules ()
+    ((and-let* () body1 body2 ...)
+     ((lambda () body1 body2 ...)))
+    ((and-let* ((name1 val1) (name2 val2) ...) body1 body2 ...)
+     ;;(and-let ((name1 val1))
+     ;; 	(and-let* ((name2 val2) ...) body1 body2 ...)))))
+     (and val1
+	  ((lambda (name1) (and-let* ((name2 val2) ...) body1 body2
+...))
+	   val1)))))
+
+--
+Joo ChurlSoo
+
+
+
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00031.html">Re: named let</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00033.html">taking off parentheses of only a resting argument</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00031.html">Re: named let</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00033.html">taking off parentheses of only a resting argument</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00032"><strong>Date</strong></a></li>
+<li><a href="threads.html#00032"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

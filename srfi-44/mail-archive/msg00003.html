@@ -1,0 +1,176 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: remarks, questions -->
+<!--X-From-R13: fptzvyyrNserrargcebwrpg.bet -->
+<!--X-Date: Tue, 29 Apr 2003 15:20:12 +0200 (DFT) -->
+<!--X-Message-Id: 20030429131900.GA349@freenetproject.org -->
+<!--X-Content-Type: multipart/signed -->
+<!--X-Reference: OF32EC7A2F.8998842F&#45;ONC1256D17.002A10C9&#45;C1256D17.002E99C5@diamond.philips.com -->
+<!--X-Derived: pgpBuZN9gx6oB.pgp -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: remarks, questions</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00002.html">Date Prev</a>][<a href="msg00004.html">Date Next</a>][<a href="msg00002.html">Thread Prev</a>][<a href="msg00020.html">Thread Next</a>][<a href="maillist.html#00003">Date Index</a>][<a href="threads.html#00003">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: remarks, questions</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:sebastian.egner@DOMAIN.HIDDEN">sebastian.egner@xxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: remarks, questions</li>
+<li><em>From</em>: <a href="mailto:scgmille@DOMAIN.HIDDEN">scgmille@xxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Date</em>: Tue, 29 Apr 2003 08:19:00 -0500</li>
+<li><em>Cc</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:OF32EC7A2F.8998842F-ONC1256D17.002A10C9-C1256D17.002E99C5@DOMAIN.HIDDEN">OF32EC7A2F.8998842F-ONC1256D17.002A10C9-C1256D17.002E99C5@xxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Mail-followup-to</em>: <a href="mailto:scgmille@DOMAIN.HIDDEN">scgmille@xxxxxxxxxxxxxxxxx</a>,	<a href="mailto:sebastian.egner@DOMAIN.HIDDEN">sebastian.egner@xxxxxxxxxxx</a>, <a href="mailto:srfi-44@DOMAIN.HIDDEN">srfi-44@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>References</em>: &lt;<a href="mailto:OF32EC7A2F.8998842F-ONC1256D17.002A10C9-C1256D17.002E99C5@DOMAIN.HIDDEN">OF32EC7A2F.8998842F-ONC1256D17.002A10C9-C1256D17.002E99C5@xxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Mutt/1.4i</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>On Tue, Apr 29, 2003 at 10:27:25AM +0200, sebastian.egner@xxxxxxxxxxx wrote:
+&gt; Scott,
+&gt; 
+&gt; There are a number of remarks
+&gt; 
+&gt; 1. Two frequent operations
+&gt; 
+&gt; I am missing the two frequent methods *-clear!  and *-copy.
+
+Yes of course.  
+
+&gt; 
+&gt; 2. Passing options to the constructors
+&gt; 
+&gt; A major design challenge is passing options to the constructors (make-%). 
+&gt; 
+&gt; Your design only specifies an optional argument equivalence-function
+&gt; for datatypes that require a notion of equality on their keys 
+&gt; (Dictionaries).
+&gt; However, for efficient data structures it is very important to know as
+&gt; much as possible about the keys (e.g. a total order, a hash function, 
+&gt; a range of possible keys or even their statistical distribution). This
+&gt; holds in particular for Sets (= trivial applications of dictionaries).
+&gt; 
+&gt; In the current SRFI there is no mechanism to pass these options to the
+&gt; constructors, the problem is left to subclasses. Is it your intention to 
+&gt; add
+&gt; a mechanism for this?
+
+Perhaps it needs to be made more clear in the document itself, but the 
+intention is that specific collection SRFIs are allowed to make more 
+specific, or even moderately conflicting definitions collection specific 
+functions.  Nevertheless, it may be desirable to add an 
+[additional-options ...] to the specification of make-%.
+
+&gt; 
+&gt; 3. Polymorphic interface
+&gt; 
+&gt; Another major design challenge is a mechanism to choose the 
+&gt; representation of the collections without modifying the interface.
+&gt; 
+&gt; The SRFI specifies a monomorphic interface, only. In other words,
+&gt; each operation of each data type has a different name, so for
+&gt; example alist-remove! and avl-tree-remove! both delete an
+&gt; element from a dictionary but you have to know whether it is
+&gt; implemented as an alist or an avl-tree. As the number of possible
+&gt; data structures grows a problem might evolve here.
+
+Actually, there are polymorphic calls as well. *-remove!, for example, 
+mandates the existence of dict-remove! and alist-remove!. 
+
+I hope that specific Scheme systems solve this problem more 
+cleanly than the current portable implementation does.  The rationale 
+for distinct functions for a specific datastructure as well as the 
+categories it lives in is to allow code to be written which is 
+datastructure agnostic, code to be written which is datastructure 
+sensitive (using a more specific function would cause an error with the 
+wrong specific type), and for implementors to both improve the 
+efficiency of the specific calls, and to be able to dispatch to the 
+specific calls from the generic ones.
+
+&gt; 
+&gt; Iterators on the other hand are specified polymorphic; in other
+&gt; words, *-iterator creates an object that can handle the messages
+&gt; iterator-at-start? etc. independent of the underlying representation.
+&gt; (Sorry for the OO-speak, but this language is widely known.)
+&gt; If efficiency was the main design goal, wouldn't it be much more
+&gt; efficient to specify alist-iterator-at-start? etc.?
+
+If iterators were monomorphic, it would prevent one from writing 
+collection agnostic code, which I perceive as a real benefit to the 
+collections APIs of most languages that have them.  A fine example in 
+this SRFI is the *-add-all! function, which is specified to take any bag 
+as input to any other bag (including sequences).  This is trivially 
+implemented using an iterator and the *-add! function, but only if 
+iterators are polymorphic.
+
+&gt; Finally, you may want to check out two libraries for data structures
+&gt; (if you haven't already) that I find myself very interesting. In any
+&gt; case, they are worth a reference:
+&gt;    * LEDA: <a  rel="nofollow" href="http://www.algorithmic-solutions.com/enledadoku.htm">http://www.algorithmic-solutions.com/enledadoku.htm</a>
+&gt;    * STL: <a  rel="nofollow" href="http://www.cs.utexas.edu/users/lavender/courses/stl/stl.pdf">http://www.cs.utexas.edu/users/lavender/courses/stl/stl.pdf</a>
+
+I have some familiarity with the STL, but I'll give LEDA a look.
+
+	Scott
+
+</pre><p><strong>Attachment:
+<a href="pgpBuZN9gx6oB.pgp" ><tt>pgpBuZN9gx6oB.pgp</tt></a></strong><br>
+<em>Description:</em> PGP signature</p>
+
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00002" href="msg00002.html">remarks, questions</a></strong>
+<ul><li><em>From:</em> sebastian . egner</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00002.html">remarks, questions</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00004.html">Re: interators</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00002.html">remarks, questions</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00020.html">Re: remarks, questions</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00003"><strong>Date</strong></a></li>
+<li><a href="threads.html#00003"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

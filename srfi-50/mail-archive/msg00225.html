@@ -1,0 +1,149 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Strings/chars -->
+<!--X-From-R13: Xvz Pynaql <wvzoNerqung.pbz> -->
+<!--X-Date: Thu,  8 Jan 2004 09:16:04 +0100 (NFT) -->
+<!--X-Message-Id: vt28ykij1yh.fsf@zenia.home -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: opr0lf0hi7w2xcd0@mx.freenet.de -->
+<!--X-Reference: 20031222.115128.628193033.shiro@lava.net -->
+<!--X-Reference: y9l4qvriz08.fsf@informatik.uni&#45;tuebingen.de -->
+<!--X-Reference: 20031223.113343.730550371.shiro@lava.net -->
+<!--X-Reference: Pine.LNX.4.58.0312231557330.30716@bolt.sonic.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Strings/chars</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00224.html">Date Prev</a>][<a href="msg00226.html">Date Next</a>][<a href="msg00046.html">Thread Prev</a>][<a href="msg00229.html">Thread Next</a>][<a href="maillist.html#00225">Date Index</a>][<a href="threads.html#00225">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Strings/chars</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Strings/chars</li>
+<li><em>From</em>: Jim Blandy &lt;<a href="mailto:jimb@DOMAIN.HIDDEN">jimb@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: 08 Jan 2004 03:09:58 -0500</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:Pine.LNX.4.58.0312231557330.30716@DOMAIN.HIDDEN">Pine.LNX.4.58.0312231557330.30716@xxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:opr0lf0hi7w2xcd0@DOMAIN.HIDDEN">opr0lf0hi7w2xcd0@xxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:20031222.115128.628193033.shiro@DOMAIN.HIDDEN">20031222.115128.628193033.shiro@xxxxxxxx</a>&gt;	&lt;<a href="mailto:y9l4qvriz08.fsf@DOMAIN.HIDDEN">y9l4qvriz08.fsf@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;	&lt;<a href="mailto:20031223.113343.730550371.shiro@DOMAIN.HIDDEN">20031223.113343.730550371.shiro@xxxxxxxx</a>&gt;	&lt;<a href="mailto:Pine.LNX.4.58.0312231557330.30716@DOMAIN.HIDDEN">Pine.LNX.4.58.0312231557330.30716@xxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Sender</em>: <a href="mailto:jimb@DOMAIN.HIDDEN">jimb@xxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Gnus/5.09 (Gnus v5.9.0) Emacs/21.3</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+I think it's important to work well with C as it is, and not try to
+correct C's problems in the SRFI API.  C doesn't specify a particular
+character set.  It distinguishes the character set used in the source
+code (the &quot;source character set&quot;) from the character set used in the
+running program (the &quot;execution character set&quot;), and specifies a
+limited set of characters that both must contain (the &quot;basic character
+set&quot;).
+
+
+The simplest and easiest ways to access Scheme strings' contents and
+Scheme characters should return the corresponding strings and
+characters in the C program's execution character set.  That is:
+
+- Extracting the first character of the Scheme string &quot;z&quot; had better
+  yield the C character 'z'.
+
+- I shouldn't have to mention any character set by name, or do any
+  kind of character set conversions at all, to write C code that
+  checks whether a given string's contents are &quot;foo&quot;.
+
+Implementing this behavior can't be a burden on the Scheme
+implementation, since it had to get all the data from the outside
+system anyway, and it was almost certainly already in the program's C
+execution character set when it arrived.  So if the Scheme system
+doesn't actually use the C execution character set itself, it must
+already have mechanisms for converting to and from that character set.
+
+
+The next case to support is the &quot;Scheme execution character set&quot;,
+where you just return the data in whatever form is cheapest and
+easiest for the Scheme system, once you've flattened it out into an
+array of characters or wide characters.  You can't assume any
+relationship between this form and the C program's execution character
+set, of course, but you can at least pass it through without paying
+for conversions you don't need, or wondering if the round trip is
+going to munge anything.  And, when you don't care about writing code
+portable to other Schemes, you can operate on the data directly.
+
+
+Only after those two cases are covered should one move on to providing
+ways to reliably get UTF-8, UCS-4, or whatever you like.
+
+
+That's my two cents, anyway.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00229" href="msg00229.html">Re: Strings/chars</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+<li><strong><a name="00244" href="msg00244.html">Re: Strings/chars</a></strong>
+<ul><li><em>From:</em> Thomas Bushnell, BSG</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00004" href="msg00004.html">Couple things...</a></strong>
+<ul><li><em>From:</em> felix</li></ul></li>
+<li><strong><a name="00009" href="msg00009.html">Strings/chars</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+<li><strong><a name="00032" href="msg00032.html">Re: Strings/chars</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+<li><strong><a name="00036" href="msg00036.html">Re: Strings/chars</a></strong>
+<ul><li><em>From:</em> Shiro Kawai</li></ul></li>
+<li><strong><a name="00046" href="msg00046.html">Re: Strings/chars</a></strong>
+<ul><li><em>From:</em> bear</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00224.html">Re: when GC is permitted</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00226.html">Re: Couple things...</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00046.html">Re: Strings/chars</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00229.html">Re: Strings/chars</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00225"><strong>Date</strong></a></li>
+<li><a href="threads.html#00225"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

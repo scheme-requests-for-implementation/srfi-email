@@ -1,0 +1,190 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: binary vs non&#45;binary ports -->
+<!--X-From-R13: Oyrk Euvaa <sbbsNflagupbqr.pbz> -->
+<!--X-Date: Thu, 16 Sep 2004 07:34:45 +0200 (DFT) -->
+<!--X-Message-Id: 86u0tyhj4m.wl@lain.inunome.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 41491BE0.50006@bothner.com -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: binary vs non-binary ports</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00024.html">Date Prev</a>][<a href="msg00026.html">Date Next</a>][<a href="msg00024.html">Thread Prev</a>][<a href="msg00026.html">Thread Next</a>][<a href="maillist.html#00025">Date Index</a>][<a href="threads.html#00025">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: binary vs non-binary ports</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Per Bothner &lt;<a href="mailto:per@DOMAIN.HIDDEN">per@xxxxxxxxxxx</a>&gt;</li>
+<li><em>Subject</em>: Re: binary vs non-binary ports</li>
+<li><em>From</em>: Alex Shinn &lt;<a href="mailto:foof@DOMAIN.HIDDEN">foof@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 16 Sep 2004 00:34:33 -0500</li>
+<li><em>Cc</em>: <a href="mailto:srfi-56@DOMAIN.HIDDEN">srfi-56@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-56@DOMAIN.HIDDEN">srfi-56@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:41491BE0.50006@DOMAIN.HIDDEN">41491BE0.50006@xxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:41491BE0.50006@DOMAIN.HIDDEN">41491BE0.50006@xxxxxxxxxxx</a>&gt;</li>
+<li><em>User-agent</em>: Wanderlust/2.10.1 (Watching The Wheels) SEMI/1.14.6 (Maruoka) FLIM/1.14.6 (Marutamachi) APEL/10.6 Emacs/21.3 (i386-pc-linux-gnu) MULE/5.0 (SAKAKI)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>At Wed, 15 Sep 2004 21:51:44 -0700, Per Bothner wrote:
+&gt; 
+&gt;  From the draft:
+&gt;  &gt; Some Schemes may wish to distinguish between binary and non-binary
+&gt;  &gt; ports as in Common-Lisp. As these can be layered on top of the
+&gt;  &gt; current ports this may better be relegated to a separate SRFI.
+&gt; 
+&gt; Huh?  This is backwards.  The current ports are character ports.
+&gt; As such they are layered on top of byte ports.  I.e. non-binary
+&gt; ports are layered on top of binary ports.
+
+Hello,
+
+I had in fact expected more opposition to this earlier and was
+wondering when it would turn up :)
+
+&gt; You have to specify when the port is *opened* whether it is a
+&gt; binary or character.
+
+That is one philosophy.  Another is that given ports with which you
+can perform both byte and character operations, you can implement such
+B&amp;D-style ports on top of them.
+
+&gt; The alternative is for read-byte/write-byte to peek into the
+&gt; implementation of a character port, and operate on the underlying
+&gt; byte port.
+
+Ideally, as Bear mentioned earlier, I like to think of the byte-level
+operations as the only primitives on top of which character-level
+operations are defined, but that is an implementation detail.
+
+&gt; This is losing:
+&gt; (a) It complicates synchronizing (buffering) between the character
+&gt; stream and the byte stream.
+
+&quot;Complicated&quot; should not prevent us from adding language features, and
+I don't see this as any more complex than having additional primitive
+port types.
+
+&gt; (b) Some implementations of character streams may buffer a chuck
+&gt; of bytes.  If some bytes in the file cannot be mapped to characters
+&gt; in the current character encoding, an exception may be signalled.
+
+Yes, and the SRFI goes so far as to provide a SRFI-36 condition for
+such a case.
+
+&gt; (c) In some environments you cannot get at the underlying byte
+&gt; stream from a character stream.  This includes Java.  A Scheme
+&gt; implementation could do its own implementation of character streams
+&gt; such that you could get at the underlying byte stream, but then
+&gt; the read functions would only work on character streams created
+&gt; using Scheme run-time routines, which complicates both implementation
+&gt; and interoperability.
+
+This is again the complexity argument.  The above strategy is also a
+backwards approach, as you said earlier, and could be made simpler and
+more efficient by making the byte-level operations the only
+primitives.
+
+&gt; It makes no sense to mix character and binary I/O on the same port.
+&gt; Anyone who tries it is in a state of sin.
+
+I work very often with binary file formats, including Scheme libraries
+for handling ELF, TIFF, and the gettext .mo format among others.
+Every one of these mixes binary and character data.  Apparently almost
+everyone who has ever designed a binary format is a sinner :)
+
+&gt; Kawa does treat binary ports as character ports with a special
+&gt; character encoding of &quot;binary&quot;.
+
+This is a feature others are likely to want, and you will undoubtedly
+find support if you write a SRFI for it.  It can be implemented in
+portable Scheme on top of SRFI-56 by redefining the current port
+primitives.
+
+Given disjoint ports I can think of 3 options for working with binary
+formats, almost all of which include character data:
+
+1) Toggle the port between binary mode and character mode.  Clumsy and
+   error-prone.  Does not solve the problem that the character port
+   will at times still be pointing to invalid characters.
+
+2) Open two ports to the same source, one in character mode and one in
+   binary mode, and read from them separately.  Same problems as above
+   with the added difficulty of keeping the two in the same position
+   when the binary data is closely interleaved with character data.
+
+3) Extract character data in binary ports as binary first then convert
+   with utility procedures to character/string.  In this case I would
+   simply define as convenience forms read-char, read-line, etc. in
+   terms of these utilities and the resulting API is indistinguishable
+   from the current SRFI-56.
+
+Potential encoding errors are inherent in all ports and have to be
+dealt with whether or not you have disjoint port types.  Any safety
+measures can and will be circumvented, becoming merely an
+inconvenience while providing a false sense of security.
+
+-- 
+Alex
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00026" href="msg00026.html">Re: binary vs non-binary ports</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00024" href="msg00024.html">binary vs non-binary ports</a></strong>
+<ul><li><em>From:</em> Per Bothner</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00024.html">binary vs non-binary ports</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00026.html">Re: binary vs non-binary ports</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00024.html">binary vs non-binary ports</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00026.html">Re: binary vs non-binary ports</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00025"><strong>Date</strong></a></li>
+<li><a href="threads.html#00025"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,134 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: s/vector/vec -->
+<!--X-From-R13: Bnantvbgvf Hbffbf <B.HbffbfNcbfgtenq.hzvfg.np.hx> -->
+<!--X-Date: Tue,  6 May 2003 13:21:53 +0200 (DFT) -->
+<!--X-Message-Id: cj3fznsnwvo.fsf@cosmos.umist.ac.uk -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>s/vector/vec</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00042.html">Date Prev</a>][<a href="msg00044.html">Date Next</a>][<a href="msg00030.html">Thread Prev</a>][<a href="msg00044.html">Thread Next</a>][<a href="maillist.html#00043">Date Index</a>][<a href="threads.html#00043">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>s/vector/vec</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-43@DOMAIN.HIDDEN">srfi-43@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: s/vector/vec</li>
+<li><em>From</em>: Panagiotis Vossos &lt;<a href="mailto:P.Vossos@DOMAIN.HIDDEN">P.Vossos@xxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: 06 May 2003 12:21:47 +0100</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-43@DOMAIN.HIDDEN">srfi-43@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Sender</em>: <a href="mailto:mcgibpv2@DOMAIN.HIDDEN">mcgibpv2@xxxxxxxxxxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Gnus/5.0808 (Gnus v5.8.8) Emacs/21.1</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>I came across this srfi a couple of days ago, which is great since it
+means I don't have to waste any more time with my own (very small)
+srfi-1 like vector library.  Big thanks to Taylor and all the others
+that have contributed so far.
+
+It would be _great_ IMHO, if this library was not restricted to r5rs
+vectors, but also applied to all objects that have (r5rs)vector-like
+properties, i.e. integer indexed objects starting at 0 with O(1)
+retrieval &amp; update.  The reason is that we /already/ have srfi-4 with
+its {f32,f64,...}vectors that offer exactly the same interface, and it
+will be a nuisance if someone has to rewrite srfi-34 operations for
+these types.
+
+So how can it be done?  One way is to use, say, vec-ref, vec-set!,
+vec-length, vec? generic functions that accept any (r5rs)vector-like
+object and have different constructors for each one of them (exactly
+as it is now -- make-vector, make-f32vector etc).  If a srfi-34
+function doesn't (directly or indirectly) construct a new vector it
+can operate solely in terms of vec-ref etc. without caring about the
+specific type of vector it is applied to.  If, OTOH, a srfi-34
+function _does_ construct a vector, or calls another function that
+constructs one, its definition can be changed from:
+
+(foo v arg1 arg2 ...), to:
+
+(foo konstr) -&gt; (lambda (v arg1 arg2 ...)),
+
+where konstr is a constructor with the same interface with
+make-vector, i.e. make-f32vector, make-bazvector etc.
+
+This of course raises the question of how these generic vec-foo
+operations are defined.  This could be left unspecified.  A scheme
+system that supports srfi-4 for example could implement it very simply
+as:
+
+(define (vec-length x)
+  (cond
+    ((vector? x) (vector-length x))
+    ((f32vector? x) (f32vector-length x))
+    (... ...)
+    (else (error &quot;VEC-LENGTH: no applicable method.&quot;))))
+
+A system supports some kind of clos-like system can even let the user
+define his own methods and extend the system.
+
+I came across this when, after implementing an interface to fortran
+vectors, I realized that I don't want to maintain two different
+versions of my vector library; one for r5rs and one for foreign
+vectors.  I changed my library accordingly and I find it quite
+convenient.
+
+I am pretty sure that I either have obviously overlooked something
+crucial or there is an easier solution to this.  In both cases, I
+would be glad if someone responds and corrects me.
+
+regards,
+panagiotis.
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00042.html">Re: AW: Prototypes</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00044.html">Copying</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00030.html">Re: Storage Efficiency of Vectors</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00044.html">Copying</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00043"><strong>Date</strong></a></li>
+<li><a href="threads.html#00043"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,168 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Syntax question; possible errata -->
+<!--X-From-R13: "Penqq I. Embalr" <oenqq+fesvNfmbalr.pbz> -->
+<!--X-Date: Sat, 17 Apr 2004 00:41:16 +0200 (DFT) -->
+<!--X-Message-Id: 20040416224109.GB2099@ogre.szonye.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Syntax question; possible errata</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[Date Prev][<a href="msg00001.html">Date Next</a>][Thread Prev][<a href="msg00001.html">Thread Next</a>][<a href="maillist.html#00000">Date Index</a>][<a href="threads.html#00000">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Syntax question; possible errata</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-10@DOMAIN.HIDDEN">srfi-10@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Syntax question; possible errata</li>
+<li><em>From</em>: &quot;Bradd W. Szonye&quot; &lt;<a href="mailto:bradd%2Bsrfi@DOMAIN.HIDDEN">bradd+srfi@xxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 16 Apr 2004 15:41:09 -0700</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-10@DOMAIN.HIDDEN">srfi-10@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Mail-followup-to</em>: <a href="mailto:srfi-10@DOMAIN.HIDDEN">srfi-10@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>User-agent</em>: Mutt/1.4.1i</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>According to SRFI-10, a &lt;hash-comma-datum&gt; can only appear in the
+expansion of a &lt;datum&gt; production. (It can also appear in a &lt;tag&gt;, but
+that leads cyclically back to &lt;datum&gt;, so we can ignore it.)
+
+Out of curiosity, I traced the grammar expansion backwards to see
+exactly which forms may contain a &lt;hash-comma-datum&gt;.
+
+    &lt;datum&gt; &lt;-- &lt;list&gt;
+             |  &lt;vector&gt;
+             |  &lt;abbreviation&gt;
+             |  &lt;quotation&gt;
+             |  &lt;macro use&gt;
+             |  &lt;case clause&gt;
+
+The first few forms also lead cyclically back to datum:
+
+    &lt;list&gt;         &lt;-- &lt;compound datum&gt; &lt;-- &lt;datum&gt;
+    &lt;vector&gt;       &lt;-- &lt;compound datum&gt; &lt;-- &lt;datum&gt;
+    &lt;abbreviation&gt; &lt;-- &lt;list&gt; &lt;-- ... &lt;-- &lt;datum&gt;
+
+The last few trace back to expressions. Therefore, these are the only
+contexts in which you can use a &lt;hash-comma-datum&gt;:
+
+    &lt;quotation&gt;   &lt;-- &lt;literal&gt; &lt;-- &lt;expression&gt;
+    &lt;macro use&gt;   &lt;-- &lt;expression&gt;
+    &lt;case clause&gt; &lt;-- &lt;derived expression&gt; &lt;-- &lt;expression&gt;
+
+For example:
+
+    (quote #,(&lt;tag&gt; ...))
+    (&lt;keyword&gt; #,(&lt;tag&gt; ...))
+    (case &lt;key&gt; ((#,(&lt;tag&gt; ...)) &lt;sequence&gt;))
+
+The quotation produces a literal. The expansion of the macro use may
+compare the &lt;hash-comma-datum&gt; to a datum in the macro pattern, using
+EQUAL?. The case expression will compare it to the key using EQV?.
+
+Quasiquotation is notably absent from the above list. I originally
+explored the SRFI-10 syntax when trying to figure out what `(#,(foo ,a))
+would mean, especially given the reference implementation, which relies
+on read-time application.
+
+Is read-time evaluation an important element of SRFI-10? If so, then the
+lack of quasiquotation syntax makes sense (but see below). If not, then
+the SRFI should probably extend the grammars for &lt;compound datum&gt;,
+&lt;quasiquotation&gt;, and maybe even &lt;transformer spec&gt; so that hash-comma
+data acts more like list/vector syntax.
+
+Even if SRFI-10 is for read-time literals only, there are still a couple
+of weird quirks in the syntax. Since a &lt;qq template 0&gt; is an
+&lt;expression&gt;,
+
+    (quasiquote (unquote (quote #,(foo ...))))
+
+is legal, but
+
+    (quasiquote #,(foo ...))
+
+is not. In other words, you can put a hash-comma form in a
+quasiquotation, but only if you unquote it and requote it first. Also,
+it seems a bit strange that one must quote a hash-comma form in the
+first place, since it behaves in most ways like the &lt;self-evaluating&gt;
+literals. Therefore, I suggest the following errata:
+
+    &lt;self-evaluating&gt; --&gt; &lt;boolean&gt; | &lt;number&gt;
+         | &lt;character&gt; | &lt;string&gt; | &lt;hash-comma-datum&gt;
+
+    &lt;qq template D&gt; --&gt; &lt;simple datum&gt;
+                     |  &lt;hash-comma-datum&gt;
+                     |  &lt;list qq template D&gt;
+                     |  &lt;vector qq template D&gt;
+                     |  &lt;unquotation D&gt;
+
+This would permit the use of unquoted and quasiquoted hash-comma data
+without eliminating the ability to evaluate them as read-time literals.
+
+The other alternative is to make the hash-comma form completely
+analogous to the list/vector form, as I mentioned above. However, that's
+a much more complicated change, and it doesn't lend itself well to the
+read-time application implementation. It might be better to leave
+hash-comma simple and introduce a separate syntax for &quot;generalized
+compound data&quot; (in a new SRFI).
+
+On a more whimsical note, SRFI-10 has one other subtle flaw: It's very
+easy to mistype #,(...), at least on my keyboard. The rapid succession
+of shifted and unshifed characters makes it quite easy to type 3,(...)
+and #&lt;(...) and #,9...). If any of you decide to implement the more
+ambitious &quot;generalized compound data&quot; SRFI, I strongly recommend that
+you use a shifted keystroke for the middle symbol!
+-- 
+Bradd W. Szonye
+<a  rel="nofollow" href="http://www.szonye.com/bradd">http://www.szonye.com/bradd</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00001" href="msg00001.html">Re: Syntax question; possible errata</a></strong>
+<ul><li><em>From:</em> Michael Sperber</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Next by Date:
+<strong><a href="msg00001.html">Re: Syntax question; possible errata</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00001.html">Re: Syntax question; possible errata</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00000"><strong>Date</strong></a></li>
+<li><a href="threads.html#00000"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

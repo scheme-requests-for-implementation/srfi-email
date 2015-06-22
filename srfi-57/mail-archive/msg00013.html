@@ -1,0 +1,262 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: propositions, oppositions, and some minor details -->
+<!--X-From-R13: Oaqer ina Fbaqre <naqerNabj.urg.oebja.rqh> -->
+<!--X-Date: Mon, 13 Sep 2004 21:00:47 +0200 (DFT) -->
+<!--X-Message-Id: Pine.GSO.4.60.0409131326560.13880@now.het.brown.edu -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: Pine.LNX.4.44.0409121531380.25352&#45;100000@autodrip.bloodandcoffee.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: propositions, oppositions, and some minor details</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00012.html">Date Prev</a>][<a href="msg00014.html">Date Next</a>][<a href="msg00024.html">Thread Prev</a>][<a href="msg00025.html">Thread Next</a>][<a href="maillist.html#00013">Date Index</a>][<a href="threads.html#00013">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: propositions, oppositions, and some minor details</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-57@DOMAIN.HIDDEN">srfi-57@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: propositions, oppositions, and some minor details</li>
+<li><em>From</em>: Andre van Tonder &lt;<a href="mailto:andre@DOMAIN.HIDDEN">andre@xxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Mon, 13 Sep 2004 15:00:33 -0400 (EDT)</li>
+<li><em>Cc</em>: <a href="mailto:campbell@DOMAIN.HIDDEN">campbell@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-57@DOMAIN.HIDDEN">srfi-57@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:Pine.LNX.4.44.0409121531380.25352-100000@DOMAIN.HIDDEN">Pine.LNX.4.44.0409121531380.25352-100000@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:Pine.LNX.4.44.0409121531380.25352-100000@DOMAIN.HIDDEN">Pine.LNX.4.44.0409121531380.25352-100000@xxxxxxxxxxxxxxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+Hi Taylor, let me try to answer your comments:
+
+On Sun, 12 Sep 2004 campbell@xxxxxxxxxxxxxxxxxxxxxxxxxxx wrote:
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+First, my thoughts on the matter of syntactic details.  With respect to
+compatibility with SRFI 9, I think it would just be easier if the
+predicate were mandatory.  I don't see much of a reason to omit it,
+and, by mandating it, it removes ambiguity: it clearly delimits the
+type name &amp; the constructor specifier from the fields.  Also, I don't
+like the token for specifying mutability.  I think it would be better
+to have a &lt;field spec&gt; nonterminal where the token for mutability is
+_not_ a symbol; I think it would also be a bit more consistent to allow
+a mutable field with an accessor but no separate modifier defined.
+This replacement &lt;field spec&gt; nonterminal would fix both problems,
+given some &lt;mutability token&gt;, e.g. #T/#F:
+
+ &lt;field spec&gt; -&gt;
+     (&lt;field label&gt; [&lt;accessor name&gt;] [&lt;mutability token&gt;])
+   | (&lt;field label&gt; &lt;accessor name&gt; &lt;modifier name&gt;)
+</pre></blockquote><pre style="margin: 0em;">
+
+</pre><tt>How would you like the following (also proposed by Alex Shinn):  Keep the 
+</tt><tt>SRFI-9 syntax mostly and just use #f for omitted elements, along with a 
+</tt><tt>couple of additional shortcuts:
+</tt><pre style="margin: 0em;">
+
+ (define-record-type node (make-node left right) node?
+                 (left  node-left  node-left-set!)
+                 (right node-right node-right-set!))
+
+Examples of variations:
+
+ (define-record-type node make-node #f (left  node-left  #f)
+                                       (right node-right #f))
+
+   --&gt; no predicate, default constructor arguments,
+       both fields mutable but no setters defined
+
+ (define-record-type node make-node #f (left #f #f) (right #f #f))
+
+   --&gt; as above, fields are mutable, but no getters or setters defined
+
+ (define-record-type node make-node #f (left #f) (right #f))
+
+   --&gt; as above, but both fields immutable
+
+ (define-record-type node make-node #f left right)
+
+  --&gt; shortcut for previous
+
+ (define-record-type node #f #f left right)
+
+  --&gt; bare minimum if we have fields
+
+ (define-record-type node make-node)
+ (define-record-type node)
+
+  --&gt; adiitional shortcuts suggested by Felix if we have no fields
+
+</pre><tt>Mutability would depend, as in SRFI-9, on whether field clause is a two or 
+</tt><tt>three element list (or special case of atom as above).
+</tt><pre style="margin: 0em;">
+
+</pre><tt>The disadvantage would be all those little spiders walking across the 
+</tt><tt>screen when we want to leave things out, but maybe this design, because of 
+</tt><tt>its backward-compatibility, will please more people (in addition to being 
+</tt><tt>slightly more flexible) than my original.
+</tt><pre style="margin: 0em;">
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+The last syntactic detail that bothers me is the use of record types'
+constructors in the pattern matching.  It would seem more sensical to
+me to use the record type names themselves, not their constructors;
+this would also solve the problem that required identifier macros --
+which I am loathe to consider -- when defining the constructors so that
+they could be used as regular variable bindings, bound to procedures,
+as the specification specifies: they would no longer need syntactic
+information used in pattern matching.
+</pre></blockquote><pre style="margin: 0em;">
+
+</pre><tt>In accordance with the apparent majority opinion, I am pretty much decided 
+</tt><tt>on splitting pattern matching off (editors and the gods of time 
+</tt><tt>management willing), so this discussion should perhaps be left for then. 
+</tt><tt>I will just mention that with a more powerful macro system, one can keep 
+</tt><tt>a compile-time registry, obviating the need to bind constructor names as 
+</tt><tt>identifier macros.  So it becomes a matter of taste whether one wants
+</tt><tt>match expressions to look like the corresponding constructors or perhaps 
+</tt><tt>more like external representations or whatever.  As you no doubt know, 
+</tt><tt>both styles of matchers exist for Scheme.
+</tt><pre style="margin: 0em;">
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+I also have a somewhat deeper semantic question: can SRFI 57 be used to
+define subtypes of record types defined with SRFI 9?  My suggestion: an
+emphatic *YES*.
+</pre></blockquote><pre style="margin: 0em;">
+
+I would agree.
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+I am also *vehemently* opposed to the completely unrestricted operator
+of reflection RECORD-&gt;SEXP.  Reflection should either be completely
+expurgated -- as I'd prefer --, or, if you intend to include any at all
+in this SRFI, highly controlled by whomever defined the record type.
+For example, Scheme48 has a simple, controlled mechanism for disclosing
+the components of particular record types, though mostly for printing
+unreadable objects.  I don't want to clutter this email describing it,
+however, unless requested; request if you want me to.
+</pre></blockquote><pre style="margin: 0em;">
+
+</pre><tt>Thanks, yes, I looked it up.  I am not really happy either with 
+</tt><tt>record-&gt;sexp; on the other hand it may be better than nothing - something 
+</tt><tt>like it could be rather useful not just for generic printing but also 
+</tt><tt>other generic operations such as debugging (as Felix mentioned), generic 
+</tt><tt>unification algorithms over records, etc.  Are you worried about data 
+</tt><tt>hiding?  Of course the other side of the generic coin concerns generic 
+</tt><tt>construction of record values (e.g. reading), which I am reluctant to 
+</tt><tt>tackle in this SRFI because of its difficulty.  I am open to more 
+</tt><tt>suggestions.
+</tt><pre style="margin: 0em;">
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+A smaller issue that I brought up on c.l.s seemed to have been left
+unnoticed: record type equivalence seems to be based on name, not on
+identity of the record type.  I believe this could be fixed by defining
+an extra variable when invoking DEFINE-RECORD for a token identifying
+the newly defined record type, and comparing against this, instead of
+symbolic names, in BUILD-MAKER.
+</pre></blockquote><pre style="margin: 0em;">
+
+</pre><tt>I prefer the simplicity of name equivalence.  I know that with 
+</tt><tt>this interpretation, redefining a record type may break code that depends
+</tt><tt>on the prior definition, but so may redefining a procedure or macro in 
+</tt><tt>standard Scheme.
+</tt><pre style="margin: 0em;">
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Regarding implementations, it is obviously not tractable for many
+Scheme implementations to implement DEFINE-RECORD as a syntax-rules
+macro of such extreme proportions; although I find it amazing that you
+wrote such a macro, I don't think it's practical, _especially_ not for
+implementations that implement syntax-rules by translating the
+expression into Scheme, compiling the Scheme, and then running that --
+for _every_ use of syntax-rules.  I believe it would be a good idea to
+provide an alternative implementation of DEFINE-RECORD in terms of even
+a non-standard macro system, such as the fairly widely implemented
+explicit renaming.*  It would also be undoubtedly easier to maintain as
+the SRFI evolves than this gargantuan set of syntax-rules macros.
+</pre></blockquote><pre style="margin: 0em;">
+
+</pre><tt>I agree.  I actually started working on an alternative implementation 
+</tt><tt>in syntax-case but stopped for lack of time (as well as disgust at the 
+</tt><tt>non-uniformity of the available implementations, different methods of 
+</tt><tt>phase control, etc.)
+</tt><pre style="margin: 0em;">
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Finally, it would also be good if an implementation were provided -- be
+it in syntax-rules or explicit renaming or anything, as long as it can
+be shown that it works -- that based records on the low-level record
+interface used internally by SRFI 9's implementation, because that is
+what most 'real' implementations will likely be based on.
+</pre></blockquote><pre style="margin: 0em;">
+
+</pre><tt>I agree it could be good, but this would be somewhat on the back-burner as 
+</tt><tt>far as I'm concerned, I'm afraid.  Closures can be rather efficient, 
+</tt><tt>especially once you start mixing pattern matching into the equation.
+</tt><pre style="margin: 0em;">
+
+Regards
+Andre
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00025" href="msg00025.html">Re: propositions, oppositions, and some minor details</a></strong>
+<ul><li><em>From:</em> Andre van Tonder</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00008" href="msg00008.html">propositions, oppositions, and some minor details</a></strong>
+<ul><li><em>From:</em> campbell</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00012.html">Re: propositions, oppositions, and some minor details</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00014.html">Re: Backward compatibility, pattern matching and some small things</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00024.html">Re: propositions, oppositions, and some minor details</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00025.html">Re: propositions, oppositions, and some minor details</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00013"><strong>Date</strong></a></li>
+<li><a href="threads.html#00013"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

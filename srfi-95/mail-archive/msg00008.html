@@ -1,0 +1,236 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Wording of the rationale -->
+<!--X-From-R13: =?WEA&#45;8859&#45;1?C?Xraf_Okry_E=T8tnneq?= <wrafnkryNfbrtnneq.arg> -->
+<!--X-Date: Tue,  7 Nov 2006 22:24:43 +0100 (MET) -->
+<!--X-Message-Id: 4550F97A.2090506@soegaard.net -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 455080C2.2090103@soegaard.net -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Wording of the rationale</title>
+<link rev="made" href="mailto:jensaxel@soegaard.net">
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00007.html">Date Prev</a>][<a href="msg00009.html">Date Next</a>][<a href="msg00006.html">Thread Prev</a>][<a href="msg00009.html">Thread Next</a>][<a href="maillist.html#00008">Date Index</a>][<a href="threads.html#00008">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Wording of the rationale</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: Jens Axel S&#xF8;gaard &lt;<a href="mailto:jensaxel%40soegaard.net">jensaxel@soegaard.net</a>&gt;</li>
+<li><em>Subject</em>: Re: Wording of the rationale</li>
+<li><em>From</em>: Jens Axel S&#xF8;gaard &lt;<a href="mailto:jensaxel%40soegaard.net">jensaxel@soegaard.net</a>&gt;</li>
+<li><em>Date</em>: Tue, 07 Nov 2006 22:24:10 +0100</li>
+<li><em>Cc</em>: <a href="mailto:srfi-95%40srfi.schemers.org">srfi-95@srfi.schemers.org</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-95%40srfi.schemers.org">srfi-95@srfi.schemers.org</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:455080C2.2090103%40soegaard.net"><a href="msg00006.html">455080C2.2090103@soegaard.net</a></a>&gt;</li>
+<li><em>References</em>: &lt;<a href="mailto:455080C2.2090103%40soegaard.net"><a href="msg00006.html">455080C2.2090103@soegaard.net</a></a>&gt;</li>
+<li><em>User-agent</em>: Thunderbird 1.5.0.7 (Windows/20060909)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre style="margin: 0em;">
+Jens Axel S&#xF8;gaard skrev:
+
+Quoting the rational of srfi-95:
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+       * Four varieties of algorithms were provided (quick, heap,
+         insert, merge) even though quick, heap, and insert sorts have
+         no significant advantage over merge-sort.
+</pre></blockquote><pre style="margin: 0em;">
+
+Commenting:
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Second: What does &quot;no significant advantage&quot; mean? I were of the
+impression, that the &quot;hidden constants&quot; of O(n log (n)) of
+vector-quick-sort were smaller than that of vector-merge-sort.
+</pre></blockquote><pre style="margin: 0em;">
+
+...
+
+</pre><blockquote style="border-left: #5555EE solid 0.2em; margin: 0em; padding-left: 0.85em"><pre style="margin: 0em;">
+Also: Is merge-sort the fastest algorithm, if the elements are &quot;almost
+sorted&quot;?
+</pre></blockquote><pre style="margin: 0em;">
+
+I tried a few experiments, and discovered that heap-sort beats the other
+algorithms when the elements are in almost reverse order. (The most
+surprising about this, is that I didn't figured it out before running
+the test).
+
+That is: If you know something about the data to be sorted, you are
+in a position, where you *want* to choose between the various
+algorithms.
+
+/Jens Axel S&#xF8;gaard
+
+
+  A sorted, long vector:  (vector 1 2 3 ... 1000000) with &lt;
+  ----------------------------------------------------------
+  vector-merge-sort! and vector-insert-sort! roughly the same time
+  vector-heap-sort! *much* slower
+
+  vector-merge-sort!
+  cpu time: 62 real time: 63 gc time: 0
+  vector-insert-sort!
+  cpu time: 62 real time: 63 gc time: 0
+  vector-heap-sort!
+  cpu time: 2343 real time: 2359 gc time: 0
+
+
+
+  A reverse-sorted, long vector:  (vector 10000 ... 3 2 1) with &lt;
+  -------------------------------------------------------------
+  vector-heap-sort! *very* fast
+  vector-merge-sort! and vector-insert-sort! roughly the same time
+
+  vector-merge-sort!
+  cpu time: 2203 real time: 2219 gc time: 0
+  vector-insert-sort!
+  cpu time: 2047 real time: 2046 gc time: 0
+  vector-heap-sort!
+  cpu time: 16 real time: 16 gc time: 0
+
+
+
+My test program and results follow:
+
+
+(require (lib &quot;32.ss&quot; &quot;srfi&quot;))
+
+; interval : integer integer -&gt; (list integer)
+;   (interval n m) =&gt; (list n n+1 ... m)
+(define (interval n m)
+  (do ((i m (- i 1))
+       (xs '() (cons i xs)))
+    ((&lt; i n) xs)))
+
+; copy the input vector, and time the sorting only
+(define (test orig-v sorter)
+  (let (; copy v so we can sort the same vector several times
+        (v (list-&gt;vector
+            (vector-&gt;list orig-v))))
+    ; make sure the garbage of one test doesn't affect the next
+    (collect-garbage)
+    (collect-garbage)
+    ; time the sorting only
+    (time (sorter &lt; v))))
+
+'SORTED-VECTOR-TEST
+(define n 1000000)
+(define v (list-&gt;vector (interval 1 n)))
+'vector-merge-sort!
+(test v vector-merge-sort!)
+'vector-insert-sort!
+(test v vector-insert-sort!)
+'vector-heap-sort!
+(test v vector-heap-sort!)
+
+
+'REVERSE-SORTED-VECTOR-TEST
+(define n 10000)
+(define v (list-&gt;vector (reverse! (interval 1 n))))
+'vector-merge-sort!
+(test v vector-merge-sort!)
+'vector-insert-sort!
+(test v vector-insert-sort!)
+'vector-heap-sort!
+(test v vector-heap-sort!)
+
+
+'RANDOM-VECTOR-TEST
+(define n 10000)
+(define v (list-&gt;vector (map (lambda (n) (random 1000000))
+                             (interval 1 n))))
+'vector-merge-sort!
+(test v vector-merge-sort!)
+'vector-insert-sort!
+(test v vector-insert-sort!)
+'vector-heap-sort!
+(test v vector-heap-sort!)
+
+
+The results were (a different run than the above):
+
+Welcome to DrScheme, version 359.100-svn6nov2006.
+Language: Pretty Big (includes MrEd and Advanced Student).
+
+SORTED-VECTOR-TEST
+vector-merge-sort!
+cpu time: 63 real time: 62 gc time: 0
+vector-insert-sort!
+cpu time: 62 real time: 62 gc time: 0
+vector-heap-sort!
+cpu time: 2359 real time: 2359 gc time: 0
+
+REVERSE-SORTED-VECTOR-TEST
+vector-merge-sort!
+cpu time: 2110 real time: 2110 gc time: 0
+vector-insert-sort!
+cpu time: 2000 real time: 2000 gc time: 0
+vector-heap-sort!
+cpu time: 15 real time: 15 gc time: 0
+
+RANDOM-VECTOR-TEST
+vector-merge-sort!
+cpu time: 16 real time: 16 gc time: 0
+vector-insert-sort!
+cpu time: 1031 real time: 1062 gc time: 0
+vector-heap-sort!
+cpu time: 31 real time: 31 gc time: 0
+
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00006" href="msg00006.html">Wording of the rationale</a></strong>
+<ul><li><em>From:</em> Jens Axel S&#xF8;gaard &lt;jensaxel@soegaard.net&gt;</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00007.html">Wording of the rationale</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00009.html">Re: Wording of the rationale</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00006.html">Wording of the rationale</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00009.html">Re: Wording of the rationale</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00008"><strong>Date</strong></a></li>
+<li><a href="threads.html#00008"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

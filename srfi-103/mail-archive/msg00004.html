@@ -1,0 +1,137 @@
+<!-- MHonArc v2.6.16 -->
+<!--X-Subject: Re: Encoding Windows reserved charactes -->
+<!--X-From-R13: Rrevpx Sqqvatgba <qrevpx.rqqvatgbaNtznvy.pbz> -->
+<!--X-Date: Thu, 24 Sep 2009 17:45:55 +0000 (UTC) -->
+<!--X-Message-Id: 1253814351.30233.17.camel@eep -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Encoding Windows reserved charactes</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00003.html">Date Prev</a>][<a href="msg00005.html">Date Next</a>][<a href="msg00000.html">Thread Prev</a>][<a href="msg00005.html">Thread Next</a>][<a href="maillist.html#00004">Date Index</a>][<a href="threads.html#00004">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Encoding Windows reserved charactes</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-103@DOMAIN.HIDDEN">srfi-103@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Encoding Windows reserved charactes</li>
+<li><em>From</em>: Derick Eddington &lt;<a href="mailto:derick.eddington@DOMAIN.HIDDEN">derick.eddington@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 24 Sep 2009 10:45:51 -0700</li>
+<li><em>Cc</em>: <a href="mailto:cowan@DOMAIN.HIDDEN">cowan@xxxxxxxx</a></li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-103@DOMAIN.HIDDEN">srfi-103@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Dkim-signature</em>: v=1; a=rsa-sha256; c=relaxed/relaxed;        d=gmail.com; s=gamma;        h=domainkey-signature:received:received:subject:from:to:cc         :content-type:date:message-id:mime-version:x-mailer         :content-transfer-encoding;        bh=tjwz4QGBZJhohJuATgEBMVEPym0BXc/oEIO6fKLYXgo=;        b=bh1paL77EiRelT8a5luNk3waqhNwZS0ONmVhGY1oL27VOeerJ/8+qmpSfz9b1gn/6z         HU4VxtFVtdKCEiCkYD9dl9BZud/1sOWrL6perLsK68hgvq/3FXaQSqb5veKLfpJ+EsX7         XWSyAXCzofpw2BWsa+QYkNSU+ofLyRzsOL82w=</li>
+<li><em>Domainkey-signature</em>: a=rsa-sha1; c=nofws;        d=gmail.com; s=gamma;        h=subject:from:to:cc:content-type:date:message-id:mime-version         :x-mailer:content-transfer-encoding;        b=pPA35sT7YnbiI9sGpNKCsDGtD4fVqphHkDGM/K2MuCc0TW5q+lOFc39zVin0QabZ8y         V31djV/vAdQ6SPtK7jN5Fa8juJLBlX4NVDoYX3FmpYYY3PSi7/sIuvfI6ycgnr0pVf+l         6aTefZtJ7xrn4MEa+OvD/GpWk+UeBddF+Wf94=</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>John Cowan wrote:
+
+&gt; I think it is sensible to require encoding of all the characters that
+&gt; Windows doesn't allow in path components, viz.  #\&lt;, #\&gt;, #\:, #\|,
+&gt; #\?, #\*, and #x0; through #x1F;.  Posix allows all but #\x0;, but
+&gt; the remainder, though technically permitted, are nothing but nuisances
+&gt; in pathname components, as they must be escaped when referred to from
+&gt; the shell.  (#\: is an exception, but doesn't show up in Posix filenames
+&gt; often either.)
+&gt; 
+&gt; In addition, the Windows executive treats #\\ and #\/ both as path
+&gt; separators, a fact occasionally convenient, although the UI disallows #\/.
+&gt; So I'd escape both of them in all cases too.
+
+I have been conflicted about this issue as I was drafting this SRFI.
+
+One part of me wants to say:
+
+I'm disinclined to make SRFI 103 require encoding any characters except
+the four it uses specially which must be.  However, as the document
+says, an implementation may encode any additional characters it wants.
+Always encoding the characters which Windows disallows, or which are
+nuisances in shells, may very well be the de facto for the near future.
+However, in the farther future, these characters may not need encoding,
+and other OSs and shells may have greater prevalence than Windows,
+POSIX, and Bash.  Even if the Windows-disallowed and shell-nuisance
+characters were required to be encoded, there could still exist
+characters which some file systems need encoded but others do not, e.g.
+file systems of OSs other than Windows or POSIX, and so communicating
+what characters to encode and coordinating transcoding path names would
+still be required.
+
+Another part of me thinks:
+
+It's not a big deal.  Not requiring encoding other cultures' languages'
+characters, and not requiring encoding other non-natural-language
+character-symbols which I want to explore using in library names, and
+promoting progress to file systems which can handle all characters, *is*
+a big deal to me.  But this small set of Windows-disallowed and
+shell-nuisance characters probably won't be common in library names and
+can be sacrificed if it really helps portability.  And we can always
+make a new SRFI in the future which revises this one to get rid of
+requiring encoding these characters.
+
+The question is: what is the exact set of characters which should be
+required to be encoded?  I've heard different descriptions of what
+Windows/DOS disallows.  Does it differ between versions?  What eras of
+Microsoft OSs do we want to cater to?  Surely, some shells differ in
+what are nuisance characters?  What shells should be catered to for the
+nuisance characters to encode?
+
+-- 
+: Derick
+----------------------------------------------------------------
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00005" href="msg00005.html">Re: Encoding Windows reserved charactes</a></strong>
+<ul><li><em>From:</em> John Cowan</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00003.html">Re: whoa</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00005.html">Re: Encoding Windows reserved charactes</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00000.html">Encoding Windows reserved charactes</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00005.html">Re: Encoding Windows reserved charactes</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00004"><strong>Date</strong></a></li>
+<li><a href="threads.html#00004"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

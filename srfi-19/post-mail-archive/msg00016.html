@@ -1,0 +1,123 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Apparent divide&#45;by&#45;zero bug in date&#45;>julian&#45;day -->
+<!--X-From-R13: Xbua Qyrzragf <pyrzragfNoevapxreubss.bet> -->
+<!--X-Date: Wed, 30 Jun 2004 08:25:41 +0200 (DFT) -->
+<!--X-Message-Id: y9ly8m5r28r.fsf@sams.informatik.uni&#45;tuebingen.de -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Apparent divide-by-zero bug in date-&gt;julian-day</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00015.html">Date Prev</a>][<a href="msg00017.html">Date Next</a>][<a href="msg00015.html">Thread Prev</a>][<a href="msg00017.html">Thread Next</a>][<a href="maillist.html#00016">Date Index</a>][<a href="threads.html#00016">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Apparent divide-by-zero bug in date-&gt;julian-day</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-19@DOMAIN.HIDDEN">srfi-19@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Apparent divide-by-zero bug in date-&gt;julian-day</li>
+<li><em>From</em>: John Clements &lt;<a href="mailto:clements@DOMAIN.HIDDEN">clements@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Wed, 30 Jun 2004 08:25:40 +0200</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-19@DOMAIN.HIDDEN">srfi-19@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Old-date</em>: Tue, 29 Jun 2004 13:37:30 -0400</li>
+<li><em>User-agent</em>: Gnus/5.110002 (No Gnus v0.2) XEmacs/21.5 (chayote, berkeley-unix)</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>
+date-&gt;julian-day can result in a divide-by-zero error:
+
+(require (lib &quot;time.ss&quot; &quot;srfi&quot; &quot;19&quot;))
+(date-&gt;julian-day (make-srfi:date 0 0 0 0 29 6 2004 0))
+
+=&gt;
+
+/: Division by 0
+
+
+The problem appears to be in date-&gt;julian-day:
+
+(define (date-&gt;julian-day date)
+   (let ( (nanosecond (date-nanosecond date))
+	 (second (date-second date))
+	 (minute (date-minute date))
+	 (hour (date-hour date))
+	 (day (date-day date))
+	 (month (date-month date))
+	 (year (date-year date))
+	 (offset (date-zone-offset date)) )
+     (+ (tm:encode-julian-day-number day month year)
+        (- 1/2)
+        (+ (/ (/ (+ (* hour 60 60)
+		   (* minute 60) second (/ nanosecond tm:nano)) tm:sid)
+	     (- offset))))))
+
+
+Note that there's a division by (- offset), which means that any call 
+to date-&gt;julian-day with a zero time-zone offset causes an error.  It 
+seems clear that the (- offset) should appear inside the 
+summation-of-seconds addition.
+
+It also means that the result of date-&gt;julian day is _always_ going to 
+be wrong, which suggests that there's no test case for this function at 
+all.  Sure enough, a grep through the test suite for 'date-&gt;julian-day' 
+comes up empty.  Was this function added late?  Any thought of updating 
+the test suite?
+
+john clements
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00017" href="msg00017.html">Re: Apparent divide-by-zero bug in date-&gt;julian-day</a></strong>
+<ul><li><em>From:</em> Will Fitzgerald</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00015.html">Re: off-by-one error in SRFI 19's date-week-number procedure?</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00017.html">Re: Apparent divide-by-zero bug in date-&gt;julian-day</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00015.html">Re: off-by-one error in SRFI 19's date-week-number procedure?</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00017.html">Re: Apparent divide-by-zero bug in date-&gt;julian-day</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00016"><strong>Date</strong></a></li>
+<li><a href="threads.html#00016"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

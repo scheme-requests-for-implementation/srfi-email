@@ -1,0 +1,224 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: Re: Thoughts on Priorities and Quanta -->
+<!--X-From-R13: [nep Trryrl <srryrlNWDA.G[bagerny.QO> -->
+<!--X-Date: Thu, 10 Feb 2000 10:27:06 &#45;0600 (CST) -->
+<!--X-Message-Id: 200002101627.LAA14775@trex.IRO.UMontreal.CA -->
+<!--X-Content-Type: text/plain -->
+<!--X-Reference: 200002100039.RAA25793@asimov.lanl.gov -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>Re: Thoughts on Priorities and Quanta</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00000.html">Date Prev</a>][<a href="msg00002.html">Date Next</a>][<a href="msg00000.html">Thread Prev</a>][<a href="msg00002.html">Thread Next</a>][<a href="maillist.html#00001">Date Index</a>][<a href="threads.html#00001">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>Re: Thoughts on Priorities and Quanta</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:mkg@DOMAIN.HIDDEN">mkg@xxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: Re: Thoughts on Priorities and Quanta</li>
+<li><em>From</em>: Marc Feeley &lt;<a href="mailto:feeley@DOMAIN.HIDDEN">feeley@xxxxxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 10 Feb 2000 11:27:04 -0500</li>
+<li><em>Cc</em>: <a href="mailto:srfi-18@DOMAIN.HIDDEN">srfi-18@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>In-reply-to</em>: &lt;<a href="mailto:200002100039.RAA25793@DOMAIN.HIDDEN">200002100039.RAA25793@xxxxxxxxxxxxxxx</a>&gt; (<a href="mailto:mkg@DOMAIN.HIDDEN">mkg@xxxxxxxxxxxxxxx</a>)</li>
+<li><em>References</em>: &lt;<a href="mailto:200002100039.RAA25793@DOMAIN.HIDDEN">200002100039.RAA25793@xxxxxxxxxxxxxxx</a>&gt;</li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>&gt; There are a couple of items concerning priorities and quanta that I
+&gt; would like to see discussed. First, an admission of bias: I have been
+&gt; thoroughly indoctrinated in the real-time community. Thus the comments
+&gt; below deal with modifying the SRFI so that it does not prohibit the
+&gt; construction of real-time systems programmed in Scheme.
+
+Thanks for your comments.
+
+As I'm sure you know, real-time systems typically tradeoff efficiency
+(i.e. speed/throughput) for guarantee of deadlines (i.e. maximum
+latency).  As it stands, SRFI-18 can be implemented with simple and
+efficient data structures (essentially double-ended-queues for mutex
+and condition variables, and a small table of double-ended-queues
+indexed by priority to represent the set of runnable threads).  The
+more stringent real-time semantics you propose (i.e. 256 priorities,
+and prioritized wakeups for mutexes and condition variables) would
+require a much more complex and heavy implementation (basically
+priority-queues everywhere, represented by heaps or leftist trees,
+with O(log N) complexity for insert and delete operations).
+
+From my recent experiments with a Scheme implementation of leftist
+trees, I would say that the overhead is probably between a factor of 5
+and 10 for small N (N=10 in my experiments).  Since most of the thread
+operations (such as starting or terminating a thread, thread
+suspension or wakeup on a mutex, preemption of a thread, extraction of
+the next runnable thread) are dominated by queue manipulations, we can
+expect a considerable slowdown of these operations.  This can be bad
+news for some applications that don't need real-time guarantees.
+
+I think the right approach is to make sure SRFI-18 doesn't disallow a
+more stringent real-time implementation, so that a future &quot;real-time
+thread&quot; SRFI can extend SRFI-18's semantics and API.  For this reason
+I am inclined to use an even weaker form of fairness:
+
+  If threads A and B are blocked (on a mutex or condition variable)
+  and A blocked before B, then:
+    1) if A's priority is not less than B's priority, A will wakeup before B
+    2) otherwise, A will wakeup before or after B
+
+Also, I'll add a procedure to get the maximum priority:
+
+   The call (thread-max-priority) returns a non-negative exact integer that
+   indicates the maximum thread priority.
+
+and yes, I mean for priorities to increase with higher integer values.
+
+Concerning your specific comments:
+
+&gt; 1) Limiting the number of priority levels to 8 is a severe problem for
+&gt; real-time systems. Mapping otherwise distinct priorities, which have
+&gt; been established by fixed priority design guidelines, onto a limited
+&gt; set causes a potential reduction in the number of tasks which can meet
+&gt; their deadlines. The problem has been well studied and the consensus
+&gt; is that 256 priorities are sufficient to virtually eliminate the
+&gt; effect. Thus nearly all real-time operating systems have 256 priority
+&gt; levels. 
+&gt; 
+&gt; Is there any reason for limiting the number of priorities to 8? If
+&gt; there is, I suggest that we make 8 the minimum number of priority
+&gt; levels and add a function to obtain the maximum number of priority
+&gt; levels.
+
+QNX, a well known real-time OS, has only 32 priorities, so 256 seems
+way too much, even for a real-time system.  Note that the Java JDK
+(not a real-time system) has 10 priorities.
+
+&gt; 3) In general, (hard) real-time tasks do not time share. Thus there
+&gt; needs to be another value added to the quantum domain specifying that
+&gt; the thread is not to be preempted, i.e., it is to run until it blocks,
+&gt; yields the processor, or terminates. As a by-product of defining this
+&gt; special value, it is no longer necessary to precisely know how quanta
+&gt; map onto real time. (Without the special value, a hard real-time task
+&gt; would need to specify a quantum that is guaranteed to be greater than
+&gt; its longest execution time before blocking, yielding, etc.)
+
+How about specifying the quantum units to be microseconds, and you
+just give a very large value.
+
+&gt; 5) thread-priority-set! should cause an immediate reschedule if the
+&gt; priority decreases. This seems logical but it is especially important
+&gt; for real-time systems as otherwise predictability will be lost. 
+&gt; 
+&gt; 6) Should thread-quantum-set! cause a reschedule if the amount of time
+&gt; executed so far exceeds the new quantum? (This is not a real-time
+&gt; issue if there is a quantum that signifies no time sharing.) For
+&gt; symmetry with the preceding comment, I suggest that this be the case
+&gt; but I don't really care as it too can be implemented in user code *if*
+&gt; there is a way to access the number of quanta used since beginning to
+&gt; run.
+
+Immediate rescheduling is hard and expensive in a multiprocessor
+context when the thread being modified is running on another
+processor.  I'm not sure what is the right thing to do here...
+should the current thread wait for the rescheduling to occur,
+which might mean waiting for a large quantum?
+
+&gt; 7) I would suggest that thread-terminate! should always allow the
+&gt; current thread to finish the critical section if indeed it is in one.
+
+I'm not sure what you mean by &quot;the critical section&quot;.  Critical
+sections are implemented, by the user, with calls to mutex-lock! and
+mutex-unlock!, but this is not the only use of these primitives.  So
+it is not the case that a thread is &quot;in a critical section&quot; if it owns
+a lock (for example the end-mutex of a thread is owned by that thread
+until it terminates).  It is also possible for a mutex to be unlocked
+by a thread other than it's owner.
+
+&gt; 8) Perhaps an exception should be thrown when a thread is terminated
+&gt; (as opposed to when its thunk returns) so that the thread's resources
+&gt; can be properly deallocated.
+
+It would be nice... but since there is no way to catch exceptions
+(currently) how would you specify this!!!  I guess I could add
+something like &quot;an exception is raised in the target thread&quot; (but
+when??? and does the current thread wait until the exception is
+raised), and some future &quot;exception&quot; SRFI can say exactly which form
+this exception takes...
+
+&gt; 9) For good flexibility in scheduling, I like the QNX approach. Allow
+&gt; FIFO, round-robin and &quot;adaptive priority&quot; which may include aging.
+
+This can be specified by a future &quot;real-time threads&quot; SRFI.
+
+&gt; 10) For predictability, I favor having thread quanta be in some
+&gt; sufficiently small unit of time like microseconds.
+
+Agreed.  Should there be a maximum quantum?
+
+&gt; 11) I also like the idea that a program is the initial thread of
+&gt; execution and hence the parent of all other threads.
+
+I like this too, mainly because it is more modular.  I'd like to hear
+from other implementors on this issue because it requires a
+substantial change in the Scheme runtime system.
+
+Marc
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00002" href="msg00002.html">Re: Thoughts on Priorities and Quanta</a></strong>
+<ul><li><em>From:</em> David Rush</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<ul><li><strong>References</strong>:
+<ul>
+<li><strong><a name="00000" href="msg00000.html">Thoughts on Priorities and Quanta</a></strong>
+<ul><li><em>From:</em> Mark K. Gardner</li></ul></li>
+</ul></li></ul>
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00000.html">Thoughts on Priorities and Quanta</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00002.html">Re: Thoughts on Priorities and Quanta</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00000.html">Thoughts on Priorities and Quanta</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00002.html">Re: Thoughts on Priorities and Quanta</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00001"><strong>Date</strong></a></li>
+<li><a href="threads.html#00001"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

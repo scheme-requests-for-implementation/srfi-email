@@ -1,0 +1,190 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: is that useful? -->
+<!--X-From-R13: "Inygre Q. Bryvffreb" <jnygreNcryvffreb.bet> -->
+<!--X-Date: Fri, 22 Feb 2002 14:29:48 +0100 (NFT) -->
+<!--X-Message-Id: 15478.18376.948968.287998@hyde.lpds.sublink.org -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>is that useful?</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00037.html">Date Prev</a>][<a href="msg00039.html">Date Next</a>][<a href="msg00044.html">Thread Prev</a>][<a href="msg00039.html">Thread Next</a>][<a href="maillist.html#00038">Date Index</a>][<a href="threads.html#00038">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>is that useful?</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-26@DOMAIN.HIDDEN">srfi-26@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: is that useful?</li>
+<li><em>From</em>: &quot;Walter C. Pelissero&quot; &lt;<a href="mailto:walter@DOMAIN.HIDDEN">walter@xxxxxxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Fri, 22 Feb 2002 13:29:44 +0000</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-26@DOMAIN.HIDDEN">srfi-26@xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</a></li>
+<li><em>Reply-to</em>: <a href="mailto:walter@DOMAIN.HIDDEN">walter@xxxxxxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Maybe somebody can explain me what is the use of this SRFI.
+
+The original curry, as explained by some book,
+
+    (define (curry f x)
+      (lambda (y)
+	(f x y)))
+
+is a suggestive trick to produce a specialization of f without an
+explicit lambda expression.  A special case of partial application,
+one might argue.
+
+While having an educational value the curry higher-order function is
+not very useful as its specialization is only on the first parameter
+and therefore its applicability is marginal as it doesn't address
+common cases like:
+
+    (lambda (y) (/ y 2))		; where x=2
+    (lambda (z) (&lt; 0 z 1))		; where x=0, y=1
+    (lambda (y) (hash-store table y y))	; where x=table
+    (lambda (y z) (list 1 z 2 y 3))
+
+I see that this SRFI aims at solving the first and second cases, with
+the introduction of a place-holder notation, but still doesn't address
+the swapping of two arguments and the repetition of one argument.
+Indeed, pretty common cases.
+
+The original curry is elegant, because the declaration of the missing
+argument is implicit.  This SRFI, to cope with the positional
+arguments, departs from that idea.  Making explicit the position of
+the parameters, it goes toward the vanilla lambda expression with the
+only benefit that you don't have to invent and declare names for the
+place-holders.  In short, it looks to me like a lambda form with the
+limitations of curry.
+
+If all you want is a shortcut for the lambda expression, there are a
+couple of things that come to mind.  In Scheme 48, with the macro:
+
+    (define-syntax f
+      (lambda (form rename compare)
+	`(lambda (_)
+	   ,(cdr form))))
+
+you can write closures like:
+
+    (define halve (f / _ 2))
+    (define in-range? (f &lt; 0 _ 1))
+    (define store (f hash-store table _ _))
+
+but, of course, this goes far beyond curry, because you are free to
+write subforms:
+
+    (define quadratic (f + (* _ _ 2) (* _ 3) 4))
+
+It's, indeed, a replacement notation for lambda with the imaginable
+impact on readability (not so easy sometime).
+
+The underscore notation is not by chance.  It's taken from the Paul
+Graham's wish list for his brainchild, Arc.  Actually, he proposes the
+use of a square bracket shortcut:
+
+    (define halve [/ _ 2])
+    (define in-range? [&lt; 0 _ 1])
+    (define store [hash-store table _ _])
+    (define quadratic [+ (* _ _ 2) (* _ 3) 4])
+
+Which is trivial to implement in Common Lisp and Scheme 48, but not
+necessarily in other Lisp dialects lacking read macros.
+
+This macro, while flexible, still doesn't address the multiple (and
+swapped) arguments issue.  This is a bit more work:
+
+    (define-syntax fn
+      (lambda (form rename compare)
+	(letrec ((arg-number
+		  (lambda (x)
+		    (if (symbol? x)
+			(let ((s (symbol-&gt;string x)))
+			  (if (char=? #\$ (string-ref s 0))
+			      (or (string-&gt;number (substring s 1 (string-length s)))
+				  0)
+			      0))
+			0)))
+		 (number-of-arguments
+		  (lambda (l)
+		    (let loop ((l l))
+		      (if (null? l)
+			  0
+			  (let ((x (car l)))
+			    (max (if (pair? x)
+				     (loop x)
+				     (arg-number x))
+				 (loop (cdr l))))))))
+		 (make-argument-list
+		  (lambda (n)
+		    (do ((n n (- n 1))
+			 (l '() (cons (string-&gt;symbol (string-append &quot;$&quot; (number-&gt;string n))) l)))
+			((zero? n) l)))))
+	  (list 'lambda (make-argument-list (number-of-arguments form))
+		(cdr form)))))
+
+With that you can write things like:
+
+    (define foo (fn list &quot;(&quot; $2 &quot;.&quot; $1 &quot;)&quot;))	; swap 1st and 2nd arg
+    (define bar (fn list $2))			; ignore 1st arg
+    (define acf (fn an $2 (arbitrary $3 'complex) $1 (form $2)))
+
+Once again, this has nothing to do with curry as it lets you write
+horrible syntactic closures resembling more Perl than Scheme in
+anything with more than two or three parameters.
+
+-- 
+walter pelissero
+<a  rel="nofollow" href="http://www.pelissero.org">http://www.pelissero.org</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00037.html">Re: Changing the name</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00039.html">Re: is that useful?</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00044.html">Re: A short name.</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00039.html">Re: is that useful?</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00038"><strong>Date</strong></a></li>
+<li><a href="threads.html#00038"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>

@@ -1,0 +1,227 @@
+<!-- MHonArc v2.6.15 -->
+<!--X-Subject: null&#45;terminated strings vs. strings with length -->
+<!--X-From-R13: Eronfgvna Stare <fronfgvna_rtareNlnubb.pbz> -->
+<!--X-Date: Thu,  1 Jan 2004 16:04:54 +0100 (NFT) -->
+<!--X-Message-Id: 20040101150452.10239.qmail@web40020.mail.yahoo.com -->
+<!--X-Content-Type: text/plain -->
+<!--X-Head-End-->
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+        "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<title>null-terminated strings vs. strings with length</title>
+</head>
+<body>
+<!--X-Body-Begin-->
+<!--X-User-Header-->
+<!--X-User-Header-End-->
+<!--X-TopPNI-->
+<hr>
+[<a href="msg00131.html">Date Prev</a>][<a href="msg00133.html">Date Next</a>][<a href="msg00114.html">Thread Prev</a>][<a href="msg00156.html">Thread Next</a>][<a href="maillist.html#00132">Date Index</a>][<a href="threads.html#00132">Thread Index</a>]
+<!--X-TopPNI-End-->
+<!--X-MsgBody-->
+<!--X-Subject-Header-Begin-->
+<h1>null-terminated strings vs. strings with length</h1>
+<hr>
+<!--X-Subject-Header-End-->
+<!--X-Head-of-Message-->
+<ul>
+<li><em>To</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Subject</em>: null-terminated strings vs. strings with length</li>
+<li><em>From</em>: Sebastian Egner &lt;<a href="mailto:sebastian_egner@DOMAIN.HIDDEN">sebastian_egner@xxxxxxxxx</a>&gt;</li>
+<li><em>Date</em>: Thu, 1 Jan 2004 07:04:52 -0800 (PST)</li>
+<li><em>Delivered-to</em>: <a href="mailto:srfi-50@DOMAIN.HIDDEN">srfi-50@xxxxxxxxxxxxxxxxx</a></li>
+<li><em>Reply-to</em>: <a href="mailto:sebastian_egner@DOMAIN.HIDDEN">sebastian_egner@xxxxxxxxx</a></li>
+</ul>
+<!--X-Head-of-Message-End-->
+<!--X-Head-Body-Sep-Begin-->
+<hr>
+<!--X-Head-Body-Sep-End-->
+<!--X-Body-of-Message-->
+<pre>Dear authors of SRFI-50,
+
+I would like to raise an issue concerning the actual 
+interface for strings:
+
+'Native C-strings' (ha ha) are null-terminated whereas
+
+Scheme-strings have length. Unfortunately, SRFI-50 
+tries to bridge the mismatch by conversion, instead 
+of pushing the problem to either side (preferably to
+C)
+where it can be dealt with in an application-specific
+manner as need arises.
+
+For example, assume a printer escape sequence 
+including several '\0's is constructed in C and should
+
+be passed on to Scheme for printing. How can I do it?
+
+Fortunately, there is a simple and effective
+alternative:
+
+*** 
+a) The C-side of the FFI does not deal with
+null-terminated 
+native C-strings but rather with buffers of the form 
+(const char *) pointer together with a (size_t) size. 
+b) The content of the buffer is the internal
+representation
+of the Scheme-string, whatever that may be.
+c) The FFI deals with Scheme-substrings, i.e., 
+(STRING, START, END) in the sense of R5RS 6.3.5.,
+rather than with entire Scheme-strings.
+***
+
+The rationale for this is as follows:
+
+Ad a) Strings in Scheme are sometimes used for storing
+
+vectors of bytes. Although this is clearly a misuse of
+STRING,
+it is common practice due to a lack of alternatives.
+The FFI
+should not rule out this option by defining the C-side
+as
+null-terminated strings.
+
+The only inconvenience introduced by defining buffers
+with 
+explicit length instead of null-terminated strings is
+an occasional
+explicit call to strlen() when creating a
+Scheme-string from
+a native C-string.
+
+Ad b) There is no way Scheme's character
+representation can 
+be hidden from the C-side, anyway. So there is no
+point in
+trying to convert CHAR to (char) in an undefined way. 
+Prescribing a certain conversion on the other hand
+turns
+the FFI into a source of limitation, which should be
+avoided.
+
+The downside of this approach is that there is no
+portable
+way in C to produce a Scheme-string, even if it is
+straight
+no-bells-and-whistles printable ASCII. This can be
+fixed
+easily, though. (See below.)
+
+Ad c) Depending on the GC, it is dangerous to deal
+with 
+pointers pointing directly into the internal
+representation of
+Scheme objects, in particular if concurrent threads
+could 
+initiate garbage collection at any moment. By using 
+substrings it becomes affordable to always copy
+between 
+C and Scheme.
+
+The proposal would require the following
+modifications:
+
+1. SCHEME_EXTRACT_STRING copies a specified substring
+(with START, END as in R5RS 6.3.5) of the
+Scheme-string into 
+a buffer prepared by the caller (taking into account
+the size of 
+the buffer ;-) and returns the number of (char)s
+actually copied.
+
+An additional C-function can be called for computing
+the number of 
+(char)s of the internal representation of a given
+Scheme-substring.
+(Depending on character encoding this could be linear
+time, but
+copying is linear time anyhow.)
+
+2. SCHEME_ENTER_STRING copies a C-buffer ((char *)s,
+(size_t) n) 
+into a specified substring of an already existing
+Scheme-string (or #f
+to allocate a new one) and returns the resulting
+(scheme_value).
+It should be defined what happens when the
+Scheme-string is too
+short to receive the C-buffer.
+
+3. SCHEME_EXTRACT/ENTER_CHAR do not assume that a
+Scheme-character is just a (char); like the
+STRING-procedures
+they are called with caller-prepared buffers of
+sufficient length.
+
+4. There is a C-function mapping (char) into the
+internal rep. of
+a Scheme-character, at least preserving ASCII
+{0..127}. There
+is also a C-function projecting (the internal rep. of)
+a Scheme-
+character into ASCII {0..127}, indicating if there was
+a loss.
+(These two conversions should make sure there is some
+way
+to say &quot;Hello, world!&quot; without diving into the muddy
+waters of
+Unicode.)
+
+This proposal separates the issue of character
+encoding  from the issue of null-terminated strings
+vs. buffers with length.
+
+Sebastian.
+
+
+P.S. Good SRFI, please continue!
+
+__________________________________
+Do you Yahoo!?
+Find out what made the Top Yahoo! Searches of 2003
+<a  rel="nofollow" href="http://search.yahoo.com/top2003">http://search.yahoo.com/top2003</a>
+
+</pre>
+<!--X-Body-of-Message-End-->
+<!--X-MsgBody-End-->
+<!--X-Follow-Ups-->
+<hr>
+<ul><li><strong>Follow-Ups</strong>:
+<ul>
+<li><strong><a name="00156" href="msg00156.html">Re: null-terminated strings vs. strings with length</a></strong>
+<ul><li><em>From:</em> Richard Kelsey</li></ul></li>
+</ul></li></ul>
+<!--X-Follow-Ups-End-->
+<!--X-References-->
+<!--X-References-End-->
+<!--X-BotPNI-->
+<ul>
+<li>Prev by Date:
+<strong><a href="msg00131.html">Re: no constants please</a></strong>
+</li>
+<li>Next by Date:
+<strong><a href="msg00133.html">Re: Couple things...</a></strong>
+</li>
+<li>Previous by thread:
+<strong><a href="msg00114.html">misc</a></strong>
+</li>
+<li>Next by thread:
+<strong><a href="msg00156.html">Re: null-terminated strings vs. strings with length</a></strong>
+</li>
+<li>Index(es):
+<ul>
+<li><a href="maillist.html#00132"><strong>Date</strong></a></li>
+<li><a href="threads.html#00132"><strong>Thread</strong></a></li>
+</ul>
+</li>
+</ul>
+
+<!--X-BotPNI-End-->
+<!--X-User-Footer-->
+<!--X-User-Footer-End-->
+</body>
+</html>
