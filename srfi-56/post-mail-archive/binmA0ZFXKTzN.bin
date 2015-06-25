@@ -1,0 +1,105 @@
+(c-declare "#include <math.h>")
+(##include "../lib/header.scm")
+
+;; note that pow can deal with negative x if y is an integer
+
+(define ##flonum.pow (c-lambda (float64 float64) float64 "pow"))
+
+(define (##my-expt x y)
+
+  (define (exact-int-expt x y)
+
+    ;; x is an exact number and y is a nonzero exact integer
+
+    (define (square x)
+      (##* x x))
+
+    (define (expt-aux x y)
+
+      ;; x is an exact integer (not 0 or 1) and y is a nonzero exact integer
+
+      (if (##eq? y 1)
+	  x
+	  (let ((temp (square (expt-aux x (##arithmetic-shift y -1)))))
+	    (if (##even? y)
+		temp
+		(##* x temp)))))
+
+    (cond ((or (##eq? x 0)
+	       (##eq? x 1))
+	   x)
+	  ((##ratnum? x)
+	   (macro-ratnum-make (exact-int-expt (macro-ratnum-numerator   x) y)
+			      (exact-int-expt (macro-ratnum-denominator x) y)))
+	  (else
+	   (expt-aux x y))))
+
+  (define (flonum-expt x y)
+
+    ;; x is a flonum
+
+    (cond ((##flonum.nan? x)
+	   x)
+	  
+	  ((or (##fixnum? y)
+	       (##bignum? y))
+	   (let ((abs-result
+		  (##flonum.abs
+		   (##flonum.pow x (##flonum.<-exact-int y)))))
+	     (if (##odd? y)
+		 (##flonum.copysign abs-result x)
+		 abs-result)))
+	  
+	  ((##flonum? y)
+	   (if (and (##flonum.negative? x)
+		    (##not (macro-flonum-int? y)))
+	       (complex-expt x y)
+	       (##flonum.pow x y)))
+	  
+	  ((##ratnum? y)
+	   (if (##flonum.negative? x)
+	       (complex-expt x y)
+	       (##flonum.pow x (##flonum.<-ratnum y))))
+	  
+	  (else
+	   (complex-expt x y))))
+  
+  (define (complex-expt x y)
+    (##exp (##* (##log x) y)))
+  
+  (define (invert z)
+    ;; z is exact
+    (let ((result (##inverse z)))
+      (if (##not result)
+          (##raise-range-exception 1 expt x y)
+          result)))
+
+  (if (##complex? x)
+      (if (##complex? y)
+	  (cond ((##eq? y 0)
+		 1)
+		((and (or (##fixnum? y)
+			  (##bignum? y))
+		      (##exact? x))
+		 (if (##negative? y)
+		     (invert (exact-int-expt x (##negate y)))
+		     (exact-int-expt x y)))
+		
+		;; we may be able to do something fancier with ratnum y in the following
+		;; but I'm not going to worry about it for now.
+		;; note that (expt -8 1/3) => 1.+1.732050807568877i, not -2.0,
+		;; since -2.0 is not the principle cube root of -8, i.e., it doesn't
+		;; match the definition of complex-expt in the general case.
+		
+		((##fixnum? x)                          ; y is not fixnum or bignum
+		 (flonum-expt (##flonum.<-fixnum x) y))
+		((##bignum? x)                          ; y is not fixnum or bignum
+		 (flonum-expt (##flonum.<-exact-int x) y))
+		((##flonum? x)
+		 (flonum-expt x y))
+		((##ratnum? x)                          ; y is not a fixnum or bignum
+		 (flonum-expt (##flonum.<-ratnum x) y))
+		(else                                   ; either x is not exact or y is not a fixnum or bignum
+		 (complex-expt x y)))
+	  (##fail-check-number 2 expt x y))
+      (##fail-check-number 1 expt x y)))

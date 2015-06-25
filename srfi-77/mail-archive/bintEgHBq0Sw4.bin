@@ -1,0 +1,103 @@
+;;; This program was written for Gambit-C.  If you can find or write "with-exception-handler"
+;;; for your scheme, it may work there, too.
+
+;;; This program tests +, -, *, and / with all combinations of "arguments" as the real part
+;;; and the imaginary parts of the two arguments of the operators.  It writes ths results
+;;; to a file name "results" in a way that should be independent of how NaNs and infinities
+;;; are represented on your scheme system.
+
+;;; If you think the results should be significantly different for any of these operations,
+;;; I'd like to hear about it: lucier at math dot purdue dot edu
+
+(define plus-infinity (let loop ((x (r5rs->number 2.0)))
+			(let ((two-x (* (r5rs->number 2.0) x)))
+			  (if (= x two-x)
+			      x
+			      (loop two-x)))))
+
+(define minus-infinity (- plus-infinity))
+
+(define plus-zero (/ (r5rs->number 1.0) plus-infinity))
+
+(define minus-zero (/ (r5rs->number 1.0) minus-infinity))
+
+(define not-a-number (/ plus-zero plus-zero))
+
+(define arguments (list (r5rs->number 0)
+			(r5rs->number 1)
+			(r5rs->number -1)
+			plus-zero
+			minus-zero
+			(r5rs->number 1.)
+			(r5rs->number -1.)
+			plus-infinity
+			minus-infinity
+			not-a-number))
+
+(define operations+names (list (list + '+)
+			       (list - '-)
+			       (list * '*)
+			       (list / '/)))
+
+(define error-object (list "ERROR"))
+
+(define (print-result name first-arg second-arg result)
+  
+  (define (print-arg arg)
+    
+    (define (print-number x)
+      (cond ((exact? x)
+	     (if (>= x (r5rs->number 0))
+		 (display "+"))
+	     (display (number->string x)))
+	    ((not (= x x)) (display "+NAN."))
+	    ((zero? x)
+	     (if (> (/ (r5rs->number 1.0) x) (r5rs->number 0.))
+		 (display "+0.")
+		 (display "-0.")))
+	    ((= (+ x x) x)
+	     (if (> x (r5rs->number 0.))
+		 (display "+INF.")
+		 (display "-INF.")))
+	    (else
+	     (if (>= x (r5rs->number 0.))
+		 (display "+"))
+	     (display (number->string x)))))
+    
+    (if (eq? arg error-object)
+	(display "ERROR")
+	(begin
+	  (print-number (real-part arg))
+	  (print-number (imag-part arg))
+	  (display "i"))))
+  
+  (display "(")
+  (display name)
+  (display " ")
+  (print-arg first-arg)
+  (display " ")
+  (print-arg second-arg)
+  (display ")        =>         ")
+  (print-arg result)
+  (newline))
+
+
+(for-each (lambda (arg1)
+		(for-each (lambda (arg2)
+			    (for-each (lambda (arg3)
+					(for-each (lambda (arg4)
+						    (for-each (lambda (operation+name)
+								(let ((operation (car  operation+name))
+								      (name      (cadr operation+name))
+								      (first-arg  (make-rectangular arg1 arg2))
+								      (second-arg (make-rectangular arg3 arg4)))
+								  (let ((result (with-exception-handler
+										 (lambda (args) error-object)
+										 (lambda ()
+										   (operation first-arg second-arg)))))
+								    (print-result name first-arg second-arg result))))
+							      operations+names))
+						  arguments))
+				      arguments))
+			  arguments))
+	      arguments)

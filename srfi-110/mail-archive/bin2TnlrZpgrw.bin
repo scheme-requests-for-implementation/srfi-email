@@ -1,0 +1,113 @@
+#!/usr/bin/env sweet-run
+;#!guile -s
+;!#
+
+
+; Code to generate derivatives from the "Wizard Book" -
+; Hal Abelson's, Jerry Sussman's and Julie Sussman's
+; "Structure and Interpretation of Computer Programs"
+; (MIT Press, 1984; ISBN 0-262-01077-1),
+; http://mitpress.mit.edu/sicp/full-text/sicp/book/node39.html
+; http://mitpress.mit.edu/sicp/code/index.html
+;;; SECTION 2.3.2
+
+
+
+define deriv(exp var)
+  cond
+    number?(exp) 0
+    variable?(exp)
+      if same-variable?(exp var) 1 0
+    sum?(exp)
+      make-sum deriv(addend(exp) var) deriv(augend(exp) var)
+    product?(exp)
+      make-sum
+        make-product multiplier(exp) deriv(multiplicand(exp) var)
+        make-product deriv(multiplier(exp) var) multiplicand(exp)
+    else error("unknown expression type -- DERIV" exp)
+
+;; representing algebraic expressions
+
+define variable?(x) symbol?(x)
+
+define same-variable?(v1 v2)
+  {variable?(v1) and variable?(v2) and eq?(v1 v2)}
+
+define sum?(x)
+  {pair?(x) and eq?(car(x) '+)}
+
+define addend(s) cadr(s)
+
+define augend(s) caddr(s)
+
+define product?(x)
+  {pair?(x) and eq?(car(x) '*)}
+
+define multiplier(p) cadr(p)
+
+define multiplicand(p) caddr(p)
+
+
+;; Simplification
+
+define make-sum(a1 a2)
+  cond
+    =number?(a1 0) a2
+    =number?(a2 0) a1
+    {number?(a1) and number?(a2)} {a1 + a2}
+    else list('+ a1 a2)
+
+define =number?(exp num)
+  {number?(exp) and {exp = num}}
+
+define make-product(m1 m2)
+  cond
+    {=number?(m1 0) or =number?(m2 0)} 0
+    =number?(m1 1) m2
+    =number?(m2 1) m1
+    {number?(m1) and number?(m2)} {m1 * m2}
+    else list('* m1 m2)
+
+
+
+; Here are routines to display result in infix form:
+
+define infix-operators '(+ *)
+
+define infix-tail(op x)
+  cond
+    null?(x)
+      display "}"
+    pair?(x)
+      display " "
+      write op
+      display " "
+      my-write car(x)
+      infix-tail op cdr(x)
+    #t
+      error("Infix operator with improper list")
+
+define my-write(x)
+  cond
+    null?(x)
+      display "()"
+    pair?(x)
+      if {memq(car(x) infix-operators) and pair?(cdr(x))}
+        begin ; Display in infix order
+          display "{"
+          if not(null?(cdr(x)))
+            my-write cadr(x)
+          infix-tail car(x) cddr(x)
+        write x
+    #t
+      write x
+
+
+
+; Use demo - this should produce {{x * y} + {y * {x + 3}}}
+
+
+my-write
+  deriv '{{x * y} * {x + 3}} 'x
+
+

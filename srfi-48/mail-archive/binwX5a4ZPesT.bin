@@ -1,0 +1,215 @@
+;; IMPLEMENTATION DEPENDENT options
+
+(define ascii-tab   (integer->char  9))  ;; Assume ASCII encoding
+(define dont-print  (if (eq? #t #f) 1))  ;; Unspecified result
+;;(define DONT-PRINT (string->symbol ""))
+;;(define DONT-PRINT (void))
+(define pretty-print display)  ;; Ugly, but permitted
+
+;; FORMAT
+
+(define (format . args)
+  (cond
+    ((null? args)
+     (error "FORMAT: required format-string argument is missing")
+     )
+    ((string? (car args))
+     (apply format (cons #f args)))
+    ((< (length args) 2)
+     (error (format #f "FORMAT: too few arguments ~a" (cons 'format args)))
+     )
+    (else
+     (let ( (output-port   (car  args))
+            (format-string (cadr args))
+            (args          (cddr args))
+            )
+       (letrec ( (port
+                  (cond ((output-port? output-port) output-port)
+                        ((eq? output-port #t) (current-output-port))
+                        ((eq? output-port #f) (open-output-string))
+                        (else (error
+                               (format #f "FORMAT: bad output-port argument: ~s"
+                                       output-port)))
+                        ))
+                 (return-value
+                  (if (eq? output-port #f)    ;; if format into a string
+                    (lambda () (get-output-string port)) ;; then return the string
+                    (lambda () dont-print)) ;; else do something harmless
+                  )
+                 )
+
+         (define (round* n scale) ;; assume scale < 0
+           (let ((one (expt 10 (- scale))))
+             (/ (round (* n one)) one)))
+
+         (define (string-index str c)
+           (let ((len (string-length str)))
+             (let loop ((i 0))
+               (cond ((= i len) #f)
+                     ((eqv? c (string-ref str i)) i)
+                     (loop (+ i 1))))))
+
+         (define (string-grow str len char)
+           (let ((off (- len (string-length str))))
+             (if (positive? off)
+               (string-append (make-string off char) str)
+               str)))
+
+         (define (string-pad-right str len char)
+           (let ((slen (string-length str)))
+             (cond ((< slen len)
+                    (string-append str (make-string (- len slen) char)))
+                   ((> slen len)
+                    (substring str 0 len))
+                   (else str))))
+
+         (define (format-fixed n1 width digits)
+           (let* ((s1 (number->string n1))
+                  (d1 (string-index s1 #\.))
+                  (l1 (string-length s1))
+                  (req-width (or d1 l1))
+                  (real-digits
+                   (or digits (and width (- width req-width 1))))
+                  (n2 (if real-digits (round* n1 (- real-digits)) n1))
+                  (s2 (number->string n2))
+                  (d2 (string-index s2 #\.))
+                  (l2 (string-length s2)))
+             ((if width (lambda (s) (string-grow s width #\space)) (lambda (s) s))
+              (if digits
+                (string-pad-right s2 (+ digits (or d2 l2) 1) #\0)
+                s2))))
+
+         (define (format-help format-strg arglist)
+
+           (letrec (
+
+                    (length-of-format-string (string-length format-strg))
+
+                    (anychar-dispatch
+                     (lambda (pos arglist last-was-newline)
+                       (if (>= pos length-of-format-string)
+                         arglist ; used for ~? continuance
+                         (let ( (char (string-ref format-strg pos)) )
+                           (cond
+                             ((eq? char #\~)
+                              (tilde-dispatch (+ pos 1) arglist '() '() last-was-newline))
+                             (else
+                              (write-char char port)
+                              (anychar-dispatch (+ pos 1) arglist #f)
+                              ))
+                           ))
+                       )) ; end anychar-dispatch
+
+                    (collect-digits
+                     (lambda (digits)
+                       (and (pair? digits)
+                            (string->number (list->string (reverse digits))))))
+
+                    (tilde-dispatch
+                     (lambda (pos arglist params digits last-was-newline)
+                       (cond
+                         ((>= pos length-of-format-string)
+                          (write-char #\~ port) ; tilde at end of string is just output
+                          arglist ; used for ~? continuance
+                          )
+                         (else
+                          (case (char-upcase (string-ref format-strg pos))
+                            ((#\A)       ; Any -- for humans
+                             (let* ((x (car arglist))
+                                    (nl? (or (and (string? x) (eqv? #\newline (string-ref x (string-length x))))
+                                             (eqv? x #\newline))))
+                               (display x port)
+                               (anychar-dispatch (+ pos 1) (cdr arglist) nl?))
+                             )
+                            ((#\S)       ; Slashified -- for parsers
+                             (write (car arglist) port)
+                             (anychar-dispatch (+ pos 1) (cdr arglist) #f)
+                             )
+                            ((#\D)       ; Decimal
+                             (display (number->string (car arglist) 10) port)
+                             (anychar-dispatch (+ pos 1) (cdr arglist) #f)
+                             )
+                            ((#\X)       ; HeXadecimal
+                             (display (number->string (car arglist) 16) port)
+                             (anychar-dispatch (+ pos 1) (cdr arglist) #f)
+                             )
+                            ((#\O)       ; Octal
+                             (display (number->string (car arglist)  8) port)
+                             (anychar-dispatch (+ pos 1) (cdr arglist) #f)
+                             )
+                            ((#\B)       ; Binary
+                             (display (number->string (car arglist)  2) port)
+                             (anychar-dispatch (+ pos 1) (cdr arglist) #f)
+                             )
+                            ((#\C)       ; Character
+                             (write-char (car arglist) port)
+                             (anychar-dispatch (+ pos 1) (cdr arglist) (eq? (car arglist) #\newline))
+                             )
+                            ((#\P)       ; Plural
+                             (if (<= (car arglist) 1)
+                               #f ; no action
+                               (write-char #\s port))
+                             (anychar-dispatch (+ pos 1) (cdr arglist) #f)
+                             )
+                            ((#\~)       ; Tilde
+                             (write-char #\~ port)
+                             (anychar-dispatch (+ pos 1) arglist #f)
+                             )
+                            ((#\%)       ; Newline
+                             (newline port)
+                             (anychar-dispatch (+ pos 1) arglist #t)
+                             )
+                            ((#\&)      ; Freshline
+                             (if (not last-was-newline) ;; (unless last-was-newline ..
+                               (newline port))
+                             (anychar-dispatch (+ pos 1) arglist #t)
+                             )
+                            ((#\_)       ; Space
+                             (write-char #\space port)
+                             (anychar-dispatch (+ pos 1) arglist #f)
+                             )
+                            ((#\T)       ; Tab -- IMPLEMENTATION DEPENDENT ENCODING
+                             (write-char #\tab port)
+                             (anychar-dispatch (+ pos 1) arglist #f)
+                             )
+                            ((#\Y)       ; Pretty-print
+                             (pretty-print (car arglist) port)  ;; IMPLEMENTATION DEPENDENT
+                             (anychar-dispatch (+ pos 1) (cdr arglist) #f)
+                             )
+                            ;; {"~?" in Common Lisp is "~K" in T}
+                            ((#\? #\K)       ; indirection -- take next arg as format string
+                             (anychar-dispatch
+                              (+ pos 1)
+                              (format-help (car arglist) (cdr arglist)) ; Note: format-help returns unused args
+                              #f)
+                             )
+                            ((#\F)
+                             (let* ((plist (reverse (cons (collect-digits digits) params)))
+                                    (width (and (pair? plist) (car plist)))
+                                    (digits (and (pair? plist) (pair? (cdr plist)) (cadr plist))))
+                               (display (format-fixed (car arglist) width digits) port)
+                               (anychar-dispatch (+ pos 1) (cdr arglist) #f)))
+                            ((#\,)
+                             (tilde-dispatch (+ pos 1) arglist (cons (collect-digits digits) params)
+                                             '() last-was-newline))
+                            ((#\1 #\2 #\3 #\4 #\5 #\6 #\7 #\8 #\9 #\0 #\+ #\-)
+                             (tilde-dispatch (+ pos 1) arglist params
+                                             (cons (string-ref format-strg pos) digits)
+                                             last-was-newline))
+                            (else
+                             (error (format "FORMAT: unknown tilde escape: ~a"
+                                            (string-ref format-strg pos))))
+                            )))
+                       )) ; end tilde-dispatch
+                    ) ; end letrec
+
+                                        ; format-help main
+             (anychar-dispatch 0 arglist #f)
+             )) ; end format-help
+
+                                        ; format main
+         (format-help format-string args)
+         (return-value)
+
+         )) ; end letrec, if
+     ))) ; end format
